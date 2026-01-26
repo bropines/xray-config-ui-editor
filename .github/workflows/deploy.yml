@@ -1,13 +1,23 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Автоматический запуск при пуше в main
   push:
-    branches: [ main ] # Или master, если у тебя старая ветка
+    branches: [ main ]
 
+  # ВОТ ЭТО позволяет запускать вручную через кнопку "Run workflow"
+  workflow_dispatch:
+
+# Права, необходимые для деплоя на Pages
 permissions:
   contents: read
   pages: write
   id-token: write
+
+# Одна сборка для обоих сценариев
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -30,7 +40,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist # Vite собирает проект в папку dist
+          path: ./dist
 
   deploy:
     environment:
