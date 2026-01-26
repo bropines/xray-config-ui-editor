@@ -1,13 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
-
-// Генератор ключей (можно вынести в utils, но пока оставим здесь для DRY)
-const generatePrivateKey = () => {
-    const arr = new Uint8Array(32);
-    window.crypto.getRandomValues(arr);
-    return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-};
+import { generateX25519Keys } from '../../../utils/crypto';
 
 interface TransportProps {
     streamSettings: any;
@@ -16,8 +10,11 @@ interface TransportProps {
 }
 
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false }: TransportProps) => {
+    // Локальный стейт для отображения публичного ключа при генерации на сервере
+    const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
+
     const update = (path: string[], value: any) => {
-        // Эмуляция глубокого обновления (immer-like)
+        // Эмуляция глубокого обновления
         const newObj = JSON.parse(JSON.stringify(streamSettings));
         let curr = newObj;
         for (let i = 0; i < path.length - 1; i++) {
@@ -31,6 +28,27 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
     const net = streamSettings.network || "tcp";
     const sec = streamSettings.security || "none";
 
+    const handleGenKeys = () => {
+        const keys = generateX25519Keys();
+        
+        if (isClient) {
+            // Клиенту обычно нужен Public Key, который дает админ сервера.
+            // Но если генерируем для теста:
+            update(['realitySettings', 'privateKey'], keys.privateKey);
+            update(['realitySettings', 'publicKey'], keys.publicKey);
+        } else {
+            // Серверу нужен Private Key.
+            update(['realitySettings', 'privateKey'], keys.privateKey);
+            // Сохраняем Public Key чтобы показать пользователю
+            setTempPublicKey(keys.publicKey);
+            
+            // Если нет ShortId, генерируем один
+            if (!streamSettings.realitySettings?.shortIds) {
+                update(['realitySettings', 'shortIds'], [Math.random().toString(16).substring(2, 10)]);
+            }
+        }
+    };
+
     return (
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-4 mt-4 animate-in fade-in">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -39,12 +57,12 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </h4>
             </div>
 
+            {/* --- MAIN SELECTORS --- */}
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="label-xs">Network</label>
                     <select className="input-base"
                         value={net} onChange={e => update(['network'], e.target.value)}>
-                        {/* Добавлен xhttp */}
                         {["tcp", "ws", "xhttp", "grpc", "http", "quic", "kcp"].map(n => 
                             <option key={n} value={n}>{n.toUpperCase()}</option>
                         )}
@@ -100,9 +118,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         />
                     </div>
                     
-                    {/* Extra Headers - упрощенный вариант для скачивания/загрузки */}
                     <div className="col-span-2">
-                        <label className="label-xs">Extra (JSON)</label>
+                        <label className="label-xs">Extra Headers (JSON)</label>
                         <input 
                             className="input-base font-mono text-xs"
                             placeholder='{"no-sse": "true"}'
@@ -111,7 +128,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                 try {
                                     update(['xhttpSettings', 'extra'], JSON.parse(e.target.value));
                                 } catch (err) {
-                                    // Игнорируем ошибки ввода JSON пока пользователь печатает
+                                    // Игнорируем ошибки ввода пока юзер печатает
                                 }
                             }}
                         />
@@ -156,29 +173,35 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
 
-            {/* --- REALITY BLOCK --- */}
+            {/* --- REALITY SETTINGS --- */}
             {sec === 'reality' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-purple-400">REALITY</span>
-                        {!isClient && (
-                            <Button variant="secondary" className="px-2 py-1 text-[10px]"
-                                onClick={() => {
-                                    const priv = generatePrivateKey();
-                                    update(['realitySettings', 'privateKey'], priv);
-                                    if (!streamSettings.realitySettings?.shortIds) update(['realitySettings', 'shortIds'], [""]);
-                                    alert("Private Key generated!\nPublic Key needs to be derived via 'xray x25519 -i " + priv + "'");
-                                }}>
-                                Gen Keys
-                            </Button>
-                        )}
+                        
+                        <Button variant="secondary" className="px-2 py-1 text-[10px]" onClick={handleGenKeys}>
+                            Gen Keys Pair
+                        </Button>
                     </div>
                     
+                    {/* Показываем сгенерированный Public Key, если мы на сервере */}
+                    {!isClient && tempPublicKey && (
+                        <div className="bg-emerald-900/20 border border-emerald-500/50 p-3 rounded-lg animate-in zoom-in-95">
+                            <label className="label-xs text-emerald-400">Generated Public Key (Copy to Client!)</label>
+                            <div className="flex gap-2">
+                                <code className="flex-1 bg-black/30 p-2 rounded text-xs font-mono break-all text-emerald-200 selection:bg-emerald-500/30">
+                                    {tempPublicKey}
+                                </code>
+                                <Button variant="ghost" icon="Copy" onClick={() => navigator.clipboard.writeText(tempPublicKey)} />
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {isClient ? (
                             <>
                                 <div>
-                                    <label className="label-xs text-purple-400">Public Key</label>
+                                    <label className="label-xs text-purple-400">Public Key (Required)</label>
                                     <input className="input-base font-mono"
                                         value={streamSettings.realitySettings?.publicKey || ""}
                                         onChange={e => update(['realitySettings', 'publicKey'], e.target.value)} />
@@ -193,7 +216,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         ) : (
                             <>
                                 <div>
-                                    <label className="label-xs">Dest</label>
+                                    <label className="label-xs">Dest (Fallback)</label>
                                     <input className="input-base font-mono" placeholder="google.com:443"
                                         value={streamSettings.realitySettings?.dest || ""}
                                         onChange={e => update(['realitySettings', 'dest'], e.target.value)} />
@@ -215,7 +238,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                     : (streamSettings.realitySettings?.serverNames || []).join(', ')}
                                 onChange={e => {
                                     const val = e.target.value;
-                                    update(['realitySettings', isClient ? 'serverName' : 'serverNames'], isClient ? val : val.split(',').map(s => s.trim()));
+                                    update(['realitySettings', isClient ? 'serverName' : 'serverNames'], isClient ? val : val.split(',').map((s: string) => s.trim()));
                                 }} 
                             />
                         </div>
@@ -223,7 +246,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
             
-            {/* TLS Settings (если не Reality) */}
+            {/* --- TLS SETTINGS --- */}
             {sec === 'tls' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="text-xs font-bold text-blue-400">TLS Settings</div>
