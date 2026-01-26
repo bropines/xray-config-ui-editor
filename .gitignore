@@ -67,3 +67,7 @@ tmp/
 temp/
 
 main.js
+dist/
+bun.lock
+
+cobase*

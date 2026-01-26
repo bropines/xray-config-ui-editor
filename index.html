@@ -6,33 +6,64 @@
     <title>Xray Configurator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { dark: '#0f172a', surface: '#1e293b' } } } }
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        dark: '#0f172a', 
+                        surface: '#1e293b' 
+                    } 
+                } 
+            } 
+        }
     </script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-<style>
-    body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
     
-/* Custom Scrollbar */
-.custom-scroll::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-.custom-scroll::-webkit-scrollbar-track {
-    background: #0f172a; 
-}
-.custom-scroll::-webkit-scrollbar-thumb {
-    background: #334155; 
-    border-radius: 3px;
-}
-.custom-scroll::-webkit-scrollbar-thumb:hover {
-    background: #475569; 
-}
-</style>
+    <!-- ВАЖНО: type="text/tailwindcss" -->
+    <style type="text/tailwindcss">
+        body { 
+            font-family: 'Inter', sans-serif; 
+            @apply bg-slate-950 text-slate-200;
+        }
+        
+        /* Определяем компоненты для переиспользования */
+        @layer components {
+            .input-base {
+                @apply w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:border-indigo-500 outline-none transition-colors font-mono;
+            }
+            .label-xs {
+                @apply block text-[10px] uppercase text-slate-500 font-bold mb-1;
+            }
+            .card-item {
+                @apply bg-slate-900 p-3 rounded-lg border border-slate-700/50 hover:border-indigo-500/50 transition-all;
+            }
+            .btn-icon {
+                @apply p-2 hover:bg-indigo-600 rounded text-slate-400 hover:text-white transition-colors;
+            }
+            .btn-icon-danger {
+                @apply p-2 hover:bg-rose-600 rounded text-slate-400 hover:text-white transition-colors;
+            }
+        }
+
+        /* Скроллбар */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
 </head>
 <body>
     <div id="app"></div>
-    <script src="/main.js" type="module"></script>
+    <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
