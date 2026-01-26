@@ -1,5 +1,3 @@
-// src/utils/link-parser.ts
-
 export const parseXrayLink = (link: string): any => {
   try {
     const url = new URL(link);
@@ -15,7 +13,7 @@ export const parseXrayLink = (link: string): any => {
       streamSettings: {
         network: "tcp",
         security: "none",
-        [query.net || "tcp"]: {} // placeholder for transport settings
+        // Плейсхолдеры для настроек будут заполнены ниже
       }
     };
 
@@ -28,7 +26,7 @@ export const parseXrayLink = (link: string): any => {
         encryption: query.encryption || "none"
       };
 
-      if (protocol === 'trojan') delete user.id; // Trojan uses password only
+      if (protocol === 'trojan') delete user.id;
 
       baseOutbound.settings = {
         vnext: [{
@@ -39,7 +37,10 @@ export const parseXrayLink = (link: string): any => {
       };
 
       // Stream Settings
-      if (query.type) baseOutbound.streamSettings.network = query.type;
+      // Поддержка параметра `net` (стандарт) и `type` (старые клиенты)
+      const network = query.type || query.net || "tcp";
+      baseOutbound.streamSettings.network = network;
+      
       if (query.security) baseOutbound.streamSettings.security = query.security;
 
       // TLS / Reality Settings
@@ -60,12 +61,32 @@ export const parseXrayLink = (link: string): any => {
         }
       }
       
-      // Transport specific (ws, grpc, etc)
-      if (query.type === 'ws') {
-        baseOutbound.streamSettings.wsSettings = { path: query.path || "/", headers: { Host: query.host || "" } };
+      // --- TRANSPORT SPECIFIC ---
+      
+      // WebSocket
+      if (network === 'ws') {
+        baseOutbound.streamSettings.wsSettings = { 
+            path: query.path || "/", 
+            headers: { Host: query.host || "" } 
+        };
       }
-      if (query.type === 'grpc') {
-        baseOutbound.streamSettings.grpcSettings = { serviceName: query.serviceName || "" };
+      
+      // gRPC
+      if (network === 'grpc') {
+        baseOutbound.streamSettings.grpcSettings = { 
+            serviceName: query.serviceName || "" 
+        };
+      }
+
+      // XHTTP (New!)
+      if (network === 'xhttp') {
+        baseOutbound.streamSettings.xhttpSettings = {
+            mode: query.mode || "auto",
+            path: query.path || "/",
+            host: query.host || "",
+            // Если есть extra параметры в JSON строке (редкость для ссылок, но возможно)
+            extra: query.extra ? JSON.parse(query.extra) : {}
+        };
       }
 
       return baseOutbound;
@@ -73,15 +94,10 @@ export const parseXrayLink = (link: string): any => {
 
     // --- SHADOWSOCKS ---
     if (protocol === 'ss') {
-      // ss://BASE64@host:port#tag
-      // BASE64 decodes to method:password
       let userInfo = url.username;
+      // Обработка Base64 (старый формат ss)
       if (!userInfo.includes(':')) {
-        try {
-          userInfo = atob(url.username);
-        } catch (e) {
-           // fallback if base64 is separate
-        }
+        try { userInfo = atob(url.username); } catch (e) {}
       }
       const [method, password] = userInfo.split(':');
 
