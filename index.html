@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xray Configurator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { dark: '#0f172a', surface: '#1e293b' } } } }
+    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: #0f172a; 
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #334155; 
+    border-radius: 3px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #475569; 
+}
+</style>
+</head>
+<body>
+    <div id="app"></div>
+    <script src="/main.js" type="module"></script>
+</body>
+</html>
