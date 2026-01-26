@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   // ЗАМЕНИ 'repo-name' НА НАЗВАНИЕ ТВОЕГО РЕПОЗИТОРИЯ!
   // Слеш в начале и конце обязателен.
-  base: '/xray-ui/', 
+  base: '/xray-config-ui-editor/', 
   server: {
     port: 3000,
   }
