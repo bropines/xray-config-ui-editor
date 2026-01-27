@@ -2,10 +2,33 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-// Типизация
+// Полная типизация конфига
 interface XrayConfig {
-    log?: any;
-    api?: any;
+    log?: {
+        access?: string;
+        error?: string;
+        loglevel?: "debug" | "info" | "warning" | "error" | "none";
+        dnsLog?: boolean;
+    };
+    api?: {
+        tag?: string;
+        services?: string[];
+    };
+    stats?: {};
+    policy?: {
+        levels?: { [key: string]: any };
+        system?: {
+            statsInboundUplink?: boolean;
+            statsInboundDownlink?: boolean;
+            statsOutboundUplink?: boolean;
+            statsOutboundDownlink?: boolean;
+        };
+    };
+    observatory?: {
+        subjectSelector?: string[];
+        probeUrl?: string;
+        probeInterval?: string;
+    };
     dns?: {
         servers?: any[];
         hosts?: Record<string, string | string[]>;
@@ -19,7 +42,6 @@ interface XrayConfig {
     routing?: { domainStrategy?: string; rules: any[]; balancers: any[] };
     inbounds: any[];
     outbounds: any[];
-    policy?: any;
 }
 
 interface ConfigState {
@@ -28,16 +50,15 @@ interface ConfigState {
     
     // Generic Actions
     updateSection: (section: keyof XrayConfig, data: any) => void;
+    toggleSection: (section: keyof XrayConfig, defaultValue: any) => void; // Новое!
     
     // Array Actions
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
     
-    // Routing Specific
+    // Complex Actions
     reorderRules: (newRules: any[]) => void;
-
-    // DNS Specific (инициализация если null)
     initDns: () => void;
 }
 
@@ -50,6 +71,16 @@ export const useConfigStore = create(
 
             updateSection: (section, data) => set(produce((state) => {
                 if (state.config) state.config[section] = data;
+            })),
+
+            // Включить/Выключить секцию (null/object)
+            toggleSection: (section, defaultValue) => set(produce((state) => {
+                if (!state.config) return;
+                if (state.config[section]) {
+                    delete state.config[section]; // Выключаем
+                } else {
+                    state.config[section] = defaultValue; // Включаем
+                }
             })),
 
             addItem: (section, item) => set(produce((state) => {
