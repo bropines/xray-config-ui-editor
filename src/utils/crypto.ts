@@ -1,5 +1,4 @@
-import { generateKeyPair } from '@stablelib/x25519';
-import { randomBytes } from '@stablelib/random';
+import nacl from 'tweetnacl';
 
 // Хелпер: Uint8Array -> Base64 URL-Safe String
 // Xray использует этот формат (без padding "=" в конце)
@@ -11,11 +10,12 @@ const toBase64Url = (arr: Uint8Array): string => {
 };
 
 export const generateX25519Keys = () => {
-    // Генерируем пару ключей для Curve25519 (X25519), используя безопасный рандом
-    const pair = generateKeyPair(randomBytes);
+    // TweetNaCl box.keyPair генерирует ключи на кривой Curve25519 (X25519),
+    // которая используется в REALITY.
+    const keyPair = nacl.box.keyPair();
 
     return {
-        privateKey: toBase64Url(pair.secretKey),
-        publicKey: toBase64Url(pair.publicKey)
+        privateKey: toBase64Url(keyPair.secretKey),
+        publicKey: toBase64Url(keyPair.publicKey)
     };
 };

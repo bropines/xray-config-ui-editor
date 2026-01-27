@@ -5,10 +5,12 @@ import { Icon } from "./components/ui/Icon";
 import { InboundModal } from "./components/editors/InboundModal";
 import { OutboundModal } from "./components/editors/OutboundModal";
 import { RoutingModal } from "./components/editors/RoutingModal";
+import { DnsModal } from "./components/editors/DnsModal";
 import { DropZone } from "./components/ui/DropZone";
 
-const Card = ({ title, icon, color, children, actions }) => (
-  <div className="bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col h-full hover:border-slate-600 transition-colors shadow-xl overflow-hidden">
+// Обновленный Card: теперь принимает className для гибкости размеров
+const Card = ({ title, icon, color, children, actions, className = "h-full" }) => (
+  <div className={`bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col hover:border-slate-600 transition-colors shadow-xl overflow-hidden ${className}`}>
     <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${color} text-white shadow-lg`}><Icon name={icon} className="text-xl" /></div>
@@ -70,63 +72,101 @@ export const App = () => {
                 spellCheck="false"
             />
         ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[85vh]">
-                {/* Inbounds */}
-                <Card title={`Inbounds (${config.inbounds?.length || 0})`} icon="ArrowCircleDown" color="bg-emerald-600"
-                    actions={<Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus"/>}>
-                    {(config.inbounds || []).map((ib, i) => (
-                        <div key={i} className="card-item group flex justify-between items-start">
-                            <div>
-                                <div className="font-bold text-emerald-400 text-sm flex items-center gap-2"><Icon name="Hash"/> {ib.tag || "no-tag"}</div>
-                                <div className="text-xs text-slate-400 mt-1 font-mono pl-6">{ib.protocol} : {ib.port}</div>
-                            </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setModal({ type: 'inbound', data: ib, index: i })} className="btn-icon"><Icon name="PencilSimple" /></button>
-                                <button onClick={() => deleteItem('inbounds', i)} className="btn-icon-danger"><Icon name="Trash" /></button>
-                            </div>
-                        </div>
-                    ))}
-                </Card>
-
-                {/* Routing (Исправлено отображение) */}
-                <Card title="Routing" icon="ArrowsSplit" color="bg-purple-600"
-                    actions={<Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>}>
-                    <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20">
-                        Strategy: <span className="font-bold">{config.routing?.domainStrategy || "AsIs"}</span>
-                    </div>
-                    <div className="space-y-1">
-                        {(config.routing?.rules || []).slice(0, 20).map((rule, i) => (
-                            <div key={i} className="text-xs bg-slate-950 p-2 rounded flex gap-2 border-l-2 border-slate-700 items-center">
-                                <span className={`font-bold w-24 truncate text-right ${rule.balancerTag ? 'text-purple-400' : 'text-blue-400'}`}>
-                                    {rule.outboundTag || rule.balancerTag}
-                                </span>
-                                <span className="text-slate-600"><Icon name="ArrowLeft" /></span>
-                                <span className="text-slate-400 truncate flex-1 font-mono">
-                                    {rule.domain ? `dom:${rule.domain.length}` : rule.ip ? `ip:${rule.ip.length}` : 'match'}
-                                </span>
+            // Flex контейнер: Grid сверху занимает все место, DNS снизу компактный
+            <div className="flex flex-col gap-6 h-[85vh]">
+                
+                {/* Верхняя часть: Grid 3 колонки (растягивается flex-1) */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 min-h-0">
+                    {/* Inbounds */}
+                    <Card title={`Inbounds (${config.inbounds?.length || 0})`} icon="ArrowCircleDown" color="bg-emerald-600" className="h-full"
+                        actions={<Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus"/>}>
+                        {(config.inbounds || []).map((ib, i) => (
+                            <div key={i} className="card-item group flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-emerald-400 text-sm flex items-center gap-2"><Icon name="Hash"/> {ib.tag || "no-tag"}</div>
+                                    <div className="text-xs text-slate-400 mt-1 font-mono pl-6">{ib.protocol} : {ib.port}</div>
+                                </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => setModal({ type: 'inbound', data: ib, index: i })} className="btn-icon"><Icon name="PencilSimple" /></button>
+                                    <button onClick={() => deleteItem('inbounds', i)} className="btn-icon-danger"><Icon name="Trash" /></button>
+                                </div>
                             </div>
                         ))}
-                        {(config.routing?.rules || []).length > 20 && (
-                            <div className="text-center text-xs text-slate-500 italic">... +{(config.routing?.rules || []).length - 20} rules</div>
-                        )}
-                    </div>
-                </Card>
+                    </Card>
 
-                {/* Outbounds */}
-                <Card title={`Outbounds (${config.outbounds?.length || 0})`} icon="ArrowCircleUp" color="bg-blue-600"
-                    actions={<Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus"/>}>
-                    {(config.outbounds || []).map((ob, i) => (
-                        <div key={i} className="card-item group flex justify-between items-start">
-                            <div>
-                                <div className="font-bold text-blue-400 text-sm flex items-center gap-2"><Icon name="PaperPlaneRight"/> {ob.tag || "no-tag"}</div>
-                                <div className="text-xs text-slate-400 mt-1 font-mono pl-6">{ob.protocol}</div>
+                    {/* Routing */}
+                    <Card title="Routing" icon="ArrowsSplit" color="bg-purple-600" className="h-full"
+                        actions={<Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>}>
+                        <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20">
+                            Strategy: <span className="font-bold">{config.routing?.domainStrategy || "AsIs"}</span>
+                        </div>
+                        <div className="space-y-1">
+                            {(config.routing?.rules || []).slice(0, 20).map((rule, i) => (
+                                <div key={i} className="text-xs bg-slate-950 p-2 rounded flex gap-2 border-l-2 border-slate-700 items-center">
+                                    <span className={`font-bold w-24 truncate text-right ${rule.balancerTag ? 'text-purple-400' : 'text-blue-400'}`}>
+                                        {rule.outboundTag || rule.balancerTag}
+                                    </span>
+                                    <span className="text-slate-600"><Icon name="ArrowLeft" /></span>
+                                    <span className="text-slate-400 truncate flex-1 font-mono">
+                                        {rule.domain ? `dom:${rule.domain.length}` : rule.ip ? `ip:${rule.ip.length}` : 'match'}
+                                    </span>
+                                </div>
+                            ))}
+                            {(config.routing?.rules || []).length > 20 && (
+                                <div className="text-center text-xs text-slate-500 italic">... +{(config.routing?.rules || []).length - 20} rules</div>
+                            )}
+                        </div>
+                    </Card>
+
+                    {/* Outbounds */}
+                    <Card title={`Outbounds (${config.outbounds?.length || 0})`} icon="ArrowCircleUp" color="bg-blue-600" className="h-full"
+                        actions={<Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus"/>}>
+                        {(config.outbounds || []).map((ob, i) => (
+                            <div key={i} className="card-item group flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-blue-400 text-sm flex items-center gap-2"><Icon name="PaperPlaneRight"/> {ob.tag || "no-tag"}</div>
+                                    <div className="text-xs text-slate-400 mt-1 font-mono pl-6">{ob.protocol}</div>
+                                </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => setModal({ type: 'outbound', data: ob, index: i })} className="btn-icon"><Icon name="PencilSimple" /></button>
+                                    <button onClick={() => deleteItem('outbounds', i)} className="btn-icon-danger"><Icon name="Trash" /></button>
+                                </div>
                             </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setModal({ type: 'outbound', data: ob, index: i })} className="btn-icon"><Icon name="PencilSimple" /></button>
-                                <button onClick={() => deleteItem('outbounds', i)} className="btn-icon-danger"><Icon name="Trash" /></button>
+                        ))}
+                    </Card>
+                </div>
+
+                {/* DNS Configuration (Нижняя панель) */}
+                {/* h-fit - чтобы не растягивался на высоту, а был компактным */}
+                <Card title="DNS" icon="Globe" color="bg-indigo-600" className="h-fit shrink-0"
+                    actions={<Button variant="ghost" onClick={() => { useConfigStore.getState().initDns(); setModal({ type: 'dns', data: null, index: null }) }} icon="PencilSimple">Edit</Button>}>
+                    
+                    {config.dns ? (
+                        <div className="flex gap-4 items-center">
+                            <div className="grid grid-cols-2 gap-2 text-xs flex-1">
+                                <div className="bg-slate-900 p-2 rounded border border-slate-700/50 flex items-center justify-between px-4">
+                                    <span className="text-slate-500 block text-[10px] uppercase">Servers</span>
+                                    <span className="text-white font-bold font-mono text-lg">{config.dns.servers?.length || 0}</span>
+                                </div>
+                                <div className="bg-slate-900 p-2 rounded border border-slate-700/50 flex items-center justify-between px-4">
+                                    <span className="text-slate-500 block text-[10px] uppercase">Hosts</span>
+                                    <span className="text-white font-bold font-mono text-lg">{Object.keys(config.dns.hosts || {}).length}</span>
+                                </div>
+                            </div>
+                            <div className="text-xs text-slate-400 border-l border-slate-800 pl-4 flex flex-col gap-1 min-w-[200px]">
+                                <div className="flex justify-between">
+                                    <span>Strategy:</span> <span className="text-indigo-300 font-bold">{config.dns.queryStrategy || "UseIP"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Client IP:</span> <span className="font-mono text-slate-500">{config.dns.clientIp || "N/A"}</span>
+                                </div>
                             </div>
                         </div>
-                    ))}
+                    ) : (
+                        <div className="text-center py-4 text-slate-500 text-xs">
+                            DNS not configured. Click Edit to initialize defaults.
+                        </div>
+                    )}
                 </Card>
             </div>
         )}
@@ -134,6 +174,8 @@ export const App = () => {
         {modal.type === 'inbound' && <InboundModal data={modal.data} onClose={() => setModal({ type: null })} onSave={handleSaveModal} />}
         {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null })} onSave={handleSaveModal} />}
         {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null })} />}
+        {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null })} />}
+
       </main>
     </div>
   );

@@ -2,14 +2,24 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-// Типизация (можно расширять)
+// Типизация
 interface XrayConfig {
     log?: any;
     api?: any;
-    dns?: any;
+    dns?: {
+        servers?: any[];
+        hosts?: Record<string, string | string[]>;
+        clientIp?: string;
+        queryStrategy?: string;
+        disableCache?: boolean;
+        disableFallback?: boolean;
+        disableFallbackIfMatch?: boolean;
+        tag?: string;
+    };
     routing?: { domainStrategy?: string; rules: any[]; balancers: any[] };
     inbounds: any[];
     outbounds: any[];
+    policy?: any;
 }
 
 interface ConfigState {
@@ -26,6 +36,9 @@ interface ConfigState {
     
     // Routing Specific
     reorderRules: (newRules: any[]) => void;
+
+    // DNS Specific (инициализация если null)
+    initDns: () => void;
 }
 
 export const useConfigStore = create(
@@ -63,10 +76,20 @@ export const useConfigStore = create(
                     if (!state.config.routing) state.config.routing = { rules: [], balancers: [] };
                     state.config.routing.rules = newRules;
                 }
+            })),
+
+            initDns: () => set(produce((state) => {
+                if (state.config && !state.config.dns) {
+                    state.config.dns = {
+                        servers: ["1.1.1.1", "8.8.8.8"],
+                        queryStrategy: "UseIP",
+                        tag: "dns_inbound"
+                    };
+                }
             }))
         }),
         {
-            name: 'xray-config-storage', // Уникальное имя ключа в LocalStorage
+            name: 'xray-config-storage',
             storage: createJSONStorage(() => localStorage),
         }
     )
