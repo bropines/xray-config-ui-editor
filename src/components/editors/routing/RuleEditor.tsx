@@ -55,7 +55,7 @@ export const RuleEditor = ({
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg">
                 <div className="flex justify-between items-center mb-2">
                     <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Traffic Destination</label>
-                    <div className="text-[10px] text-slate-500 font-mono">Куда отправить трафик</div>
+                    <div className="text-[10px] text-slate-500 font-mono">Where to send traffic</div>
                 </div>
                 <div className="flex gap-2">
                     <select 
