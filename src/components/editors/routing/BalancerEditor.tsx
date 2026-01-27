@@ -45,7 +45,6 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
     };
 
     return (
-        // ИСПРАВЛЕНИЕ: w-full вместо w-0
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
                 <div>
@@ -56,10 +55,12 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
                     <label className="label-xs">Strategy</label>
                     <select className="input-base font-mono" 
                         value={balancer.strategy?.type || "random"} 
-                        onChange={e => update('strategy', { type: e.target.value })}>
+                        // Исправлено: сохраняем остальные поля strategy (если они есть), меняем только type
+                        onChange={e => update('strategy', { ...balancer.strategy, type: e.target.value })}>
                         <option value="random">Random</option>
                         <option value="roundRobin">Round Robin</option>
                         <option value="leastPing">Least Ping</option>
+                        <option value="leastLoad">Least Load</option> {/* Добавлено */}
                     </select>
                 </div>
             </div>
@@ -114,6 +115,15 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
                     </div>
                 </div>
             </div>
+            
+            {(balancer.strategy?.type === 'leastPing' || balancer.strategy?.type === 'leastLoad') && (
+                <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-700/50 text-xs text-yellow-200 flex gap-2 items-start">
+                    <Icon name="Warning" className="mt-0.5 shrink-0" weight="fill" />
+                    <div>
+                        <strong>Observatory Required:</strong> For "{balancer.strategy.type}" to work, you must configure <b>Observatory</b> in Settings and ensure the selector matches these outbounds.
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
