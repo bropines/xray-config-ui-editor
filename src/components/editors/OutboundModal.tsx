@@ -4,11 +4,12 @@ import { JsonField } from '../ui/JsonField';
 import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
 import { useConfigStore } from '../../store/configStore';
-import { Icon } from '../ui/Icon'; // Импорт иконки
+import { Icon } from '../ui/Icon';
+import { toast } from 'sonner'; // Импорт уведомлений
 
 // Утилиты
 import { parseXrayLink } from '../../utils/link-parser';
-import { generateLink } from '../../utils/link-generator'; // Импорт генератора
+import { generateLink } from '../../utils/link-generator';
 
 // Суб-компоненты
 import { OutboundImport } from './outbound/OutboundImport';
@@ -30,11 +31,11 @@ export const OutboundModal = ({ data, onSave, onClose }) => {
     });
     
     const [rawMode, setRawMode] = useState(false);
-    const [generatedLink, setGeneratedLink] = useState("");
 
     const handleImport = (parsedConfig) => {
         setLocal(parsedConfig);
         setRawMode(false);
+        toast.success("Configuration imported successfully");
     };
 
     const handleUpdate = (path: string | string[], value: any) => {
@@ -58,15 +59,57 @@ export const OutboundModal = ({ data, onSave, onClose }) => {
         setLocal(newObj);
     };
 
-    // Функция копирования
     const handleCopyLink = () => {
         const link = generateLink(local);
-        if (link) {
-            navigator.clipboard.writeText(link);
-            alert("Link copied to clipboard!");
-        } else {
-            alert("Could not generate link for this config (maybe protocol not supported or missing fields).");
+        
+        if (!link) {
+            toast.error("Error generating link", {
+                description: "Protocol might not be supported or required fields (address, port, uuid) are missing."
+            });
+            return;
         }
+
+        // Вспомогательная функция для старого метода (fallback)
+        const fallbackCopyTextToClipboard = (text: string) => {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                toast.success("Link copied!", {
+                    description: "Copied via fallback method."
+                });
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                toast.error("Failed to copy link", {
+                    description: "Check console for the link or try manually."
+                });
+                console.log(text);
+            }
+
+            document.body.removeChild(textArea);
+        };
+
+        // Пытаемся использовать современный API
+        if (!navigator.clipboard) {
+            fallbackCopyTextToClipboard(link);
+            return;
+        }
+
+        navigator.clipboard.writeText(link).then(() => {
+            toast.success("Link copied to clipboard!", {
+                icon: <Icon name="ClipboardText" className="text-emerald-400" />
+            });
+        }, (err) => {
+            console.error('Async: Could not copy text: ', err);
+            fallbackCopyTextToClipboard(link);
+        });
     };
 
     if (rawMode) return (
@@ -83,7 +126,6 @@ export const OutboundModal = ({ data, onSave, onClose }) => {
         >
             <div className="h-[600px] flex flex-col gap-4">
                 <OutboundImport onImport={handleImport} />
-                {/* Теперь JsonField использует Monaco внутри */}
                 <JsonField label="JSON" value={local} onChange={setLocal} className="flex-1" />
             </div>
         </Modal>
