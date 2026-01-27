@@ -9,12 +9,11 @@ import { DnsModal } from "./components/editors/DnsModal";
 import { SettingsModal } from "./components/editors/SettingsModal";
 import { ReverseModal } from "./components/editors/ReverseModal";
 import { TopologyModal } from "./components/topology/TopologyModal";
-import { DropZone } from "./components/ui/DropZone";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
+import { getPresets } from "./utils/presets"; // Импорт пресетов
 
 // Компонент карточки
-// className по умолчанию "h-full" убрали, чтобы управлять им снаружи
 const Card = ({ title, icon, color, children, actions, className = "" }) => (
   <div className={`bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col hover:border-slate-600 transition-colors shadow-xl overflow-hidden ${className}`}>
     <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0">
@@ -59,15 +58,7 @@ export const App = () => {
     a.click();
   };
 
-  const createEmpty = () => {
-    setConfig({
-      log: { loglevel: "warning" },
-      inbounds: [],
-      outbounds: [],
-      routing: { rules: [], balancers: [] }
-    });
-  };
-
+  // Drag & Drop Handlers
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
@@ -91,8 +82,9 @@ export const App = () => {
       setModal({ type: null, data: null, index: null });
   };
 
+  const presets = getPresets();
+
   return (
-    // На мобильном h-auto (скроллится body), на десктопе h-screen (скроллится внутри)
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col xl:h-screen xl:overflow-hidden h-auto"
         onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
     >
@@ -113,30 +105,49 @@ export const App = () => {
         </div>
 
         <div className="flex gap-2">
-            <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 md:px-4 md:py-2 rounded-lg font-bold cursor-pointer transition-all border border-slate-700 flex items-center gap-2">
-                <Icon name="FolderOpen" /> <span className="hidden md:inline">Open</span>
+            <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 md:px-4 md:py-2 rounded-lg font-bold cursor-pointer transition-all border border-slate-700 flex items-center gap-2 text-xs md:text-sm">
+                <Icon name="FolderOpen" /> <span className="hidden md:inline">Open File</span>
                 <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
             </label>
-            <Button variant="success" onClick={downloadConfig} icon="DownloadSimple" className="font-bold p-2 md:px-4 md:py-2" disabled={!config}>
+            <Button variant="success" onClick={downloadConfig} icon="DownloadSimple" className="font-bold p-2 md:px-4 md:py-2 text-xs md:text-sm" disabled={!config}>
                 <span className="hidden md:inline">Download</span>
             </Button>
         </div>
       </nav>
 
       {/* --- MAIN CONTENT --- */}
-      {/* Mobile: h-auto (растет вниз). Desktop: h-[calc] (фиксирован) */}
       <main className="p-4 md:p-6 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex-1 flex flex-col min-h-0 h-auto xl:h-[calc(100vh-4rem)]">
         {!config ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-center min-h-[60vh]">
-                <Icon name="FileJson" className="text-6xl md:text-8xl mb-6 text-slate-800" />
-                <h1 className="text-2xl md:text-3xl text-white font-bold mb-2">No Config Loaded</h1>
-                <p className="mb-8 text-sm md:text-base px-4">Drag & Drop your <code>config.json</code> or create new</p>
-                <div className="flex flex-col md:flex-row gap-4 w-full max-w-xs md:max-w-none justify-center">
-                    <label className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-lg cursor-pointer font-bold transition-colors flex items-center justify-center gap-2">
-                        <Icon name="FolderOpen" weight="bold" /> Browse Files
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl md:text-4xl text-white font-bold mb-3 tracking-tight">Welcome to Xray GUI</h1>
+                    <p className="text-slate-400 max-w-md mx-auto">
+                        Drag & Drop your <code>config.json</code> anywhere or choose a template to start.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl px-4">
+                    {presets.map((preset, i) => (
+                        <div key={i} 
+                            onClick={() => setConfig(preset.config)}
+                            className="bg-slate-900/50 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-6 cursor-pointer transition-all group shadow-lg hover:shadow-indigo-500/10 flex flex-col gap-3"
+                        >
+                            <div className="bg-slate-950 w-12 h-12 rounded-lg flex items-center justify-center border border-slate-800 group-hover:border-indigo-500/50 group-hover:text-indigo-400 transition-colors">
+                                <Icon name={preset.icon} className="text-2xl" weight="duotone" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-200 group-hover:text-white mb-1">{preset.name}</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed">{preset.description}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                
+                <div className="mt-12 opacity-50 hover:opacity-100 transition-opacity">
+                    <label className="text-sm text-slate-500 cursor-pointer flex items-center gap-2 hover:text-indigo-400 transition-colors">
+                        <Icon name="FolderOpen" /> Or open existing config file
                         <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
                     </label>
-                    <Button variant="secondary" onClick={createEmpty} icon="PlusCircle" className="px-6 py-3">Create Empty</Button>
                 </div>
             </div>
         ) : (
@@ -159,6 +170,7 @@ export const App = () => {
                         >
                             {rawMode ? "UI" : "JSON"}
                         </Button>
+                        <Button variant="danger" className="text-xs px-3 ml-2" onClick={() => { if(confirm('Clear config?')) setConfig(null); }} icon="XCircle" title="Close Config" />
                     </div>
                 </div>
 
@@ -168,23 +180,14 @@ export const App = () => {
                         <JsonField label="Full Configuration" value={config} onChange={(newConfig) => { if (newConfig) setConfig(newConfig); }} className="h-full" />
                     </div>
                 ) : (
-                    // Responsive Layout
-                    // Mobile: flex-col (блоки друг под другом), h-auto
-                    // Desktop: flex-col, h-full (вписано в экран)
                     <div className="flex flex-col gap-6 flex-1 min-h-0 xl:overflow-hidden">
                         
-                        {/* 
-                           Верхняя часть: Grid 3 колонки
-                           Mobile: min-h-0 не нужен, пусть растет.
-                           Desktop: flex-1 min-h-0, чтобы занимал остаток места и скроллил внутри.
-                        */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 xl:flex-1 xl:min-h-0">
                             {/* Inbounds */}
                             <Card 
                                 title={`Inbounds (${config.inbounds?.length || 0})`} 
                                 icon="ArrowCircleDown" 
                                 color="bg-emerald-600" 
-                                // Mobile: фикс высота 400px (или h-auto если хочешь резиновый). Desktop: h-full.
                                 className="h-[500px] xl:h-full"
                                 actions={<Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus"/>}
                             >

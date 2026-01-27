@@ -1,10 +1,8 @@
 import React from 'react';
 import { Icon } from '../../ui/Icon';
 
-// Убрали проп onAdd
 export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete }) => {
     return (
-        // Убрали ширину и бордеры, оставили только контейнер скролла
         <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
             {balancers.map((b, i) => (
                 <div key={i} onClick={() => onSelect(i)} 
@@ -14,8 +12,13 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete }) => 
                         <div className={`font-bold ${activeIndex === i ? 'text-white' : 'text-slate-300'}`}>{b.tag}</div>
                         <div className="text-[10px] text-slate-500 mt-0.5">Strategy: {b.strategy?.type || 'random'}</div>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); onDelete(i); }} className="opacity-0 group-hover:opacity-100 hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 transition-colors">
-                        <Icon name="Trash" />
+                    {/* Кнопка теперь всегда видна и увеличена */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onDelete(i); }} 
+                        className="text-slate-600 hover:text-rose-400 p-2 rounded-md hover:bg-rose-500/10 transition-colors"
+                        title="Delete Balancer"
+                    >
+                        <Icon name="Trash" className="text-lg" />
                     </button>
                 </div>
             ))}

@@ -19,27 +19,32 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
             className={`p-2 rounded-lg cursor-pointer text-xs flex items-center gap-2 group transition-all border select-none mb-1
                 ${isActive ? 'bg-indigo-600/20 border-indigo-500/50' : 'bg-slate-900 border-transparent hover:border-slate-700'}`}
         >
-            <div {...listeners} className="cursor-grab text-slate-600 hover:text-slate-300 p-1 touch-none">
-                <Icon name="DotsSixVertical" />
+            <div {...listeners} className="cursor-grab text-slate-600 hover:text-slate-300 p-2 touch-none">
+                <Icon name="DotsSixVertical" className="text-base"/>
             </div>
             
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                     <span className={`w-1.5 h-1.5 rounded-full ${rule.balancerTag ? 'bg-purple-400' : 'bg-blue-400'}`}></span>
-                    <span className="font-bold truncate text-slate-200">{rule.outboundTag || rule.balancerTag || "Empty"}</span>
+                    <span className="font-bold truncate text-slate-200 text-sm">{rule.outboundTag || rule.balancerTag || "Empty"}</span>
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono truncate">
+                <div className="text-[10px] text-slate-500 font-mono truncate mt-0.5">
                     {rule.domain ? `dom:${rule.domain.length}` : rule.ip ? `ip:${rule.ip.length}` : 'match:all'}
                 </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-slate-600 hover:text-rose-500 p-1 rounded hover:bg-rose-500/10 transition-colors">
-                <Icon name="Trash" />
+            
+            {/* Кнопка увеличена */}
+            <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+                className="text-slate-600 hover:text-rose-500 p-2 rounded-md hover:bg-rose-500/10 transition-colors"
+                title="Delete Rule"
+            >
+                <Icon name="Trash" className="text-lg" />
             </button>
         </div>
     );
 };
 
-// Убрали проп onAdd, так как кнопка теперь снаружи
 export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }) => {
     const handleDragEnd = (event) => {
         const { active, over } = event;
@@ -55,7 +60,6 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }) 
         onReorder(newRules, oldIndex, newIndex);
     };
 
-    // Убрали внешние div-обертки с шириной и заголовками
     return (
         <div className="flex-1 overflow-y-auto custom-scroll p-2">
             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
