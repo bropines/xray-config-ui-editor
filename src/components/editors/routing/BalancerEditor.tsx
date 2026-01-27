@@ -12,10 +12,10 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
         );
     }
 
-    // Исправление для JSON режима: w-0 и h-full
+    // Исправление: w-full вместо w-0
     if (rawMode) {
         return (
-            <div className="flex-1 w-0 h-full p-4 bg-slate-950">
+            <div className="flex-1 w-full h-full p-4 bg-slate-950">
                 <JsonField label="Raw Balancer JSON" value={balancer} onChange={onChange} className="h-full"/>
             </div>
         );
@@ -45,7 +45,8 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
     };
 
     return (
-        <div className="flex-1 w-0 overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
+        // ИСПРАВЛЕНИЕ: w-full вместо w-0
+        <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
                 <div>
                     <label className="label-xs">Balancer Tag</label>
