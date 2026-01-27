@@ -1,0 +1,93 @@
+import React from 'react';
+import { TagSelector } from '../../ui/TagSelector';
+
+export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
+    // Исключаем себя, чтобы не сделать петлю
+    const availableProxies = allTags.filter(t => t !== outbound.tag);
+
+    const updateProxy = (tag) => {
+        if (!tag) {
+            onChange('proxySettings', undefined);
+        } else {
+            onChange('proxySettings', { tag });
+        }
+    };
+
+    const updateMux = (enabled) => {
+        if (!enabled) {
+            onChange('mux', undefined);
+        } else {
+            // Дефолтные настройки
+            onChange('mux', { enabled: true, concurrency: 8, xudpConcurrency: 8, xudpProxyUDP443: "reject" });
+        }
+    };
+
+    const updateMuxField = (field, val) => {
+        onChange(['mux', field], val);
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            
+            {/* Proxy Chain */}
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <h4 className="label-xs text-slate-400 mb-3">Proxy Chaining (Optional)</h4>
+                <p className="text-[10px] text-slate-500 mb-3">Send traffic through another outbound first.</p>
+                <TagSelector 
+                    availableTags={availableProxies}
+                    selected={outbound.proxySettings?.tag || ""}
+                    onChange={v => updateProxy(v)}
+                    placeholder="Direct (None)"
+                />
+            </div>
+
+            {/* Mux */}
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <div className="flex justify-between items-center mb-3">
+                    <h4 className="label-xs text-slate-400">Mux (Multiplexing)</h4>
+                    <input type="checkbox" className="w-4 h-4 accent-indigo-600 cursor-pointer"
+                        checked={outbound.mux?.enabled || false}
+                        onChange={e => updateMux(e.target.checked)}
+                    />
+                </div>
+                
+                {outbound.mux?.enabled && (
+                    <div className="space-y-3 animate-in fade-in">
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="label-xs">TCP Concurrency</label>
+                                <input type="number" className="input-base" 
+                                    value={outbound.mux.concurrency || 8}
+                                    onChange={e => updateMuxField('concurrency', parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <label className="label-xs">XUDP Concurrency</label>
+                                <input type="number" className="input-base" 
+                                    value={outbound.mux.xudpConcurrency || 8}
+                                    onChange={e => updateMuxField('xudpConcurrency', parseInt(e.target.value))}
+                                />
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label className="label-xs">UDP 443 Strategy (QUIC)</label>
+                            <select className="input-base"
+                                value={outbound.mux.xudpProxyUDP443 || "reject"}
+                                onChange={e => updateMuxField('xudpProxyUDP443', e.target.value)}
+                            >
+                                <option value="reject">Reject (Recommended)</option>
+                                <option value="allow">Allow</option>
+                                <option value="skip">Skip</option>
+                            </select>
+                            <p className="text-[10px] text-slate-500 mt-1">
+                                'Reject' forces browsers to fallback to TCP (better for Mux).
+                            </p>
+                        </div>
+                    </div>
+                )}
+                {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">Enable to reduce handshake latency for multiple requests.</p>}
+            </div>
+        </div>
+    );
+};

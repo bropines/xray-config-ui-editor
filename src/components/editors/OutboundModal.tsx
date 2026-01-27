@@ -3,13 +3,19 @@ import { Modal } from '../ui/Modal';
 import { JsonField } from '../ui/JsonField';
 import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
+import { useConfigStore } from '../../store/configStore'; // Импорт стора
 
 // Суб-компоненты
 import { OutboundImport } from './outbound/OutboundImport';
 import { OutboundGeneral } from './outbound/OutboundGeneral';
 import { OutboundServer } from './outbound/OutboundServer';
+import { OutboundProxyMux } from './outbound/OutboundProxyMux'; // Новый компонент
 
 export const OutboundModal = ({ data, onSave, onClose }) => {
+    // Достаем все теги из стора для цепочек прокси
+    const { config } = useConfigStore();
+    const allOutboundTags = (config?.outbounds || []).map(o => o.tag).filter(t => t);
+
     // Начальное состояние
     const [local, setLocal] = useState(data || { 
         tag: "out-" + Math.floor(Math.random()*1000), 
@@ -20,13 +26,11 @@ export const OutboundModal = ({ data, onSave, onClose }) => {
     
     const [rawMode, setRawMode] = useState(false);
 
-    // Обработка импорта (заменяет весь объект)
     const handleImport = (parsedConfig) => {
         setLocal(parsedConfig);
-        setRawMode(false); // Возвращаемся в UI режим, чтобы увидеть результат
+        setRawMode(false);
     };
 
-    // Универсальная функция обновления
     const handleUpdate = (path: string | string[], value: any) => {
         const newObj = JSON.parse(JSON.stringify(local));
         
@@ -38,7 +42,6 @@ export const OutboundModal = ({ data, onSave, onClose }) => {
             }
             curr[path[path.length - 1]] = value;
         } else {
-            // Если меняем протокол - сбрасываем настройки, чтобы не было мусора
             if (path === 'protocol') {
                 newObj.settings = {};
                 newObj.streamSettings = {};
@@ -71,23 +74,25 @@ export const OutboundModal = ({ data, onSave, onClose }) => {
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(true)} icon="Code">JSON / Import</Button>}
         >
             <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
-                
-                {/* 1. Import (Optional helper on top) */}
                 <OutboundImport onImport={handleImport} />
 
-                {/* 2. General */}
                 <OutboundGeneral 
                     outbound={local} 
                     onChange={handleUpdate} 
                 />
 
-                {/* 3. Server Settings */}
                 <OutboundServer 
                     outbound={local} 
                     onChange={handleUpdate} 
                 />
 
-                {/* 4. Transport (Shared) */}
+                {/* PROXY & MUX (NEW) */}
+                <OutboundProxyMux 
+                    outbound={local}
+                    onChange={handleUpdate}
+                    allTags={allOutboundTags}
+                />
+
                 <TransportSettings 
                     streamSettings={local.streamSettings} 
                     onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
