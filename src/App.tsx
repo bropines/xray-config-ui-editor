@@ -7,6 +7,7 @@ import { OutboundModal } from "./components/editors/OutboundModal";
 import { RoutingModal } from "./components/editors/RoutingModal";
 import { DnsModal } from "./components/editors/DnsModal";
 import { DropZone } from "./components/ui/DropZone";
+import { SettingsModal } from "./components/editors/SettingsModal";
 
 // Обновленный Card: теперь принимает className для гибкости размеров
 const Card = ({ title, icon, color, children, actions, className = "h-full" }) => (
@@ -58,6 +59,7 @@ export const App = () => {
             <span className="font-bold text-lg tracking-tight text-white">Xray GUI</span>
         </div>
         <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">Settings</Button> 
             <Button variant="secondary" onClick={() => setConfig(null)} icon="ArrowUUpLeft">Back</Button>
             <Button variant="secondary" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"}>{rawMode ? "UI" : "JSON"}</Button>
             <Button variant="success" onClick={downloadConfig} icon="DownloadSimple">Download</Button>
@@ -175,6 +177,8 @@ export const App = () => {
         {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null })} onSave={handleSaveModal} />}
         {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null })} />}
         {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null })} />}
+        {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null })} />}
+
 
       </main>
     </div>
