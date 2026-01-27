@@ -10,6 +10,7 @@ import { DnsModal } from "./components/editors/DnsModal";
 import { SettingsModal } from "./components/editors/SettingsModal";
 import { ReverseModal } from "./components/editors/ReverseModal";
 import { JsonField } from "./components/ui/JsonField";
+import { TopologyModal } from "./components/topology/TopologyModal";
 
 // Компонент карточки
 const Card = ({ title, icon, color, children, actions, className = "h-full" }) => (
@@ -173,6 +174,7 @@ export const App = () => {
                         <Icon name="SlidersHorizontal" /> Core Modules
                     </h2>
                     <div className="flex gap-3">
+                        <Button variant="secondary" onClick={() => setModal({ type: 'topology', data: null, index: null })} icon="GitMerge" title="Topology View" />
                         <Button variant="secondary" onClick={() => setModal({ type: 'reverse', data: null, index: null })} icon="ArrowsLeftRight">Reverse Proxy</Button>
                         <Button variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">General Settings</Button>
                         <div className="w-px bg-slate-800 mx-2"></div>
@@ -300,6 +302,8 @@ export const App = () => {
         {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null })} />}
         {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null })} />}
         {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null })} />}
+        {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null })} />}
+
 
       </main>
     </div>
