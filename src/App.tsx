@@ -59,6 +59,7 @@ export const App = () => {
             <span className="font-bold text-lg tracking-tight text-white">Xray GUI</span>
         </div>
         <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setModal({ type: 'reverse', data: null, index: null })} icon="ArrowsLeftRight" title="Reverse Proxy" />
             <Button variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">Settings</Button> 
             <Button variant="secondary" onClick={() => setConfig(null)} icon="ArrowUUpLeft">Back</Button>
             <Button variant="secondary" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"}>{rawMode ? "UI" : "JSON"}</Button>
@@ -178,6 +179,8 @@ export const App = () => {
         {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null })} />}
         {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null })} />}
         {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null })} />}
+        {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null })} />}
+
 
 
       </main>

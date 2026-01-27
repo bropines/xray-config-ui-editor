@@ -9,12 +9,16 @@ import { DnsGeneral } from './dns/DnsGeneral';
 import { DnsServers } from './dns/DnsServers';
 import { DnsServerEditor } from './dns/DnsServerEditor';
 import { DnsHosts } from './dns/DnsHosts';
+import { DnsFakedns } from './dns/DnsFakedns';
 
 export const DnsModal = ({ onClose }) => {
     const { config, updateSection } = useConfigStore();
+    
+    // Получаем секцию DNS и FakeDNS (она лежит в корне конфига, но настраиваем здесь)
     const dns = config?.dns || {};
+    const fakedns = config?.fakedns || []; 
 
-    const [activeTab, setActiveTab] = useState<'general' | 'servers' | 'hosts'>('servers');
+    const [activeTab, setActiveTab] = useState<'general' | 'servers' | 'hosts' | 'fakedns'>('servers');
     const [editingServerIdx, setEditingServerIdx] = useState<number | null>(null);
 
     // Helpers
@@ -26,7 +30,7 @@ export const DnsModal = ({ onClose }) => {
     const handleAddServer = (initialVal) => {
         const newServers = [...(dns.servers || []), initialVal];
         handleUpdateDns({ ...dns, servers: newServers });
-        // Если добавляем сложный - сразу открываем редактор
+        // Если добавляем сложный объект - сразу открываем редактор
         if (typeof initialVal !== 'string') setEditingServerIdx(newServers.length - 1);
     };
 
@@ -42,7 +46,6 @@ export const DnsModal = ({ onClose }) => {
         const newServers = [...(dns.servers || [])];
         newServers[editingServerIdx] = val;
         handleUpdateDns({ ...dns, servers: newServers });
-        // Не закрываем редактор сразу, даем возможность юзеру нажать "Save & Close"
     };
 
     return (
@@ -52,9 +55,30 @@ export const DnsModal = ({ onClose }) => {
             onSave={() => onClose()} // Auto-save via store
             extraButtons={
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
-                    <button onClick={() => { setActiveTab('general'); setEditingServerIdx(null); }} className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'general' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>General</button>
-                    <button onClick={() => { setActiveTab('servers'); setEditingServerIdx(null); }} className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'servers' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Servers</button>
-                    <button onClick={() => { setActiveTab('hosts'); setEditingServerIdx(null); }} className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'hosts' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Hosts</button>
+                    <button 
+                        onClick={() => { setActiveTab('general'); setEditingServerIdx(null); }} 
+                        className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'general' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        General
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('servers'); setEditingServerIdx(null); }} 
+                        className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'servers' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        Servers
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('hosts'); setEditingServerIdx(null); }} 
+                        className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'hosts' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        Hosts
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('fakedns'); setEditingServerIdx(null); }} 
+                        className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'fakedns' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        FakeDNS
+                    </button>
                 </div>
             }
         >
@@ -74,19 +98,29 @@ export const DnsModal = ({ onClose }) => {
                     </div>
                 )}
 
-{/* --- SERVERS TAB --- */}
-{activeTab === 'servers' && (
-    <>
-        <div className={`${editingServerIdx !== null ? 'w-1/3' : 'w-full max-w-2xl mx-auto'} transition-all duration-300 h-full`}>
-            <DnsServers 
-                servers={dns.servers} 
-                onSelect={setEditingServerIdx}
-                onAdd={handleAddServer}
-                onDelete={handleDeleteServer}
-                // Добавляем обработчик перетаскивания
-                onReorder={(newServers) => handleUpdateDns({ ...dns, servers: newServers })}
-            />
-        </div>
+                {/* --- FAKEDNS TAB --- */}
+                {activeTab === 'fakedns' && (
+                    <div className="w-full max-w-2xl mx-auto">
+                        <DnsFakedns 
+                            fakedns={fakedns} 
+                            onChange={(val) => updateSection('fakedns', val)} 
+                        />
+                    </div>
+                )}
+
+                {/* --- SERVERS TAB (Split View) --- */}
+                {activeTab === 'servers' && (
+                    <>
+                        {/* List Column */}
+                        <div className={`${editingServerIdx !== null ? 'w-1/3' : 'w-full max-w-2xl mx-auto'} transition-all duration-300 h-full`}>
+                            <DnsServers 
+                                servers={dns.servers} 
+                                onSelect={setEditingServerIdx}
+                                onAdd={handleAddServer}
+                                onDelete={handleDeleteServer}
+                                onReorder={(newServers) => handleUpdateDns({ ...dns, servers: newServers })}
+                            />
+                        </div>
 
                         {/* Editor Column */}
                         {editingServerIdx !== null && (
