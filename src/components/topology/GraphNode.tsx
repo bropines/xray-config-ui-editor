@@ -24,26 +24,42 @@ export const GraphNode = memo(({ data }: any) => {
     const iconName = icons[type] || icons.default;
 
     return (
-        <div className={`px-4 py-2 rounded-xl border shadow-xl min-w-[150px] backdrop-blur-sm transition-all hover:scale-105 ${style}`}>
-            {/* Входы (слева) */}
+        // Добавил mx-auto для центрирования, если нужно
+        <div className={`px-4 py-3 rounded-xl border shadow-xl min-w-[200px] backdrop-blur-sm transition-all hover:scale-105 hover:shadow-2xl ${style}`}>
+            
+            {/* Входы (Сверху) */}
             {type !== 'inbound' && (
-                <Handle type="target" position={Position.Left} className="!bg-slate-400 !w-2 !h-2" />
+                <Handle 
+                    type="target" 
+                    position={Position.Top} 
+                    className="!bg-slate-400 !w-3 !h-3 !-top-1.5 rounded-full border border-slate-900" 
+                />
             )}
             
-            <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-black/20">
-                    <Icon name={iconName} className="text-lg" />
+            <div className="flex items-center gap-3 justify-center text-center">
+                <div className="p-2 rounded-lg bg-black/20 shrink-0">
+                    <Icon name={iconName} className="text-xl" />
                 </div>
-                <div>
-                    <div className="text-[10px] uppercase opacity-50 font-bold tracking-wider">{data.labelType}</div>
-                    <div className="text-xs font-bold font-mono truncate max-w-[180px]" title={data.label}>{data.label}</div>
-                    {data.details && <div className="text-[9px] opacity-70 mt-0.5 font-mono">{data.details}</div>}
+                <div className="overflow-hidden">
+                    <div className="text-[9px] uppercase opacity-60 font-bold tracking-widest mb-0.5">{data.labelType}</div>
+                    <div className="text-sm font-bold font-mono truncate max-w-[140px]" title={data.label}>
+                        {data.label}
+                    </div>
+                    {data.details && (
+                        <div className="text-[10px] opacity-70 mt-1 font-mono bg-black/10 px-1.5 py-0.5 rounded inline-block truncate max-w-full">
+                            {data.details}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Выходы (справа) */}
+            {/* Выходы (Снизу) */}
             {type !== 'outbound' && (
-                <Handle type="source" position={Position.Right} className="!bg-slate-400 !w-2 !h-2" />
+                <Handle 
+                    type="source" 
+                    position={Position.Bottom} 
+                    className="!bg-slate-400 !w-3 !h-3 !-bottom-1.5 rounded-full border border-slate-900" 
+                />
             )}
         </div>
     );
