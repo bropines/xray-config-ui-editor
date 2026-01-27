@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { createProtoWorker } from '../../utils/proto-worker';
 import { useConfigStore } from '../../store/configStore';
-import { Icon } from '../ui/Icon'; // Импорт иконки для кнопки "Back"
+import { Icon } from '../ui/Icon';
 
 // Суб-компоненты
 import { RuleList } from './routing/RuleList';
@@ -12,7 +12,6 @@ import { BalancerList } from './routing/BalancerList';
 import { BalancerEditor } from './routing/BalancerEditor';
 
 export const RoutingModal = ({ onClose }) => {
-    // ... (Данные из стора - теги, rules, balancers - БЕЗ ИЗМЕНЕНИЙ) ...
     const { config, updateSection, reorderRules } = useConfigStore();
     const rules = config?.routing?.rules || [];
     const balancers = config?.routing?.balancers || [];
@@ -26,10 +25,58 @@ export const RoutingModal = ({ onClose }) => {
     const [activeBalancerIdx, setActiveBalancerIdx] = useState<number | null>(null);
     const [rawMode, setRawMode] = useState(false);
     
-    // NEW: Мобильный режим редактирования (показываем ли мы редактор вместо списка)
+    // Мобильный режим
     const [mobileEditMode, setMobileEditMode] = useState(false);
 
-    // Geo Data (БЕЗ ИЗМЕНЕНИЙ)
+    // --- RESIZER LOGIC START ---
+    const [sidebarWidth, setSidebarWidth] = useState(380); // Начальная ширина
+    const [isResizing, setIsResizing] = useState(false);
+    const sidebarRef = useRef<HTMLDivElement>(null);
+
+    const startResizing = useCallback(() => {
+        setIsResizing(true);
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    const resize = useCallback(
+        (mouseMoveEvent: MouseEvent) => {
+            if (isResizing) {
+                // Вычисляем новую ширину на основе движения мыши (movementX)
+                // Ограничиваем минимальную (250px) и максимальную (800px) ширину
+                setSidebarWidth((previousWidth) => {
+                    const newWidth = previousWidth + mouseMoveEvent.movementX;
+                    if (newWidth < 250) return 250;
+                    if (newWidth > 800) return 800;
+                    return newWidth;
+                });
+            }
+        },
+        [isResizing]
+    );
+
+    useEffect(() => {
+        if (isResizing) {
+            window.addEventListener("mousemove", resize);
+            window.addEventListener("mouseup", stopResizing);
+            // Блокируем выделение текста и меняем курсор во время перетаскивания
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+        } else {
+            document.body.style.cursor = "default";
+            document.body.style.userSelect = "auto";
+        }
+
+        return () => {
+            window.removeEventListener("mousemove", resize);
+            window.removeEventListener("mouseup", stopResizing);
+        };
+    }, [isResizing, resize, stopResizing]);
+    // --- RESIZER LOGIC END ---
+
+    // Geo Data
     const [geoSites, setGeoSites] = useState([]);
     const [geoIps, setGeoIps] = useState([]);
     const [loadingGeo, setLoadingGeo] = useState(false);
@@ -48,7 +95,7 @@ export const RoutingModal = ({ onClose }) => {
         return () => { worker.terminate(); clearTimeout(timeout); };
     }, []);
 
-    // ... (HANDLERS - Немного модифицируем для мобилки) ...
+    // ... (HANDLERS) ...
     
     // Rules
     const handleAddRule = () => {
@@ -56,13 +103,13 @@ export const RoutingModal = ({ onClose }) => {
         reorderRules([newRule, ...rules]);
         setActiveRuleIdx(0);
         setRawMode(false);
-        setMobileEditMode(true); // Сразу открываем на мобилке
+        setMobileEditMode(true);
     };
 
     const handleSelectRule = (idx) => {
         setActiveRuleIdx(idx);
-        setRuleRawMode(false);
-        setMobileEditMode(true); // Открываем редактор
+        setRawMode(false);
+        setMobileEditMode(true);
     };
 
     const handleDeleteRule = (idx) => {
@@ -79,7 +126,7 @@ export const RoutingModal = ({ onClose }) => {
         reorderRules(newRules);
         if (activeRuleIdx === oldIdx) setActiveRuleIdx(newIdx);
         else if (activeRuleIdx === newIdx && oldIdx < newIdx) setActiveRuleIdx(activeRuleIdx - 1); 
-        else if (activeRuleIdx === newIdx && oldIdx > newIndex) setActiveRuleIdx(activeRuleIdx + 1);
+        else if (activeRuleIdx === newIdx && oldIdx > newIdx) setActiveRuleIdx(activeRuleIdx + 1);
     };
 
     const handleUpdateRule = (updatedRule) => {
@@ -160,29 +207,45 @@ export const RoutingModal = ({ onClose }) => {
                 )}
             </div>
 
-            <div className="flex flex-col md:flex-row h-[500px] md:h-[600px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative">
+            {/* 
+               Основной контейнер. 
+               Передаем ширину через CSS переменную --sidebar-width.
+               Это позволяет использовать её в Tailwind классе md:w-[var(...)]
+            */}
+            <div 
+                className="flex flex-col md:flex-row h-[500px] md:h-[600px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
+                style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
+            >
                 {activeTab === 'rules' ? (
                     <>
-                        {/* LIST (Hidden on mobile if editing) */}
-                        <div className={`w-full md:w-80 bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
-                            <div className="p-3 border-b border-slate-800 flex justify-between">
-                                <span className="text-xs font-bold text-slate-400">RULES</span>
-                                <Button variant="ghost" icon="Plus" className="py-0 px-2 text-xs" onClick={handleAddRule} />
+                        {/* LIST COLUMN: w-full на мобилке, var(--sidebar-width) на десктопе */}
+                        <div 
+                            ref={sidebarRef}
+                            className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}
+                        >
+                            <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50 items-center">
+                                <span className="text-xs font-bold text-slate-400 pl-2">RULES</span>
+                                <Button variant="ghost" icon="Plus" className="py-1 px-2 text-xs" onClick={handleAddRule} />
                             </div>
-                            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
-                                <RuleList 
-                                    rules={rules} 
-                                    activeIndex={activeRuleIdx}
-                                    onSelect={handleSelectRule} // Используем обертку
-                                    onAdd={handleAddRule}
-                                    onDelete={handleDeleteRule}
-                                    onReorder={handleReorderRules}
-                                />
-                            </div>
+                            
+                            <RuleList 
+                                rules={rules} 
+                                activeIndex={activeRuleIdx}
+                                onSelect={handleSelectRule}
+                                onDelete={handleDeleteRule}
+                                onReorder={handleReorderRules}
+                            />
                         </div>
+
+                        {/* RESIZER HANDLE (Desktop only) */}
+                        <div
+                            className="hidden md:block w-1.5 bg-slate-800 hover:bg-indigo-500 cursor-col-resize transition-colors z-10 shrink-0 select-none active:bg-indigo-600"
+                            onMouseDown={startResizing}
+                            title="Drag to resize"
+                        />
                         
-                        {/* EDITOR (Hidden on mobile if NOT editing) */}
-                        <div className={`flex-1 flex flex-col h-full bg-slate-900/50 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
+                        {/* EDITOR COLUMN */}
+                        <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
                             <RuleEditor 
                                 rule={rules[activeRuleIdx]}
                                 onChange={handleUpdateRule}
@@ -196,22 +259,28 @@ export const RoutingModal = ({ onClose }) => {
                     </>
                 ) : (
                     <>
-                        <div className={`w-full md:w-80 bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
-                            <div className="p-3 border-b border-slate-800 flex justify-between">
-                                <span className="text-xs font-bold text-slate-400">BALANCERS</span>
-                                <Button variant="ghost" icon="Plus" className="py-0 px-2 text-xs" onClick={handleAddBalancer} />
+                         {/* BALANCER LIST COLUMN */}
+                        <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
+                            <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50 items-center">
+                                <span className="text-xs font-bold text-slate-400 pl-2">BALANCERS</span>
+                                <Button variant="ghost" icon="Plus" className="py-1 px-2 text-xs" onClick={handleAddBalancer} />
                             </div>
-                            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
-                                <BalancerList 
-                                    balancers={balancers}
-                                    activeIndex={activeBalancerIdx}
-                                    onSelect={handleSelectBalancer}
-                                    onAdd={handleAddBalancer}
-                                    onDelete={handleDeleteBalancer}
-                                />
-                            </div>
+                            <BalancerList 
+                                balancers={balancers}
+                                activeIndex={activeBalancerIdx}
+                                onSelect={handleSelectBalancer}
+                                onDelete={handleDeleteBalancer}
+                            />
                         </div>
-                        <div className={`flex-1 flex flex-col h-full bg-slate-900/50 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
+
+                        {/* RESIZER HANDLE (Desktop only) */}
+                        <div
+                            className="hidden md:block w-1.5 bg-slate-800 hover:bg-indigo-500 cursor-col-resize transition-colors z-10 shrink-0 select-none active:bg-indigo-600"
+                            onMouseDown={startResizing}
+                        />
+
+                        {/* BALANCER EDITOR COLUMN */}
+                        <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
                             <BalancerEditor 
                                 balancer={balancers[activeBalancerIdx]}
                                 onChange={handleUpdateBalancer}

@@ -1,11 +1,9 @@
 import React from 'react';
-import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// Внутренний компонент элемента списка
 const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
     
@@ -18,7 +16,7 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
     return (
         <div ref={setNodeRef} style={style} {...attributes}
             onClick={onClick}
-            className={`p-2 rounded cursor-pointer text-xs flex items-center gap-2 group transition-all border select-none
+            className={`p-2 rounded-lg cursor-pointer text-xs flex items-center gap-2 group transition-all border select-none mb-1
                 ${isActive ? 'bg-indigo-600/20 border-indigo-500/50' : 'bg-slate-900 border-transparent hover:border-slate-700'}`}
         >
             <div {...listeners} className="cursor-grab text-slate-600 hover:text-slate-300 p-1 touch-none">
@@ -34,14 +32,15 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
                     {rule.domain ? `dom:${rule.domain.length}` : rule.ip ? `ip:${rule.ip.length}` : 'match:all'}
                 </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-slate-600 hover:text-rose-500 p-1">
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-slate-600 hover:text-rose-500 p-1 rounded hover:bg-rose-500/10 transition-colors">
                 <Icon name="Trash" />
             </button>
         </div>
     );
 };
 
-export const RuleList = ({ rules, activeIndex, onSelect, onAdd, onDelete, onReorder }) => {
+// Убрали проп onAdd, так как кнопка теперь снаружи
+export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }) => {
     const handleDragEnd = (event) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -56,29 +55,23 @@ export const RuleList = ({ rules, activeIndex, onSelect, onAdd, onDelete, onReor
         onReorder(newRules, oldIndex, newIndex);
     };
 
+    // Убрали внешние div-обертки с шириной и заголовками
     return (
-        <div className="w-80 bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0">
-            <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50">
-                <span className="text-xs font-bold text-slate-400">RULES</span>
-                <Button variant="ghost" icon="Plus" className="py-0 px-2 text-xs" onClick={onAdd} />
-            </div>
-            
-            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
-                <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                    <SortableContext items={rules.map((_, i) => `rule-${i}`)} strategy={verticalListSortingStrategy}>
-                        {rules.map((rule, i) => (
-                            <SortableRuleItem 
-                                key={`rule-${i}`} 
-                                id={`rule-${i}`} 
-                                rule={rule} 
-                                isActive={activeIndex === i}
-                                onClick={() => onSelect(i)}
-                                onDelete={() => onDelete(i)}
-                            />
-                        ))}
-                    </SortableContext>
-                </DndContext>
-            </div>
+        <div className="flex-1 overflow-y-auto custom-scroll p-2">
+            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={rules.map((_, i) => `rule-${i}`)} strategy={verticalListSortingStrategy}>
+                    {rules.map((rule, i) => (
+                        <SortableRuleItem 
+                            key={`rule-${i}`} 
+                            id={`rule-${i}`} 
+                            rule={rule} 
+                            isActive={activeIndex === i}
+                            onClick={() => onSelect(i)}
+                            onDelete={() => onDelete(i)}
+                        />
+                    ))}
+                </SortableContext>
+            </DndContext>
         </div>
     );
 };
