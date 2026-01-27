@@ -2,7 +2,6 @@ import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
 
 export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
-    // Исключаем себя, чтобы не сделать петлю
     const availableProxies = allTags.filter(t => t !== outbound.tag);
 
     const updateProxy = (tag) => {
@@ -17,7 +16,6 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
         if (!enabled) {
             onChange('mux', undefined);
         } else {
-            // Дефолтные настройки
             onChange('mux', { enabled: true, concurrency: 8, xudpConcurrency: 8, xudpProxyUDP443: "reject" });
         }
     };
@@ -32,7 +30,6 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
             {/* Proxy Chain */}
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                 <h4 className="label-xs text-slate-400 mb-3">Proxy Chaining (Optional)</h4>
-                <p className="text-[10px] text-slate-500 mb-3">Send traffic through another outbound first.</p>
                 <TagSelector 
                     availableTags={availableProxies}
                     selected={outbound.proxySettings?.tag || ""}
@@ -80,13 +77,10 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
                                 <option value="allow">Allow</option>
                                 <option value="skip">Skip</option>
                             </select>
-                            <p className="text-[10px] text-slate-500 mt-1">
-                                'Reject' forces browsers to fallback to TCP (better for Mux).
-                            </p>
                         </div>
                     </div>
                 )}
-                {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">Enable to reduce handshake latency for multiple requests.</p>}
+                {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">Enable to reduce handshake latency.</p>}
             </div>
         </div>
     );

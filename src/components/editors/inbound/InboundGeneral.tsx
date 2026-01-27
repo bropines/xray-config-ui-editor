@@ -2,7 +2,9 @@ import React from 'react';
 
 export const InboundGeneral = ({ inbound, onChange, onProtocolChange }) => {
     return (
-        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        // БЫЛО: grid-cols-1 md:grid-cols-2 lg:grid-cols-4
+        // СТАЛО: grid-cols-2 (на мобилках 2 колонки ок для портов) -> md:grid-cols-4
+        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="col-span-1">
                 <label className="label-xs">Protocol</label>
                 <select 

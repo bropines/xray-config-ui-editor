@@ -1,22 +1,20 @@
 import React from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-
-// Хелперы
-const generateUUID = () => crypto.randomUUID();
-const generateShortId = () => Math.random().toString(16).substring(2, 10);
+import { generateUUID, generateShortId } from '../../../utils/generators'; 
 
 export const InboundClients = ({ inbound, onChange }) => {
     const proto = inbound.protocol;
 
-    // 1. Shadowsocks (Single User config style for simplicity in UI)
+    // 1. Shadowsocks
     if (proto === 'shadowsocks') {
         return (
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
                     <Icon name="Key"/> Shadowsocks Credentials
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                {/* Адаптивный грид: 1 колонка на мобиле, 2 на десктопе */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="label-xs">Method</label>
                         <select className="input-base"
@@ -46,7 +44,7 @@ export const InboundClients = ({ inbound, onChange }) => {
         );
     }
 
-    // 2. Socks / HTTP (Auth Strategy)
+    // 2. Socks / HTTP
     if (proto === 'socks' || proto === 'http') {
         return (
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
@@ -73,7 +71,7 @@ export const InboundClients = ({ inbound, onChange }) => {
         );
     }
 
-    // 3. VLESS / VMess / Trojan (Multi-client)
+    // 3. VLESS / VMess / Trojan
     if (!['vless', 'vmess', 'trojan'].includes(proto)) return null;
 
     const clients = inbound.settings?.clients || [];
@@ -110,10 +108,11 @@ export const InboundClients = ({ inbound, onChange }) => {
             <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scroll pr-1">
                 {clients.map((c, i) => (
                     <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group hover:border-slate-600 transition-colors">
-                        <button onClick={() => removeClient(i)} className="absolute top-2 right-2 text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => removeClient(i)} className="absolute top-2 right-2 text-slate-600 hover:text-rose-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                             <Icon name="Trash"/>
                         </button>
                         
+                        {/* Адаптивный грид клиентов */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
                             <div>
                                 <label className="label-xs">Email</label>

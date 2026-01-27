@@ -3,18 +3,14 @@ import React from 'react';
 export const OutboundServer = ({ outbound, onChange }) => {
     const proto = outbound.protocol;
     
-    // Если протокол не требует настройки удаленного сервера, ничего не рендерим
     if (!['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(proto)) return null;
 
-    // Определяем пути к данным
     const isShadowsocks = proto === 'shadowsocks';
-    const rootKey = isShadowsocks ? 'servers' : 'vnext'; // shadowsocks использует 'servers', остальные 'vnext'
+    const rootKey = isShadowsocks ? 'servers' : 'vnext';
     
-    // Получаем текущие значения (безопасное чтение)
     const serverObj = outbound.settings?.[rootKey]?.[0] || {};
     const userObj = isShadowsocks ? serverObj : (serverObj.users?.[0] || {});
 
-    // Хелпер для обновления
     const updateServer = (field, value) => {
         const newRoot = [...(outbound.settings?.[rootKey] || [{}])];
         if(!newRoot[0]) newRoot[0] = {};
@@ -24,7 +20,7 @@ export const OutboundServer = ({ outbound, onChange }) => {
 
     const updateUser = (field, value) => {
         if (isShadowsocks) {
-            updateServer(field, value); // У SS пароль лежит прямо в объекте сервера
+            updateServer(field, value);
         } else {
             const newRoot = [...(outbound.settings?.[rootKey] || [{}])];
             if(!newRoot[0]) newRoot[0] = {};
@@ -38,9 +34,9 @@ export const OutboundServer = ({ outbound, onChange }) => {
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
             <h4 className="label-xs border-b border-slate-800 pb-2 mb-3">Remote Server</h4>
             
-            {/* Address & Port */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="col-span-2">
+            {/* Адаптивный грид: Адрес и Порт */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="md:col-span-2">
                     <label className="label-xs">Address</label>
                     <input 
                         className="input-base font-mono" 
@@ -60,9 +56,9 @@ export const OutboundServer = ({ outbound, onChange }) => {
                 </div>
             </div>
 
-            {/* Credentials */}
+            {/* Credentials Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
+                <div className={`${proto === 'vless' || isShadowsocks ? 'md:col-span-2' : ''}`}>
                     <label className="label-xs">
                         {proto === 'trojan' || proto === 'shadowsocks' || proto === 'socks' ? 'Password' : 'UUID'}
                     </label>
@@ -73,9 +69,8 @@ export const OutboundServer = ({ outbound, onChange }) => {
                     />
                 </div>
 
-                {/* VLESS Specific */}
                 {proto === 'vless' && (
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                         <label className="label-xs">Flow</label>
                         <select 
                             className="input-base"
@@ -88,9 +83,8 @@ export const OutboundServer = ({ outbound, onChange }) => {
                     </div>
                 )}
 
-                {/* Shadowsocks Specific */}
                 {isShadowsocks && (
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                         <label className="label-xs">Encryption Method</label>
                         <select 
                             className="input-base"
