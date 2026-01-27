@@ -22,8 +22,13 @@ export const RuleEditor = ({
         );
     }
 
+    // Исправление для JSON режима: w-0 заставляет flex-элемент сжиматься корректно
     if (rawMode) {
-        return <JsonField label="Raw Rule JSON" value={rule} onChange={onChange} className="h-full p-4"/>;
+        return (
+            <div className="flex-1 w-0 h-full p-4 bg-slate-950">
+                <JsonField label="Raw Rule JSON" value={rule} onChange={onChange} className="h-full" />
+            </div>
+        );
     }
 
     const update = (field: string, val: any) => {
@@ -35,7 +40,6 @@ export const RuleEditor = ({
             newRule[field] = val;
         }
         
-        // Логика переключения
         if (field === 'outboundTag') delete newRule.balancerTag;
         if (field === 'balancerTag') delete newRule.outboundTag;
 
@@ -45,7 +49,7 @@ export const RuleEditor = ({
     const currentTarget = rule.balancerTag ? `bal:${rule.balancerTag}` : (rule.outboundTag || "");
 
     return (
-        <div className="flex-1 overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
+        <div className="flex-1 w-0 overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
             {/* DESTINATION */}
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg">
                 <div className="flex justify-between items-center mb-2">

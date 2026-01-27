@@ -68,13 +68,18 @@ export const App = () => {
       </nav>
 
       <main className="p-6 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {rawMode ? (
-            <textarea className="w-full h-[85vh] bg-slate-900 border border-slate-800 rounded-xl p-6 font-mono text-sm text-emerald-400 focus:outline-none resize-none custom-scroll shadow-inner"
-                value={JSON.stringify(config, null, 2)}
-                onChange={(e) => { try { setConfig(JSON.parse(e.target.value)); } catch(e) {} }}
-                spellCheck="false"
-            />
-        ) : (
+{rawMode ? (
+    <div className="h-[85vh]">
+        <JsonField 
+            label="Full Configuration" 
+            value={config} 
+            onChange={(newConfig) => {
+                if (newConfig) setConfig(newConfig);
+            }} 
+            className="h-full"
+        />
+    </div>
+) : (
             // Flex контейнер: Grid сверху занимает все место, DNS снизу компактный
             <div className="flex flex-col gap-6 h-[85vh]">
                 

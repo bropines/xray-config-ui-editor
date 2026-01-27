@@ -1,22 +1,43 @@
 import React, { useState, useEffect } from "react";
+import { JsonEditor } from "./JsonEditor";
 
-export const JsonField = ({ label, value, onChange, className="" }) => {
+interface JsonFieldProps {
+    label?: string;
+    value: any;
+    onChange: (val: any) => void;
+    className?: string;
+}
+
+export const JsonField = ({ label, value, onChange, className = "" }: JsonFieldProps) => {
+    // Храним текстовое представление для редактора
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
 
+    // При изменении внешнего value обновляем текст, НО только если value реально отличается,
+    // чтобы курсор не прыгал при каждом нажатии клавиши
     useEffect(() => {
-        setText(value === undefined ? "" : JSON.stringify(value, null, 2));
-    }, [value]);
-
-    const handleChange = (e) => {
-        const newVal = e.target.value;
-        setText(newVal);
         try {
-            if (newVal.trim() === "") {
+            const currentObj = JSON.parse(text || "null");
+            // Глубокое сравнение делать дорого, сравниваем строки
+            if (JSON.stringify(currentObj) !== JSON.stringify(value)) {
+                setText(JSON.stringify(value, null, 2));
+            }
+        } catch (e) {
+            // Если текущий текст невалиден, но пришло новое value извне, обновляем
+            setText(JSON.stringify(value, null, 2));
+        }
+    }, [value]); // Зависимость от value может быть триггером, но лучше использовать JSON.stringify(value) если объект меняется по ссылке
+
+    const handleEditorChange = (newVal: string | undefined) => {
+        const v = newVal || "";
+        setText(v);
+        try {
+            if (v.trim() === "") {
                 onChange(undefined);
                 setError(false);
             } else {
-                onChange(JSON.parse(newVal));
+                const parsed = JSON.parse(v);
+                onChange(parsed);
                 setError(false);
             }
         } catch (err) {
@@ -25,17 +46,16 @@ export const JsonField = ({ label, value, onChange, className="" }) => {
     };
 
     return (
-        <div className={`flex flex-col gap-2 flex-1 ${className}`}>
-            <label className="text-xs uppercase font-bold text-slate-500 flex justify-between">
-                {label}
-                {error && <span className="text-rose-500 font-bold">Invalid JSON</span>}
-            </label>
-            <textarea 
-                className={`w-full h-full bg-slate-950 border rounded-lg p-3 font-mono text-xs leading-relaxed outline-none resize-none custom-scroll ${error ? 'border-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-indigo-500'}`}
-                value={text}
-                onChange={handleChange}
-                spellCheck="false"
-            />
+        <div className={`flex flex-col gap-2 h-full ${className}`}>
+            {label && (
+                <label className="text-xs uppercase font-bold text-slate-500 flex justify-between">
+                    {label}
+                    {error && <span className="text-rose-500 font-bold animate-pulse">Invalid JSON syntax</span>}
+                </label>
+            )}
+            <div className={`flex-1 min-h-[300px] rounded-lg overflow-hidden transition-all ${error ? 'ring-1 ring-rose-500' : ''}`}>
+                <JsonEditor value={text} onChange={handleEditorChange} />
+            </div>
         </div>
     );
 };
