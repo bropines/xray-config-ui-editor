@@ -42,6 +42,11 @@ interface XrayConfig {
     routing?: { domainStrategy?: string; rules: any[]; balancers: any[] };
     inbounds: any[];
     outbounds: any[];
+    fakedns?: { ipPool: string; poolSize: number }[];
+    reverse?: {
+        bridges?: { tag: string; domain: string }[];
+        portals?: { tag: string; domain: string }[];
+    };
 }
 
 interface ConfigState {
