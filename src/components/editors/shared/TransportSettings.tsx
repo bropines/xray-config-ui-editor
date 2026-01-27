@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { generateX25519Keys } from '../../../utils/crypto';
+import { SockoptEditor } from './SockoptEditor';
 
 interface TransportProps {
     streamSettings: any;
@@ -12,6 +13,9 @@ interface TransportProps {
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false }: TransportProps) => {
     // Локальный стейт для отображения публичного ключа при генерации на сервере
     const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
+    
+    // Стейт для скрытия/показа Advanced настроек (Sockopt)
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const update = (path: string[], value: any) => {
         // Эмуляция глубокого обновления
@@ -32,12 +36,11 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
         const keys = generateX25519Keys();
         
         if (isClient) {
-            // Клиенту обычно нужен Public Key, который дает админ сервера.
-            // Но если генерируем для теста:
+            // Клиенту обычно нужен Public Key
             update(['realitySettings', 'privateKey'], keys.privateKey);
             update(['realitySettings', 'publicKey'], keys.publicKey);
         } else {
-            // Серверу нужен Private Key.
+            // Серверу нужен Private Key
             update(['realitySettings', 'privateKey'], keys.privateKey);
             // Сохраняем Public Key чтобы показать пользователю
             setTempPublicKey(keys.publicKey);
@@ -55,6 +58,12 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
                     <Icon name="Network" /> Stream Settings
                 </h4>
+                <button 
+                    onClick={() => setShowAdvanced(!showAdvanced)} 
+                    className="text-[10px] text-indigo-400 hover:text-white transition-colors uppercase font-bold"
+                >
+                    {showAdvanced ? "Hide Advanced" : "Show Advanced"}
+                </button>
             </div>
 
             {/* --- MAIN SELECTORS --- */}
@@ -77,7 +86,9 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             </div>
 
-            {/* --- XHTTP SETTINGS --- */}
+            {/* --- PROTOCOL SPECIFIC SETTINGS --- */}
+
+            {/* XHTTP */}
             {net === 'xhttp' && (
                 <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="col-span-full flex items-center gap-2">
@@ -136,7 +147,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
 
-            {/* --- WEBSOCKET SETTINGS --- */}
+            {/* WEBSOCKET */}
             {net === 'ws' && (
                 <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="col-span-2 text-xs font-bold text-indigo-400">WebSocket</div>
@@ -158,7 +169,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
 
-            {/* --- GRPC SETTINGS --- */}
+            {/* GRPC */}
             {net === 'grpc' && (
                 <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="col-span-2 text-xs font-bold text-indigo-400">gRPC</div>
@@ -173,7 +184,58 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
 
-            {/* --- REALITY SETTINGS --- */}
+            {/* mKCP */}
+            {net === 'kcp' && (
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="col-span-2 text-xs font-bold text-indigo-400">mKCP</div>
+                    <div>
+                        <label className="label-xs">Seed (Obfuscation)</label>
+                        <input className="input-base font-mono"
+                            placeholder="password"
+                            value={streamSettings.kcpSettings?.seed || ""}
+                            onChange={e => update(['kcpSettings', 'seed'], e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="label-xs">MTU</label>
+                        <input type="number" className="input-base font-mono"
+                            placeholder="1350"
+                            value={streamSettings.kcpSettings?.mtu || 1350}
+                            onChange={e => update(['kcpSettings', 'mtu'], parseInt(e.target.value))}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* QUIC */}
+            {net === 'quic' && (
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="col-span-2 text-xs font-bold text-indigo-400">QUIC</div>
+                    <div>
+                        <label className="label-xs">Security</label>
+                        <select className="input-base"
+                            value={streamSettings.quicSettings?.security || "none"}
+                            onChange={e => update(['quicSettings', 'security'], e.target.value)}
+                        >
+                            <option value="none">None</option>
+                            <option value="aes-128-gcm">AES-128-GCM</option>
+                            <option value="chacha20-poly1305">ChaCha20</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="label-xs">Key</label>
+                        <input className="input-base font-mono"
+                            placeholder="key"
+                            value={streamSettings.quicSettings?.key || ""}
+                            onChange={e => update(['quicSettings', 'key'], e.target.value)}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* --- SECURITY SETTINGS --- */}
+
+            {/* REALITY */}
             {sec === 'reality' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
@@ -246,7 +308,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
             
-            {/* --- TLS SETTINGS --- */}
+            {/* TLS */}
             {sec === 'tls' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="text-xs font-bold text-blue-400">TLS Settings</div>
@@ -269,6 +331,15 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* --- SOCKOPT (Advanced) --- */}
+            {showAdvanced && (
+                <SockoptEditor 
+                    sockopt={streamSettings.sockopt} 
+                    onChange={v => update(['sockopt'], v)} 
+                    isClient={isClient} 
+                />
             )}
         </div>
     );
