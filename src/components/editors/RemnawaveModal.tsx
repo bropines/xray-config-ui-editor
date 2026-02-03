@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
@@ -11,7 +11,9 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
         remnawave, 
         setRemnawaveCreds, 
         connectRemnawaveToken, 
-        loadRemnawaveProfile 
+        fetchRemnawaveProfiles, // Новый метод из стора
+        loadRemnawaveProfile,
+        disconnectRemnawave 
     } = useConfigStore();
     
     // UI State
@@ -27,6 +29,29 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
     
     // Profiles
     const [profiles, setProfiles] = useState<RemnawaveProfile[]>([]);
+
+    // При открытии проверяем, подключены ли мы уже
+    useEffect(() => {
+        if (remnawave.connected) {
+            setStep('select');
+            handleRefreshProfiles();
+        }
+    }, []);
+
+    const handleRefreshProfiles = async () => {
+        setLoading(true);
+        try {
+            const list = await fetchRemnawaveProfiles();
+            setProfiles(list);
+        } catch (e: any) {
+            // Ошибка уже обработана в сторе (например, токен протух), но можно сбросить на логин
+            if (e.message.includes("Not connected") || e.message.includes("401")) {
+                setStep('login');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // 1. Вход по логину/паролю
     const handleLoginCreds = async () => {
@@ -61,15 +86,12 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
         }
         setLoading(true);
         try {
-            // Сначала проверим токен, попробовав загрузить профили
             const client = new RemnawaveClient(url);
             client.setToken(apiToken);
             
             const loadedProfiles = await client.getConfigProfiles();
             
-            // Если успех - сохраняем в стор
             connectRemnawaveToken(url, apiToken);
-            
             setProfiles(loadedProfiles);
             setStep('select');
         } catch (e: any) {
@@ -87,9 +109,14 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
         onClose();
     };
 
+    const handleLogout = () => {
+        disconnectRemnawave();
+        setStep('login');
+    };
+
     return (
         <Modal 
-            title="Connect to Remnawave" 
+            title={step === 'login' ? "Connect to Remnawave" : "Select Profile"} 
             onClose={onClose} 
             className="max-w-md"
             onSave={onClose}
@@ -172,22 +199,39 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
                     </>
                 ) : (
                     <>
-                        <h3 className="text-sm font-bold text-slate-300 mb-2">Select Config Profile</h3>
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scroll">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-sm font-bold text-slate-300">Config Profiles</h3>
+                            <button onClick={handleRefreshProfiles} className="text-xs text-indigo-400 hover:text-white" title="Refresh">
+                                <Icon name="ArrowsClockwise" className={loading ? "animate-spin" : ""} />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scroll mb-4">
                             {profiles.map(p => (
                                 <div key={p.uuid} 
                                     onClick={() => handleSelectProfile(p.uuid)}
-                                    className="p-3 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg cursor-pointer transition-colors flex justify-between items-center group"
+                                    className={`p-3 border rounded-lg cursor-pointer transition-all flex justify-between items-center group
+                                        ${remnawave.activeProfileUuid === p.uuid 
+                                            ? 'bg-indigo-600/20 border-indigo-500' 
+                                            : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-slate-500'}
+                                    `}
                                 >
-                                    <span className="font-mono text-sm text-slate-200 group-hover:text-white">{p.name}</span>
-                                    <Icon name="ArrowRight" className="opacity-0 group-hover:opacity-100" />
+                                    <span className={`font-mono text-sm ${remnawave.activeProfileUuid === p.uuid ? 'text-white font-bold' : 'text-slate-300'}`}>
+                                        {p.name}
+                                    </span>
+                                    {remnawave.activeProfileUuid === p.uuid && <Icon name="Check" className="text-emerald-400" />}
                                 </div>
                             ))}
                             {profiles.length === 0 && (
                                 <div className="text-center text-slate-500 py-4">No profiles found.</div>
                             )}
                         </div>
-                        <Button variant="secondary" className="w-full mt-4" onClick={() => setStep('login')}>Back</Button>
+
+                        <div className="border-t border-slate-800 pt-4 flex justify-between">
+                             <Button variant="ghost" onClick={handleLogout} className="text-xs text-rose-400 hover:text-rose-200">
+                                <Icon name="SignOut" /> Logout
+                            </Button>
+                        </div>
                     </>
                 )}
             </div>
