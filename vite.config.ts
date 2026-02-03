@@ -9,5 +9,7 @@ export default defineConfig({
   base: '/xray-config-ui-editor/', 
   server: {
     port: 3000,
+    host: '0.0.0.0'
+  
   }
 })

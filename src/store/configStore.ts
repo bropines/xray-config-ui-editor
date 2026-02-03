@@ -1,90 +1,329 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { RemnawaveClient } from '../utils/remnawave-client';
+import { toast } from 'sonner';
 
-// Полная типизация конфига
-interface XrayConfig {
-    log?: {
-        access?: string;
-        error?: string;
-        loglevel?: "debug" | "info" | "warning" | "error" | "none";
-        dnsLog?: boolean;
+// --- Полная типизация конфигурации Xray (как было ранее) ---
+export interface LogConfig {
+    access?: string;
+    error?: string;
+    loglevel?: "debug" | "info" | "warning" | "error" | "none";
+    dnsLog?: boolean;
+    maskAddress?: string;
+}
+
+export interface ApiConfig {
+    tag?: string;
+    listen?: string;
+    services?: string[];
+}
+
+export interface DnsServerObject {
+    address?: string;
+    port?: number;
+    domains?: string[];
+    expectIPs?: string[];
+    skipFallback?: boolean;
+    clientIp?: string;
+    queryStrategy?: "UseIP" | "UseIPv4" | "UseIPv6";
+    disableCache?: boolean;
+    tag?: string;
+}
+
+export interface DnsConfig {
+    servers?: (string | DnsServerObject)[];
+    hosts?: Record<string, string | string[]>;
+    clientIp?: string;
+    queryStrategy?: "UseIP" | "UseIPv4" | "UseIPv6";
+    disableCache?: boolean;
+    disableFallback?: boolean;
+    disableFallbackIfMatch?: boolean;
+    tag?: string;
+}
+
+export interface RoutingRule {
+    type?: string;
+    domain?: string[];
+    ip?: string[];
+    port?: string;
+    sourcePort?: string;
+    network?: string;
+    source?: string[];
+    user?: string[];
+    inboundTag?: string[];
+    protocol?: string[];
+    attrs?: Record<string, string>;
+    outboundTag?: string;
+    balancerTag?: string;
+}
+
+export interface Balancer {
+    tag: string;
+    selector: string[];
+    strategy?: {
+        type: "random" | "roundRobin" | "leastPing" | "leastLoad";
     };
-    api?: {
+    fallbackTag?: string;
+}
+
+export interface RoutingConfig {
+    domainStrategy?: "AsIs" | "IPIfNonMatch" | "IPOnDemand";
+    rules?: RoutingRule[];
+    balancers?: Balancer[];
+}
+
+export interface Inbound {
+    tag?: string;
+    port?: number | string;
+    listen?: string;
+    protocol: string;
+    settings?: any;
+    streamSettings?: any;
+    sniffing?: {
+        enabled?: boolean;
+        destOverride?: string[];
+        metadataOnly?: boolean;
+    };
+    allocate?: any;
+}
+
+export interface Outbound {
+    tag?: string;
+    sendThrough?: string;
+    protocol: string;
+    settings?: any;
+    streamSettings?: any;
+    proxySettings?: {
         tag?: string;
-        services?: string[];
+        transportLayer?: boolean;
     };
-    stats?: {};
-    policy?: {
-        levels?: { [key: string]: any };
-        system?: {
-            statsInboundUplink?: boolean;
-            statsInboundDownlink?: boolean;
-            statsOutboundUplink?: boolean;
-            statsOutboundDownlink?: boolean;
-        };
+    mux?: {
+        enabled?: boolean;
+        concurrency?: number;
+        xudpConcurrency?: number;
+        xudpProxyUDP443?: string;
     };
-    observatory?: {
-        subjectSelector?: string[];
-        probeUrl?: string;
-        probeInterval?: string;
+}
+
+export interface PolicyLevel {
+    handshake?: number;
+    connIdle?: number;
+    uplinkOnly?: number;
+    downlinkOnly?: number;
+    statsUserUplink?: boolean;
+    statsUserDownlink?: boolean;
+    bufferSize?: number;
+}
+
+export interface PolicyConfig {
+    levels?: Record<string, PolicyLevel>;
+    system?: {
+        statsInboundUplink?: boolean;
+        statsInboundDownlink?: boolean;
+        statsOutboundUplink?: boolean;
+        statsOutboundDownlink?: boolean;
     };
-    dns?: {
-        servers?: any[];
-        hosts?: Record<string, string | string[]>;
-        clientIp?: string;
-        queryStrategy?: string;
-        disableCache?: boolean;
-        disableFallback?: boolean;
-        disableFallbackIfMatch?: boolean;
-        tag?: string;
-    };
-    routing?: { domainStrategy?: string; rules: any[]; balancers: any[] };
-    inbounds: any[];
-    outbounds: any[];
-    fakedns?: { ipPool: string; poolSize: number }[];
-    reverse?: {
-        bridges?: { tag: string; domain: string }[];
-        portals?: { tag: string; domain: string }[];
-    };
+}
+
+export interface StatsConfig {}
+
+export interface ReverseConfig {
+    bridges?: { tag: string; domain: string }[];
+    portals?: { tag: string; domain: string }[];
+}
+
+export interface FakednsPool {
+    ipPool: string;
+    poolSize: number;
+}
+
+export interface ObservatoryConfig {
+    subjectSelector?: string[];
+    probeUrl?: string;
+    probeInterval?: string;
+}
+
+export interface XrayConfig {
+    log?: LogConfig;
+    api?: ApiConfig;
+    dns?: DnsConfig;
+    routing?: RoutingConfig;
+    policy?: PolicyConfig;
+    inbounds?: Inbound[];
+    outbounds?: Outbound[];
+    transport?: any;
+    stats?: StatsConfig;
+    reverse?: ReverseConfig;
+    fakedns?: FakednsPool[];
+    observatory?: ObservatoryConfig;
+    [key: string]: any; 
+}
+
+// --- Интерфейсы Store ---
+
+interface RemnawaveState {
+    url: string;
+    username: string;
+    token: string | null;
+    connected: boolean;
+    activeProfileUuid: string | null;
 }
 
 interface ConfigState {
     config: XrayConfig | null;
     setConfig: (config: XrayConfig | null) => void;
     
-    // Generic Actions
-    updateSection: (section: keyof XrayConfig, data: any) => void;
-    toggleSection: (section: keyof XrayConfig, defaultValue: any) => void; // Новое!
+    // Remnawave Actions
+    remnawave: RemnawaveState;
+    setRemnawaveCreds: (url: string, username: string, token: string) => void;
+    connectRemnawave: (password: string) => Promise<void>;
+    connectRemnawaveToken: (url: string, token: string) => void; // НОВЫЙ МЕТОД
+    loadRemnawaveProfile: (uuid: string) => Promise<void>;
+    saveToRemnawave: () => Promise<void>;
+    disconnectRemnawave: () => void;
     
-    // Array Actions
+    // Standard Actions
+    updateSection: (section: keyof XrayConfig, data: any) => void;
+    toggleSection: (section: keyof XrayConfig, defaultValue: any) => void;
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
     
-    // Complex Actions
-    reorderRules: (newRules: any[]) => void;
+    reorderRules: (newRules: RoutingRule[]) => void;
     initDns: () => void;
 }
 
 export const useConfigStore = create(
     persist<ConfigState>(
-        (set) => ({
+        (set, get) => ({
             config: null,
 
+            // --- Remnawave State & Logic ---
+            remnawave: {
+                url: '',
+                username: '',
+                token: null,
+                connected: false,
+                activeProfileUuid: null
+            },
+
+            setRemnawaveCreds: (url, username, token) => set(produce((state) => {
+                state.remnawave.url = url;
+                state.remnawave.username = username;
+                state.remnawave.token = token;
+                state.remnawave.connected = true;
+            })),
+
+            disconnectRemnawave: () => set(produce((state) => {
+                state.remnawave.token = null;
+                state.remnawave.connected = false;
+                state.remnawave.activeProfileUuid = null;
+                toast.info("Disconnected from Remnawave");
+            })),
+
+            // Вход по логину/паролю
+            connectRemnawave: async (password) => {
+                const { url, username } = get().remnawave;
+                if (!url || !username) {
+                    toast.error("Missing URL or Username");
+                    throw new Error("Missing credentials");
+                }
+                
+                const client = new RemnawaveClient(url);
+                try {
+                    const token = await client.login(username, password);
+                    get().setRemnawaveCreds(url, username, token);
+                    toast.success("Connected via Credentials!");
+                } catch (e: any) {
+                    console.error(e);
+                    toast.error("Connection failed", { description: e.message });
+                    throw e;
+                }
+            },
+
+            // Вход по токену (НОВОЕ)
+            connectRemnawaveToken: (url, token) => {
+                if (!url || !token) {
+                    toast.error("Missing URL or Token");
+                    return;
+                }
+                set(produce((state) => {
+                    state.remnawave.url = url;
+                    state.remnawave.token = token;
+                    // При входе по токену мы можем не знать username, ставим заглушку
+                    state.remnawave.username = "API Token User"; 
+                    state.remnawave.connected = true;
+                }));
+                toast.success("Connected via Token!");
+            },
+
+            loadRemnawaveProfile: async (uuid) => {
+                const { url, token } = get().remnawave;
+                if (!url || !token) return;
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+
+                try {
+                    const configData = await client.getConfigProfile(uuid);
+                    if (configData) {
+                        set({ config: configData as XrayConfig });
+                        set(produce((state) => {
+                            state.remnawave.activeProfileUuid = uuid;
+                        }));
+                        toast.success("Profile loaded successfully");
+                    } else {
+                        toast.warning("Config is empty in this profile");
+                        set(produce((state) => {
+                            state.remnawave.activeProfileUuid = uuid;
+                        }));
+                    }
+                } catch (e: any) {
+                    console.error(e);
+                    toast.error("Failed to load profile", { description: e.message });
+                }
+            },
+
+            saveToRemnawave: async () => {
+                const { url, token, activeProfileUuid } = get().remnawave;
+                const { config } = get();
+
+                if (!url || !token || !activeProfileUuid) {
+                    toast.error("Not connected to a profile");
+                    return;
+                }
+                if (!config) {
+                    toast.error("Config is empty");
+                    return;
+                }
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+
+                try {
+                    await client.updateConfigProfile(activeProfileUuid, config);
+                    toast.success("Config saved to Remnawave cloud!");
+                } catch (e: any) {
+                    console.error(e);
+                    toast.error("Failed to save", { description: e.message });
+                }
+            },
+
+            // --- Standard Actions ---
             setConfig: (config) => set({ config }),
 
             updateSection: (section, data) => set(produce((state) => {
-                if (state.config) state.config[section] = data;
+                if (!state.config) state.config = { inbounds: [], outbounds: [] };
+                state.config[section] = data;
             })),
 
-            // Включить/Выключить секцию (null/object)
             toggleSection: (section, defaultValue) => set(produce((state) => {
                 if (!state.config) return;
                 if (state.config[section]) {
-                    delete state.config[section]; // Выключаем
+                    delete state.config[section];
                 } else {
-                    state.config[section] = defaultValue; // Включаем
+                    state.config[section] = defaultValue;
                 }
             })),
 
@@ -127,6 +366,16 @@ export const useConfigStore = create(
         {
             name: 'xray-config-storage',
             storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({ 
+                config: state.config,
+                remnawave: { 
+                    url: state.remnawave.url, 
+                    username: state.remnawave.username,
+                    token: null, 
+                    connected: false, 
+                    activeProfileUuid: null 
+                } 
+            }),
         }
     )
 );
