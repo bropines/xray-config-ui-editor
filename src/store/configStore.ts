@@ -299,6 +299,8 @@ export const useConfigStore = create(
                 }
             },
 
+// Находим метод saveToRemnawave в src/store/configStore.ts
+
             saveToRemnawave: async () => {
                 const { url, token, activeProfileUuid } = get().remnawave;
                 const { config } = get();
@@ -307,10 +309,25 @@ export const useConfigStore = create(
                     toast.error("Not connected to a profile");
                     return;
                 }
+
                 if (!config) {
                     toast.error("Config is empty");
                     return;
                 }
+
+                // --- НОВАЯ ВАЛИДАЦИЯ БАЛАНСИРОВЩИКОВ ---
+                const balancers = config.routing?.balancers || [];
+                const emptyBalancer = balancers.find(b => !b.selector || b.selector.length === 0);
+                
+                if (emptyBalancer) {
+                    toast.error("Validation Failed", {
+                        description: `Balancer "${emptyBalancer.tag}" has no target outbounds. This will break the node!`,
+                        duration: 5000
+                    });
+                    return; // ПРЕРЫВАЕМ ПУШ
+                }
+                // ---------------------------------------
+
                 const client = new RemnawaveClient(url);
                 client.setToken(token);
 

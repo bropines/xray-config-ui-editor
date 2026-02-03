@@ -46,6 +46,16 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
 
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
+            {/* Добавляем КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ в самом верху */}
+            {balancer.selector?.length === 0 && (
+                <div className="p-4 rounded-xl bg-rose-900/20 border border-rose-500/50 text-rose-200 flex gap-3 items-start animate-pulse">
+                    <Icon name="WarningOctagon" className="mt-1 shrink-0 text-xl" weight="fill" />
+                    <div>
+                        <strong className="block text-sm">Empty Selector!</strong>
+                        <p className="text-xs opacity-80">Xray node will crash if you push a balancer without target outbounds. Select at least one tag below.</p>
+                    </div>
+                </div>
+            )}
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
                 <div>
                     <label className="label-xs">Balancer Tag</label>
