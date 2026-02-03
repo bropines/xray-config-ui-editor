@@ -1,6 +1,7 @@
 # 🚀 Xray Config UI Editor
 
-**PIC**
+<img width="1912" height="954" alt="image" src="https://github.com/user-attachments/assets/967752f9-c10f-410b-8d0b-ef4ac93e6c33" />
+
 
 The most advanced, static web-based GUI for **Xray-core**. Manage your configurations with ease, visualize traffic flow, and sync directly with **Remnawave Panel**. No backend required — it runs entirely in your browser.
 
@@ -21,15 +22,18 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 ## 📸 Screenshots
 
 ### Remnawave Cloud Sync
-**PIC**
+<img width="565" height="682" alt="image" src="https://github.com/user-attachments/assets/d526888b-a529-43d1-8961-123051c7f5c3" />
+
 *Connect to your panel and manage profiles in real-time.*
 
 ### Routing Manager
-**PIC**
+<img width="1090" height="898" alt="image" src="https://github.com/user-attachments/assets/5068045c-aed0-473d-be3f-76cbe3eea42a" />
+
 *Manage complex routing logic with simple Drag-and-Drop.*
 
 ### Visual Topology
-**PIC**
+<img width="1342" height="891" alt="image" src="https://github.com/user-attachments/assets/3de84084-c7b3-47b9-8448-bc94310ed7e5" />
+
 *Visualize how traffic moves through your core.*
 
 ---
