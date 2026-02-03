@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useConfigStore } from "./store/configStore";
+import { useConfigStore, type XrayConfig } from "./store/configStore";
 import { Button } from "./components/ui/Button";
 import { Icon } from "./components/ui/Icon";
 import { InboundModal } from "./components/editors/InboundModal";
@@ -9,16 +9,19 @@ import { DnsModal } from "./components/editors/DnsModal";
 import { SettingsModal } from "./components/editors/SettingsModal";
 import { ReverseModal } from "./components/editors/ReverseModal";
 import { TopologyModal } from "./components/topology/TopologyModal";
+import { RemnawaveModal } from "./components/editors/RemnawaveModal";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
-import { getPresets } from "./utils/presets"; // Импорт пресетов
+import { getPresets } from "./utils/presets";
 
-// Компонент карточки
-const Card = ({ title, icon, color, children, actions, className = "" }) => (
+// Компонент карточки для списков (Inbounds, Outbounds, Routing preview)
+const Card = ({ title, icon, color, children, actions, className = "" }: any) => (
   <div className={`bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col hover:border-slate-600 transition-colors shadow-xl overflow-hidden ${className}`}>
     <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${color} text-white shadow-lg`}><Icon name={icon} className="text-xl" /></div>
+        <div className={`p-2 rounded-lg ${color} text-white shadow-lg`}>
+            <Icon name={icon} className="text-xl" />
+        </div>
         <h2 className="text-lg font-bold text-slate-100">{title}</h2>
       </div>
       <div className="flex gap-2">{actions}</div>
@@ -28,16 +31,33 @@ const Card = ({ title, icon, color, children, actions, className = "" }) => (
 );
 
 export const App = () => {
-  const { config, setConfig, deleteItem } = useConfigStore();
-  const [modal, setModal] = useState({ type: null, data: null, index: null });
+  // Достаем всё из стора
+  const { 
+      config, 
+      setConfig, 
+      deleteItem, 
+      updateItem, 
+      addItem, 
+      remnawave,
+      saveToRemnawave,
+      disconnectRemnawave,
+      initDns
+  } = useConfigStore();
+
+  // Локальные стейты UI
+  const [modal, setModal] = useState<{ type: string | null, data: any, index: number | null }>({ type: null, data: null, index: null });
   const [rawMode, setRawMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
+
+  // --- File Handlers ---
 
   const loadFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        setConfig(JSON.parse(e.target?.result as string));
+        const parsed = JSON.parse(e.target?.result as string);
+        setConfig(parsed as XrayConfig);
         setRawMode(false);
       } catch (err) {
         alert("Invalid JSON file");
@@ -58,7 +78,8 @@ export const App = () => {
     a.click();
   };
 
-  // Drag & Drop Handlers
+  // --- Drag & Drop Handlers ---
+
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
@@ -69,15 +90,17 @@ export const App = () => {
     if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
   };
 
-  const handleSaveModal = (data) => {
+  // --- Modal Callbacks ---
+
+  const handleSaveModal = (data: any) => {
       const { type, index } = modal;
       if (type === 'inbound') {
-          if (index !== null) useConfigStore.getState().updateItem('inbounds', index, data);
-          else useConfigStore.getState().addItem('inbounds', data);
+          if (index !== null) updateItem('inbounds', index, data);
+          else addItem('inbounds', data);
       }
       if (type === 'outbound') {
-          if (index !== null) useConfigStore.getState().updateItem('outbounds', index, data);
-          else useConfigStore.getState().addItem('outbounds', data);
+          if (index !== null) updateItem('outbounds', index, data);
+          else addItem('outbounds', data);
       }
       setModal({ type: null, data: null, index: null });
   };
@@ -100,11 +123,36 @@ export const App = () => {
       {/* --- HEADER --- */}
       <nav className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 py-3 shadow-md flex flex-wrap gap-4 justify-between items-center shrink-0 h-16 box-border">
         <div className="flex items-center gap-2 md:gap-3">
-            <div className="bg-indigo-600 p-1.5 md:p-2 rounded-lg text-white shadow-lg"><Icon name="Planet" className="text-lg md:text-xl" /></div>
+            <div className="bg-indigo-600 p-1.5 md:p-2 rounded-lg text-white shadow-lg">
+                <Icon name="Planet" className="text-lg md:text-xl" />
+            </div>
             <span className="font-bold text-base md:text-lg tracking-tight text-white">Xray GUI</span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+            {/* Remnawave Controls */}
+            {remnawave.connected ? (
+                <div className="flex items-center gap-2 bg-indigo-900/50 border border-indigo-500/50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg mr-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
+                    <span className="text-xs font-bold text-indigo-200 hidden md:inline">Remnawave</span>
+                    
+                    <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
+                    
+                    <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={saveToRemnawave} title="Save to Remnawave Cloud">
+                        <Icon name="CloudArrowUp" weight="bold" />
+                    </Button>
+                     <Button variant="ghost" className="p-1 h-auto text-xs text-rose-400 hover:text-rose-200" onClick={disconnectRemnawave} title="Disconnect">
+                        <Icon name="LinkBreak" weight="bold" />
+                    </Button>
+                </div>
+            ) : (
+                 <Button variant="secondary" onClick={() => setRemnawaveModalOpen(true)} className="text-xs mr-2 border-indigo-500/30 hover:border-indigo-500/80">
+                    <Icon name="Cloud" className="text-indigo-400" /> <span className="hidden md:inline">Remnawave</span>
+                 </Button>
+            )}
+
+            <div className="w-px h-6 bg-slate-800 mx-1 hidden md:block"></div>
+
             <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 md:px-4 md:py-2 rounded-lg font-bold cursor-pointer transition-all border border-slate-700 flex items-center gap-2 text-xs md:text-sm">
                 <Icon name="FolderOpen" /> <span className="hidden md:inline">Open File</span>
                 <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
@@ -129,7 +177,7 @@ export const App = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl px-4">
                     {presets.map((preset, i) => (
                         <div key={i} 
-                            onClick={() => setConfig(preset.config)}
+                            onClick={() => setConfig(preset.config as any)}
                             className="bg-slate-900/50 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-6 cursor-pointer transition-all group shadow-lg hover:shadow-indigo-500/10 flex flex-col gap-3"
                         >
                             <div className="bg-slate-950 w-12 h-12 rounded-lg flex items-center justify-center border border-slate-800 group-hover:border-indigo-500/50 group-hover:text-indigo-400 transition-colors">
@@ -143,11 +191,17 @@ export const App = () => {
                     ))}
                 </div>
                 
-                <div className="mt-12 opacity-50 hover:opacity-100 transition-opacity">
-                    <label className="text-sm text-slate-500 cursor-pointer flex items-center gap-2 hover:text-indigo-400 transition-colors">
-                        <Icon name="FolderOpen" /> Or open existing config file
-                        <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
-                    </label>
+                <div className="mt-12 flex flex-col items-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                    <div className="text-sm text-slate-500">Or import from sources:</div>
+                    <div className="flex gap-4">
+                         <label className="text-sm text-slate-400 cursor-pointer flex items-center gap-2 hover:text-indigo-400 transition-colors bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
+                            <Icon name="FolderOpen" /> Local File
+                            <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
+                        </label>
+                        <button onClick={() => setRemnawaveModalOpen(true)} className="text-sm text-slate-400 cursor-pointer flex items-center gap-2 hover:text-indigo-400 transition-colors bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
+                            <Icon name="Cloud" /> Remnawave Panel
+                        </button>
+                    </div>
                 </div>
             </div>
         ) : (
@@ -177,7 +231,7 @@ export const App = () => {
                 {/* CONTENT AREA */}
                 {rawMode ? (
                     <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-1 shadow-2xl min-h-[600px] xl:min-h-0">
-                        <JsonField label="Full Configuration" value={config} onChange={(newConfig) => { if (newConfig) setConfig(newConfig); }} className="h-full" />
+                        <JsonField label="Full Configuration" value={config} onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }} className="h-full" />
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6 flex-1 min-h-0 xl:overflow-hidden">
@@ -191,7 +245,7 @@ export const App = () => {
                                 className="h-[500px] xl:h-full"
                                 actions={<Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus"/>}
                             >
-                                {(config.inbounds || []).map((ib, i) => (
+                                {(config.inbounds || []).map((ib: any, i: number) => (
                                     <div key={i} className="card-item group flex justify-between items-start">
                                         <div className="min-w-0 pr-2">
                                             <div className="font-bold text-emerald-400 text-sm flex items-center gap-2 truncate"><Icon name="Hash"/> {ib.tag || "no-tag"}</div>
@@ -217,7 +271,7 @@ export const App = () => {
                                     Strategy: <span className="font-bold">{config.routing?.domainStrategy || "AsIs"}</span>
                                 </div>
                                 <div className="space-y-1">
-                                    {(config.routing?.rules || []).slice(0, 20).map((rule, i) => (
+                                    {(config.routing?.rules || []).slice(0, 20).map((rule: any, i: number) => (
                                         <div key={i} className="text-xs bg-slate-950 p-2 rounded flex gap-2 border-l-2 border-slate-700 items-center overflow-hidden">
                                             <span className={`font-bold w-16 md:w-24 truncate text-right shrink-0 ${rule.balancerTag ? 'text-purple-400' : 'text-blue-400'}`}>
                                                 {rule.outboundTag || rule.balancerTag}
@@ -242,7 +296,7 @@ export const App = () => {
                                 className="h-[500px] xl:h-full"
                                 actions={<Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus"/>}
                             >
-                                {(config.outbounds || []).map((ob, i) => (
+                                {(config.outbounds || []).map((ob: any, i: number) => (
                                     <div key={i} className="card-item group flex justify-between items-start">
                                         <div className="min-w-0 pr-2">
                                             <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate"><Icon name="PaperPlaneRight"/> {ob.tag || "no-tag"}</div>
@@ -259,7 +313,7 @@ export const App = () => {
 
                         {/* DNS Configuration */}
                         <Card title="DNS" icon="Globe" color="bg-indigo-600" className="h-fit shrink-0 mb-6 xl:mb-0"
-                            actions={<Button variant="ghost" onClick={() => { useConfigStore.getState().initDns(); setModal({ type: 'dns', data: null, index: null }) }} icon="PencilSimple">Edit</Button>}>
+                            actions={<Button variant="ghost" onClick={() => { initDns(); setModal({ type: 'dns', data: null, index: null }) }} icon="PencilSimple">Edit</Button>}>
                             {config.dns ? (
                                 <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                                     <div className="grid grid-cols-2 gap-2 text-xs flex-1">
@@ -291,13 +345,16 @@ export const App = () => {
         )}
 
         {/* MODALS */}
-        {modal.type === 'inbound' && <InboundModal data={modal.data} onClose={() => setModal({ type: null })} onSave={handleSaveModal} />}
-        {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null })} onSave={handleSaveModal} />}
-        {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null })} />}
-        {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null })} />}
-        {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null })} />}
-        {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null })} />}
-        {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null })} />}
+        {modal.type === 'inbound' && <InboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} onSave={handleSaveModal} />}
+        {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} onSave={handleSaveModal} />}
+        {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null, data: null, index: null })} />}
+        {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null, data: null, index: null })} />}
+        {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null, data: null, index: null })} />}
+        {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null, data: null, index: null })} />}
+        {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null, data: null, index: null })} />}
+        
+        {/* NEW: Remnawave Modal */}
+        {remnawaveModalOpen && <RemnawaveModal onClose={() => setRemnawaveModalOpen(false)} />}
       </main>
     </div>
   );
