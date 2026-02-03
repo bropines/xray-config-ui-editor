@@ -178,7 +178,8 @@ interface ConfigState {
     remnawave: RemnawaveState;
     setRemnawaveCreds: (url: string, username: string, token: string) => void;
     connectRemnawave: (password: string) => Promise<void>;
-    connectRemnawaveToken: (url: string, token: string) => void; // НОВЫЙ МЕТОД
+    connectRemnawaveToken: (url: string, token: string) => void;
+    fetchRemnawaveProfiles: () => Promise<RemnawaveProfile[]>; // <--- НОВЫЙ МЕТОД
     loadRemnawaveProfile: (uuid: string) => Promise<void>;
     saveToRemnawave: () => Promise<void>;
     disconnectRemnawave: () => void;
@@ -189,8 +190,7 @@ interface ConfigState {
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
-    
-    reorderRules: (newRules: RoutingRule[]) => void;
+    reorderRules: (newRules: any[]) => void;
     initDns: () => void;
 }
 
@@ -199,7 +199,6 @@ export const useConfigStore = create(
         (set, get) => ({
             config: null,
 
-            // --- Remnawave State & Logic ---
             remnawave: {
                 url: '',
                 username: '',
@@ -222,14 +221,12 @@ export const useConfigStore = create(
                 toast.info("Disconnected from Remnawave");
             })),
 
-            // Вход по логину/паролю
             connectRemnawave: async (password) => {
                 const { url, username } = get().remnawave;
                 if (!url || !username) {
                     toast.error("Missing URL or Username");
                     throw new Error("Missing credentials");
                 }
-                
                 const client = new RemnawaveClient(url);
                 try {
                     const token = await client.login(username, password);
@@ -242,7 +239,6 @@ export const useConfigStore = create(
                 }
             },
 
-            // Вход по токену (НОВОЕ)
             connectRemnawaveToken: (url, token) => {
                 if (!url || !token) {
                     toast.error("Missing URL or Token");
@@ -251,11 +247,29 @@ export const useConfigStore = create(
                 set(produce((state) => {
                     state.remnawave.url = url;
                     state.remnawave.token = token;
-                    // При входе по токену мы можем не знать username, ставим заглушку
                     state.remnawave.username = "API Token User"; 
                     state.remnawave.connected = true;
                 }));
                 toast.success("Connected via Token!");
+            },
+
+            fetchRemnawaveProfiles: async () => {
+                const { url, token } = get().remnawave;
+                if (!url || !token) {
+                    throw new Error("Not connected");
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    return await client.getConfigProfiles();
+                } catch (e: any) {
+                    // Если токен протух - отключаем
+                    if (e.message.includes("401") || e.message.includes("Unauthorized")) {
+                        get().disconnectRemnawave();
+                        toast.error("Session expired. Please login again.");
+                    }
+                    throw e;
+                }
             },
 
             loadRemnawaveProfile: async (uuid) => {
@@ -297,7 +311,6 @@ export const useConfigStore = create(
                     toast.error("Config is empty");
                     return;
                 }
-
                 const client = new RemnawaveClient(url);
                 client.setToken(token);
 

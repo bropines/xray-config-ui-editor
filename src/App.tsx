@@ -132,16 +132,24 @@ export const App = () => {
         <div className="flex gap-2 items-center">
             {/* Remnawave Controls */}
             {remnawave.connected ? (
-                <div className="flex items-center gap-2 bg-indigo-900/50 border border-indigo-500/50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg mr-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                    <span className="text-xs font-bold text-indigo-200 hidden md:inline">Remnawave</span>
+                <div className="flex items-center gap-1 bg-indigo-900/50 border border-indigo-500/50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg mr-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)] mr-2"></div>
+                    <span className="text-xs font-bold text-indigo-200 hidden md:inline mr-2">Remnawave</span>
                     
                     <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
                     
-                    <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={saveToRemnawave} title="Save to Remnawave Cloud">
+                    {/* Кнопка смены профиля */}
+                    <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={() => setRemnawaveModalOpen(true)} title="Switch Profile">
+                        <Icon name="ListDashes" weight="bold" />
+                    </Button>
+
+                    <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={saveToRemnawave} title="Save to Cloud">
                         <Icon name="CloudArrowUp" weight="bold" />
                     </Button>
-                     <Button variant="ghost" className="p-1 h-auto text-xs text-rose-400 hover:text-rose-200" onClick={disconnectRemnawave} title="Disconnect">
+                    
+                    <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
+
+                    <Button variant="ghost" className="p-1 h-auto text-xs text-rose-400 hover:text-rose-200" onClick={disconnectRemnawave} title="Disconnect">
                         <Icon name="LinkBreak" weight="bold" />
                     </Button>
                 </div>
