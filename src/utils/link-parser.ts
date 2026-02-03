@@ -2,10 +2,10 @@ export const parseXrayLink = (link: string): any => {
   try {
     const url = new URL(link);
     const protocol = url.protocol.replace(':', '');
-    const tag = decodeURIComponent(url.hash.slice(1));
+    const hashPart = link.includes('#') ? link.split('#')[1] : '';
+    const tag = decodeURIComponent(hashPart);
     const query = Object.fromEntries(url.searchParams.entries());
 
-    // Общая заготовка
     const baseOutbound = {
       tag: tag || `${protocol}-${Math.floor(Math.random() * 1000)}`,
       protocol: protocol,
@@ -13,7 +13,6 @@ export const parseXrayLink = (link: string): any => {
       streamSettings: {
         network: "tcp",
         security: "none",
-        // Плейсхолдеры для настроек будут заполнены ниже
       }
     };
 
@@ -26,7 +25,7 @@ export const parseXrayLink = (link: string): any => {
         encryption: query.encryption || "none"
       };
 
-      if (protocol === 'trojan') delete user.id;
+      if (protocol === 'trojan') delete (user as any).id;
 
       baseOutbound.settings = {
         vnext: [{
@@ -36,14 +35,11 @@ export const parseXrayLink = (link: string): any => {
         }]
       };
 
-      // Stream Settings
-      // Поддержка параметра `net` (стандарт) и `type` (старые клиенты)
       const network = query.type || query.net || "tcp";
       baseOutbound.streamSettings.network = network;
       
       if (query.security) baseOutbound.streamSettings.security = query.security;
 
-      // TLS / Reality Settings
       if (query.security === 'tls' || query.security === 'reality') {
         const tlsSettings: any = {
           serverName: query.sni || url.hostname,
@@ -61,52 +57,71 @@ export const parseXrayLink = (link: string): any => {
         }
       }
       
-      // --- TRANSPORT SPECIFIC ---
-      
-      // WebSocket
       if (network === 'ws') {
         baseOutbound.streamSettings.wsSettings = { 
             path: query.path || "/", 
             headers: { Host: query.host || "" } 
         };
       }
-      
-      // gRPC
       if (network === 'grpc') {
-        baseOutbound.streamSettings.grpcSettings = { 
-            serviceName: query.serviceName || "" 
-        };
-      }
-
-      // XHTTP (New!)
-      if (network === 'xhttp') {
-        baseOutbound.streamSettings.xhttpSettings = {
-            mode: query.mode || "auto",
-            path: query.path || "/",
-            host: query.host || "",
-            // Если есть extra параметры в JSON строке (редкость для ссылок, но возможно)
-            extra: query.extra ? JSON.parse(query.extra) : {}
-        };
+        baseOutbound.streamSettings.grpcSettings = { serviceName: query.serviceName || "" };
       }
 
       return baseOutbound;
     }
 
-    // --- SHADOWSOCKS ---
+    // --- SHADOWSOCKS (Исправленный парсинг) ---
     if (protocol === 'ss') {
-      let userInfo = url.username;
-      // Обработка Base64 (старый формат ss)
-      if (!userInfo.includes(':')) {
-        try { userInfo = atob(url.username); } catch (e) {}
+      // 1. Извлекаем часть после ss:// и до #
+      const mainPart = link.split('#')[0].replace('ss://', '');
+      
+      // 2. Находим последний символ @, который отделяет userInfo от host:port
+      const lastAtIndex = mainPart.lastIndexOf('@');
+      
+      let method = "";
+      let password = "";
+      let serverAddr = "";
+      let serverPort = 443;
+
+      if (lastAtIndex !== -1) {
+        // Формат с Base64 или обычным текстом: [userInfo]@[host]:[port]
+        const userInfoRaw = mainPart.substring(0, lastAtIndex);
+        const hostPortPart = mainPart.substring(lastAtIndex + 1);
+
+        // Пытаемся декодировать userInfo
+        let decodedUserInfo = "";
+        try {
+            // Исправляем возможные проблемы с URL-safe Base64
+            const normalizedB64 = userInfoRaw.replace(/-/g, '+').replace(/_/g, '/');
+            decodedUserInfo = atob(normalizedB64);
+        } catch (e) {
+            // Если не Base64, значит это plain text (метод:пароль)
+            decodedUserInfo = userInfoRaw;
+        }
+
+        if (decodedUserInfo.includes(':')) {
+            const parts = decodedUserInfo.split(':');
+            method = parts[0];
+            // Пароль может содержать двоеточие, поэтому объединяем остаток
+            password = parts.slice(1).join(':');
+        }
+
+        // Парсим хост и порт
+        if (hostPortPart.includes(':')) {
+            const hp = hostPortPart.split(':');
+            serverAddr = hp[0];
+            serverPort = parseInt(hp[1]);
+        } else {
+            serverAddr = hostPortPart;
+        }
       }
-      const [method, password] = userInfo.split(':');
 
       baseOutbound.protocol = "shadowsocks";
       baseOutbound.settings = {
         servers: [{
-          address: url.hostname,
-          port: parseInt(url.port),
-          method: method,
+          address: serverAddr,
+          port: serverPort,
+          method: method || "aes-256-gcm",
           password: password,
           uot: true
         }]
@@ -115,9 +130,8 @@ export const parseXrayLink = (link: string): any => {
     }
 
     throw new Error("Unsupported protocol");
-  } catch (e) {
-    console.error(e);
-    alert("Ошибка парсинга ссылки: " + e.message);
+  } catch (e: any) {
+    console.error("Parse error:", e);
     return null;
   }
 };
