@@ -9,28 +9,22 @@ import { toast } from 'sonner';
 export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
     const { 
         remnawave, 
-        setRemnawaveCreds, 
         connectRemnawaveToken, 
-        fetchRemnawaveProfiles, // Новый метод из стора
+        fetchRemnawaveProfiles, 
         loadRemnawaveProfile,
         disconnectRemnawave 
     } = useConfigStore();
     
-    // UI State
-    const [loginMethod, setLoginMethod] = useState<'creds' | 'token'>('creds');
     const [step, setStep] = useState<'login' | 'select'>('login');
     const [loading, setLoading] = useState(false);
 
     // Form State
     const [url, setUrl] = useState(remnawave.url || "");
-    const [username, setUsername] = useState(remnawave.username || "");
-    const [password, setPassword] = useState("");
-    const [apiToken, setApiToken] = useState("");
+    const [apiToken, setApiToken] = useState(remnawave.token || "");
     
     // Profiles
     const [profiles, setProfiles] = useState<RemnawaveProfile[]>([]);
 
-    // При открытии проверяем, подключены ли мы уже
     useEffect(() => {
         if (remnawave.connected) {
             setStep('select');
@@ -44,44 +38,15 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
             const list = await fetchRemnawaveProfiles();
             setProfiles(list);
         } catch (e: any) {
-            // Ошибка уже обработана в сторе (например, токен протух), но можно сбросить на логин
-            if (e.message.includes("Not connected") || e.message.includes("401")) {
-                setStep('login');
-            }
+            setStep('login');
         } finally {
             setLoading(false);
         }
     };
 
-    // 1. Вход по логину/паролю
-    const handleLoginCreds = async () => {
-        if (!url || !username || !password) {
-            toast.error("Please fill all fields");
-            return;
-        }
-        setLoading(true);
-        try {
-            const client = new RemnawaveClient(url);
-            const token = await client.login(username, password);
-            setRemnawaveCreds(url, username, token);
-            
-            // Сразу грузим профили
-            client.setToken(token);
-            const loadedProfiles = await client.getConfigProfiles();
-            setProfiles(loadedProfiles);
-            setStep('select');
-        } catch (e: any) {
-            console.error(e);
-            toast.error("Login failed", { description: e.message });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // 2. Вход по API токену
-    const handleLoginToken = async () => {
+    const handleConnect = async () => {
         if (!url || !apiToken) {
-            toast.error("Please fill URL and Token");
+            toast.error("Please fill URL and API Token");
             return;
         }
         setLoading(true);
@@ -91,12 +56,13 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
             
             const loadedProfiles = await client.getConfigProfiles();
             
+            // Если профили загрузились — токен валидный
             connectRemnawaveToken(url, apiToken);
             setProfiles(loadedProfiles);
             setStep('select');
         } catch (e: any) {
             console.error(e);
-            toast.error("Invalid Token or URL", { description: e.message });
+            toast.error("Connection failed", { description: "Invalid token or panel URL" });
         } finally {
             setLoading(false);
         }
@@ -109,130 +75,90 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
         onClose();
     };
 
-    const handleLogout = () => {
-        disconnectRemnawave();
-        setStep('login');
-    };
-
     return (
         <Modal 
-            title={step === 'login' ? "Connect to Remnawave" : "Select Profile"} 
+            title={step === 'login' ? "Connect Remnawave" : "Select Profile"} 
             onClose={onClose} 
             className="max-w-md"
             onSave={onClose}
         >
-            <div className="space-y-4">
+            <div className="space-y-5">
                 {step === 'login' ? (
-                    <>
-                        <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 text-xs text-indigo-200 mb-4">
-                            <p className="font-bold flex items-center gap-2"><Icon name="Warning" /> CORS Warning</p>
-                            <p className="mt-1 opacity-80">
-                                Since this is a static page, you must configure Nginx on your Remnawave server to allow CORS from this domain.
+                    <div className="animate-in fade-in duration-300">
+                        <div className="bg-amber-900/20 p-4 rounded-xl border border-amber-500/30 text-[11px] text-amber-200/80 mb-6 flex gap-3">
+                            <Icon name="ShieldCheck" className="text-xl shrink-0 text-amber-400" />
+                            <p>
+                                Password login is disabled for security reasons. 
+                                Please use an <b>API Token</b> from your panel settings.
                             </p>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 mb-4">
-                            <button 
-                                onClick={() => setLoginMethod('creds')} 
-                                className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${loginMethod === 'creds' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-white'}`}
-                            >
-                                Credentials
-                            </button>
-                            <button 
-                                onClick={() => setLoginMethod('token')} 
-                                className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${loginMethod === 'token' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-white'}`}
-                            >
-                                API Token
-                            </button>
-                        </div>
-
-                        {/* Common: Panel URL */}
-                        <div>
-                            <label className="label-xs">Panel URL</label>
-                            <input className="input-base" 
-                                placeholder="https://panel.example.com" 
-                                value={url} onChange={e => setUrl(e.target.value)} 
-                            />
-                        </div>
-
-                        {/* Specific Fields */}
-                        {loginMethod === 'creds' ? (
-                            <div className="space-y-4 animate-in fade-in">
-                                <div>
-                                    <label className="label-xs">Username</label>
-                                    <input className="input-base" 
-                                        placeholder="admin" 
-                                        value={username} onChange={e => setUsername(e.target.value)} 
-                                    />
-                                </div>
-                                <div>
-                                    <label className="label-xs">Password</label>
-                                    <input className="input-base" 
-                                        type="password" 
-                                        placeholder="••••••" 
-                                        value={password} onChange={e => setPassword(e.target.value)} 
-                                    />
-                                </div>
-                                <Button className="w-full mt-4" onClick={handleLoginCreds} disabled={loading}>
-                                    {loading ? <Icon name="Spinner" className="animate-spin" /> : "Login & Fetch Profiles"}
-                                </Button>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="label-xs">Panel URL</label>
+                                <input className="input-base" 
+                                    placeholder="https://panel.example.com" 
+                                    value={url} onChange={e => setUrl(e.target.value)} 
+                                />
                             </div>
-                        ) : (
-                            <div className="space-y-4 animate-in fade-in">
-                                <div>
-                                    <label className="label-xs">API Token (JWT or Key)</label>
-                                    <input className="input-base font-mono" 
-                                        type="password"
-                                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6Ik..." 
-                                        value={apiToken} onChange={e => setApiToken(e.target.value)} 
-                                    />
-                                    <p className="text-[10px] text-slate-500 mt-1">
-                                        Use a long-lived API token or a temporary Admin JWT.
-                                    </p>
-                                </div>
-                                <Button className="w-full mt-4 bg-indigo-600" onClick={handleLoginToken} disabled={loading}>
-                                    {loading ? <Icon name="Spinner" className="animate-spin" /> : "Connect via Token"}
-                                </Button>
+
+                            <div>
+                                <label className="label-xs">API Token</label>
+                                <input className="input-base font-mono text-xs" 
+                                    type="password"
+                                    placeholder="Paste your token here..." 
+                                    value={apiToken} onChange={e => setApiToken(e.target.value)} 
+                                />
                             </div>
-                        )}
-                    </>
+
+                            <Button className="w-full mt-2 py-3" onClick={handleConnect} disabled={loading}>
+                                {loading ? <Icon name="Spinner" className="animate-spin" /> : "Connect & Fetch Profiles"}
+                            </Button>
+                        </div>
+                    </div>
                 ) : (
-                    <>
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-sm font-bold text-slate-300">Config Profiles</h3>
-                            <button onClick={handleRefreshProfiles} className="text-xs text-indigo-400 hover:text-white" title="Refresh">
+                    <div className="animate-in slide-in-from-right-4 duration-300">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Available Profiles</h3>
+                            <button onClick={handleRefreshProfiles} className="p-1 hover:bg-slate-800 rounded transition-colors text-indigo-400">
                                 <Icon name="ArrowsClockwise" className={loading ? "animate-spin" : ""} />
                             </button>
                         </div>
                         
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scroll mb-4">
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scroll pr-1">
                             {profiles.map(p => (
                                 <div key={p.uuid} 
                                     onClick={() => handleSelectProfile(p.uuid)}
-                                    className={`p-3 border rounded-lg cursor-pointer transition-all flex justify-between items-center group
+                                    className={`p-3 border rounded-xl cursor-pointer transition-all flex justify-between items-center group
                                         ${remnawave.activeProfileUuid === p.uuid 
-                                            ? 'bg-indigo-600/20 border-indigo-500' 
-                                            : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-slate-500'}
+                                            ? 'bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.1)]' 
+                                            : 'bg-slate-900 border-slate-800 hover:border-slate-600'}
                                     `}
                                 >
-                                    <span className={`font-mono text-sm ${remnawave.activeProfileUuid === p.uuid ? 'text-white font-bold' : 'text-slate-300'}`}>
-                                        {p.name}
-                                    </span>
-                                    {remnawave.activeProfileUuid === p.uuid && <Icon name="Check" className="text-emerald-400" />}
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${remnawave.activeProfileUuid === p.uuid ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.6)]' : 'bg-slate-700'}`}></div>
+                                        <span className={`font-mono text-sm ${remnawave.activeProfileUuid === p.uuid ? 'text-white font-bold' : 'text-slate-300'}`}>
+                                            {p.name}
+                                        </span>
+                                    </div>
+                                    {remnawave.activeProfileUuid === p.uuid ? (
+                                        <Icon name="CheckCircle" weight="fill" className="text-emerald-400" />
+                                    ) : (
+                                        <Icon name="ArrowRight" className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    )}
                                 </div>
                             ))}
-                            {profiles.length === 0 && (
-                                <div className="text-center text-slate-500 py-4">No profiles found.</div>
-                            )}
                         </div>
 
-                        <div className="border-t border-slate-800 pt-4 flex justify-between">
-                             <Button variant="ghost" onClick={handleLogout} className="text-xs text-rose-400 hover:text-rose-200">
-                                <Icon name="SignOut" /> Logout
+                        <div className="mt-6 pt-4 border-t border-slate-800 flex justify-between gap-3">
+                             <Button variant="ghost" onClick={() => disconnectRemnawave()} className="text-xs text-rose-400 hover:bg-rose-500/10">
+                                <Icon name="LinkBreak" /> Disconnect
+                            </Button>
+                             <Button variant="secondary" onClick={() => setStep('login')} className="text-xs">
+                                <Icon name="UserSwitch" /> Change URL
                             </Button>
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </Modal>

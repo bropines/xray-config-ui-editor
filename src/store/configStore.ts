@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { RemnawaveClient } from '../utils/remnawave-client';
+import { RemnawaveClient, type RemnawaveProfile } from '../utils/remnawave-client';
 import { toast } from 'sonner';
+import { validateBalancer } from '../utils/validator';
 
-// --- Полная типизация конфигурации Xray (как было ранее) ---
 export interface LogConfig {
     access?: string;
     error?: string;
@@ -84,8 +84,13 @@ export interface Inbound {
         enabled?: boolean;
         destOverride?: string[];
         metadataOnly?: boolean;
+        routeOnly?: boolean;
     };
-    allocate?: any;
+    allocate?: {
+        strategy?: string;
+        refresh?: number;
+        concurrency?: number;
+    };
 }
 
 export interface Outbound {
@@ -126,7 +131,7 @@ export interface PolicyConfig {
     };
 }
 
-export interface StatsConfig { }
+export interface StatsConfig {}
 
 export interface ReverseConfig {
     bridges?: { tag: string; domain: string }[];
@@ -157,14 +162,13 @@ export interface XrayConfig {
     reverse?: ReverseConfig;
     fakedns?: FakednsPool[];
     observatory?: ObservatoryConfig;
-    [key: string]: any;
+    [key: string]: any; 
 }
 
-// --- Интерфейсы Store ---
+// --- Интерфейсы Состояния Store ---
 
 interface RemnawaveState {
     url: string;
-    username: string;
     token: string | null;
     connected: boolean;
     activeProfileUuid: string | null;
@@ -173,100 +177,73 @@ interface RemnawaveState {
 interface ConfigState {
     config: XrayConfig | null;
     setConfig: (config: XrayConfig | null) => void;
-
+    
     // Remnawave Actions
     remnawave: RemnawaveState;
-    setRemnawaveCreds: (url: string, username: string, token: string) => void;
-    connectRemnawave: (password: string) => Promise<void>;
-    connectRemnawaveToken: (url: string, token: string) => void;
-    fetchRemnawaveProfiles: () => Promise<RemnawaveProfile[]>; // <--- НОВЫЙ МЕТОД
+    connectRemnawaveToken: (url: string, token: string) => void; 
+    fetchRemnawaveProfiles: () => Promise<RemnawaveProfile[]>;
     loadRemnawaveProfile: (uuid: string) => Promise<void>;
     saveToRemnawave: () => Promise<void>;
     disconnectRemnawave: () => void;
-
-    // Standard Actions
+    
+    // Standard CRUD Actions
     updateSection: (section: keyof XrayConfig, data: any) => void;
     toggleSection: (section: keyof XrayConfig, defaultValue: any) => void;
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
-    reorderRules: (newRules: any[]) => void;
+    
+    reorderRules: (newRules: RoutingRule[]) => void;
     initDns: () => void;
 }
+
+// --- Implementation ---
 
 export const useConfigStore = create(
     persist<ConfigState>(
         (set, get) => ({
             config: null,
 
+            // --- Remnawave Connection ---
             remnawave: {
                 url: '',
-                username: '',
                 token: null,
                 connected: false,
                 activeProfileUuid: null
             },
 
-            setRemnawaveCreds: (url, username, token) => set(produce((state) => {
-                state.remnawave.url = url;
-                state.remnawave.username = username;
-                state.remnawave.token = token;
-                state.remnawave.connected = true;
-            })),
-
             disconnectRemnawave: () => set(produce((state) => {
                 state.remnawave.token = null;
                 state.remnawave.connected = false;
                 state.remnawave.activeProfileUuid = null;
-                toast.info("Disconnected from Remnawave");
+                toast.info("Remnawave connection closed");
             })),
-
-            connectRemnawave: async (password) => {
-                const { url, username } = get().remnawave;
-                if (!url || !username) {
-                    toast.error("Missing URL or Username");
-                    throw new Error("Missing credentials");
-                }
-                const client = new RemnawaveClient(url);
-                try {
-                    const token = await client.login(username, password);
-                    get().setRemnawaveCreds(url, username, token);
-                    toast.success("Connected via Credentials!");
-                } catch (e: any) {
-                    console.error(e);
-                    toast.error("Connection failed", { description: e.message });
-                    throw e;
-                }
-            },
 
             connectRemnawaveToken: (url, token) => {
                 if (!url || !token) {
-                    toast.error("Missing URL or Token");
+                    toast.error("URL and Token are required");
                     return;
                 }
                 set(produce((state) => {
                     state.remnawave.url = url;
                     state.remnawave.token = token;
-                    state.remnawave.username = "API Token User";
                     state.remnawave.connected = true;
                 }));
-                toast.success("Connected via Token!");
+                toast.success("Linked to Remnawave via Token");
             },
 
             fetchRemnawaveProfiles: async () => {
                 const { url, token } = get().remnawave;
-                if (!url || !token) {
-                    throw new Error("Not connected");
-                }
+                if (!url || !token) throw new Error("Not authenticated");
+                
                 const client = new RemnawaveClient(url);
                 client.setToken(token);
                 try {
                     return await client.getConfigProfiles();
                 } catch (e: any) {
-                    // Если токен протух - отключаем
-                    if (e.message.includes("401") || e.message.includes("Unauthorized")) {
+                    if (e.message.includes("401")) {
                         get().disconnectRemnawave();
-                        toast.error("Session expired. Please login again.");
+                        toast.error("Session expired");
                     }
                     throw e;
                 }
@@ -281,66 +258,50 @@ export const useConfigStore = create(
 
                 try {
                     const configData = await client.getConfigProfile(uuid);
-                    if (configData) {
-                        set({ config: configData as XrayConfig });
-                        set(produce((state) => {
-                            state.remnawave.activeProfileUuid = uuid;
-                        }));
-                        toast.success("Profile loaded successfully");
-                    } else {
-                        toast.warning("Config is empty in this profile");
-                        set(produce((state) => {
-                            state.remnawave.activeProfileUuid = uuid;
-                        }));
-                    }
+                    set({ config: configData as XrayConfig });
+                    set(produce((state) => {
+                        state.remnawave.activeProfileUuid = uuid;
+                    }));
+                    toast.success("Profile config loaded");
                 } catch (e: any) {
-                    console.error(e);
-                    toast.error("Failed to load profile", { description: e.message });
+                    toast.error("Failed to load profile from cloud");
                 }
             },
-
-            // Находим метод saveToRemnawave в src/store/configStore.ts
 
             saveToRemnawave: async () => {
                 const { url, token, activeProfileUuid } = get().remnawave;
                 const { config } = get();
 
-                if (!url || !token || !activeProfileUuid) {
-                    toast.error("Not connected to a profile");
+                if (!url || !token || !activeProfileUuid || !config) {
+                    toast.error("Cannot save: No active cloud profile");
                     return;
                 }
 
-                if (!config) {
-                    toast.error("Config is empty");
-                    return;
-                }
-
-                // --- НОВАЯ ВАЛИДАЦИЯ БАЛАНСИРОВЩИКОВ ---
+                // --- КРИТИЧЕСКАЯ ВАЛИДАЦИЯ БАЛАНСИРОВЩИКОВ ПЕРЕД ПУШЕМ ---
                 const balancers = config.routing?.balancers || [];
-                const emptyBalancer = balancers.find(b => !b.selector || b.selector.length === 0);
-
-                if (emptyBalancer) {
-                    toast.error("Validation Failed", {
-                        description: `Balancer "${emptyBalancer.tag}" has no target outbounds. This will break the node!`,
-                        duration: 5000
+                const invalidBalancer = balancers.find(b => validateBalancer(b).length > 0);
+                
+                if (invalidBalancer) {
+                    toast.error("Push Blocked!", {
+                        description: `Balancer "${invalidBalancer.tag}" has no target outbounds. Node will crash if you push this.`,
+                        duration: 6000
                     });
-                    return; // ПРЕРЫВАЕМ ПУШ
+                    return; 
                 }
-                // ---------------------------------------
 
                 const client = new RemnawaveClient(url);
                 client.setToken(token);
 
                 try {
                     await client.updateConfigProfile(activeProfileUuid, config);
-                    toast.success("Config saved to Remnawave cloud!");
+                    toast.success("Cloud Profile Updated!");
                 } catch (e: any) {
-                    console.error(e);
-                    toast.error("Failed to save", { description: e.message });
+                    toast.error("Failed to push config to cloud");
                 }
             },
 
-            // --- Standard Actions ---
+            // --- Standard CRUD Actions ---
+            
             setConfig: (config) => set({ config }),
 
             updateSection: (section, data) => set(produce((state) => {
@@ -386,7 +347,7 @@ export const useConfigStore = create(
             initDns: () => set(produce((state) => {
                 if (state.config && !state.config.dns) {
                     state.config.dns = {
-                        servers: ["1.1.1.1", "8.8.8.8"],
+                        servers: ["1.1.1.1", "8.8.8.8", "localhost"],
                         queryStrategy: "UseIP",
                         tag: "dns_inbound"
                     };
@@ -396,15 +357,14 @@ export const useConfigStore = create(
         {
             name: 'xray-config-storage',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({
+            partialize: (state) => ({ 
                 config: state.config,
-                remnawave: {
-                    url: state.remnawave.url,
-                    username: state.remnawave.username,
-                    token: state.remnawave.token,
+                remnawave: { 
+                    url: state.remnawave.url, 
+                    token: state.remnawave.token, 
                     connected: state.remnawave.connected,
-                    activeProfileUuid: state.remnawave.activeProfileUuid
-                }
+                    activeProfileUuid: state.remnawave.activeProfileUuid 
+                } 
             }),
         }
     )
