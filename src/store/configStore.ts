@@ -126,7 +126,7 @@ export interface PolicyConfig {
     };
 }
 
-export interface StatsConfig {}
+export interface StatsConfig { }
 
 export interface ReverseConfig {
     bridges?: { tag: string; domain: string }[];
@@ -157,7 +157,7 @@ export interface XrayConfig {
     reverse?: ReverseConfig;
     fakedns?: FakednsPool[];
     observatory?: ObservatoryConfig;
-    [key: string]: any; 
+    [key: string]: any;
 }
 
 // --- Интерфейсы Store ---
@@ -173,7 +173,7 @@ interface RemnawaveState {
 interface ConfigState {
     config: XrayConfig | null;
     setConfig: (config: XrayConfig | null) => void;
-    
+
     // Remnawave Actions
     remnawave: RemnawaveState;
     setRemnawaveCreds: (url: string, username: string, token: string) => void;
@@ -183,7 +183,7 @@ interface ConfigState {
     loadRemnawaveProfile: (uuid: string) => Promise<void>;
     saveToRemnawave: () => Promise<void>;
     disconnectRemnawave: () => void;
-    
+
     // Standard Actions
     updateSection: (section: keyof XrayConfig, data: any) => void;
     toggleSection: (section: keyof XrayConfig, defaultValue: any) => void;
@@ -247,7 +247,7 @@ export const useConfigStore = create(
                 set(produce((state) => {
                     state.remnawave.url = url;
                     state.remnawave.token = token;
-                    state.remnawave.username = "API Token User"; 
+                    state.remnawave.username = "API Token User";
                     state.remnawave.connected = true;
                 }));
                 toast.success("Connected via Token!");
@@ -299,7 +299,7 @@ export const useConfigStore = create(
                 }
             },
 
-// Находим метод saveToRemnawave в src/store/configStore.ts
+            // Находим метод saveToRemnawave в src/store/configStore.ts
 
             saveToRemnawave: async () => {
                 const { url, token, activeProfileUuid } = get().remnawave;
@@ -318,7 +318,7 @@ export const useConfigStore = create(
                 // --- НОВАЯ ВАЛИДАЦИЯ БАЛАНСИРОВЩИКОВ ---
                 const balancers = config.routing?.balancers || [];
                 const emptyBalancer = balancers.find(b => !b.selector || b.selector.length === 0);
-                
+
                 if (emptyBalancer) {
                     toast.error("Validation Failed", {
                         description: `Balancer "${emptyBalancer.tag}" has no target outbounds. This will break the node!`,
@@ -396,15 +396,15 @@ export const useConfigStore = create(
         {
             name: 'xray-config-storage',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({ 
+            partialize: (state) => ({
                 config: state.config,
-                remnawave: { 
-                    url: state.remnawave.url, 
+                remnawave: {
+                    url: state.remnawave.url,
                     username: state.remnawave.username,
-                    token: null, 
-                    connected: false, 
-                    activeProfileUuid: null 
-                } 
+                    token: state.remnawave.token,
+                    connected: state.remnawave.connected,
+                    activeProfileUuid: state.remnawave.activeProfileUuid
+                }
             }),
         }
     )

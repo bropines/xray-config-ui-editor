@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
 
 interface JsonFieldProps {
@@ -9,24 +9,17 @@ interface JsonFieldProps {
 }
 
 export const JsonField = ({ label, value, onChange, className = "" }: JsonFieldProps) => {
-    // Храним текстовое представление для редактора
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
+    
+    const isInternalUpdate = useRef(false);
 
-    // При изменении внешнего value обновляем текст, НО только если value реально отличается,
-    // чтобы курсор не прыгал при каждом нажатии клавиши
     useEffect(() => {
-        try {
-            const currentObj = JSON.parse(text || "null");
-            // Глубокое сравнение делать дорого, сравниваем строки
-            if (JSON.stringify(currentObj) !== JSON.stringify(value)) {
-                setText(JSON.stringify(value, null, 2));
-            }
-        } catch (e) {
-            // Если текущий текст невалиден, но пришло новое value извне, обновляем
+        if (!isInternalUpdate.current) {
             setText(JSON.stringify(value, null, 2));
         }
-    }, [value]); // Зависимость от value может быть триггером, но лучше использовать JSON.stringify(value) если объект меняется по ссылке
+        isInternalUpdate.current = false;
+    }, [value]);
 
     const handleEditorChange = (newVal: string | undefined) => {
         const v = newVal || "";
@@ -37,6 +30,7 @@ export const JsonField = ({ label, value, onChange, className = "" }: JsonFieldP
                 setError(false);
             } else {
                 const parsed = JSON.parse(v);
+                isInternalUpdate.current = true;
                 onChange(parsed);
                 setError(false);
             }
