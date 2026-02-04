@@ -1,8 +1,9 @@
 import React from 'react';
 import { Icon } from '../../ui/Icon';
 import { JsonField } from '../../ui/JsonField';
+import { validateBalancer } from '../../../utils/validator';
 
-export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) => {
+export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: any) => {
     if (!balancer) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 h-full">
@@ -12,7 +13,6 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
         );
     }
 
-    // Исправление: w-full вместо w-0
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full p-4 bg-slate-950">
@@ -22,12 +22,17 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
     }
 
     const currentSelector = balancer.selector || [];
+    
+    // Получаем ошибки валидации на лету для отображения
+    const errors = validateBalancer(balancer);
+    const selectorError = errors.find(e => e.field === 'selector');
+    const tagError = errors.find(e => e.field === 'tag');
 
-    const update = (field, val) => {
+    const update = (field: string, val: any) => {
         onChange({ ...balancer, [field]: val });
     };
 
-    const toggleSelector = (tag) => {
+    const toggleSelector = (tag: string) => {
         const index = currentSelector.indexOf(tag);
         if (index > -1) {
             const newSel = [...currentSelector];
@@ -38,53 +43,59 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
         }
     };
 
-    const checkMatch = (tag) => {
+    const checkMatch = (tag: string) => {
         const exact = currentSelector.includes(tag);
-        const prefix = currentSelector.find(s => tag.startsWith(s) && tag !== s);
+        const prefix = currentSelector.find((s: string) => tag.startsWith(s) && tag !== s);
         return { exact, prefix };
     };
 
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
-            {/* Добавляем КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ в самом верху */}
-            {balancer.selector?.length === 0 && (
+            
+            {/* КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ */}
+            {selectorError && (
                 <div className="p-4 rounded-xl bg-rose-900/20 border border-rose-500/50 text-rose-200 flex gap-3 items-start animate-pulse">
                     <Icon name="WarningOctagon" className="mt-1 shrink-0 text-xl" weight="fill" />
                     <div>
-                        <strong className="block text-sm">Empty Selector!</strong>
-                        <p className="text-xs opacity-80">Xray node will crash if you push a balancer without target outbounds. Select at least one tag below.</p>
+                        <strong className="block text-sm">Critical Config Error</strong>
+                        <p className="text-xs opacity-80">{selectorError.message}</p>
                     </div>
                 </div>
             )}
+
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
                 <div>
                     <label className="label-xs">Balancer Tag</label>
-                    <input className="input-base font-bold font-mono" value={balancer.tag} onChange={e => update('tag', e.target.value)} />
+                    <input 
+                        className={`input-base font-bold font-mono ${tagError ? 'border-rose-500 bg-rose-500/10' : ''}`} 
+                        value={balancer.tag} 
+                        onChange={e => update('tag', e.target.value)} 
+                    />
+                    {tagError && <span className="text-[10px] text-rose-500">{tagError.message}</span>}
                 </div>
                 <div>
                     <label className="label-xs">Strategy</label>
                     <select className="input-base font-mono" 
                         value={balancer.strategy?.type || "random"} 
-                        // Исправлено: сохраняем остальные поля strategy (если они есть), меняем только type
                         onChange={e => update('strategy', { ...balancer.strategy, type: e.target.value })}>
                         <option value="random">Random</option>
                         <option value="roundRobin">Round Robin</option>
                         <option value="leastPing">Least Ping</option>
-                        <option value="leastLoad">Least Load</option> {/* Добавлено */}
+                        <option value="leastLoad">Least Load</option>
                     </select>
                 </div>
             </div>
 
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50">
+            <div className={`bg-slate-900/50 p-4 rounded-xl border ${selectorError ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
                 <div className="flex justify-between items-end mb-4">
                     <div>
-                        <label className="label-xs block">Target Outbounds</label>
+                        <label className={`label-xs block ${selectorError ? 'text-rose-400' : ''}`}>Target Outbounds</label>
                         <span className="text-[10px] text-slate-500">Xray matches by prefix.</span>
                     </div>
                 </div>
                 
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto custom-scroll">
-                    {outboundTags.map(tag => {
+                    {outboundTags.map((tag: string) => {
                         const { exact, prefix } = checkMatch(tag);
                         return (
                             <div key={tag} onClick={() => toggleSelector(tag)} 
@@ -116,10 +127,10 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }) =>
                         />
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
-                        {currentSelector.map(sel => (
+                        {currentSelector.map((sel: string) => (
                             <span key={sel} className="text-[10px] px-2 py-1 rounded border flex items-center gap-1 bg-purple-900/50 border-purple-800 text-purple-300">
                                 {sel}
-                                <button onClick={() => update('selector', currentSelector.filter(s => s !== sel))} className="hover:text-white ml-1">×</button>
+                                <button onClick={() => update('selector', currentSelector.filter((s: string) => s !== sel))} className="hover:text-white ml-1">×</button>
                             </span>
                         ))}
                     </div>
