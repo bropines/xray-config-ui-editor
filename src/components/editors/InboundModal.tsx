@@ -3,14 +3,16 @@ import { Modal } from '../ui/Modal';
 import { JsonField } from '../ui/JsonField';
 import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
+import { toast } from 'sonner';
 
+// Валидатор
+import { validateOutbound, type ValidationError } from '../../utils/validator';
 // Суб-компоненты
 import { InboundGeneral } from './inbound/InboundGeneral';
 import { InboundClients } from './inbound/InboundClients';
 import { InboundSniffing } from './inbound/InboundSniffing';
 
-export const InboundModal = ({ data, onSave, onClose }) => {
-    // Начальное состояние
+export const InboundModal = ({ data, onSave, onClose }: any) => {
     const [local, setLocal] = useState(data || { 
         tag: `in-${Math.floor(Math.random()*1000)}`, 
         port: 10808, 
@@ -21,9 +23,8 @@ export const InboundModal = ({ data, onSave, onClose }) => {
     });
 
     const [rawMode, setRawMode] = useState(false);
+    const [errors, setErrors] = useState<ValidationError[]>([]);
     
-    // Универсальная функция обновления
-    // Поддерживает путь ['settings', 'auth'] или просто 'port'
     const handleUpdate = (path: string | string[], value: any) => {
         const newObj = JSON.parse(JSON.stringify(local));
         
@@ -39,9 +40,10 @@ export const InboundModal = ({ data, onSave, onClose }) => {
         }
         
         setLocal(newObj);
+        // Очищаем ошибки при изменении
+        if (errors.length > 0) setErrors([]);
     };
 
-    // Смена протокола с установкой дефолтов
     const handleProtocolChange = (proto: string) => {
         const newObj = { ...local, protocol: proto, settings: {} };
         const uuid = crypto.randomUUID();
@@ -58,7 +60,22 @@ export const InboundModal = ({ data, onSave, onClose }) => {
             newObj.settings = { auth: "noauth", udp: true };
         }
         setLocal(newObj);
+        setErrors([]);
     };
+
+    const handleSave = () => {
+        // Валидация перед сохранением
+        const validationErrors = validateInbound(local);
+        if (validationErrors.length > 0) {
+            setErrors(validationErrors);
+            toast.error("Please fix validation errors before saving");
+            return;
+        }
+        onSave(local);
+    };
+
+    // Хелпер для поиска ошибки конкретного поля
+    const getError = (field: string) => errors.find(e => e.field === field)?.message;
 
     if (rawMode) return (
         <Modal 
@@ -77,31 +94,42 @@ export const InboundModal = ({ data, onSave, onClose }) => {
         <Modal 
             title="Inbound Editor" 
             onClose={onClose} 
-            onSave={() => onSave(local)}
+            onSave={handleSave}
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(true)} icon="Code">JSON</Button>}
         >
             <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
-                {/* 1. General Info */}
+                {/* Блок ошибок */}
+                {errors.length > 0 && (
+                    <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-lg text-rose-200 text-xs animate-in fade-in slide-in-from-top-2">
+                        <p className="font-bold mb-1">Validation Errors:</p>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                            {errors.map((err, i) => <li key={i}>{err.message}</li>)}
+                        </ul>
+                    </div>
+                )}
+
                 <InboundGeneral 
                     inbound={local} 
                     onChange={handleUpdate} 
-                    onProtocolChange={handleProtocolChange} 
+                    onProtocolChange={handleProtocolChange}
+                    // Передаем ошибки в компонент
+                    errors={{
+                        tag: getError('tag'),
+                        port: getError('port')
+                    }}
                 />
 
-                {/* 2. Clients */}
                 <InboundClients 
                     inbound={local} 
                     onChange={handleUpdate} 
                 />
 
-                {/* 3. Transport (Shared) */}
                 <TransportSettings 
                     streamSettings={local.streamSettings} 
                     onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
                     isClient={false} 
                 />
 
-                {/* 4. Sniffing */}
                 <InboundSniffing 
                     sniffing={local.sniffing} 
                     onChange={handleUpdate} 
