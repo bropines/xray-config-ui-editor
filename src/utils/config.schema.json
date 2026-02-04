@@ -1,0 +1,486 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ConfigObject",
+  "definitions": {
+    "ConfigObject": {
+      "type": "object",
+      "title": "Xray-core Configuration",
+      "description": "Root configuration object for Xray.",
+      "additionalProperties": false,
+      "properties": {
+        "$schema": { 
+          "type": "string",
+          "description": "URL to the JSON Schema (this file) for validation."
+        },
+        "log": { 
+          "$ref": "#/definitions/LogObject",
+          "description": "Controls Xray logging behavior."
+        },
+        "api": { 
+          "$ref": "#/definitions/ApiObject",
+          "description": "Configuration for the remote control API."
+        },
+        "metrics": { 
+          "$ref": "#/definitions/MetricsObject",
+          "description": "Configuration for Prometheus metrics export."
+        },
+        "dns": { 
+          "$ref": "#/definitions/DnsObject",
+          "description": "Internal DNS server settings for domain resolution."
+        },
+        "routing": { 
+          "$ref": "#/definitions/RoutingObject",
+          "description": "Routing rules to direct traffic to different outbounds."
+        },
+        "policy": { 
+          "$ref": "#/definitions/PolicyObject",
+          "description": "Policies for user levels and system-wide timeouts."
+        },
+        "inbounds": {
+          "type": "array",
+          "description": "List of input proxies (servers) Xray listens on.",
+          "items": { "$ref": "#/definitions/InboundObject" }
+        },
+        "outbounds": {
+          "type": "array",
+          "description": "List of output proxies (clients/destinations) Xray sends traffic to.",
+          "items": { "$ref": "#/definitions/OutboundObject" }
+        },
+        "transport": { 
+          "$ref": "#/definitions/TransportObject",
+          "description": "Deprecated global transport settings. Use streamSettings within inbounds/outbounds instead."
+        },
+        "stats": { 
+          "$ref": "#/definitions/StatsObject",
+          "description": "Must be empty object '{}' to enable statistics collection."
+        },
+        "reverse": { 
+          "$ref": "#/definitions/ReverseObject",
+          "description": "Reverse proxy configuration (e.g. for traversing NAT)."
+        },
+        "fakedns": { 
+          "$ref": "#/definitions/FakeDnsObject",
+          "description": "Configuration for returning fake IPs to clients to sniff domains later."
+        },
+        "observatory": { 
+          "$ref": "#/definitions/ObservatoryObject",
+          "description": "Background connection health monitoring."
+        },
+        "burstObservatory": { 
+          "$ref": "#/definitions/BurstObservatoryObject",
+          "description": "Configuration for burst testing multiple outbounds."
+        }
+      }
+    },
+    "LogObject": {
+      "type": "object",
+      "properties": {
+        "access": { 
+          "type": "string", 
+          "description": "Path to access log file. Use 'none' to disable." 
+        },
+        "error": { 
+          "type": "string", 
+          "description": "Path to error log file. Use 'none' to disable." 
+        },
+        "loglevel": { 
+          "enum": ["debug", "info", "warning", "error", "none"],
+          "description": "Minimum severity level to log."
+        },
+        "dnsLog": { 
+          "type": "boolean",
+          "description": "Whether to log DNS queries."
+        },
+        "maskAddress": { 
+          "type": "string",
+          "description": "Mask IP addresses in logs (e.g., 'half' hides part of the IP)."
+        }
+      }
+    },
+    "ApiObject": {
+      "type": "object",
+      "properties": {
+        "tag": { "type": "string", "description": "Outbound tag for API traffic." },
+        "listen": { "type": "string", "description": "Address to listen for API commands (e.g. 127.0.0.1:10085)." },
+        "services": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "List of enabled API services (e.g. 'HandlerService', 'LoggerService', 'StatsService')."
+        }
+      }
+    },
+    "MetricsObject": {
+      "type": "object",
+      "properties": {
+        "tag": { "type": "string", "description": "Tag for the metrics outbound." },
+        "listen": { "type": "string", "description": "Address to listen for Prometheus scrapes (e.g. 127.0.0.1:10085)." }
+      }
+    },
+    "DnsObject": {
+      "type": "object",
+      "description": "Xray's internal DNS server configuration.",
+      "properties": {
+        "servers": {
+          "type": "array",
+          "description": "List of DNS servers to use.",
+          "items": {
+            "anyOf": [
+              { 
+                "type": "string", 
+                "description": "Simple string address (e.g., '8.8.8.8', 'https://dns.google/dns-query')." 
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "address": { "type": "string" },
+                  "port": { "type": "integer" },
+                  "domains": { 
+                    "type": "array", 
+                    "items": { "type": "string" },
+                    "description": "List of domains to use this server for (e.g. 'geosite:cn')."
+                  },
+                  "expectIPs": { 
+                    "type": "array", 
+                    "items": { "type": "string" },
+                    "description": "List of expected IP ranges (e.g. 'geoip:cn')."
+                  },
+                  "skipFallback": { "type": "boolean" }
+                }
+              }
+            ]
+          }
+        },
+        "hosts": { 
+          "type": "object",
+          "description": "Static hosts mapping (like /etc/hosts)."
+        },
+        "clientIp": { 
+          "type": "string", 
+          "description": "Client IP used when making DNS queries (for ECS)."
+        },
+        "tag": { "type": "string", "description": "Routing tag for DNS queries." },
+        "queryStrategy": { 
+          "enum": ["UseIP", "UseIPv4", "UseIPv6"],
+          "description": "Preferred IP strategy for DNS queries."
+        },
+        "disableCache": { "type": "boolean" },
+        "disableFallback": { "type": "boolean" },
+        "disableFallbackIfMatch": { "type": "boolean" }
+      }
+    },
+    "RoutingObject": {
+      "type": "object",
+      "properties": {
+        "domainStrategy": { 
+          "enum": ["AsIs", "IPIfNonMatch", "IPOnDemand"],
+          "description": "Strategy for resolving domains during routing."
+        },
+        "rules": {
+          "type": "array",
+          "description": "List of routing rules.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "const": "field" },
+              "domain": { 
+                "type": "array", 
+                "items": { "type": "string" },
+                "description": "Domains to match (e.g. 'geosite:google')."
+              },
+              "ip": { 
+                "type": "array", 
+                "items": { "type": "string" },
+                "description": "IPs to match (e.g. 'geoip:cn', '192.168.0.0/16')."
+              },
+              "port": { "type": "string", "description": "Ports to match (e.g. '443', '0-1024')." },
+              "network": { "type": "string", "description": "Networks to match (e.g. 'tcp,udp')." },
+              "source": { "type": "array", "items": { "type": "string" } },
+              "user": { "type": "array", "items": { "type": "string" } },
+              "inboundTag": { "type": "array", "items": { "type": "string" } },
+              "protocol": { "type": "array", "items": { "type": "string" } },
+              "outboundTag": { "type": "string", "description": "Target outbound tag if matched." },
+              "balancerTag": { "type": "string", "description": "Target balancer tag if matched." }
+            }
+          }
+        },
+        "balancers": {
+          "type": "array",
+          "description": "Load balancers for multiple outbounds.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tag": { "type": "string" },
+              "selector": { 
+                "type": "array", 
+                "items": { "type": "string" },
+                "description": "Tags of outbounds to balance across."
+              }
+            }
+          }
+        }
+      }
+    },
+    "InboundObject": {
+      "type": "object",
+      "properties": {
+        "tag": { "type": "string", "description": "Identifier for this inbound (used in routing)." },
+        "port": { 
+          "anyOf": [{ "type": "integer" }, { "type": "string" }],
+          "description": "Port to listen on (integer or range string)."
+        },
+        "listen": { "type": "string", "description": "IP address to listen on (e.g., 0.0.0.0)." },
+        "protocol": {
+          "enum": ["dokodemo-door", "http", "socks", "vless", "vmess", "trojan", "shadowsocks", "wireguard"],
+          "description": "Inbound protocol."
+        },
+        "settings": { 
+          "type": "object",
+          "description": "Protocol-specific settings (clients, auth, etc.)."
+        },
+        "streamSettings": { "$ref": "#/definitions/StreamSettingsObject" },
+        "sniffing": {
+          "type": "object",
+          "description": "Traffic sniffing settings to detect real destination domains.",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "destOverride": { 
+              "type": "array", 
+              "items": { "type": "string" },
+              "description": "What to override with sniffed result (e.g. ['http', 'tls', 'quic'])."
+            },
+            "metadataOnly": { "type": "boolean" },
+            "routeOnly": { "type": "boolean" }
+          }
+        },
+        "allocate": {
+          "type": "object",
+          "description": "Port allocation settings.",
+          "properties": {
+            "strategy": { "type": "string" },
+            "refresh": { "type": "integer" },
+            "concurrency": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["protocol"]
+    },
+    "OutboundObject": {
+      "type": "object",
+      "properties": {
+        "tag": { "type": "string", "description": "Identifier for this outbound (used in routing)." },
+        "sendThrough": { "type": "string", "description": "Local IP to bind for outgoing connections." },
+        "protocol": {
+          "enum": ["freedom", "blackhole", "vless", "vmess", "trojan", "shadowsocks", "socks", "http", "wireguard", "dns", "loopback"],
+          "description": "Outbound protocol."
+        },
+        "settings": {
+          "type": "object",
+          "description": "Protocol specific settings (server address, users, etc.).",
+          "properties": {
+            "vnext": {
+              "type": "array",
+              "description": "Used by VLESS/VMess to define remote servers.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "address": { "type": "string", "description": "Remote server address." },
+                  "port": { "type": "integer", "description": "Remote server port." },
+                  "users": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "description": "UUID or password." },
+                        "encryption": { "type": "string", "description": "Usually 'none' for VLESS." },
+                        "flow": { "type": "string", "description": "Flow control (e.g. 'xtls-rprx-vision')." },
+                        "level": { "type": "integer", "description": "User policy level." }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "servers": { "type": "array", "description": "Used by Shadowsocks/Trojan." },
+            "response": { "type": "object", "description": "Used by Blackhole." }
+          }
+        },
+        "streamSettings": { "$ref": "#/definitions/StreamSettingsObject" },
+        "proxySettings": {
+          "type": "object",
+          "description": "Configuration for proxy chaining (sending this outbound through another).",
+          "properties": {
+            "tag": { "type": "string", "description": "Tag of the next proxy in the chain." },
+            "transportLayer": { "type": "boolean" }
+          }
+        },
+        "mux": {
+          "type": "object",
+          "description": "Multiplexing settings to send multiple requests over one TCP connection.",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "concurrency": { "type": "integer", "description": "Max concurrent streams per connection (e.g. 8)." },
+            "xudpConcurrency": { "type": "integer" },
+            "xudpProxyUDP443": { "type": "string" }
+          }
+        }
+      },
+      "required": ["protocol"]
+    },
+    "StreamSettingsObject": {
+      "type": "object",
+      "description": "Transport layer configuration.",
+      "properties": {
+        "network": { 
+          "enum": ["tcp", "kcp", "ws", "http", "domainsocket", "quic", "grpc", "xhttp", "raw"],
+          "description": "Underlying network transport. 'raw' is often used with REALITY."
+        },
+        "security": { 
+          "enum": ["none", "tls", "xtls", "reality"],
+          "description": "Transport layer security."
+        },
+        "tlsSettings": {
+          "type": "object",
+          "description": "Settings for standard TLS.",
+          "properties": {
+            "serverName": { "type": "string", "description": "SNI (Server Name Indication)." },
+            "allowInsecure": { "type": "boolean", "description": "Allow self-signed or invalid certs (insecure)." },
+            "alpn": { "type": "array", "items": { "type": "string" } },
+            "fingerprint": { "type": "string", "description": "uTLS fingerprint (chrome, randomized, etc.)." }
+          }
+        },
+        "realitySettings": {
+          "type": "object",
+          "description": "Settings for REALITY security.",
+          "properties": {
+            "serverName": { "type": "string", "description": "SNI of the real website being mimicked." },
+            "publicKey": { "type": "string", "description": "X25519 Public Key (Client side)." },
+            "privateKey": { "type": "string", "description": "X25519 Private Key (Server side)." },
+            "shortId": { "type": "string", "description": "Short hex string for client distinction." },
+            "fingerprint": { "type": "string", "description": "uTLS fingerprint (e.g. chrome, ios)." },
+            "spiderX": { "type": "string", "description": "Path for the spider bot to crawl." }
+          }
+        },
+        "tcpSettings": {
+          "type": "object",
+          "description": "Settings for TCP transport.",
+          "properties": {
+            "header": { "type": "object", "description": "HTTP Obfuscation settings." },
+            "acceptProxyProtocol": { "type": "boolean" }
+          }
+        },
+        "kcpSettings": { "type": "object", "description": "Settings for mKCP transport." },
+        "wsSettings": {
+          "type": "object",
+          "description": "Settings for WebSocket transport.",
+          "properties": {
+            "path": { "type": "string" },
+            "headers": { "type": "object" }
+          }
+        },
+        "httpSettings": {
+          "type": "object",
+          "description": "Settings for HTTP/2 transport.",
+          "properties": {
+            "host": { "type": "array", "items": { "type": "string" } },
+            "path": { "type": "string" }
+          }
+        },
+        "quicSettings": { "type": "object" },
+        "grpcSettings": {
+          "type": "object",
+          "description": "Settings for gRPC transport.",
+          "properties": {
+            "serviceName": { "type": "string" },
+            "multiMode": { "type": "boolean" }
+          }
+        },
+        "xhttpSettings": {
+           "type": "object",
+           "description": "Settings for XHTTP transport (Splits large packets to mimic HTTP).",
+           "properties": {
+             "path": { "type": "string" },
+             "host": { "type": "string" },
+             "headers": { "type": "object" },
+             "mode": { "type": "string" },
+             "extra": { "type": "object" }
+           }
+        },
+        "sockopt": {
+          "type": "object",
+          "description": "Low-level socket options.",
+          "properties": {
+            "mark": { "type": "integer" },
+            "tcpFastOpen": { "type": "boolean" },
+            "tproxy": { "enum": ["redirect", "tproxy", "off"] }
+          }
+        }
+      }
+    },
+    "TransportObject": {
+      "type": "object",
+      "description": "Global transport settings (Deprecated, prefer streamSettings per inbound/outbound)."
+    },
+    "StatsObject": {
+      "type": "object",
+      "description": "Empty object enabling statistics."
+    },
+    "PolicyObject": {
+      "type": "object",
+      "properties": {
+        "levels": { 
+          "type": "object",
+          "description": "User level policies (key is level number '0', '1').",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+               "handshake": { "type": "integer", "description": "Handshake timeout in seconds." },
+               "connIdle": { "type": "integer", "description": "Connection idle timeout in seconds." },
+               "uplinkOnly": { "type": "integer", "description": "Time before closing connection after uplink closes." },
+               "downlinkOnly": { "type": "integer", "description": "Time before closing connection after downlink closes." },
+               "statsUserUplink": { "type": "boolean" },
+               "statsUserDownlink": { "type": "boolean" }
+            }
+          }
+        },
+        "system": { 
+          "type": "object",
+          "properties": {
+            "statsInboundUplink": { "type": "boolean" },
+            "statsInboundDownlink": { "type": "boolean" },
+            "statsOutboundUplink": { "type": "boolean" },
+            "statsOutboundDownlink": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "ReverseObject": {
+      "type": "object",
+      "properties": {
+        "bridges": { "type": "array" },
+        "portals": { "type": "array" }
+      }
+    },
+    "FakeDnsObject": {
+      "type": "object",
+      "properties": {
+        "ipPool": { "type": "string", "description": "CIDR range of fake IPs (e.g. 198.18.0.0/15)." },
+        "poolSize": { "type": "integer", "description": "Number of IPs to remember." }
+      }
+    },
+    "ObservatoryObject": {
+      "type": "object",
+      "properties": {
+        "subjectSelector": { "type": "array", "items": { "type": "string" }, "description": "Tags of outbounds to monitor." },
+        "probeURL": { "type": "string", "description": "URL to test connectivity against." },
+        "probeInterval": { "type": "string", "description": "Interval between probes (e.g. '1m')." }
+      }
+    },
+    "BurstObservatoryObject": {
+      "type": "object",
+      "properties": {
+        "subjectSelector": { "type": "array", "items": { "type": "string" } },
+        "pingConfig": { "type": "object" }
+      }
+    }
+  }
+}
