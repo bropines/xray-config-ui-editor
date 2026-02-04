@@ -23,13 +23,13 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
     const { config } = useConfigStore();
     const allOutboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter((t: any) => t);
 
-    const [local, setLocal] = useState(data || { 
-        tag: "out-" + Math.floor(Math.random()*1000), 
-        protocol: "freedom", 
-        settings: {}, 
-        streamSettings: {} 
+    const [local, setLocal] = useState(data || {
+        tag: "out-" + Math.floor(Math.random() * 1000),
+        protocol: "freedom",
+        settings: {},
+        streamSettings: {}
     });
-    
+
     const [rawMode, setRawMode] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
 
@@ -40,24 +40,32 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
         toast.success("Configuration imported successfully");
     };
 
+    // Внутри OutboundModal.tsx измени функцию handleUpdate на эту версию:
+
     const handleUpdate = (path: string | string[], value: any) => {
+        // Создаем глубокую копию объекта, чтобы не наткнуться на Read-only свойства
         const newObj = JSON.parse(JSON.stringify(local));
-        
+
         if (Array.isArray(path)) {
             let curr = newObj;
             for (let i = 0; i < path.length - 1; i++) {
-                if (!curr[path[i]]) curr[path[i]] = {};
-                curr = curr[path[i]];
+                const key = path[i];
+                // Если узла нет или это не объект — создаем объект
+                if (!curr[key] || typeof curr[key] !== 'object') {
+                    curr[key] = {};
+                }
+                curr = curr[key];
             }
+            // Устанавливаем финальное значение
             curr[path[path.length - 1]] = value;
         } else {
             if (path === 'protocol') {
                 newObj.settings = {};
-                newObj.streamSettings = {};
+                newObj.streamSettings = { network: "tcp", security: "none" };
             }
             newObj[path] = value;
         }
-        
+
         setLocal(newObj);
         if (errors.length > 0) setErrors([]);
     };
@@ -81,8 +89,8 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
             return;
         }
         if (!navigator.clipboard) {
-             // Fallback logic omitted for brevity
-             return;
+            // Fallback logic omitted for brevity
+            return;
         }
         navigator.clipboard.writeText(link).then(() => {
             toast.success("Link copied to clipboard!");
@@ -92,9 +100,9 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
     const getError = (field: string) => errors.find(e => e.field === field)?.message;
 
     if (rawMode) return (
-        <Modal 
-            title="Outbound JSON" 
-            onClose={onClose} 
+        <Modal
+            title="Outbound JSON"
+            onClose={onClose}
             onSave={() => onSave(local)}
             extraButtons={
                 <div className="flex gap-2">
@@ -111,9 +119,9 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
     );
 
     return (
-        <Modal 
-            title="Outbound Editor" 
-            onClose={onClose} 
+        <Modal
+            title="Outbound Editor"
+            onClose={onClose}
             onSave={handleSave}
             extraButtons={
                 <div className="flex gap-2">
@@ -123,7 +131,7 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
             }
         >
             <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
-                
+
                 {errors.length > 0 && (
                     <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-lg text-rose-200 text-xs">
                         <p className="font-bold mb-1">Validation Errors:</p>
@@ -135,31 +143,31 @@ export const OutboundModal = ({ data, onSave, onClose }: any) => {
 
                 <OutboundImport onImport={handleImport} />
 
-                <OutboundGeneral 
-                    outbound={local} 
+                <OutboundGeneral
+                    outbound={local}
                     onChange={handleUpdate}
                     errors={{ tag: getError('tag') }}
                 />
 
-                <OutboundServer 
-                    outbound={local} 
+                <OutboundServer
+                    outbound={local}
                     onChange={handleUpdate}
-                    errors={{ 
+                    errors={{
                         address: getError('address'),
                         port: getError('port')
                     }}
                 />
 
-                <OutboundProxyMux 
+                <OutboundProxyMux
                     outbound={local}
                     onChange={handleUpdate}
                     allTags={allOutboundTags}
                 />
 
-                <TransportSettings 
-                    streamSettings={local.streamSettings} 
+                <TransportSettings
+                    streamSettings={local.streamSettings}
                     onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
-                    isClient={true} 
+                    isClient={true}
                 />
             </div>
         </Modal>
