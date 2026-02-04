@@ -10,7 +10,8 @@ import { toast } from 'sonner';
 // Утилиты
 import { parseXrayLink } from '../../utils/link-parser';
 import { generateLink } from '../../utils/link-generator';
-import { validateOutbound, type ValidationError } from '../../utils/validator';
+import { validateOutbound } from '../../utils/validator';
+import type { ValidationError } from '../../utils/validator';
 
 // Суб-компоненты
 import { OutboundImport } from './outbound/OutboundImport';

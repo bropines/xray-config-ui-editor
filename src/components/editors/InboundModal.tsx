@@ -5,8 +5,10 @@ import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
 import { toast } from 'sonner';
 
-// Валидатор
-import { validateOutbound, type ValidationError } from '../../utils/validator';
+// Импортируем функцию как обычное значение (без type)
+import { validateInbound } from '../../utils/validator'; 
+// Импортируем интерфейс только как тип
+import type { ValidationError } from '../../utils/validator';
 // Суб-компоненты
 import { InboundGeneral } from './inbound/InboundGeneral';
 import { InboundClients } from './inbound/InboundClients';
