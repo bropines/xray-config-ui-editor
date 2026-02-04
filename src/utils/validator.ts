@@ -40,26 +40,38 @@ export const validateInbound = (data: any): ValidationError[] => {
 export const validateOutbound = (data: any): ValidationError[] => {
     const errors: ValidationError[] = [];
 
+    // 1. Проверка тега
     if (!data.tag || data.tag.trim() === "") {
         errors.push({ field: "tag", message: "Tag is required" });
     }
 
+    // 2. Проверка прокси-протоколов
     if (['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(data.protocol)) {
-        const settings = data.settings;
-        let server;
+        const settings = data.settings || {};
+        
+        // Ищем адрес и порт везде, где они могут быть
+        let addr = "";
+        let port: number | string = 0;
 
-        if (data.protocol === 'shadowsocks') {
-            server = settings?.servers?.[0];
-        } else if (data.protocol === 'socks' || data.protocol === 'http') {
-             server = settings?.servers?.[0] || settings; 
+        if (Array.isArray(settings.vnext) && settings.vnext[0]) {
+            // Стандарт VLESS/VMess
+            addr = settings.vnext[0].address;
+            port = settings.vnext[0].port;
+        } else if (Array.isArray(settings.servers) && settings.servers[0]) {
+            // Стандарт Trojan/SS/Socks
+            addr = settings.servers[0].address;
+            port = settings.servers[0].port;
         } else {
-            server = settings?.vnext?.[0];
+            // ПЛОСКИЙ ФОРМАТ (твой случай)
+            addr = settings.address;
+            port = settings.port;
         }
 
-        if (!server?.address || server.address.trim() === "") {
+        // Сама проверка накопленных данных
+        if (!addr || addr.toString().trim() === "") {
             errors.push({ field: "address", message: "Remote address is required" });
         }
-        if (!server?.port || server.port === 0) {
+        if (!port || port === 0 || port === "0") {
             errors.push({ field: "port", message: "Remote port is required" });
         }
     }
