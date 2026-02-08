@@ -6,14 +6,13 @@ interface JsonEditorProps {
     value: string;
     onChange: (value: string | undefined) => void;
     readOnly?: boolean;
-    schemaMode?: 'full' | 'inbound' | 'outbound' | 'rule' | 'dns' | 'balancer'; // Новый проп
+    schemaMode?: 'full' | 'inbound' | 'outbound' | 'rule' | 'dns' | 'balancer' | 'routing'; 
 }
 
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
     const editorRef = useRef<any>(null);
 
     const handleEditorWillMount = (monaco: any) => {
-        // Мы передаем definitions во все подсхемы, чтобы $ref работали
         const commonDefinitions = xraySchema.definitions;
 
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
@@ -26,48 +25,59 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     fileMatch: ["/config.json"], 
                     schema: xraySchema,
                 },
-                // 2. Отдельный Inbound
+                // 2. МАССИВ Inbounds (для модалки секции)
                 {
-                    uri: "xray://schemas/inbound.json",
-                    fileMatch: ["/inbound.json"],
+                    uri: "xray://schemas/inbounds.json",
+                    fileMatch: ["/inbounds.json"],
                     schema: {
-                        "$ref": "#/definitions/InboundObject",
+                        "type": "array",
+                        "items": { "$ref": "xray://schemas/config.json#/definitions/InboundObject" },
                         "definitions": commonDefinitions
                     }
                 },
-                // 3. Отдельный Outbound
+                // 3. МАССИВ Outbounds (для модалки секции)
                 {
-                    uri: "xray://schemas/outbound.json",
-                    fileMatch: ["/outbound.json"],
+                    uri: "xray://schemas/outbounds.json",
+                    fileMatch: ["/outbounds.json"],
                     schema: {
-                        "$ref": "#/definitions/OutboundObject",
+                        "type": "array",
+                        "items": { "$ref": "xray://schemas/config.json#/definitions/OutboundObject" },
                         "definitions": commonDefinitions
                     }
                 },
-                // 4. Routing Rule (Правило)
+                // 4. Одиночное правило (для RuleEditor внутри менеджера)
                 {
                     uri: "xray://schemas/rule.json",
                     fileMatch: ["/rule.json"],
                     schema: {
-                        "$ref": "#/definitions/RoutingRule",
+                        "$ref": "xray://schemas/config.json#/definitions/RoutingRule",
                         "definitions": commonDefinitions
                     }
                 },
-                 // 5. DNS
-                 {
+                // 5. Весь объект Routing (для модалки секции)
+                {
+                    uri: "xray://schemas/routing.json",
+                    fileMatch: ["/routing.json"],
+                    schema: {
+                        "$ref": "xray://schemas/config.json#/definitions/RoutingObject",
+                        "definitions": commonDefinitions
+                    }
+                },
+                // 6. Весь объект DNS
+                {
                     uri: "xray://schemas/dns.json",
                     fileMatch: ["/dns.json"],
                     schema: {
-                        "$ref": "#/definitions/DnsObject",
+                        "$ref": "xray://schemas/config.json#/definitions/DnsObject",
                         "definitions": commonDefinitions
                     }
                 },
-                 // 6. Balancer
-                 {
+                // 7. Одиночный Balancer
+                {
                     uri: "xray://schemas/balancer.json",
                     fileMatch: ["/balancer.json"],
                     schema: {
-                        "$ref": "#/definitions/BalancerObject",
+                        "$ref": "xray://schemas/config.json#/definitions/BalancerObject",
                         "definitions": commonDefinitions
                     }
                 }
@@ -77,15 +87,17 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
     const handleEditorDidMount = (editor: any) => {
         editorRef.current = editor;
-        setTimeout(() => editor.layout(), 100);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => editor.layout());
+        }
     };
 
-    // Определяем имя "виртуального файла" на основе режима
     const getFilePath = () => {
         switch(schemaMode) {
-            case 'inbound': return '/inbound.json';
-            case 'outbound': return '/outbound.json';
+            case 'inbound': return '/inbounds.json';
+            case 'outbound': return '/outbounds.json';
             case 'rule': return '/rule.json';
+            case 'routing': return '/routing.json';
             case 'dns': return '/dns.json';
             case 'balancer': return '/balancer.json';
             default: return '/config.json';
@@ -97,7 +109,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             <Editor
                 height="100%"
-                path={getFilePath()} // <--- МАГИЯ ЗДЕСЬ: Monaco подберет схему по имени файла
+                path={getFilePath()}
                 defaultLanguage="json"
                 theme="vs-dark"
                 value={value}
@@ -118,14 +130,6 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     fixedOverflowWidgets: true,
                 }}
             />
-            <style>{`
-                .monaco-editor-container .monaco-editor .view-line {
-                    line-height: 20px !important;
-                }
-                .monaco-editor .decorationsOverviewRuler {
-                    display: none !important;
-                }
-            `}</style>
         </div>
     );
 };
