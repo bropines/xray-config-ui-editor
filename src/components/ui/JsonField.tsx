@@ -6,12 +6,12 @@ interface JsonFieldProps {
     value: any;
     onChange: (val: any) => void;
     className?: string;
+    schemaMode?: 'full' | 'inbound' | 'outbound' | 'rule' | 'dns' | 'balancer'; // Новый проп
 }
 
-export const JsonField = ({ label, value, onChange, className = "" }: JsonFieldProps) => {
+export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full' }: JsonFieldProps) => {
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
-    
     const isInternalUpdate = useRef(false);
 
     useEffect(() => {
@@ -48,7 +48,11 @@ export const JsonField = ({ label, value, onChange, className = "" }: JsonFieldP
                 </label>
             )}
             <div className={`flex-1 min-h-[300px] rounded-lg overflow-hidden transition-all ${error ? 'ring-1 ring-rose-500' : ''}`}>
-                <JsonEditor value={text} onChange={handleEditorChange} />
+                <JsonEditor 
+                    value={text} 
+                    onChange={handleEditorChange} 
+                    schemaMode={schemaMode} // Передаем режим
+                />
             </div>
         </div>
     );
