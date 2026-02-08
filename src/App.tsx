@@ -48,14 +48,18 @@ export const App = () => {
 
     // Локальные стейты UI
     const [modal, setModal] = useState<{ type: string | null, data: any, index: number | null }>({ type: null, data: null, index: null });
+    
+    // Стейт для частичного JSON
+    const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({ 
+        open: false, title: "", section: "", data: null, schemaMode: "full" 
+    });
+
+    // Стейт для поиска по аутбаундам
+    const [obSearch, setObSearch] = useState("");
+
     const [rawMode, setRawMode] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
-
-    // Стейт для модалки частичного JSON
-    const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any }>({ 
-        open: false, title: "", section: "", data: null 
-    });
 
     // --- File Handlers ---
 
@@ -85,7 +89,7 @@ export const App = () => {
         a.click();
     };
 
-    // --- Drag & Drop Handlers ---
+    // --- Drag & Drop ---
 
     const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
     const handleDragLeave = (e: React.DragEvent) => {
@@ -97,7 +101,7 @@ export const App = () => {
         if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
     };
 
-    // --- Modal Callbacks ---
+    // --- Modal Helpers ---
 
     const handleSaveModal = (data: any) => {
         const { type, index } = modal;
@@ -112,24 +116,30 @@ export const App = () => {
         setModal({ type: null, data: null, index: null });
     };
 
-    // Callbacks для Section JSON
-    const openSectionJson = (section: string, title: string) => {
-        setSectionModal({
-            open: true,
-            title: title + " (JSON)",
-            section,
-            data: config ? config[section] : (section === 'inbounds' || section === 'outbounds' ? [] : {})
-        });
-    };
-
     const handleSaveSection = (newData: any) => {
         updateSection(sectionModal.section as any, newData);
         setSectionModal({ ...sectionModal, open: false });
     };
 
+    const openSectionJson = (section: string, title: string) => {
+        const modeMap: Record<string, string> = {
+            inbounds: 'inbound',
+            outbounds: 'outbound',
+            routing: 'routing',
+            dns: 'dns'
+        };
+        setSectionModal({
+            open: true,
+            title: title + " (JSON)",
+            section,
+            data: config ? config[section] : (section === 'inbounds' || section === 'outbounds' ? [] : {}),
+            schemaMode: modeMap[section] || 'full'
+        });
+    };
+
     const presets = getPresets();
 
-    // Валидация для хедера (примерная)
+    // --- Validation for Header ---
     const getFullConfigValidation = () => {
         if (!config) return [];
         let allErrors: string[] = [];
@@ -145,6 +155,27 @@ export const App = () => {
         return allErrors;
     };
     const configErrors = getFullConfigValidation();
+
+    // --- Filter Outbounds ---
+    const filteredOutbounds = (config?.outbounds || []).map((ob: any, i: number) => ({ ...ob, i }))
+        .filter((ob: any) => {
+            const q = obSearch.toLowerCase();
+            if (!q) return true;
+            
+            const settings = ob.settings || {};
+            const vnext = settings.vnext?.[0] || {};
+            const server = settings.servers?.[0] || settings;
+            
+            const address = (vnext.address || server.address || "").toLowerCase();
+            const key = (vnext.users?.[0]?.id || server.password || server.id || "").toLowerCase();
+            
+            return (
+                ob.tag?.toLowerCase().includes(q) ||
+                ob.protocol.toLowerCase().includes(q) ||
+                address.includes(q) ||
+                key.includes(q)
+            );
+        });
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col xl:h-screen xl:overflow-hidden h-auto"
@@ -178,7 +209,6 @@ export const App = () => {
                 </div>
 
                 <div className="flex gap-2 items-center">
-                    {/* Remnawave Controls */}
                     {remnawave.connected ? (
                         <div className="flex items-center gap-1 bg-indigo-900/50 border border-indigo-500/50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg mr-2">
                             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)] mr-2"></div>
@@ -186,7 +216,6 @@ export const App = () => {
 
                             <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
 
-                            {/* Кнопка смены профиля */}
                             <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={() => setRemnawaveModalOpen(true)} title="Switch Profile">
                                 <Icon name="ListDashes" weight="bold" />
                             </Button>
@@ -320,7 +349,7 @@ export const App = () => {
                                         ))}
                                     </Card>
 
-                                    {/* Routing */}
+                                    {/* Routing (С ОБНОВЛЕННЫМ ДИЗАЙНОМ) */}
                                     <Card
                                         title="Routing"
                                         icon="ArrowsSplit"
@@ -392,28 +421,44 @@ export const App = () => {
                                         </div>
                                     </Card>
 
-                                    {/* Outbounds */}
+                                    {/* Outbounds (С ПОИСКОМ) */}
                                     <Card
                                         title={`Outbounds (${config.outbounds?.length || 0})`}
                                         icon="ArrowCircleUp"
                                         color="bg-blue-600"
                                         className="h-[500px] xl:h-full"
                                         actions={
-                                            <div className="flex gap-1">
+                                            <div className="flex gap-2 items-center">
+                                                <div className="relative hidden md:block">
+                                                    <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
+                                                    <input 
+                                                        className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white"
+                                                        placeholder="Search IP, UUID..."
+                                                        value={obSearch}
+                                                        onChange={e => setObSearch(e.target.value)}
+                                                    />
+                                                </div>
                                                 <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("outbounds", "Outbounds")} icon="Code" title="View JSON"/>
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus" />
                                             </div>
                                         }
                                     >
-                                        {(config.outbounds || []).map((ob: any, i: number) => (
-                                            <div key={i} className="card-item group flex justify-between items-start">
+                                        <div className="md:hidden mb-2 relative">
+                                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
+                                             <input className="input-base pl-8 text-xs py-1.5" placeholder="Search..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
+                                        </div>
+
+                                        {filteredOutbounds.map((ob: any) => (
+                                            <div key={ob.i} className="card-item group flex justify-between items-start">
                                                 <div className="min-w-0 pr-2">
                                                     <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate"><Icon name="PaperPlaneRight" /> {ob.tag || "no-tag"}</div>
-                                                    <div className="text-xs text-slate-400 mt-1 font-mono pl-6 truncate">{ob.protocol}</div>
+                                                    <div className="text-[10px] text-slate-400 mt-1 font-mono pl-6 truncate">
+                                                        {ob.protocol} {ob.settings?.vnext?.[0]?.address || ob.settings?.servers?.[0]?.address || ob.settings?.address || ""}
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => setModal({ type: 'outbound', data: ob, index: i })} className="btn-icon"><Icon name="PencilSimple" /></button>
-                                                    <button onClick={() => deleteItem('outbounds', i)} className="btn-icon-danger"><Icon name="Trash" /></button>
+                                                    <button onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })} className="btn-icon"><Icon name="PencilSimple" /></button>
+                                                    <button onClick={() => deleteItem('outbounds', ob.i)} className="btn-icon-danger"><Icon name="Trash" /></button>
                                                 </div>
                                             </div>
                                         ))}
@@ -461,7 +506,7 @@ export const App = () => {
 
                 {/* MODALS */}
                 {modal.type === 'inbound' && <InboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} onSave={handleSaveModal} />}
-                {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} onSave={handleSaveModal} />}
+                {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} index={modal.index} onSave={handleSaveModal} />}
                 {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null, data: null, index: null })} />}
                 {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null, data: null, index: null })} />}
                 {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null, data: null, index: null })} />}
@@ -472,6 +517,7 @@ export const App = () => {
                 {sectionModal.open && <SectionJsonModal 
                     title={sectionModal.title} 
                     data={sectionModal.data} 
+                    schemaMode={sectionModal.schemaMode}
                     onClose={() => setSectionModal({ ...sectionModal, open: false })}
                     onSave={handleSaveSection} 
                 />}
