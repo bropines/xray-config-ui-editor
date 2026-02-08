@@ -10,6 +10,7 @@ import { SettingsModal } from "./components/editors/SettingsModal";
 import { ReverseModal } from "./components/editors/ReverseModal";
 import { TopologyModal } from "./components/topology/TopologyModal";
 import { RemnawaveModal } from "./components/editors/RemnawaveModal";
+import { SectionJsonModal } from "./components/editors/SectionJsonModal";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
 import { getPresets } from "./utils/presets";
@@ -38,6 +39,7 @@ export const App = () => {
         deleteItem,
         updateItem,
         addItem,
+        updateSection,
         remnawave,
         saveToRemnawave,
         disconnectRemnawave,
@@ -49,6 +51,11 @@ export const App = () => {
     const [rawMode, setRawMode] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
+
+    // Стейт для модалки частичного JSON
+    const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any }>({ 
+        open: false, title: "", section: "", data: null 
+    });
 
     // --- File Handlers ---
 
@@ -105,7 +112,39 @@ export const App = () => {
         setModal({ type: null, data: null, index: null });
     };
 
+    // Callbacks для Section JSON
+    const openSectionJson = (section: string, title: string) => {
+        setSectionModal({
+            open: true,
+            title: title + " (JSON)",
+            section,
+            data: config ? config[section] : (section === 'inbounds' || section === 'outbounds' ? [] : {})
+        });
+    };
+
+    const handleSaveSection = (newData: any) => {
+        updateSection(sectionModal.section as any, newData);
+        setSectionModal({ ...sectionModal, open: false });
+    };
+
     const presets = getPresets();
+
+    // Валидация для хедера (примерная)
+    const getFullConfigValidation = () => {
+        if (!config) return [];
+        let allErrors: string[] = [];
+        config.routing?.balancers?.forEach((b: any) => {
+            if (!b.selector || b.selector.length === 0) {
+                allErrors.push(`Balancer [${b.tag}] is empty!`);
+            }
+        });
+        const tags = config.inbounds?.map((i: any) => i.tag);
+        if (new Set(tags).size !== tags?.length) {
+            allErrors.push("Duplicate Inbound tags found!");
+        }
+        return allErrors;
+    };
+    const configErrors = getFullConfigValidation();
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col xl:h-screen xl:overflow-hidden h-auto"
@@ -113,6 +152,7 @@ export const App = () => {
         >
             <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: '#1e293b', border: '1px solid #334155', color: 'white' } }} />
 
+            {/* Drag Overlay */}
             {isDragging && (
                 <div className="absolute inset-0 z-50 bg-indigo-900/80 backdrop-blur-sm border-4 border-indigo-500 border-dashed flex flex-col items-center justify-center pointer-events-none transition-all fixed">
                     <Icon name="FileArrowDown" className="text-8xl text-indigo-400 mb-4 animate-bounce" weight="fill" />
@@ -127,6 +167,14 @@ export const App = () => {
                         <Icon name="Planet" className="text-lg md:text-xl" />
                     </div>
                     <span className="font-bold text-base md:text-lg tracking-tight text-white">Xray GUI</span>
+                    
+                    {configErrors.length > 0 && (
+                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2" 
+                             title={configErrors.join('\n')}>
+                            <Icon name="Warning" />
+                            <span className="text-[10px] font-bold uppercase hidden md:inline">Config Invalid</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex gap-2 items-center">
@@ -251,7 +299,12 @@ export const App = () => {
                                         icon="ArrowCircleDown"
                                         color="bg-emerald-600"
                                         className="h-[500px] xl:h-full"
-                                        actions={<Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus" />}
+                                        actions={
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("inbounds", "Inbounds")} icon="Code" title="View JSON"/>
+                                                <Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus" />
+                                            </div>
+                                        }
                                     >
                                         {(config.inbounds || []).map((ib: any, i: number) => (
                                             <div key={i} className="card-item group flex justify-between items-start">
@@ -273,7 +326,12 @@ export const App = () => {
                                         icon="ArrowsSplit"
                                         color="bg-purple-600"
                                         className="h-[500px] xl:h-full"
-                                        actions={<Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>}
+                                        actions={
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("routing", "Routing")} icon="Code" title="View JSON"/>
+                                                <Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>
+                                            </div>
+                                        }
                                     >
                                         <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20 flex justify-between px-4">
                                             <span className="opacity-70">Strategy:</span>
@@ -282,10 +340,7 @@ export const App = () => {
 
                                         <div className="space-y-2">
                                             {(config.routing?.rules || []).slice(0, 20).map((rule: any, i: number) => {
-                                                // Определяем, что показывать в заголовке
                                                 const hasName = !!rule.ruleTag;
-
-                                                // Формируем краткую сводку условий
                                                 const conditions = [];
                                                 if (rule.domain) conditions.push(`${rule.domain.length} dom`);
                                                 if (rule.ip) conditions.push(`${rule.ip.length} ip`);
@@ -301,15 +356,12 @@ export const App = () => {
                                                 return (
                                                     <div key={i} className="text-xs bg-slate-950 p-2.5 rounded-lg border border-slate-800 hover:border-indigo-500/50 transition-colors flex flex-col gap-1.5 group">
                                                         <div className="flex justify-between items-center">
-                                                            {/* Левая часть: Имя или Условия */}
                                                             <div className="flex items-center gap-2 overflow-hidden">
                                                                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isBalancer ? 'bg-purple-500' : 'bg-blue-500'}`}></div>
                                                                 <span className={`font-bold truncate ${hasName ? 'text-white' : 'text-slate-400 font-mono'}`}>
                                                                     {rule.ruleTag || conditionText}
                                                                 </span>
                                                             </div>
-
-                                                            {/* Правая часть: Стрелка и Цель */}
                                                             <div className="flex items-center gap-1.5 shrink-0 pl-2">
                                                                 <Icon name="ArrowRight" className="text-slate-700 text-[10px]" />
                                                                 <span className={`font-mono font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 max-w-[100px] truncate ${isBalancer ? 'text-purple-400' : 'text-blue-400'}`}>
@@ -317,8 +369,6 @@ export const App = () => {
                                                                 </span>
                                                             </div>
                                                         </div>
-
-                                                        {/* Если есть имя, показываем условия снизу мелким шрифтом */}
                                                         {hasName && (
                                                             <div className="text-[10px] text-slate-500 font-mono pl-3.5 flex items-center gap-2">
                                                                 <span className="truncate">{conditionText}</span>
@@ -348,7 +398,12 @@ export const App = () => {
                                         icon="ArrowCircleUp"
                                         color="bg-blue-600"
                                         className="h-[500px] xl:h-full"
-                                        actions={<Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus" />}
+                                        actions={
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("outbounds", "Outbounds")} icon="Code" title="View JSON"/>
+                                                <Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus" />
+                                            </div>
+                                        }
                                     >
                                         {(config.outbounds || []).map((ob: any, i: number) => (
                                             <div key={i} className="card-item group flex justify-between items-start">
@@ -367,7 +422,13 @@ export const App = () => {
 
                                 {/* DNS Configuration */}
                                 <Card title="DNS" icon="Globe" color="bg-indigo-600" className="h-fit shrink-0 mb-6 xl:mb-0"
-                                    actions={<Button variant="ghost" onClick={() => { initDns(); setModal({ type: 'dns', data: null, index: null }) }} icon="PencilSimple">Edit</Button>}>
+                                    actions={
+                                        <div className="flex gap-1">
+                                            <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("dns", "DNS Config")} icon="Code" title="View JSON"/>
+                                            <Button variant="ghost" onClick={() => { initDns(); setModal({ type: 'dns', data: null, index: null }) }} icon="PencilSimple">Edit</Button>
+                                        </div>
+                                    }
+                                >
                                     {config.dns ? (
                                         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                                             <div className="grid grid-cols-2 gap-2 text-xs flex-1">
@@ -407,7 +468,15 @@ export const App = () => {
                 {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null, data: null, index: null })} />}
                 {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null, data: null, index: null })} />}
 
-                {/* NEW: Remnawave Modal */}
+                {/* NEW: Section JSON Modal */}
+                {sectionModal.open && <SectionJsonModal 
+                    title={sectionModal.title} 
+                    data={sectionModal.data} 
+                    onClose={() => setSectionModal({ ...sectionModal, open: false })}
+                    onSave={handleSaveSection} 
+                />}
+
+                {/* Remnawave Modal */}
                 {remnawaveModalOpen && <RemnawaveModal onClose={() => setRemnawaveModalOpen(false)} />}
             </main>
         </div>
