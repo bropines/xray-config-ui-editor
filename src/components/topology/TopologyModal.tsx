@@ -16,7 +16,7 @@ export const TopologyModal = ({ onClose }) => {
 
         const nodes: any[] = [];
         const edges: any[] = [];
-        
+
         // 1. INBOUNDS
         config.inbounds?.forEach((inbound, i) => {
             nodes.push({
@@ -65,6 +65,7 @@ export const TopologyModal = ({ onClose }) => {
         config.routing?.rules?.forEach((rule, i) => {
             const ruleId = `rule-${i}`;
             let detail = "Match All";
+            
             if (rule.domain) detail = `Domain (${rule.domain.length})`;
             else if (rule.ip) detail = `IP (${rule.ip.length})`;
             else if (rule.port) detail = `Port: ${rule.port}`;
@@ -73,10 +74,18 @@ export const TopologyModal = ({ onClose }) => {
             nodes.push({
                 id: ruleId,
                 type: 'custom',
-                data: { type: 'rule', labelType: 'Rule', label: `#${i + 1}`, details: detail },
+                data: { 
+                    type: 'rule', 
+                    // Если есть ruleTag, пишем "Named Rule", иначе просто "Rule"
+                    labelType: rule.ruleTag ? 'Named Rule' : 'Rule', 
+                    // Если есть ruleTag, выводим его как основной заголовок ноды
+                    label: rule.ruleTag || `#${i + 1}`, 
+                    details: detail 
+                },
                 position: { x: 0, y: 0 }
             });
 
+            // Логика связей (Inbound -> Rule)
             if (rule.inboundTag && rule.inboundTag.length > 0) {
                 rule.inboundTag.forEach(tag => {
                     const inId = `in-${tag}`;
@@ -91,6 +100,7 @@ export const TopologyModal = ({ onClose }) => {
                 });
             }
 
+            // Логика связей (Rule -> Outbound/Balancer)
             if (rule.balancerTag) {
                 const balId = balancerMap.get(rule.balancerTag);
                 if (balId) edges.push({ id: `e-${ruleId}-${balId}`, source: ruleId, target: balId, animated: true });
@@ -109,10 +119,10 @@ export const TopologyModal = ({ onClose }) => {
                 data: { type: 'rule', labelType: 'Fallback', label: 'Default Route', details: 'If no match' },
                 position: { x: 0, y: 0 }
             });
-            
+
             config.inbounds?.forEach(ib => {
-                 const inId = `in-${ib.tag}`;
-                 edges.push({ id: `e-def-${inId}`, source: inId, target: defaultId, type: 'smoothstep', style: { strokeDasharray: '5,5', opacity: 0.5 } });
+                const inId = `in-${ib.tag}`;
+                edges.push({ id: `e-def-${inId}`, source: inId, target: defaultId, type: 'smoothstep', style: { strokeDasharray: '5,5', opacity: 0.5 } });
             });
 
             const firstOutId = `out-${config.outbounds[0].tag}`;
@@ -126,10 +136,10 @@ export const TopologyModal = ({ onClose }) => {
     const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
     return (
-        <Modal 
-            title="Traffic Topology" 
-            onClose={onClose} 
-            onSave={onClose} 
+        <Modal
+            title="Traffic Topology"
+            onClose={onClose}
+            onSave={onClose}
             // Расширяем модалку по максимуму, но не на 100vh, чтобы были отступы
             className="w-full max-w-[95vw] md:max-w-7xl"
             extraButtons={<div className="text-xs text-slate-500 font-mono pt-1">Visualizing {nodes.length} nodes</div>}
@@ -154,7 +164,7 @@ export const TopologyModal = ({ onClose }) => {
                     <Background color="#334155" gap={25} size={2} variant="dots" />
                     <Controls className="!bg-slate-800 !border-slate-700 !fill-white !shadow-lg" />
                 </ReactFlow>
-                
+
                 {/* Legend */}
                 <div className="absolute bottom-6 right-6 bg-slate-900/90 p-4 rounded-xl border border-slate-700/50 backdrop-blur shadow-2xl text-xs space-y-2 pointer-events-none z-10">
                     <div className="font-bold text-slate-500 mb-2 uppercase text-[10px] tracking-wider">Legend</div>
