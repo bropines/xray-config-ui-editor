@@ -44,6 +44,7 @@ export interface DnsConfig {
 
 export interface RoutingRule {
     type?: string;
+    ruleTag?: string;
     domain?: string[];
     ip?: string[];
     port?: string;

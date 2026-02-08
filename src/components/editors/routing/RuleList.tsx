@@ -19,21 +19,36 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
             className={`p-2 rounded-lg cursor-pointer text-xs flex items-center gap-2 group transition-all border select-none mb-1
                 ${isActive ? 'bg-indigo-600/20 border-indigo-500/50' : 'bg-slate-900 border-transparent hover:border-slate-700'}`}
         >
+            {/* Drag Handle */}
             <div {...listeners} className="cursor-grab text-slate-600 hover:text-slate-300 p-2 touch-none">
                 <Icon name="DotsSixVertical" className="text-base"/>
             </div>
             
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
+                    {/* Точка цвета в зависимости от типа (Balancer/Outbound) */}
                     <span className={`w-1.5 h-1.5 rounded-full ${rule.balancerTag ? 'bg-purple-400' : 'bg-blue-400'}`}></span>
-                    <span className="font-bold truncate text-slate-200 text-sm">{rule.outboundTag || rule.balancerTag || "Empty"}</span>
+                    
+                    {/* Главный заголовок: Имя (ruleTag) или Тег назначения */}
+                    <span className="font-bold truncate text-slate-200 text-sm">
+                        {rule.ruleTag || rule.outboundTag || rule.balancerTag || "Unnamed Rule"}
+                    </span>
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono truncate mt-0.5">
+
+                {/* Если задано имя, показываем куда оно ведет маленьким шрифтом */}
+                {rule.ruleTag && (
+                    <div className="text-[9px] text-slate-500 uppercase flex items-center gap-1 ml-3 mt-0.5">
+                        <Icon name="ArrowElbowDownRight" className="text-[8px]" />
+                        Target: {rule.outboundTag || rule.balancerTag}
+                    </div>
+                )}
+
+                {/* Инфо о доменах/IP */}
+                <div className={`text-[10px] text-slate-500 font-mono truncate ml-3 ${rule.ruleTag ? 'mt-0.5' : 'mt-1'}`}>
                     {rule.domain ? `dom:${rule.domain.length}` : rule.ip ? `ip:${rule.ip.length}` : 'match:all'}
                 </div>
             </div>
             
-            {/* Кнопка увеличена */}
             <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(); }} 
                 className="text-slate-600 hover:text-rose-500 p-2 rounded-md hover:bg-rose-500/10 transition-colors"
