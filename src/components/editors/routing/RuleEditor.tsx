@@ -26,7 +26,13 @@ export const RuleEditor = ({
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full p-4 bg-slate-950">
-                <JsonField label="Raw Rule JSON" value={rule} onChange={onChange} className="h-full" />
+                <JsonField
+                    label="Raw Rule JSON"
+                    value={rule}
+                    onChange={onChange}
+                    className="h-full"
+                    schemaMode="rule" // <---
+                />
             </div>
         );
     }

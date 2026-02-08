@@ -6,7 +6,7 @@ import { TransportSettings } from './shared/TransportSettings';
 import { toast } from 'sonner';
 
 // Импортируем функцию как обычное значение (без type)
-import { validateInbound } from '../../utils/validator'; 
+import { validateInbound } from '../../utils/validator';
 // Импортируем интерфейс только как тип
 import type { ValidationError } from '../../utils/validator';
 // Суб-компоненты
@@ -15,21 +15,21 @@ import { InboundClients } from './inbound/InboundClients';
 import { InboundSniffing } from './inbound/InboundSniffing';
 
 export const InboundModal = ({ data, onSave, onClose }: any) => {
-    const [local, setLocal] = useState(data || { 
-        tag: `in-${Math.floor(Math.random()*1000)}`, 
-        port: 10808, 
-        protocol: "vless", 
-        settings: { clients: [], decryption: "none" }, 
+    const [local, setLocal] = useState(data || {
+        tag: `in-${Math.floor(Math.random() * 1000)}`,
+        port: 10808,
+        protocol: "vless",
+        settings: { clients: [], decryption: "none" },
         streamSettings: { network: "tcp", security: "none", tcpSettings: {} },
         sniffing: { enabled: true, destOverride: ["http", "tls"] }
     });
 
     const [rawMode, setRawMode] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
-    
+
     const handleUpdate = (path: string | string[], value: any) => {
         const newObj = JSON.parse(JSON.stringify(local));
-        
+
         if (Array.isArray(path)) {
             let curr = newObj;
             for (let i = 0; i < path.length - 1; i++) {
@@ -40,7 +40,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
         } else {
             newObj[path] = value;
         }
-        
+
         setLocal(newObj);
         // Очищаем ошибки при изменении
         if (errors.length > 0) setErrors([]);
@@ -49,7 +49,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
     const handleProtocolChange = (proto: string) => {
         const newObj = { ...local, protocol: proto, settings: {} };
         const uuid = crypto.randomUUID();
-        
+
         if (proto === 'vless') {
             newObj.settings = { clients: [{ id: uuid, flow: "xtls-rprx-vision", level: 0 }], decryption: "none" };
         } else if (proto === 'vmess') {
@@ -80,22 +80,28 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
     const getError = (field: string) => errors.find(e => e.field === field)?.message;
 
     if (rawMode) return (
-        <Modal 
-            title="Inbound JSON" 
-            onClose={onClose} 
+        <Modal
+            title="Inbound JSON"
+            onClose={onClose}
             onSave={() => onSave(local)}
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">UI Mode</Button>}
         >
             <div className="h-[600px]">
-                <JsonField label="Full JSON" value={local} onChange={setLocal} className="h-full" />
+                <JsonField
+                    label="Full JSON"
+                    value={local}
+                    onChange={setLocal}
+                    className="h-full"
+                    schemaMode="inbound" // <---
+                />
             </div>
         </Modal>
     );
 
     return (
-        <Modal 
-            title="Inbound Editor" 
-            onClose={onClose} 
+        <Modal
+            title="Inbound Editor"
+            onClose={onClose}
             onSave={handleSave}
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(true)} icon="Code">JSON</Button>}
         >
@@ -110,9 +116,9 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                     </div>
                 )}
 
-                <InboundGeneral 
-                    inbound={local} 
-                    onChange={handleUpdate} 
+                <InboundGeneral
+                    inbound={local}
+                    onChange={handleUpdate}
                     onProtocolChange={handleProtocolChange}
                     // Передаем ошибки в компонент
                     errors={{
@@ -121,20 +127,20 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                     }}
                 />
 
-                <InboundClients 
-                    inbound={local} 
-                    onChange={handleUpdate} 
+                <InboundClients
+                    inbound={local}
+                    onChange={handleUpdate}
                 />
 
-                <TransportSettings 
-                    streamSettings={local.streamSettings} 
+                <TransportSettings
+                    streamSettings={local.streamSettings}
                     onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
-                    isClient={false} 
+                    isClient={false}
                 />
 
-                <InboundSniffing 
-                    sniffing={local.sniffing} 
-                    onChange={handleUpdate} 
+                <InboundSniffing
+                    sniffing={local.sniffing}
+                    onChange={handleUpdate}
                 />
             </div>
         </Modal>

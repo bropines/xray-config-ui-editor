@@ -16,13 +16,19 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full p-4 bg-slate-950">
-                <JsonField label="Raw Balancer JSON" value={balancer} onChange={onChange} className="h-full"/>
+                <JsonField
+                    label="Raw Balancer JSON"
+                    value={balancer}
+                    onChange={onChange}
+                    className="h-full"
+                    schemaMode="balancer" // <---
+                />
             </div>
         );
     }
 
     const currentSelector = balancer.selector || [];
-    
+
     // Получаем ошибки валидации на лету для отображения
     const errors = validateBalancer(balancer);
     const selectorError = errors.find(e => e.field === 'selector');
@@ -51,7 +57,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
 
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
-            
+
             {/* КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ */}
             {selectorError && (
                 <div className="p-4 rounded-xl bg-rose-900/20 border border-rose-500/50 text-rose-200 flex gap-3 items-start animate-pulse">
@@ -66,17 +72,17 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
                 <div>
                     <label className="label-xs">Balancer Tag</label>
-                    <input 
-                        className={`input-base font-bold font-mono ${tagError ? 'border-rose-500 bg-rose-500/10' : ''}`} 
-                        value={balancer.tag} 
-                        onChange={e => update('tag', e.target.value)} 
+                    <input
+                        className={`input-base font-bold font-mono ${tagError ? 'border-rose-500 bg-rose-500/10' : ''}`}
+                        value={balancer.tag}
+                        onChange={e => update('tag', e.target.value)}
                     />
                     {tagError && <span className="text-[10px] text-rose-500">{tagError.message}</span>}
                 </div>
                 <div>
                     <label className="label-xs">Strategy</label>
-                    <select className="input-base font-mono" 
-                        value={balancer.strategy?.type || "random"} 
+                    <select className="input-base font-mono"
+                        value={balancer.strategy?.type || "random"}
                         onChange={e => update('strategy', { ...balancer.strategy, type: e.target.value })}>
                         <option value="random">Random</option>
                         <option value="roundRobin">Round Robin</option>
@@ -93,32 +99,32 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                         <span className="text-[10px] text-slate-500">Xray matches by prefix.</span>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto custom-scroll">
                     {outboundTags.map((tag: string) => {
                         const { exact, prefix } = checkMatch(tag);
                         return (
-                            <div key={tag} onClick={() => toggleSelector(tag)} 
+                            <div key={tag} onClick={() => toggleSelector(tag)}
                                 className={`cursor-pointer px-3 py-2 rounded-lg border text-xs font-mono flex justify-between items-center transition-all select-none
                                 ${exact ? 'bg-purple-600 border-purple-500 text-white' : (prefix ? 'bg-purple-900/30 border-purple-500/60 text-purple-200' : 'bg-slate-950 border-slate-700 text-slate-400')}`}
                             >
                                 <span className="truncate">{tag}</span>
-                                {exact && <Icon name="CheckCircle" className="text-white shrink-0 ml-2"/>}
+                                {exact && <Icon name="CheckCircle" className="text-white shrink-0 ml-2" />}
                                 {prefix && <Icon name="GitMerge" className="text-purple-400 shrink-0 ml-2" />}
                             </div>
                         )
                     })}
                 </div>
-                
+
                 <div className="mt-4 pt-4 border-t border-slate-800">
                     <label className="label-xs">Add Prefix / Selector</label>
                     <div className="flex gap-2 items-center">
-                        <input className="flex-1 input-base text-xs font-mono" 
-                            placeholder="e.g. 'NEO-asia' (will match all NEO-asia-*)" 
+                        <input className="flex-1 input-base text-xs font-mono"
+                            placeholder="e.g. 'NEO-asia' (will match all NEO-asia-*)"
                             onKeyDown={e => {
-                                if(e.key === 'Enter') {
+                                if (e.key === 'Enter') {
                                     const val = e.currentTarget.value.trim();
-                                    if(val && !currentSelector.includes(val)) {
+                                    if (val && !currentSelector.includes(val)) {
                                         update('selector', [...currentSelector, val]);
                                         e.currentTarget.value = '';
                                     }
@@ -136,7 +142,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                     </div>
                 </div>
             </div>
-            
+
             {(balancer.strategy?.type === 'leastPing' || balancer.strategy?.type === 'leastLoad') && (
                 <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-700/50 text-xs text-yellow-200 flex gap-2 items-start">
                     <Icon name="Warning" className="mt-0.5 shrink-0" weight="fill" />
