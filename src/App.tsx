@@ -121,10 +121,10 @@ export const App = () => {
         setSectionModal({ ...sectionModal, open: false });
     };
 
-    const openSectionJson = (section: string, title: string) => {
+const openSectionJson = (section: string, title: string) => {
         const modeMap: Record<string, string> = {
-            inbounds: 'inbound',
-            outbounds: 'outbound',
+            inbounds: 'inbounds',  
+            outbounds: 'outbounds',
             routing: 'routing',
             dns: 'dns'
         };

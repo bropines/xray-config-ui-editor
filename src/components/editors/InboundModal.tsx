@@ -87,13 +87,13 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">UI Mode</Button>}
         >
             <div className="h-[600px]">
-                <JsonField
-                    label="Full JSON"
-                    value={local}
-                    onChange={setLocal}
-                    className="h-full"
-                    schemaMode="inbound" // <---
-                />
+<JsonField 
+    label="Full JSON" 
+    value={local} 
+    onChange={setLocal} 
+    className="h-full" 
+    schemaMode="inbound" // <-- Должно быть в единственном числе
+/>
             </div>
         </Modal>
     );

@@ -6,80 +6,84 @@ interface JsonEditorProps {
     value: string;
     onChange: (value: string | undefined) => void;
     readOnly?: boolean;
-    schemaMode?: 'full' | 'inbound' | 'outbound' | 'rule' | 'dns' | 'balancer' | 'routing'; 
+    // Добавили множественные числа
+    schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing';
 }
 
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
     const editorRef = useRef<any>(null);
 
     const handleEditorWillMount = (monaco: any) => {
-        const commonDefinitions = xraySchema.definitions;
+        const MASTER_SCHEMA_URI = "inmemory://xray/master-config.schema.json";
 
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
             allowComments: true,
+            enableSchemaRequest: false,
             schemas: [
-                // 1. Полный конфиг
+                // 1. МАСТЕР-СХЕМА
                 {
-                    uri: "xray://schemas/config.json",
-                    fileMatch: ["/config.json"], 
+                    uri: MASTER_SCHEMA_URI,
                     schema: xraySchema,
                 },
-                // 2. МАССИВ Inbounds (для модалки секции)
+
+                // 2. Полный конфиг
                 {
-                    uri: "xray://schemas/inbounds.json",
+                    uri: "inmemory://xray/config.json",
+                    fileMatch: ["/config.json"],
+                    schema: { $ref: MASTER_SCHEMA_URI }
+                },
+
+                // --- ОДИНОЧНЫЕ ОБЪЕКТЫ (для редакторов) ---
+                {
+                    uri: "inmemory://xray/inbound.json",
+                    fileMatch: ["/inbound.json"],
+                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/InboundObject` }
+                },
+                {
+                    uri: "inmemory://xray/outbound.json",
+                    fileMatch: ["/outbound.json"],
+                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/OutboundObject` }
+                },
+
+                // --- МАССИВЫ (для списков) ---
+                {
+                    uri: "inmemory://xray/inbounds.json",
                     fileMatch: ["/inbounds.json"],
                     schema: {
-                        "type": "array",
-                        "items": { "$ref": "xray://schemas/config.json#/definitions/InboundObject" },
-                        "definitions": commonDefinitions
+                        type: "array",
+                        items: { $ref: `${MASTER_SCHEMA_URI}#/definitions/InboundObject` }
                     }
                 },
-                // 3. МАССИВ Outbounds (для модалки секции)
                 {
-                    uri: "xray://schemas/outbounds.json",
+                    uri: "inmemory://xray/outbounds.json",
                     fileMatch: ["/outbounds.json"],
                     schema: {
-                        "type": "array",
-                        "items": { "$ref": "xray://schemas/config.json#/definitions/OutboundObject" },
-                        "definitions": commonDefinitions
+                        type: "array",
+                        items: { $ref: `${MASTER_SCHEMA_URI}#/definitions/OutboundObject` }
                     }
                 },
-                // 4. Одиночное правило (для RuleEditor внутри менеджера)
+
+                // --- ОСТАЛЬНОЕ ---
                 {
-                    uri: "xray://schemas/rule.json",
+                    uri: "inmemory://xray/rule.json",
                     fileMatch: ["/rule.json"],
-                    schema: {
-                        "$ref": "xray://schemas/config.json#/definitions/RoutingRule",
-                        "definitions": commonDefinitions
-                    }
+                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/RoutingRule` }
                 },
-                // 5. Весь объект Routing (для модалки секции)
                 {
-                    uri: "xray://schemas/routing.json",
+                    uri: "inmemory://xray/routing.json",
                     fileMatch: ["/routing.json"],
-                    schema: {
-                        "$ref": "xray://schemas/config.json#/definitions/RoutingObject",
-                        "definitions": commonDefinitions
-                    }
+                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/RoutingObject` }
                 },
-                // 6. Весь объект DNS
                 {
-                    uri: "xray://schemas/dns.json",
+                    uri: "inmemory://xray/dns.json",
                     fileMatch: ["/dns.json"],
-                    schema: {
-                        "$ref": "xray://schemas/config.json#/definitions/DnsObject",
-                        "definitions": commonDefinitions
-                    }
+                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/DnsObject` }
                 },
-                // 7. Одиночный Balancer
                 {
-                    uri: "xray://schemas/balancer.json",
+                    uri: "inmemory://xray/balancer.json",
                     fileMatch: ["/balancer.json"],
-                    schema: {
-                        "$ref": "xray://schemas/config.json#/definitions/BalancerObject",
-                        "definitions": commonDefinitions
-                    }
+                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/BalancerObject` }
                 }
             ],
         });
@@ -88,14 +92,19 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
     const handleEditorDidMount = (editor: any) => {
         editorRef.current = editor;
         if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(() => editor.layout());
+            document.fonts.ready.then(() => {
+                editor.layout();
+                setTimeout(() => editor.layout(), 100);
+            });
         }
     };
 
     const getFilePath = () => {
-        switch(schemaMode) {
-            case 'inbound': return '/inbounds.json';
-            case 'outbound': return '/outbounds.json';
+        switch (schemaMode) {
+            case 'inbound': return '/inbound.json';   // <-- Одиночный
+            case 'inbounds': return '/inbounds.json'; // <-- Массив
+            case 'outbound': return '/outbound.json'; // <-- Одиночный
+            case 'outbounds': return '/outbounds.json';// <-- Массив
             case 'rule': return '/rule.json';
             case 'routing': return '/routing.json';
             case 'dns': return '/dns.json';
@@ -105,8 +114,8 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
     };
 
     return (
-        <div className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container" 
-             style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             <Editor
                 height="100%"
                 path={getFilePath()}
@@ -128,8 +137,23 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     formatOnType: true,
                     lineHeight: 20,
                     fixedOverflowWidgets: true,
+                    suggest: {
+                        preview: true,
+                        showWords: false,
+                        showValues: true,
+                        showProperties: true,
+                    },
+                    hover: { enabled: true, delay: 300 }
                 }}
             />
+            <style>{`
+                .monaco-editor-container .monaco-editor .view-line {
+                    line-height: 20px !important;
+                }
+                .monaco-editor .decorationsOverviewRuler {
+                    display: none !important;
+                }
+            `}</style>
         </div>
     );
 };
