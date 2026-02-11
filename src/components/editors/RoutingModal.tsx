@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { createProtoWorker } from '../../utils/proto-worker';
 import { useConfigStore } from '../../store/configStore';
 import { Icon } from '../ui/Icon';
 
+// Суб-компоненты
 import { RuleList } from './routing/RuleList';
 import { RuleEditor } from './routing/RuleEditor';
 import { BalancerList } from './routing/BalancerList';
@@ -18,19 +19,24 @@ export const RoutingModal = ({ onClose }: any) => {
     const inboundTags = (config?.inbounds || []).map((i: any) => i.tag).filter((t: any) => t);
     const balancerTags = balancers.map((b: any) => b.tag).filter((t: any) => t);
 
+    // UI State
     const [activeTab, setActiveTab] = useState<'rules' | 'balancers'>('rules');
     const [activeRuleIdx, setActiveRuleIdx] = useState<number | null>(null);
     const [activeBalancerIdx, setActiveBalancerIdx] = useState<number | null>(null);
     const [rawMode, setRawMode] = useState(false);
+    
+    // Мобильный режим
     const [mobileEditMode, setMobileEditMode] = useState(false);
 
     // --- SEARCH LOGIC ---
     const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredRules = rules.map((r, originalIndex) => ({ ...r, originalIndex }))
-        .filter(rule => {
+    // Создаем список с индексами для фильтрации
+    const filteredRules = rules.map((r: any, originalIndex: number) => ({ ...r, originalIndex }))
+        .filter((rule: any) => {
             const q = searchQuery.toLowerCase();
             if (!q) return true;
+            
             return (
                 rule.ruleTag?.toLowerCase().includes(q) ||
                 rule.outboundTag?.toLowerCase().includes(q) ||
@@ -42,9 +48,10 @@ export const RoutingModal = ({ onClose }: any) => {
             );
         });
 
-    // --- RESIZER ---
+    // --- RESIZER LOGIC ---
     const [sidebarWidth, setSidebarWidth] = useState(380);
     const [isResizing, setIsResizing] = useState(false);
+    
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
     const resize = useCallback((e: MouseEvent) => {
@@ -81,7 +88,7 @@ export const RoutingModal = ({ onClose }: any) => {
         worker.onmessage = (e) => {
             if (e.data.type === 'geosite') setGeoSites(e.data.data);
             if (e.data.type === 'geoip') setGeoIps(e.data.data);
-            setLoadingGeo(false);
+            setLoadingGeo(false); 
         };
         worker.postMessage({ type: 'geosite' });
         worker.postMessage({ type: 'geoip' });
@@ -89,10 +96,13 @@ export const RoutingModal = ({ onClose }: any) => {
     }, []);
 
     // --- HANDLERS ---
+
     const handleAddRule = () => {
+        // Добавляем в начало
         const newRule = { type: "field", outboundTag: outboundTags[0] || "direct", domain: [] };
         reorderRules([newRule, ...rules]);
         setActiveRuleIdx(0);
+        setRawMode(false);
         setMobileEditMode(true);
     };
 
@@ -114,16 +124,21 @@ export const RoutingModal = ({ onClose }: any) => {
 
     const handleUpdateRule = (updatedRule: any) => {
         if (activeRuleIdx === null) return;
+        
+        // ВАЖНО: Очищаем мусорные поля перед сохранением в стор
+        const cleanRule = { ...updatedRule };
+        delete cleanRule.originalIndex;
+
         const n = [...rules];
-        n[activeRuleIdx] = updatedRule;
+        n[activeRuleIdx] = cleanRule;
         reorderRules(n);
     };
 
     return (
-        <Modal
-            title="Routing Manager"
-            onClose={onClose}
-            onSave={onClose}
+        <Modal 
+            title="Routing Manager" 
+            onClose={onClose} 
+            onSave={onClose} 
             extraButtons={
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
                     <button onClick={() => { setActiveTab('rules'); setMobileEditMode(false); }} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'rules' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>Rules</button>
@@ -135,14 +150,16 @@ export const RoutingModal = ({ onClose }: any) => {
                 {mobileEditMode && (
                     <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">Back</Button>
                 )}
+
                 <div className={`flex flex-col w-full md:w-auto ${mobileEditMode ? 'hidden md:flex' : ''}`}>
                     <label className="label-xs">Domain Strategy</label>
-                    <select className="input-base py-1.5 text-xs"
-                        value={config?.routing?.domainStrategy || "AsIs"}
+                    <select className="input-base py-1.5 text-xs" 
+                        value={config?.routing?.domainStrategy || "AsIs"} 
                         onChange={e => updateSection('routing', { ...config.routing, domainStrategy: e.target.value })}>
                         {["AsIs", "IPIfNonMatch", "IPOnDemand"].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                 </div>
+                
                 {((activeTab === 'rules' && activeRuleIdx !== null) || (activeTab === 'balancers' && activeBalancerIdx !== null)) && (
                     <Button variant="secondary" className={`text-xs py-1 ${mobileEditMode ? 'w-full md:w-auto' : 'hidden md:flex'}`} onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"}>
                         {rawMode ? "UI Mode" : "JSON"}
@@ -150,7 +167,10 @@ export const RoutingModal = ({ onClose }: any) => {
                 )}
             </div>
 
-            <div className="flex flex-col md:flex-row h-[600px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative" style={{ '--sidebar-width': `${sidebarWidth}px` } as any}>
+            <div 
+                className="flex flex-col md:flex-row h-[600px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
+                style={{ '--sidebar-width': `${sidebarWidth}px` } as any}
+            >
                 {activeTab === 'rules' ? (
                     <>
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
@@ -161,24 +181,42 @@ export const RoutingModal = ({ onClose }: any) => {
                                 </div>
                                 <div className="relative">
                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
-                                    <input className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500"
-                                        placeholder="Search by name, domain, ip..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                                    <input 
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500 transition-colors"
+                                        placeholder="Search by name, domain, ip..." 
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                    />
                                 </div>
                             </div>
-                            <RuleList
-                                rules={filteredRules}
+                            
+                            <RuleList 
+                                rules={filteredRules} 
                                 activeIndex={activeRuleIdx}
                                 onSelect={(idx: number) => handleSelectRule(filteredRules[idx].originalIndex)}
                                 onDelete={(idx: number) => handleDeleteRule(filteredRules[idx].originalIndex)}
-                                onReorder={searchQuery ? undefined : (newRules: any) => reorderRules(newRules)}
+                                onReorder={searchQuery ? undefined : (newRules: any) => {
+                                    // ВАЖНО: Очистка мусора при DND
+                                    const cleanRules = newRules.map((r: any) => {
+                                        const { originalIndex, ...rest } = r; 
+                                        return rest;
+                                    });
+                                    reorderRules(cleanRules);
+                                }}
                             />
                         </div>
-                        <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10" onMouseDown={startResizing} />
+
+                        <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10 shrink-0" onMouseDown={startResizing} />
+                        
                         <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
-                            <RuleEditor
-                                rule={rules[activeRuleIdx!]} onChange={handleUpdateRule}
-                                outboundTags={outboundTags} balancerTags={balancerTags} inboundTags={inboundTags}
-                                geoData={{ sites: geoSites, ips: geoIps, loading: loadingGeo }} rawMode={rawMode}
+                            <RuleEditor 
+                                rule={rules[activeRuleIdx!]}
+                                onChange={handleUpdateRule}
+                                outboundTags={outboundTags}
+                                balancerTags={balancerTags}
+                                inboundTags={inboundTags}
+                                geoData={{ sites: geoSites, ips: geoIps, loading: loadingGeo }}
+                                rawMode={rawMode}
                             />
                         </div>
                     </>
@@ -187,28 +225,35 @@ export const RoutingModal = ({ onClose }: any) => {
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50 items-center">
                                 <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
-                                <Button variant="ghost" icon="Plus" onClick={() => {
+                                <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={() => {
                                     const nb = { tag: "bal-" + (balancers.length + 1), selector: [], strategy: { type: "random" } };
                                     updateSection('routing', { ...config.routing, balancers: [...balancers, nb] });
                                 }} />
                             </div>
-                            <BalancerList
-                                balancers={balancers} activeIndex={activeBalancerIdx}
+                            <BalancerList 
+                                balancers={balancers}
+                                activeIndex={activeBalancerIdx}
                                 onSelect={(idx: number) => { setActiveBalancerIdx(idx); setMobileEditMode(true); }}
                                 onDelete={(idx: number) => {
-                                    const n = [...balancers]; n.splice(idx, 1);
+                                    const n = [...balancers];
+                                    n.splice(idx, 1);
                                     updateSection('routing', { ...config.routing, balancers: n });
                                 }}
                             />
                         </div>
-                        <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10" onMouseDown={startResizing} />
+
+                        <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10 shrink-0" onMouseDown={startResizing} />
+
                         <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
-                            <BalancerEditor
-                                balancer={balancers[activeBalancerIdx!]} outboundTags={outboundTags} rawMode={rawMode}
+                            <BalancerEditor 
+                                balancer={balancers[activeBalancerIdx!]}
                                 onChange={(val: any) => {
-                                    const n = [...balancers]; n[activeBalancerIdx!] = val;
+                                    const n = [...balancers];
+                                    n[activeBalancerIdx!] = val;
                                     updateSection('routing', { ...config.routing, balancers: n });
                                 }}
+                                outboundTags={outboundTags}
+                                rawMode={rawMode}
                             />
                         </div>
                     </>
