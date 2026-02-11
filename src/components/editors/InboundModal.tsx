@@ -88,7 +88,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
         >
             <div className="h-[600px]">
 <JsonField 
-    label="Full JSON" 
+    label="Inbound JSON" 
     value={local} 
     onChange={setLocal} 
     className="h-full" 
