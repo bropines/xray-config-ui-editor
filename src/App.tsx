@@ -11,6 +11,7 @@ import { ReverseModal } from "./components/editors/ReverseModal";
 import { TopologyModal } from "./components/topology/TopologyModal";
 import { RemnawaveModal } from "./components/editors/RemnawaveModal";
 import { SectionJsonModal } from "./components/editors/SectionJsonModal";
+import { BatchOutboundModal } from "./components/editors/outbound/BatchOutboundModal";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
 import { getPresets } from "./utils/presets";
@@ -48,10 +49,10 @@ export const App = () => {
 
     // Локальные стейты UI
     const [modal, setModal] = useState<{ type: string | null, data: any, index: number | null }>({ type: null, data: null, index: null });
-    
+
     // Стейт для частичного JSON
-    const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({ 
-        open: false, title: "", section: "", data: null, schemaMode: "full" 
+    const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({
+        open: false, title: "", section: "", data: null, schemaMode: "full"
     });
 
     // Стейт для поиска по аутбаундам
@@ -60,16 +61,22 @@ export const App = () => {
     const [rawMode, setRawMode] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
+    const [batchModalOpen, setBatchModalOpen] = useState(false);
+
 
     // --- File Handlers ---
 
     const loadFile = (file: File) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        // Исправлена типизация события
+        reader.onload = (e: ProgressEvent<FileReader>) => {
             try {
-                const parsed = JSON.parse(e.target?.result as string);
-                setConfig(parsed as XrayConfig);
-                setRawMode(false);
+                const result = e.target?.result;
+                if (typeof result === 'string') {
+                    const parsed = JSON.parse(result);
+                    setConfig(parsed as XrayConfig);
+                    setRawMode(false);
+                }
             } catch (err) {
                 alert("Invalid JSON file");
             }
@@ -121,9 +128,9 @@ export const App = () => {
         setSectionModal({ ...sectionModal, open: false });
     };
 
-const openSectionJson = (section: string, title: string) => {
+    const openSectionJson = (section: string, title: string) => {
         const modeMap: Record<string, string> = {
-            inbounds: 'inbounds',  
+            inbounds: 'inbounds',
             outbounds: 'outbounds',
             routing: 'routing',
             dns: 'dns'
@@ -161,14 +168,14 @@ const openSectionJson = (section: string, title: string) => {
         .filter((ob: any) => {
             const q = obSearch.toLowerCase();
             if (!q) return true;
-            
+
             const settings = ob.settings || {};
             const vnext = settings.vnext?.[0] || {};
             const server = settings.servers?.[0] || settings;
-            
+
             const address = (vnext.address || server.address || "").toLowerCase();
             const key = (vnext.users?.[0]?.id || server.password || server.id || "").toLowerCase();
-            
+
             return (
                 ob.tag?.toLowerCase().includes(q) ||
                 ob.protocol.toLowerCase().includes(q) ||
@@ -198,10 +205,10 @@ const openSectionJson = (section: string, title: string) => {
                         <Icon name="Planet" className="text-lg md:text-xl" />
                     </div>
                     <span className="font-bold text-base md:text-lg tracking-tight text-white">Xray GUI</span>
-                    
+
                     {configErrors.length > 0 && (
-                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2" 
-                             title={configErrors.join('\n')}>
+                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2"
+                            title={configErrors.join('\n')}>
                             <Icon name="Warning" />
                             <span className="text-[10px] font-bold uppercase hidden md:inline">Config Invalid</span>
                         </div>
@@ -349,7 +356,7 @@ const openSectionJson = (section: string, title: string) => {
                                         ))}
                                     </Card>
 
-                                    {/* Routing (С ОБНОВЛЕННЫМ ДИЗАЙНОМ) */}
+                                    {/* Routing */}
                                     <Card
                                         title="Routing"
                                         icon="ArrowsSplit"
@@ -421,7 +428,7 @@ const openSectionJson = (section: string, title: string) => {
                                         </div>
                                     </Card>
 
-                                    {/* Outbounds (С ПОИСКОМ) */}
+                                    {/* Outbounds */}
                                     <Card
                                         title={`Outbounds (${config.outbounds?.length || 0})`}
                                         icon="ArrowCircleUp"
@@ -429,39 +436,100 @@ const openSectionJson = (section: string, title: string) => {
                                         className="h-[500px] xl:h-full"
                                         actions={
                                             <div className="flex gap-2 items-center">
+                                                {/* Поиск (Десктопная версия) */}
                                                 <div className="relative hidden md:block">
                                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
-                                                    <input 
-                                                        className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white"
-                                                        placeholder="Search IP, UUID..."
+                                                    <input
+                                                        className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white placeholder:text-slate-600"
+                                                        placeholder="Filter IP, Tag..."
                                                         value={obSearch}
                                                         onChange={e => setObSearch(e.target.value)}
                                                     />
                                                 </div>
-                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("outbounds", "Outbounds")} icon="Code" title="View JSON"/>
-                                                <Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus" />
+
+                                                {/* Кнопка Batch Import/Export */}
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-1.5"
+                                                    onClick={() => setBatchModalOpen(true)}
+                                                    icon="Stack"
+                                                    title="Batch Import/Export"
+                                                />
+
+                                                {/* Кнопка JSON для всей секции */}
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-1.5"
+                                                    onClick={() => openSectionJson("outbounds", "Outbounds")}
+                                                    icon="Code"
+                                                    title="View JSON"
+                                                />
+
+                                                {/* Кнопка добавления нового аута */}
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => setModal({ type: 'outbound', data: null, index: null })}
+                                                    icon="Plus"
+                                                    title="Add New Outbound"
+                                                />
                                             </div>
                                         }
                                     >
-                                        <div className="md:hidden mb-2 relative">
-                                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
-                                             <input className="input-base pl-8 text-xs py-1.5" placeholder="Search..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
+                                        {/* Поиск (Мобильная версия) */}
+                                        <div className="md:hidden mb-3 relative">
+                                            <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
+                                            <input
+                                                className="input-base pl-8 text-xs py-2 bg-slate-950/50"
+                                                placeholder="Search outbounds..."
+                                                value={obSearch}
+                                                onChange={e => setObSearch(e.target.value)}
+                                            />
                                         </div>
 
-                                        {filteredOutbounds.map((ob: any) => (
-                                            <div key={ob.i} className="card-item group flex justify-between items-start">
-                                                <div className="min-w-0 pr-2">
-                                                    <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate"><Icon name="PaperPlaneRight" /> {ob.tag || "no-tag"}</div>
-                                                    <div className="text-[10px] text-slate-400 mt-1 font-mono pl-6 truncate">
-                                                        {ob.protocol} {ob.settings?.vnext?.[0]?.address || ob.settings?.servers?.[0]?.address || ob.settings?.address || ""}
+                                        <div className="space-y-2">
+                                            {filteredOutbounds.length > 0 ? (
+                                                filteredOutbounds.map((ob: any) => (
+                                                    <div key={ob.i} className="card-item group flex justify-between items-start">
+                                                        <div className="min-w-0 pr-2">
+                                                            <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate">
+                                                                <Icon name="PaperPlaneRight" />
+                                                                {ob.tag || "no-tag"}
+                                                            </div>
+                                                            <div className="text-[10px] text-slate-400 mt-1 font-mono pl-6 truncate">
+                                                                <span className="text-blue-500/70">{ob.protocol}</span>
+                                                                {ob.protocol !== 'freedom' && ob.protocol !== 'blackhole' && (
+                                                                    <>
+                                                                        <span className="mx-1 text-slate-600">•</span>
+                                                                        {ob.settings?.vnext?.[0]?.address || ob.settings?.servers?.[0]?.address || ob.settings?.address || "no-address"}
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })}
+                                                                className="btn-icon"
+                                                                title="Edit"
+                                                            >
+                                                                <Icon name="PencilSimple" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteItem('outbounds', ob.i)}
+                                                                className="btn-icon-danger"
+                                                                title="Delete"
+                                                            >
+                                                                <Icon name="Trash" />
+                                                            </button>
+                                                        </div>
                                                     </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-10 opacity-50">
+                                                    <Icon name="MagnifyingGlass" className="mx-auto text-3xl mb-2" />
+                                                    <p className="text-xs">No outbounds match your search</p>
                                                 </div>
-                                                <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })} className="btn-icon"><Icon name="PencilSimple" /></button>
-                                                    <button onClick={() => deleteItem('outbounds', ob.i)} className="btn-icon-danger"><Icon name="Trash" /></button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            )}
+                                        </div>
                                     </Card>
                                 </div>
 
@@ -469,7 +537,7 @@ const openSectionJson = (section: string, title: string) => {
                                 <Card title="DNS" icon="Globe" color="bg-indigo-600" className="h-fit shrink-0 mb-6 xl:mb-0"
                                     actions={
                                         <div className="flex gap-1">
-                                            <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("dns", "DNS Config")} icon="Code" title="View JSON"/>
+                                            <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("dns", "DNS Config")} icon="Code" title="View JSON" />
                                             <Button variant="ghost" onClick={() => { initDns(); setModal({ type: 'dns', data: null, index: null }) }} icon="PencilSimple">Edit</Button>
                                         </div>
                                     }
@@ -513,13 +581,16 @@ const openSectionJson = (section: string, title: string) => {
                 {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null, data: null, index: null })} />}
                 {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null, data: null, index: null })} />}
 
+                {/* NEW: Batch Outbound Modal */}
+                {batchModalOpen && <BatchOutboundModal onClose={() => setBatchModalOpen(false)} />}
+
                 {/* NEW: Section JSON Modal */}
-                {sectionModal.open && <SectionJsonModal 
-                    title={sectionModal.title} 
-                    data={sectionModal.data} 
+                {sectionModal.open && <SectionJsonModal
+                    title={sectionModal.title}
+                    data={sectionModal.data}
                     schemaMode={sectionModal.schemaMode}
                     onClose={() => setSectionModal({ ...sectionModal, open: false })}
-                    onSave={handleSaveSection} 
+                    onSave={handleSaveSection}
                 />}
 
                 {/* Remnawave Modal */}

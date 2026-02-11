@@ -193,6 +193,7 @@ interface ConfigState {
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
+    addOutbounds: (items: any[]) => void;
     
     reorderRules: (newRules: RoutingRule[]) => void;
     initDns: () => void;
@@ -324,6 +325,21 @@ export const useConfigStore = create(
                     state.config[section] = state.config[section] || [];
                     state.config[section].push(item);
                 }
+            })),
+
+            addOutbounds: (items) => set(produce((state) => {
+                if (!state.config) state.config = { inbounds: [], outbounds: [] };
+                const existingTags = new Set(state.config.outbounds?.map((o: any) => o.tag));
+                
+                const cleanItems = items.map((item) => {
+                    let tag = item.tag;
+                    if (!tag || existingTags.has(tag)) {
+                        tag = `${item.protocol}-${Math.floor(Math.random() * 10000)}`;
+                    }
+                    return { ...item, tag };
+                });
+                
+                state.config.outbounds.push(...cleanItems);
             })),
 
             updateItem: (section, index, item) => set(produce((state) => {
