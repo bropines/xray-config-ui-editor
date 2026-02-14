@@ -162,23 +162,24 @@ export const App = () => {
         return allErrors;
     };
     const configErrors = getFullConfigValidation();
-
-    // --- Filter Outbounds ---
+// --- Filter Outbounds ---
     const filteredOutbounds = (config?.outbounds || []).map((ob: any, i: number) => ({ ...ob, i }))
         .filter((ob: any) => {
             const q = obSearch.toLowerCase();
             if (!q) return true;
-
+            
             const settings = ob.settings || {};
             const vnext = settings.vnext?.[0] || {};
             const server = settings.servers?.[0] || settings;
-
-            const address = (vnext.address || server.address || "").toLowerCase();
-            const key = (vnext.users?.[0]?.id || server.password || server.id || "").toLowerCase();
-
+            
+            const address = String(vnext.address || server.address || "").toLowerCase();
+            const key = String(vnext.users?.[0]?.id || server.password || server.id || "").toLowerCase();
+            const tag = String(ob.tag || "").toLowerCase();
+            const protocol = String(ob.protocol || "").toLowerCase();
+            
             return (
-                ob.tag?.toLowerCase().includes(q) ||
-                ob.protocol.toLowerCase().includes(q) ||
+                tag.includes(q) ||
+                protocol.includes(q) ||
                 address.includes(q) ||
                 key.includes(q)
             );
