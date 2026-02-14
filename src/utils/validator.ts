@@ -28,9 +28,25 @@ export const validateInbound = (data: any): ValidationError[] => {
 
 export const validateOutbound = (data: any): ValidationError[] => {
     const errors: ValidationError[] = [];
+
     if (!data.tag || data.tag.trim() === "") {
         errors.push({ field: "tag", message: "Tag is required" });
     }
+
+    const VALID_PROTOCOLS = [
+        "vless", "vmess", "trojan", "shadowsocks", "socks", "http",
+        "freedom", "blackhole", "dns", "wireguard", "loopback", "dokodemo-door"
+    ];
+
+    if (!data.protocol || !VALID_PROTOCOLS.includes(data.protocol)) {
+        errors.push({ 
+            field: "protocol", 
+            message: `Invalid protocol: "${data.protocol}". Supported: ${VALID_PROTOCOLS.join(', ')}` 
+        });
+        return errors; 
+    }
+    // ----------------------------------------------------
+
     if (['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(data.protocol)) {
         const settings = data.settings || {};
         let addr = "";
@@ -54,6 +70,7 @@ export const validateOutbound = (data: any): ValidationError[] => {
             errors.push({ field: "port", message: "Remote port is required" });
         }
     }
+
     return errors;
 };
 
