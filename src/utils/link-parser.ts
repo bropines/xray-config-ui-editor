@@ -1,7 +1,12 @@
 export const parseXrayLink = (link: string): any => {
   try {
     const url = new URL(link);
-    const protocol = url.protocol.replace(':', '');
+    let protocol = url.protocol.replace(':', '');
+    
+    if (protocol === 'ss') {
+        protocol = 'shadowsocks';
+    }
+
     const hashPart = link.includes('#') ? link.split('#')[1] : '';
     const tag = decodeURIComponent(hashPart);
     const query = Object.fromEntries(url.searchParams.entries());
@@ -31,7 +36,7 @@ export const parseXrayLink = (link: string): any => {
         }]
       };
     } 
-    // --- TROJAN (Исправлено: используем servers вместо vnext) ---
+    // --- TROJAN ---
     else if (protocol === 'trojan') {
       baseOutbound.settings = {
         servers: [{
@@ -43,9 +48,12 @@ export const parseXrayLink = (link: string): any => {
         }]
       };
     }
+
     // --- SHADOWSOCKS ---
-    else if (protocol === 'ss') {
-      const mainPart = link.split('#')[0].replace('ss://', '');
+    else if (protocol === 'shadowsocks') { 
+      const linkBody = link.split('://')[1]; 
+      const mainPart = linkBody.split('#')[0];
+      
       const lastAtIndex = mainPart.lastIndexOf('@');
       let method = "";
       let password = "";
@@ -91,7 +99,7 @@ export const parseXrayLink = (link: string): any => {
         throw new Error("Unsupported protocol");
     }
 
-    // --- ОБЩАЯ ЛОГИКА STREAM SETTINGS (Network, TLS, Reality) ---
+    // --- (Network, TLS, Reality) ---
     const network = query.type || query.net || "tcp";
     baseOutbound.streamSettings.network = network;
     
