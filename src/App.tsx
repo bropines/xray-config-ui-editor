@@ -186,7 +186,7 @@ export const App = () => {
         });
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col xl:h-screen xl:overflow-hidden h-auto"
+        <div className="min-h-[100dvh] bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col xl:h-[100dvh] xl:overflow-hidden h-auto"
             onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
         >
             <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: '#1e293b', border: '1px solid #334155', color: 'white' } }} />
