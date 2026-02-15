@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>Xray Configurator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { 
-            theme: { 
-                extend: { 
-                    colors: { 
-                        dark: '#0f172a', 
-                        surface: '#1e293b' 
-                    } 
-                } 
-            } 
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f172a',
+                        surface: '#1e293b'
+                    }
+                }
+            }
         }
     </script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=block">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
-    
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=block">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
+
     <!-- ВАЖНО: type="text/tailwindcss" -->
     <style type="text/tailwindcss">
         body { 
-            font-family: 'Inter', sans-serif; 
-            @apply bg-slate-950 text-slate-200;
-        }
+    font-family: 'Inter', sans-serif; 
+    @apply bg-slate-950 text-slate-200;
+    min-height: 100dvh;
+}
+
+#app {
+    height: 100dvh;
+}
         
         /* Определяем компоненты для переиспользования */
         @layer components {
@@ -63,8 +72,10 @@
         }
     </style>
 </head>
+
 <body>
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
 </body>
+
 </html>
