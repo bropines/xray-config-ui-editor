@@ -49,7 +49,7 @@ export const App = () => {
 
     // Локальные стейты UI
     const [modal, setModal] = useState<{ type: string | null, data: any, index: number | null }>({ type: null, data: null, index: null });
-    
+
     // Стейт для частичного JSON
     const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({
         open: false, title: "", section: "", data: null, schemaMode: "full"
@@ -182,16 +182,16 @@ export const App = () => {
         .filter((ob: any) => {
             const q = obSearch.toLowerCase();
             if (!q) return true;
-            
+
             const settings = ob.settings || {};
             const vnext = settings.vnext?.[0] || {};
             const server = settings.servers?.[0] || settings;
-            
+
             const address = String(vnext.address || server.address || "").toLowerCase();
             const key = String(vnext.users?.[0]?.id || server.password || server.id || "").toLowerCase();
             const tag = String(ob.tag || "").toLowerCase();
             const protocol = String(ob.protocol || "").toLowerCase();
-            
+
             return (
                 tag.includes(q) ||
                 protocol.includes(q) ||
@@ -214,7 +214,7 @@ export const App = () => {
 
             {/* --- HEADER (New Design) --- */}
             <nav className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50 px-4 py-2 shadow-2xl flex items-center justify-between h-16 shrink-0">
-                
+
                 {/* LEFT: Logo & Status */}
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/20 shrink-0">
@@ -231,10 +231,10 @@ export const App = () => {
                             <span className="text-[10px] text-slate-500 font-medium">Local Mode</span>
                         )}
                     </div>
-                    
+
                     {configErrors.length > 0 && (
-                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2" 
-                             title={configErrors.join('\n')}>
+                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2"
+                            title={configErrors.join('\n')}>
                             <Icon name="Warning" />
                             <span className="text-[10px] font-bold uppercase hidden md:inline">Invalid Config</span>
                         </div>
@@ -243,25 +243,24 @@ export const App = () => {
 
                 {/* RIGHT: Actions */}
                 <div className="flex items-center gap-1.5 md:gap-3">
-                    
+
                     {/* Cloud Actions Group */}
                     {remnawave.connected && (
                         <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1">
                             {/* Switch Profile */}
-                            <button onClick={() => setRemnawaveModalOpen(true)} 
+                            <button onClick={() => setRemnawaveModalOpen(true)}
                                 className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
                                 title="Switch Profile">
                                 <Icon name="ListDashes" weight="bold" />
                             </button>
 
                             {/* Push Button with Double Confirm */}
-                            <button 
+                            <button
                                 onClick={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${
-                                    pushStage === 'confirm' 
-                                    ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce' 
-                                    : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
-                                }`}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${pushStage === 'confirm'
+                                        ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
+                                        : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
+                                    }`}
                             >
                                 <Icon name={pushStage === 'confirm' ? "SealCheck" : "CloudArrowUp"} weight="bold" className="text-base" />
                                 <span className="hidden lg:inline">{pushStage === 'confirm' ? 'Confirm Push?' : 'Push'}</span>
@@ -270,7 +269,7 @@ export const App = () => {
                             <div className="w-px h-4 bg-slate-800 mx-1" />
 
                             {/* Disconnect */}
-                            <button onClick={disconnectRemnawave} 
+                            <button onClick={disconnectRemnawave}
                                 className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
                                 title="Disconnect">
                                 <Icon name="LinkBreak" weight="bold" />
@@ -366,8 +365,15 @@ export const App = () => {
 
                         {/* CONTENT AREA */}
                         {rawMode ? (
-                            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-1 shadow-2xl min-h-[600px] xl:min-h-0">
-                                <JsonField label="Full Configuration" value={config} onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }} className="h-full" />
+                            <div className="flex-1 h-full min-h-0 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-0 shadow-2xl flex flex-col">
+                                <div className="flex-1 h-full relative">
+                                    <JsonField
+                                        label="Full Configuration"
+                                        value={config}
+                                        onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }}
+                                        className="h-full absolute inset-0" 
+                                    />
+                                </div>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-6 flex-1 min-h-0 xl:overflow-hidden">
@@ -381,7 +387,7 @@ export const App = () => {
                                         className="h-[500px] xl:h-full"
                                         actions={
                                             <div className="flex gap-1">
-                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("inbounds", "Inbounds")} icon="Code" title="View JSON"/>
+                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("inbounds", "Inbounds")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus" />
                                             </div>
                                         }
@@ -408,7 +414,7 @@ export const App = () => {
                                         className="h-[500px] xl:h-full"
                                         actions={
                                             <div className="flex gap-1">
-                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("routing", "Routing")} icon="Code" title="View JSON"/>
+                                                <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("routing", "Routing")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>
                                             </div>
                                         }
@@ -482,33 +488,33 @@ export const App = () => {
                                             <div className="flex gap-2 items-center">
                                                 <div className="relative hidden md:block">
                                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
-                                                    <input 
+                                                    <input
                                                         className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white placeholder:text-slate-600"
                                                         placeholder="Filter IP, Tag..."
                                                         value={obSearch}
                                                         onChange={e => setObSearch(e.target.value)}
                                                     />
                                                 </div>
-                                                
-                                                <Button 
-                                                    variant="ghost" 
-                                                    className="p-1.5" 
-                                                    onClick={() => setBatchModalOpen(true)} 
-                                                    icon="Stack" 
+
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-1.5"
+                                                    onClick={() => setBatchModalOpen(true)}
+                                                    icon="Stack"
                                                     title="Batch Import/Export"
                                                 />
 
-                                                <Button 
-                                                    variant="ghost" 
-                                                    className="p-1.5" 
-                                                    onClick={() => openSectionJson("outbounds", "Outbounds")} 
-                                                    icon="Code" 
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-1.5"
+                                                    onClick={() => openSectionJson("outbounds", "Outbounds")}
+                                                    icon="Code"
                                                     title="View JSON"
                                                 />
 
-                                                <Button 
-                                                    variant="ghost" 
-                                                    onClick={() => setModal({ type: 'outbound', data: null, index: null })} 
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => setModal({ type: 'outbound', data: null, index: null })}
                                                     icon="Plus"
                                                     title="Add New Outbound"
                                                 />
@@ -516,8 +522,8 @@ export const App = () => {
                                         }
                                     >
                                         <div className="md:hidden mb-3 relative">
-                                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
-                                             <input className="input-base pl-8 text-xs py-2 bg-slate-950/50" placeholder="Search outbounds..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
+                                            <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
+                                            <input className="input-base pl-8 text-xs py-2 bg-slate-950/50" placeholder="Search outbounds..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
                                         </div>
 
                                         <div className="space-y-2">
@@ -540,15 +546,15 @@ export const App = () => {
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                            <button 
-                                                                onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })} 
+                                                            <button
+                                                                onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })}
                                                                 className="btn-icon"
                                                                 title="Edit"
                                                             >
                                                                 <Icon name="PencilSimple" />
                                                             </button>
-                                                            <button 
-                                                                onClick={() => deleteItem('outbounds', ob.i)} 
+                                                            <button
+                                                                onClick={() => deleteItem('outbounds', ob.i)}
                                                                 className="btn-icon-danger"
                                                                 title="Delete"
                                                             >
