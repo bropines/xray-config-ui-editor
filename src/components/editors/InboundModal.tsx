@@ -5,31 +5,31 @@ import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
 import { toast } from 'sonner';
 
-// Импортируем функцию как обычное значение (без type)
-import { validateInbound } from '../../utils/validator';
-// Импортируем интерфейс только как тип
-import type { ValidationError } from '../../utils/validator';
+// Валидатор
+import { validateInbound, type ValidationError } from '../../utils/validator';
+
 // Суб-компоненты
 import { InboundGeneral } from './inbound/InboundGeneral';
 import { InboundClients } from './inbound/InboundClients';
 import { InboundSniffing } from './inbound/InboundSniffing';
+import { InboundTun } from './inbound/InboundTun';
 
 export const InboundModal = ({ data, onSave, onClose }: any) => {
-    const [local, setLocal] = useState(data || {
-        tag: `in-${Math.floor(Math.random() * 1000)}`,
-        port: 10808,
-        protocol: "vless",
-        settings: { clients: [], decryption: "none" },
+    const [local, setLocal] = useState(data || { 
+        tag: `in-${Math.floor(Math.random()*1000)}`, 
+        port: 10808, 
+        protocol: "vless", 
+        settings: { clients: [], decryption: "none" }, 
         streamSettings: { network: "tcp", security: "none", tcpSettings: {} },
         sniffing: { enabled: true, destOverride: ["http", "tls"] }
     });
 
     const [rawMode, setRawMode] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
-
+    
     const handleUpdate = (path: string | string[], value: any) => {
         const newObj = JSON.parse(JSON.stringify(local));
-
+        
         if (Array.isArray(path)) {
             let curr = newObj;
             for (let i = 0; i < path.length - 1; i++) {
@@ -40,33 +40,46 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
         } else {
             newObj[path] = value;
         }
-
+        
         setLocal(newObj);
-        // Очищаем ошибки при изменении
         if (errors.length > 0) setErrors([]);
     };
 
     const handleProtocolChange = (proto: string) => {
         const newObj = { ...local, protocol: proto, settings: {} };
         const uuid = crypto.randomUUID();
-
+        
         if (proto === 'vless') {
             newObj.settings = { clients: [{ id: uuid, flow: "xtls-rprx-vision", level: 0 }], decryption: "none" };
+            newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
         } else if (proto === 'vmess') {
             newObj.settings = { clients: [{ id: uuid, level: 0 }] };
+            newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
         } else if (proto === 'trojan') {
             newObj.settings = { clients: [{ password: "password", level: 0 }] };
+            newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
         } else if (proto === 'shadowsocks') {
             newObj.settings = { method: "aes-256-gcm", password: "password", network: "tcp,udp" };
+            newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
         } else if (proto === 'socks') {
             newObj.settings = { auth: "noauth", udp: true };
+            newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
+        } else if (proto === 'tun') {
+            // Специфичные настройки для TUN
+            newObj.settings = { mtu: 1500, stack: "system" };
+            newObj.sniffing = { enabled: true, destOverride: ["http", "tls"] };
+            // Удаляем порт и listen, они не нужны для TUN
+            delete newObj.port;
+            delete newObj.listen;
+            // StreamSettings не используются для TUN в inbound
+            delete newObj.streamSettings;
         }
+
         setLocal(newObj);
         setErrors([]);
     };
 
     const handleSave = () => {
-        // Валидация перед сохранением
         const validationErrors = validateInbound(local);
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
@@ -76,32 +89,25 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
         onSave(local);
     };
 
-    // Хелпер для поиска ошибки конкретного поля
     const getError = (field: string) => errors.find(e => e.field === field)?.message;
 
     if (rawMode) return (
-        <Modal
-            title="Inbound JSON"
-            onClose={onClose}
+        <Modal 
+            title="Inbound JSON" 
+            onClose={onClose} 
             onSave={() => onSave(local)}
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">UI Mode</Button>}
         >
             <div className="h-[600px]">
-<JsonField 
-    label="Inbound JSON" 
-    value={local} 
-    onChange={setLocal} 
-    className="h-full" 
-    schemaMode="inbound" // <-- Должно быть в единственном числе
-/>
+                <JsonField label="Full JSON" value={local} onChange={setLocal} schemaMode="inbound" className="h-full" />
             </div>
         </Modal>
     );
 
     return (
-        <Modal
-            title="Inbound Editor"
-            onClose={onClose}
+        <Modal 
+            title="Inbound Editor" 
+            onClose={onClose} 
             onSave={handleSave}
             extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(true)} icon="Code">JSON</Button>}
         >
@@ -116,31 +122,38 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                     </div>
                 )}
 
-                <InboundGeneral
-                    inbound={local}
-                    onChange={handleUpdate}
+                <InboundGeneral 
+                    inbound={local} 
+                    onChange={handleUpdate} 
                     onProtocolChange={handleProtocolChange}
-                    // Передаем ошибки в компонент
                     errors={{
                         tag: getError('tag'),
                         port: getError('port')
                     }}
                 />
 
-                <InboundClients
-                    inbound={local}
-                    onChange={handleUpdate}
-                />
+                {/* Если выбран TUN - показываем его редактор, иначе стандартный клиентский */}
+                {local.protocol === 'tun' ? (
+                    <InboundTun inbound={local} onChange={handleUpdate} />
+                ) : (
+                    <InboundClients 
+                        inbound={local} 
+                        onChange={handleUpdate} 
+                    />
+                )}
 
-                <TransportSettings
-                    streamSettings={local.streamSettings}
-                    onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
-                    isClient={false}
-                />
+                {/* Transport Settings не нужны для TUN */}
+                {local.protocol !== 'tun' && local.streamSettings && (
+                    <TransportSettings 
+                        streamSettings={local.streamSettings} 
+                        onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
+                        isClient={false} 
+                    />
+                )}
 
-                <InboundSniffing
-                    sniffing={local.sniffing}
-                    onChange={handleUpdate}
+                <InboundSniffing 
+                    sniffing={local.sniffing} 
+                    onChange={handleUpdate} 
                 />
             </div>
         </Modal>
