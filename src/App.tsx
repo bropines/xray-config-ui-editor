@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useConfigStore, type XrayConfig } from "./store/configStore";
 import { Button } from "./components/ui/Button";
 import { Icon } from "./components/ui/Icon";
@@ -49,26 +49,40 @@ export const App = () => {
 
     // Локальные стейты UI
     const [modal, setModal] = useState<{ type: string | null, data: any, index: number | null }>({ type: null, data: null, index: null });
-
+    
     // Стейт для частичного JSON
     const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({
         open: false, title: "", section: "", data: null, schemaMode: "full"
     });
 
-    // Стейт для поиска по аутбаундам
-    const [obSearch, setObSearch] = useState("");
-
-    const [rawMode, setRawMode] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
     const [batchModalOpen, setBatchModalOpen] = useState(false);
 
+    // Стейт для UI
+    const [rawMode, setRawMode] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [obSearch, setObSearch] = useState("");
+
+    // State для двойного подтверждения ПУША
+    const [pushStage, setPushStage] = useState<'idle' | 'confirm'>('idle');
+
+    // Сброс подтверждения через 3 секунды
+    useEffect(() => {
+        if (pushStage === 'confirm') {
+            const timer = setTimeout(() => setPushStage('idle'), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [pushStage]);
+
+    const handleRealPush = () => {
+        saveToRemnawave();
+        setPushStage('idle');
+    };
 
     // --- File Handlers ---
 
     const loadFile = (file: File) => {
         const reader = new FileReader();
-        // Исправлена типизация события
         reader.onload = (e: ProgressEvent<FileReader>) => {
             try {
                 const result = e.target?.result;
@@ -162,7 +176,8 @@ export const App = () => {
         return allErrors;
     };
     const configErrors = getFullConfigValidation();
-// --- Filter Outbounds ---
+
+    // --- Filter Outbounds ---
     const filteredOutbounds = (config?.outbounds || []).map((ob: any, i: number) => ({ ...ob, i }))
         .filter((ob: any) => {
             const q = obSearch.toLowerCase();
@@ -186,9 +201,7 @@ export const App = () => {
         });
 
     return (
-        <div className="min-h-[100dvh] bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col xl:h-[100dvh] xl:overflow-hidden h-auto"
-            onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-        >
+        <div className="min-h-[100dvh] bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 relative flex flex-col h-auto overflow-x-hidden">
             <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: '#1e293b', border: '1px solid #334155', color: 'white' } }} />
 
             {/* Drag Overlay */}
@@ -199,65 +212,95 @@ export const App = () => {
                 </div>
             )}
 
-            {/* --- HEADER --- */}
-            <nav className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 py-3 shadow-md flex flex-wrap gap-4 justify-between items-center shrink-0 h-16 box-border">
-                <div className="flex items-center gap-2 md:gap-3">
-                    <div className="bg-indigo-600 p-1.5 md:p-2 rounded-lg text-white shadow-lg">
-                        <Icon name="Planet" className="text-lg md:text-xl" />
+            {/* --- HEADER (New Design) --- */}
+            <nav className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50 px-4 py-2 shadow-2xl flex items-center justify-between h-16 shrink-0">
+                
+                {/* LEFT: Logo & Status */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/20 shrink-0">
+                        <Icon name="Planet" weight="fill" className="text-xl" />
                     </div>
-                    <span className="font-bold text-base md:text-lg tracking-tight text-white">Xray GUI</span>
-
+                    <div className="flex flex-col leading-tight hidden sm:flex">
+                        <span className="font-black text-sm tracking-tight text-white uppercase">Xray GUI</span>
+                        {remnawave.connected ? (
+                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                Cloud Linked
+                            </span>
+                        ) : (
+                            <span className="text-[10px] text-slate-500 font-medium">Local Mode</span>
+                        )}
+                    </div>
+                    
                     {configErrors.length > 0 && (
-                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2"
-                            title={configErrors.join('\n')}>
+                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2" 
+                             title={configErrors.join('\n')}>
                             <Icon name="Warning" />
-                            <span className="text-[10px] font-bold uppercase hidden md:inline">Config Invalid</span>
+                            <span className="text-[10px] font-bold uppercase hidden md:inline">Invalid Config</span>
                         </div>
                     )}
                 </div>
 
-                <div className="flex gap-2 items-center">
-                    {remnawave.connected ? (
-                        <div className="flex items-center gap-1 bg-indigo-900/50 border border-indigo-500/50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg mr-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)] mr-2"></div>
-                            <span className="text-xs font-bold text-indigo-200 hidden md:inline mr-2">Remnawave</span>
-
-                            <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
-
-                            <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={() => setRemnawaveModalOpen(true)} title="Switch Profile">
+                {/* RIGHT: Actions */}
+                <div className="flex items-center gap-1.5 md:gap-3">
+                    
+                    {/* Cloud Actions Group */}
+                    {remnawave.connected && (
+                        <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1">
+                            {/* Switch Profile */}
+                            <button onClick={() => setRemnawaveModalOpen(true)} 
+                                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
+                                title="Switch Profile">
                                 <Icon name="ListDashes" weight="bold" />
-                            </Button>
+                            </button>
 
-                            <Button variant="ghost" className="p-1 h-auto text-xs text-indigo-300 hover:text-white" onClick={saveToRemnawave} title="Save to Cloud">
-                                <Icon name="CloudArrowUp" weight="bold" />
-                            </Button>
+                            {/* Push Button with Double Confirm */}
+                            <button 
+                                onClick={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${
+                                    pushStage === 'confirm' 
+                                    ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce' 
+                                    : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
+                                }`}
+                            >
+                                <Icon name={pushStage === 'confirm' ? "SealCheck" : "CloudArrowUp"} weight="bold" className="text-base" />
+                                <span className="hidden lg:inline">{pushStage === 'confirm' ? 'Confirm Push?' : 'Push'}</span>
+                            </button>
 
-                            <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
+                            <div className="w-px h-4 bg-slate-800 mx-1" />
 
-                            <Button variant="ghost" className="p-1 h-auto text-xs text-rose-400 hover:text-rose-200" onClick={disconnectRemnawave} title="Disconnect">
+                            {/* Disconnect */}
+                            <button onClick={disconnectRemnawave} 
+                                className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
+                                title="Disconnect">
                                 <Icon name="LinkBreak" weight="bold" />
-                            </Button>
+                            </button>
                         </div>
-                    ) : (
-                        <Button variant="secondary" onClick={() => setRemnawaveModalOpen(true)} className="text-xs mr-2 border-indigo-500/30 hover:border-indigo-500/80">
-                            <Icon name="Cloud" className="text-indigo-400" /> <span className="hidden md:inline">Remnawave</span>
+                    )}
+
+                    {!remnawave.connected && (
+                        <Button variant="secondary" onClick={() => setRemnawaveModalOpen(true)} className="text-xs h-9 border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10">
+                            <Icon name="Cloud" /> <span className="hidden md:inline">Connect Cloud</span>
                         </Button>
                     )}
 
-                    <div className="w-px h-6 bg-slate-800 mx-1 hidden md:block"></div>
+                    <div className="w-px h-8 bg-slate-800/50 mx-1 hidden sm:block" />
 
-                    <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 md:px-4 md:py-2 rounded-lg font-bold cursor-pointer transition-all border border-slate-700 flex items-center gap-2 text-xs md:text-sm">
-                        <Icon name="FolderOpen" /> <span className="hidden md:inline">Open File</span>
-                        <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
-                    </label>
-                    <Button variant="success" onClick={downloadConfig} icon="DownloadSimple" className="font-bold p-2 md:px-4 md:py-2 text-xs md:text-sm" disabled={!config}>
-                        <span className="hidden md:inline">Download</span>
-                    </Button>
+                    {/* File Actions */}
+                    <div className="flex gap-1.5">
+                        <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-xl cursor-pointer transition-all border border-slate-700 flex items-center gap-2 text-sm h-9">
+                            <Icon name="FolderOpen" />
+                            <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
+                        </label>
+                        <Button variant="success" onClick={downloadConfig} icon="DownloadSimple" className="rounded-xl h-9 px-4 text-sm" disabled={!config}>
+                            <span className="hidden md:inline">Download</span>
+                        </Button>
+                    </div>
                 </div>
             </nav>
 
             {/* --- MAIN CONTENT --- */}
-            <main className="p-4 md:p-6 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex-1 flex flex-col min-h-0 h-auto xl:h-[calc(100vh-4rem)]">
+            <main className="p-4 md:p-6 max-w-[1600px] mx-auto w-full flex-1 flex flex-col min-h-0 h-auto xl:h-[calc(100dvh-4rem)]">
                 {!config ? (
                     <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh]">
                         <div className="text-center mb-10">
@@ -437,54 +480,44 @@ export const App = () => {
                                         className="h-[500px] xl:h-full"
                                         actions={
                                             <div className="flex gap-2 items-center">
-                                                {/* Поиск (Десктопная версия) */}
                                                 <div className="relative hidden md:block">
                                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
-                                                    <input
+                                                    <input 
                                                         className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white placeholder:text-slate-600"
                                                         placeholder="Filter IP, Tag..."
                                                         value={obSearch}
                                                         onChange={e => setObSearch(e.target.value)}
                                                     />
                                                 </div>
-
-                                                {/* Кнопка Batch Import/Export */}
-                                                <Button
-                                                    variant="ghost"
-                                                    className="p-1.5"
-                                                    onClick={() => setBatchModalOpen(true)}
-                                                    icon="Stack"
+                                                
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="p-1.5" 
+                                                    onClick={() => setBatchModalOpen(true)} 
+                                                    icon="Stack" 
                                                     title="Batch Import/Export"
                                                 />
 
-                                                {/* Кнопка JSON для всей секции */}
-                                                <Button
-                                                    variant="ghost"
-                                                    className="p-1.5"
-                                                    onClick={() => openSectionJson("outbounds", "Outbounds")}
-                                                    icon="Code"
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="p-1.5" 
+                                                    onClick={() => openSectionJson("outbounds", "Outbounds")} 
+                                                    icon="Code" 
                                                     title="View JSON"
                                                 />
 
-                                                {/* Кнопка добавления нового аута */}
-                                                <Button
-                                                    variant="ghost"
-                                                    onClick={() => setModal({ type: 'outbound', data: null, index: null })}
+                                                <Button 
+                                                    variant="ghost" 
+                                                    onClick={() => setModal({ type: 'outbound', data: null, index: null })} 
                                                     icon="Plus"
                                                     title="Add New Outbound"
                                                 />
                                             </div>
                                         }
                                     >
-                                        {/* Поиск (Мобильная версия) */}
                                         <div className="md:hidden mb-3 relative">
-                                            <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
-                                            <input
-                                                className="input-base pl-8 text-xs py-2 bg-slate-950/50"
-                                                placeholder="Search outbounds..."
-                                                value={obSearch}
-                                                onChange={e => setObSearch(e.target.value)}
-                                            />
+                                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
+                                             <input className="input-base pl-8 text-xs py-2 bg-slate-950/50" placeholder="Search outbounds..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
                                         </div>
 
                                         <div className="space-y-2">
@@ -507,15 +540,15 @@ export const App = () => {
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })}
+                                                            <button 
+                                                                onClick={() => setModal({ type: 'outbound', data: ob, index: ob.i })} 
                                                                 className="btn-icon"
                                                                 title="Edit"
                                                             >
                                                                 <Icon name="PencilSimple" />
                                                             </button>
-                                                            <button
-                                                                onClick={() => deleteItem('outbounds', ob.i)}
+                                                            <button 
+                                                                onClick={() => deleteItem('outbounds', ob.i)} 
                                                                 className="btn-icon-danger"
                                                                 title="Delete"
                                                             >
