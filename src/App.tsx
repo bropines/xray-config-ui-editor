@@ -258,8 +258,8 @@ export const App = () => {
                             <button
                                 onClick={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${pushStage === 'confirm'
-                                        ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
-                                        : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
+                                    ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
+                                    : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
                                     }`}
                             >
                                 <Icon name={pushStage === 'confirm' ? "SealCheck" : "CloudArrowUp"} weight="bold" className="text-base" />
@@ -365,15 +365,13 @@ export const App = () => {
 
                         {/* CONTENT AREA */}
                         {rawMode ? (
-                            <div className="flex-1 h-full min-h-0 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-0 shadow-2xl flex flex-col">
-                                <div className="flex-1 h-full relative">
-                                    <JsonField
-                                        label="Full Configuration"
-                                        value={config}
-                                        onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }}
-                                        className="h-full absolute inset-0" 
-                                    />
-                                </div>
+                            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-2 shadow-2xl h-full flex flex-col min-h-0">
+                                <JsonField
+                                    label="Full Configuration"
+                                    value={config}
+                                    onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }}
+                                    className="flex-1 h-full min-h-0" // <--- ВАЖНО: Растягиваем на всю высоту
+                                />
                             </div>
                         ) : (
                             <div className="flex flex-col gap-6 flex-1 min-h-0 xl:overflow-hidden">

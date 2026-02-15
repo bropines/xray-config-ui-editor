@@ -6,7 +6,7 @@ interface JsonFieldProps {
     value: any;
     onChange: (val: any) => void;
     className?: string;
-    schemaMode?: 'full' | 'inbound' | 'outbound' | 'rule' | 'dns' | 'balancer'; // Новый проп
+    schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing';
 }
 
 export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full' }: JsonFieldProps) => {
@@ -21,6 +21,11 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         isInternalUpdate.current = false;
     }, [value]);
 
+    // Функция для удаления комментариев перед парсингом (чтобы JSON.parse не падал)
+    const stripComments = (jsonString: string) => {
+        return jsonString.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
+    };
+
     const handleEditorChange = (newVal: string | undefined) => {
         const v = newVal || "";
         setText(v);
@@ -29,7 +34,10 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                 onChange(undefined);
                 setError(false);
             } else {
-                const parsed = JSON.parse(v);
+                // Сначала чистим комменты, потом парсим
+                const cleanJson = stripComments(v);
+                const parsed = JSON.parse(cleanJson);
+                
                 isInternalUpdate.current = true;
                 onChange(parsed);
                 setError(false);
@@ -42,17 +50,23 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
     return (
         <div className={`flex flex-col gap-2 h-full ${className}`}>
             {label && (
-                <label className="text-xs uppercase font-bold text-slate-500 flex justify-between">
-                    {label}
-                    {error && <span className="text-rose-500 font-bold animate-pulse">Invalid JSON syntax</span>}
-                </label>
+                <div className="flex justify-between items-end">
+                    <label className="text-xs uppercase font-bold text-slate-500">
+                        {label}
+                    </label>
+                    {error && <span className="text-rose-500 font-bold text-[10px] animate-pulse">Invalid JSON Syntax</span>}
+                </div>
             )}
-            <div className={`flex-1 min-h-[300px] rounded-lg overflow-hidden transition-all ${error ? 'ring-1 ring-rose-500' : ''}`}>
-                <JsonEditor 
-                    value={text} 
-                    onChange={handleEditorChange} 
-                    schemaMode={schemaMode} // Передаем режим
-                />
+            
+            {/* Контейнер редактора с абсолютным позиционированием внутри flex-элемента */}
+            <div className={`flex-1 min-h-[300px] relative rounded-lg overflow-hidden border transition-all bg-[#1e1e1e] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
+                <div className="absolute inset-0">
+                    <JsonEditor 
+                        value={text} 
+                        onChange={handleEditorChange} 
+                        schemaMode={schemaMode} 
+                    />
+                </div>
             </div>
         </div>
     );
