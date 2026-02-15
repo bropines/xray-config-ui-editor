@@ -1,7 +1,7 @@
-import isIP from 'validator/lib/isIP';
-import isFQDN from 'validator/lib/isFQDN';
-import isPort from 'validator/lib/isPort';
-import isUUID from 'validator/lib/isUUID';
+import validator from 'validator';
+
+// Распаковываем функции из основного пакета для совместимости со сборщиком
+const { isIP, isFQDN, isPort, isUUID } = validator;
 
 export interface ValidationError {
     field: string;
@@ -11,23 +11,24 @@ export interface ValidationError {
 // --- БАЗОВЫЕ ПРОВЕРКИ ---
 
 export const isValidDomain = (domain: string) => {
+    // require_tld: false позволяет использовать локальные домены типа "localhost" или "node-1"
     return isFQDN(domain, { require_tld: false, allow_underscores: true });
 };
 
 export const isValidIP = (ip: string) => {
-    return isIP(ip) !== 0;
+    return isIP(ip) !== 0; // Возвращает 4, 6 или 0
 };
 
-// Проверка адреса (IP или Домен)
+// Проверка адреса (может быть как IP, так и Домен)
 export const isValidAddress = (addr: string) => {
     if (!addr) return false;
-    return isValidIP(addr) || isValidDomain(addr);
+    const cleanAddr = String(addr).trim();
+    return isValidIP(cleanAddr) || isValidDomain(cleanAddr);
 };
 
-// Экспортируем алиас для DnsHosts.tsx
+// Алиас для обратной совместимости в DnsHosts.tsx
 export const isValidHostDestination = isValidAddress;
 
-// Проверка порта
 export const isValidPort = (port: any) => {
     return isPort(String(port));
 };
@@ -37,27 +38,38 @@ export const isValidPort = (port: any) => {
 export const validateInbound = (data: any): ValidationError[] => {
     const errors: ValidationError[] = [];
 
+    // 1. Проверка Тега
     if (!data.tag || data.tag.trim().length < 1) {
         errors.push({ field: "tag", message: "Tag is required" });
     }
 
+    // 2. Проверка Порта (пропускаем для протокола TUN)
     if (data.protocol !== 'tun') {
         if (!isValidPort(data.port)) {
             errors.push({ field: "port", message: "Invalid port (1-65535)" });
         }
     }
 
+    // 3. Проверка Listen IP (если указан)
     if (data.listen && !isValidIP(data.listen)) {
         errors.push({ field: "listen", message: "Listen address must be a valid IP" });
     }
 
+    // 4. Специфичные проверки протоколов
     const settings = data.settings || {};
-    if (['vless', 'vmess'].includes(data.protocol)) {
-        settings.clients?.forEach((c: any, i: number) => {
-            if (c.id && !isUUID(c.id)) {
-                errors.push({ field: "clients", message: `Client #${i+1}: Invalid UUID` });
-            }
-        });
+    if (['vless', 'vmess', 'trojan'].includes(data.protocol)) {
+        // Проверяем наличие массива клиентов (даже пустого для панелей типа Remnawave)
+        if (!settings.clients) {
+            errors.push({ field: "clients", message: "Clients settings missing" });
+        } else {
+            // Если клиенты есть, проверяем их UUID
+            settings.clients.forEach((c: any, i: number) => {
+                const id = c.id || c.password;
+                if (id && data.protocol !== 'trojan' && !isUUID(String(id))) {
+                    errors.push({ field: "clients", message: `Client #${i+1}: Invalid UUID format` });
+                }
+            });
+        }
     }
 
     if (data.protocol === 'shadowsocks' && !settings.password) {
@@ -70,32 +82,60 @@ export const validateInbound = (data: any): ValidationError[] => {
 export const validateOutbound = (data: any): ValidationError[] => {
     const errors: ValidationError[] = [];
 
-    if (!data.tag) errors.push({ field: "tag", message: "Tag is required" });
+    // 1. Проверка Тега
+    if (!data.tag || data.tag.trim() === "") {
+        errors.push({ field: "tag", message: "Tag is required" });
+    }
     
-    const VALID_PROTOCOLS = ["vless", "vmess", "trojan", "shadowsocks", "socks", "http", "freedom", "blackhole", "dns", "wireguard", "loopback", "dokodemo-door", "tun"];
+    // 2. Проверка валидности протокола Xray
+    const VALID_PROTOCOLS = [
+        "vless", "vmess", "trojan", "shadowsocks", "socks", "http",
+        "freedom", "blackhole", "dns", "wireguard", "loopback", "dokodemo-door", "tun"
+    ];
+
     if (!data.protocol || !VALID_PROTOCOLS.includes(data.protocol)) {
-        errors.push({ field: "protocol", message: `Invalid protocol: ${data.protocol}` });
+        errors.push({ 
+            field: "protocol", 
+            message: `Invalid protocol: "${data.protocol}".` 
+        });
+        return errors; 
     }
 
+    // 3. Проверка настроек удаленного сервера (адрес и порт)
     if (['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(data.protocol)) {
         const s = data.settings || {};
-        const addr = s.vnext?.[0]?.address || s.servers?.[0]?.address || s.address;
-        const port = s.vnext?.[0]?.port || s.servers?.[0]?.port || s.port;
+        let addr = "";
+        let port: any = 0;
+
+        // Ищем данные в любой структуре (vnext, servers или flat)
+        if (Array.isArray(s.vnext) && s.vnext[0]) {
+            addr = s.vnext[0].address;
+            port = s.vnext[0].port;
+        } else if (Array.isArray(s.servers) && s.servers[0]) {
+            addr = s.servers[0].address;
+            port = s.servers[0].port;
+        } else {
+            addr = s.address;
+            port = s.port;
+        }
 
         if (!isValidAddress(addr)) {
-            errors.push({ field: "address", message: "Valid remote address (IP/FQDN) is required" });
+            errors.push({ field: "address", message: "Valid remote address (IP/Domain) is required" });
         }
         if (!isValidPort(port)) {
             errors.push({ field: "port", message: "Valid remote port is required" });
         }
     }
 
+    // 4. Проверка REALITY
     const stream = data.streamSettings || {};
     if (stream.security === 'reality') {
         const r = stream.realitySettings || {};
-        if (!r.publicKey) errors.push({ field: "reality", message: "Reality Public Key is missing" });
+        if (!r.publicKey) {
+            errors.push({ field: "reality", message: "Reality Public Key is required" });
+        }
         if (r.shortId && r.shortId.length % 2 !== 0) {
-            errors.push({ field: "reality", message: "ShortID must be hex (even length)" });
+            errors.push({ field: "reality", message: "ShortID must be hex string with even length" });
         }
     }
 
@@ -104,13 +144,19 @@ export const validateOutbound = (data: any): ValidationError[] => {
 
 export const validateBalancer = (balancer: any): ValidationError[] => {
     const errors: ValidationError[] = [];
-    if (!balancer.tag) errors.push({ field: "tag", message: "Balancer tag is required" });
+    if (!balancer.tag || balancer.tag.trim() === "") {
+        errors.push({ field: "tag", message: "Balancer tag is required" });
+    }
+    // Критическая проверка селектора
     if (!balancer.selector || balancer.selector.length === 0) {
-        errors.push({ field: "selector", message: "At least one selector prefix is required" });
+        errors.push({ field: "selector", message: "Selector cannot be empty (Node will crash!)" });
     }
     return errors;
 };
 
+// --- СИСТЕМНЫЕ УТИЛИТЫ ---
+
+// Проверка на дубликаты Тегов (Xray вылетает при дублировании тегов инбаундов/аутбаундов)
 export const getDuplicateTags = (config: any): string[] => {
     const tags: string[] = [];
     if (config.inbounds) config.inbounds.forEach((i: any) => i.tag && tags.push(i.tag));
@@ -119,12 +165,14 @@ export const getDuplicateTags = (config: any): string[] => {
     const seen = new Set();
     const duplicates = new Set<string>();
     tags.forEach(t => {
-        if (seen.has(t)) duplicates.add(t);
-        seen.add(t);
+        const lowerTag = t.toLowerCase();
+        if (seen.has(lowerTag)) duplicates.add(t);
+        seen.add(lowerTag);
     });
     return Array.from(duplicates);
 };
 
+// Проверка на дубликаты самих настроек прокси (чтобы не добавлять один и тот же сервер дважды)
 export const checkOutboundDuplication = (current: any, all: any[], currentIndex: number | null): string | null => {
     const getIdentity = (ob: any) => {
         const s = ob.settings || {};
@@ -139,12 +187,17 @@ export const checkOutboundDuplication = (current: any, all: any[], currentIndex:
             const vn = s.vnext?.[0] || s;
             addr = `${vn.address}:${vn.port}`;
             key = vn.users?.[0]?.id || vn.id || vn.password || "";
+        } else if (['socks', 'http'].includes(ob.protocol)) {
+            const srv = s.servers?.[0] || s;
+            addr = `${srv.address}:${srv.port}`;
+            key = srv.user || "";
         }
         return `${ob.protocol}_${addr}_${key}`.toLowerCase();
     };
 
     const currentId = getIdentity(current);
-    if (currentId.includes("undefined")) return null;
+    // Если важные поля не заполнены, проверку на дубли не делаем
+    if (currentId.includes("undefined") || currentId.split('_')[1] === ":") return null;
 
     for (let i = 0; i < all.length; i++) {
         if (currentIndex !== null && i === currentIndex) continue;
