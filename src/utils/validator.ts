@@ -8,6 +8,13 @@ export const validateInbound = (data: any): ValidationError[] => {
     if (!data.tag || data.tag.trim() === "") {
         errors.push({ field: "tag", message: "Tag is required" });
     }
+    if (data.protocol !== 'tun') {
+        if (!data.port || data.port === 0) {
+            errors.push({ field: "port", message: "Port is required" });
+        } else if (typeof data.port === 'number' && (data.port < 1 || data.port > 65535)) {
+            errors.push({ field: "port", message: "Port must be between 1 and 65535" });
+        }
+    }
     if (!data.port || data.port === 0) {
         errors.push({ field: "port", message: "Port is required" });
     } else if (typeof data.port === 'number' && (data.port < 1 || data.port > 65535)) {
