@@ -4,7 +4,13 @@ import { Icon } from '../../ui/Icon';
 import { isValidDomain, isValidHostDestination } from '../../../utils/validator';
 
 export const DnsHosts = ({ hosts = {}, onChange }: any) => {
-    const [entries, setEntries] = useState<{ domain: string, ips: string[] }[]>([]);
+    const [entries, setEntries] = useState<{ domain: string, ips: string[] }[]>(() => 
+        Object.entries(hosts).map(([domain, ips]) => ({ 
+            domain, 
+            ips: Array.isArray(ips) ? [...ips] : [ips]
+        }))
+    );
+    
     const isInternalChange = useRef(false);
 
     useEffect(() => {
@@ -13,15 +19,21 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
             return;
         }
         
-        const initialEntries = Object.entries(hosts).map(([domain, ips]) => ({ 
-            domain, 
-            ips: Array.isArray(ips) ? [...ips] : [ips] 
-        }));
-        setEntries(initialEntries);
+        const incomingEntries = Object.entries(hosts);
+        const currentValidCount = entries.filter(e => e.domain.trim() !== "").length;
+
+        if (incomingEntries.length !== currentValidCount) {
+            const newEntries = incomingEntries.map(([domain, ips]) => ({ 
+                domain, 
+                ips: Array.isArray(ips) ? [...ips] : [ips]
+            }));
+            setEntries(newEntries);
+        }
     }, [hosts]);
 
     const saveToStore = (currentEntries: typeof entries) => {
         const result: Record<string, any> = {};
+
         currentEntries.forEach(e => {
             const domain = e.domain.trim();
             if (!domain || !isValidDomain(domain)) return;
@@ -37,13 +49,7 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
     };
 
     const addHost = () => {
-        setEntries([...entries, { domain: "", ips: [""] }]);
-    };
-
-    const removeHost = (hIdx: number) => {
-        const newEntries = entries.filter((_, i) => i !== hIdx);
-        setEntries(newEntries);
-        saveToStore(newEntries);
+        setEntries(prev => [...prev, { domain: "", ips: [""] }]);
     };
 
     const updateDomain = (hIdx: number, val: string) => {
@@ -54,30 +60,6 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
         saveToStore(newEntries);
     };
 
-    const addIpRow = (hIdx: number) => {
-        const newEntries = entries.map((item, i) => 
-            i === hIdx ? { ...item, ips: [...item.ips, ""] } : item
-        );
-        setEntries(newEntries);
-    };
-
-    const removeIpRow = (hIdx: number, ipIdx: number) => {
-        const host = entries[hIdx];
-        if (!host) return;
-        
-        const newIps = host.ips.filter((_, i) => i !== ipIdx);
-        
-        if (newIps.length === 0) {
-            removeHost(hIdx);
-        } else {
-            const newEntries = entries.map((item, i) => 
-                i === hIdx ? { ...item, ips: newIps } : item
-            );
-            setEntries(newEntries);
-            saveToStore(newEntries);
-        }
-    };
-
     const updateIpValue = (hIdx: number, ipIdx: number, val: string) => {
         const newEntries = entries.map((item, i) => {
             if (i !== hIdx) return item;
@@ -86,6 +68,12 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
                 ips: item.ips.map((ip, j) => j === ipIdx ? val : ip)
             };
         });
+        setEntries(newEntries);
+        saveToStore(newEntries);
+    };
+
+    const removeHost = (hIdx: number) => {
+        const newEntries = entries.filter((_, i) => i !== hIdx);
         setEntries(newEntries);
         saveToStore(newEntries);
     };
@@ -128,40 +116,16 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
                                 </div>
 
                                 <div className="md:col-span-7 space-y-2">
-                                    <label className="label-xs text-slate-500 mb-1.5 block">IP Addresses / Aliases</label>
-                                    {host.ips.map((ip, ipIdx) => {
-                                        const ipIsInvalid = ip.trim() !== "" && !isValidHostDestination(ip.trim());
-
-                                        return (
-                                            <div key={ipIdx} className="flex flex-col gap-1">
-                                                <div className="flex gap-2">
-                                                    <input 
-                                                        className={`input-base text-xs font-mono flex-1 transition-all
-                                                            ${ipIsInvalid 
-                                                                ? 'border-rose-500! bg-rose-500/10! text-rose-200!' 
-                                                                : 'text-emerald-400 focus:border-indigo-500'}`} 
-                                                        placeholder="1.2.3.4"
-                                                        value={ip}
-                                                        onChange={e => updateIpValue(hIdx, ipIdx, e.target.value)}
-                                                    />
-                                                    <button onClick={() => removeIpRow(hIdx, ipIdx)} className="p-2 text-slate-600 hover:text-rose-500">
-                                                        <Icon name="MinusCircle" />
-                                                    </button>
-                                                </div>
-                                                {ipIsInvalid && (
-                                                    <span className="text-[9px] text-rose-500 font-bold ml-1 uppercase tracking-tighter">
-                                                        Invalid IP / Alias
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    <button 
-                                        onClick={() => addIpRow(hIdx)}
-                                        className="flex items-center gap-2 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold uppercase pt-1"
-                                    >
-                                        <Icon name="PlusCircle" /> Add IP
-                                    </button>
+                                    <label className="label-xs text-slate-500 mb-1.5 block">IP Addresses</label>
+                                    {host.ips.map((ip, ipIdx) => (
+                                        <input 
+                                            key={ipIdx}
+                                            className="input-base text-xs font-mono text-emerald-400" 
+                                            placeholder="1.2.3.4"
+                                            value={ip}
+                                            onChange={e => updateIpValue(hIdx, ipIdx, e.target.value)}
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         </div>
