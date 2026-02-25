@@ -12,7 +12,7 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
             isInternalChange.current = false;
             return;
         }
-        // Создаем глубокую копию при загрузке из пропсов
+        
         const initialEntries = Object.entries(hosts).map(([domain, ips]) => ({ 
             domain, 
             ips: Array.isArray(ips) ? [...ips] : [ips] 
@@ -40,14 +40,12 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
         setEntries([...entries, { domain: "", ips: [""] }]);
     };
 
-    // ИСПРАВЛЕНО: используем filter вместо splice
     const removeHost = (hIdx: number) => {
         const newEntries = entries.filter((_, i) => i !== hIdx);
         setEntries(newEntries);
         saveToStore(newEntries);
     };
 
-    // ИСПРАВЛЕНО: создаем новый объект через spread
     const updateDomain = (hIdx: number, val: string) => {
         const newEntries = entries.map((item, i) => 
             i === hIdx ? { ...item, domain: val } : item
@@ -56,7 +54,6 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
         saveToStore(newEntries);
     };
 
-    // ИСПРАВЛЕНО: иммутабельное добавление вложенного массива
     const addIpRow = (hIdx: number) => {
         const newEntries = entries.map((item, i) => 
             i === hIdx ? { ...item, ips: [...item.ips, ""] } : item
@@ -64,9 +61,10 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
         setEntries(newEntries);
     };
 
-    // ИСПРАВЛЕНО: иммутабельное удаление вложенного элемента
     const removeIpRow = (hIdx: number, ipIdx: number) => {
         const host = entries[hIdx];
+        if (!host) return;
+        
         const newIps = host.ips.filter((_, i) => i !== ipIdx);
         
         if (newIps.length === 0) {
@@ -80,7 +78,6 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
         }
     };
 
-    // ИСПРАВЛЕНО: глубокое обновление через map
     const updateIpValue = (hIdx: number, ipIdx: number, val: string) => {
         const newEntries = entries.map((item, i) => {
             if (i !== hIdx) return item;
