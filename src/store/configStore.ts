@@ -307,8 +307,12 @@ export const useConfigStore = create(
             setConfig: (config) => set({ config }),
 
             updateSection: (section, data) => set(produce((state) => {
-                if (!state.config) state.config = { inbounds: [], outbounds: [] };
-                state.config[section] = data;
+                if (!state.config) {
+                    state.config = { inbounds: [], outbounds: [] };
+                }
+                if (data !== undefined) {
+                    state.config[section] = data;
+                }
             })),
 
             toggleSection: (section, defaultValue) => set(produce((state) => {
