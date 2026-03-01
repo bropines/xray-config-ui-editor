@@ -365,12 +365,12 @@ export const App = () => {
 
                         {/* CONTENT AREA */}
                         {rawMode ? (
-                            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-0 shadow-2xl h-full flex flex-col min-h-0">
+                            <div className="w-full h-[calc(100vh-8rem)] bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-4 shadow-2xl flex flex-col">
                                 <JsonField
-                                    label="Full Configuration"
+                                    label="Full Configuration (Auto-saved)"
                                     value={config}
                                     onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }}
-                                    className="flex-1 h-full min-h-0"
+                                    className="flex-1 relative"
                                 />
                             </div>
                         ) : (

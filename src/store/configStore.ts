@@ -150,6 +150,18 @@ export interface ObservatoryConfig {
     probeInterval?: string;
 }
 
+export interface BurstObservatoryConfig {
+    subjectSelector?: string[];
+    pingConfig?: {
+        destination?: string;
+        connectivity?: string;
+        interval?: string;
+        sampling?: number;
+        timeout?: string;
+        httpMethod?: string;
+    };
+}
+
 export interface XrayConfig {
     log?: LogConfig;
     api?: ApiConfig;
@@ -163,7 +175,8 @@ export interface XrayConfig {
     reverse?: ReverseConfig;
     fakedns?: FakednsPool[];
     observatory?: ObservatoryConfig;
-    [key: string]: any; 
+    burstObservatory?: BurstObservatoryConfig;
+    [key: string]: any;
 }
 
 // --- Интерфейсы Состояния Store ---
@@ -257,7 +270,6 @@ export const useConfigStore = create(
 
                 const client = new RemnawaveClient(url);
                 client.setToken(token);
-
                 try {
                     const configData = await client.getConfigProfile(uuid);
                     set({ config: configData as XrayConfig });
@@ -288,7 +300,7 @@ export const useConfigStore = create(
                         description: `Balancer "${invalidBalancer.tag}" has no target outbounds. Node will crash if you push this.`,
                         duration: 6000
                     });
-                    return; 
+                    return;
                 }
 
                 const client = new RemnawaveClient(url);

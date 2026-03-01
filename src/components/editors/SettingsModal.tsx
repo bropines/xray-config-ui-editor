@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
+import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { LogEditor } from './settings/LogEditor';
 import { ApiStatsEditor } from './settings/ApiStatsEditor';
 import { PolicyEditor } from './settings/PolicyEditor';
 import { ObservatoryEditor } from './settings/ObservatoryEditor';
+import { BurstObservatoryEditor } from './settings/BurstObservatoryEditor';
 
-export const SettingsModal = ({ onClose }) => {
+export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
     const { config, updateSection, toggleSection } = useConfigStore();
     const [activeTab, setActiveTab] = useState<'general' | 'policy' | 'observatory'>('general');
 
@@ -55,12 +57,28 @@ export const SettingsModal = ({ onClose }) => {
                     )}
 
                     {activeTab === 'observatory' && (
-                        <ObservatoryEditor 
-                            observatory={config?.observatory}
-                            outboundTags={outboundTags}
-                            onChange={v => updateSection('observatory', v)}
-                            onToggle={d => toggleSection('observatory', d)}
-                        />
+                        <div className="space-y-6">
+                            <div className="p-3 bg-indigo-900/20 border border-indigo-500/30 rounded-xl text-xs text-indigo-300 mb-4 flex items-start gap-2">
+                                <Icon name="Info" className="shrink-0 mt-0.5" />
+                                <span>
+                                    Use <b>Observatory</b> for standard periodic checks, or <b>Burst Observatory</b> for randomized stealth checks. Choose one based on your balancers setup.
+                                </span>
+                            </div>
+                            
+                            <ObservatoryEditor 
+                                observatory={config?.observatory}
+                                outboundTags={outboundTags}
+                                onChange={v => updateSection('observatory', v)}
+                                onToggle={d => toggleSection('observatory', d)}
+                            />
+                            
+                            <BurstObservatoryEditor 
+                                burstObservatory={config?.burstObservatory}
+                                outboundTags={outboundTags}
+                                onChange={v => updateSection('burstObservatory', v)}
+                                onToggle={d => toggleSection('burstObservatory', d)}
+                            />
+                        </div>
                     )}
 
                 </div>
