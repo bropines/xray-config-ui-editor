@@ -5,13 +5,12 @@ import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
-
 import { generateLink } from '../../utils/link-generator';
 import { validateOutbound, checkOutboundDuplication, type ValidationError } from '../../utils/validator';
-
 import { OutboundImport } from './outbound/OutboundImport';
 import { OutboundGeneral } from './outbound/OutboundGeneral';
 import { OutboundServer } from './outbound/OutboundServer';
+import { OutboundWireguard } from './outbound/OutboundWireguard';
 import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
@@ -24,7 +23,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
         settings: {}, 
         streamSettings: { network: "tcp", security: "none" } 
     });
-    
+
     const [rawMode, setRawMode] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
 
@@ -123,7 +122,14 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
                 <OutboundImport onImport={handleImport} />
 
                 <OutboundGeneral outbound={local} onChange={handleUpdate} errors={{ tag: getError('tag') }} />
-                <OutboundServer outbound={local} onChange={handleUpdate} errors={{ address: getError('address'), port: getError('port') }} />
+                
+                {/* Рендерим нужный редактор в зависимости от протокола */}
+                {local.protocol === 'wireguard' ? (
+                    <OutboundWireguard outbound={local} onChange={handleUpdate} />
+                ) : (
+                    <OutboundServer outbound={local} onChange={handleUpdate} errors={{ address: getError('address'), port: getError('port') }} />
+                )}
+                
                 <OutboundProxyMux outbound={local} onChange={handleUpdate} allTags={allOutboundTags} />
                 <TransportSettings streamSettings={local.streamSettings} onChange={(s: any) => handleUpdate('streamSettings', s)} isClient={true} />
             </div>
