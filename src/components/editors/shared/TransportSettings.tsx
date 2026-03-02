@@ -52,9 +52,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </h4>
                 <button 
                     onClick={() => setShowAdvanced(!showAdvanced)} 
-                    className="text-[10px] text-indigo-400 hover:text-white transition-colors uppercase font-bold"
+                    className="text-[10px] text-indigo-400 hover:text-white transition-colors uppercase font-bold flex items-center gap-1"
                 >
-                    {showAdvanced ? "Hide Advanced" : "Show Advanced"}
+                    <Icon name={showAdvanced ? "CaretUp" : "CaretDown"} />
+                    {showAdvanced ? "Hide Sockopt" : "Show Sockopt"}
                 </button>
             </div>
 
@@ -86,11 +87,20 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {/* --- NETWORK SPECIFIC SETTINGS --- */}
             
-            {/* TCP (RAW) - HTTP Obfuscation */}
+            {/* TCP (RAW) */}
             {net === 'tcp' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="col-span-full flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-400">TCP Settings</span>
+                    <div className="col-span-full flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-400">TCP (RAW) Settings</span>
+                        {!isClient && (
+                            <label className="flex items-center gap-2 cursor-pointer bg-slate-950 px-2 py-1 rounded border border-slate-800 hover:border-slate-700 transition-colors">
+                                <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700 accent-indigo-500"
+                                    checked={streamSettings.tcpSettings?.acceptProxyProtocol || false}
+                                    onChange={e => update(['tcpSettings', 'acceptProxyProtocol'], e.target.checked)}
+                                />
+                                <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>
+                            </label>
+                        )}
                     </div>
                     <div>
                         <label className="label-xs">Header Type (Obfuscation)</label>
@@ -102,7 +112,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <option value="http">HTTP</option>
                         </select>
                     </div>
-                    {/* HTTP Request (Only shown if type is http) */}
+                    
                     {streamSettings.tcpSettings?.header?.type === 'http' && (
                         <div className="md:col-span-2 space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
                             <label className="label-xs text-yellow-500">HTTP Request (Legacy Obfuscation)</label>
@@ -138,7 +148,18 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {net === 'ws' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="col-span-full text-xs font-bold text-indigo-400">WebSocket</div>
+                    <div className="col-span-full flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-indigo-400">WebSocket</span>
+                        {!isClient && (
+                            <label className="flex items-center gap-2 cursor-pointer bg-slate-950 px-2 py-1 rounded border border-slate-800 hover:border-slate-700 transition-colors">
+                                <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700 accent-indigo-500"
+                                    checked={streamSettings.wsSettings?.acceptProxyProtocol || false}
+                                    onChange={e => update(['wsSettings', 'acceptProxyProtocol'], e.target.checked)}
+                                />
+                                <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>
+                            </label>
+                        )}
+                    </div>
                     <div><label className="label-xs">Path</label><input className="input-base font-mono" value={streamSettings.wsSettings?.path || "/"} onChange={e => update(['wsSettings', 'path'], e.target.value)} /></div>
                     <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="host.com" value={streamSettings.wsSettings?.headers?.Host || ""} onChange={e => update(['wsSettings', 'headers', 'Host'], e.target.value)} /></div>
                 </div>
@@ -201,7 +222,6 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
 
             {/* --- SECURITY SETTINGS --- */}
-
             {/* 1. REALITY SETTINGS */}
             {sec === 'reality' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
@@ -234,8 +254,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                 placeholder="example.com, www.example.com"
                                 value={isClient ? (streamSettings.realitySettings?.serverName || "") : (streamSettings.realitySettings?.serverNames || []).join(', ')} 
                                 onChange={e => { 
-                                    const val = e.target.value; 
-                                    update(['realitySettings', isClient ? 'serverName' : 'serverNames'], isClient ? val : val.split(',').map((s: string) => s.trim())); 
+                                    const val = e.target.value;
+                                    update(['realitySettings', isClient ? 'serverName' : 'serverNames'], isClient ? val : val.split(',').map((s: string) => s.trim()));
                                 }} 
                             />
                         </div>
