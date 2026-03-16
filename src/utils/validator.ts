@@ -170,19 +170,39 @@ export const validateWireguard = (data: any): ValidationError[] => {
     return errors;
 };
 
+
 export const validateRule = (rule: any): ValidationError[] => {
     const errors: ValidationError[] = [];
- 
-    // 1. Обязательный destination — без него Xray падает при старте
+
+    // ── 1. Обязательный destination ──────────────────────────────────────────
+    // Без outboundTag или balancerTag Xray падает при старте
     if (!rule.outboundTag && !rule.balancerTag) {
         errors.push({
             field: "target",
-            message: "Rule has no destination — set outboundTag or balancerTag"
+            message: "No destination tag (outboundTag / balancerTag) — Xray will crash"
         });
     }
- 
-    // 2. Проверяем записи в domain[]
-    //    Недопустимы: пустые строки, "geosite:" без имени (типа юзер нажал Enter не дописав)
+
+    // ── 2. Пустое правило (нет ни одного матчера) ────────────────────────────
+    // Правило без матчеров — это "match:all". Само по себе не краш, но
+    // если оно стоит НЕ последним, оно поглощает весь трафик.
+    // Мы предупреждаем, но не блокируем (это может быть умысел).
+    const hasMatchers = !!(
+        rule.domain?.length ||
+        rule.ip?.length ||
+        rule.port ||
+        rule.protocol?.length ||
+        rule.inboundTag?.length ||
+        rule.source?.length
+    );
+    if (!hasMatchers) {
+        errors.push({
+            field: "matchers",
+            message: "Rule has no matchers — it will match ALL traffic (catch-all). Move to the last position if intentional."
+        });
+    }
+
+    // ── 3. domain[] — пустые строки и geosite: без имени ────────────────────
     const domains: string[] = rule.domain || [];
     domains.forEach((d, i) => {
         const clean = String(d).trim();
@@ -190,13 +210,22 @@ export const validateRule = (rule: any): ValidationError[] => {
             errors.push({ field: `domain_${i}`, message: `Domain entry #${i + 1} is empty` });
             return;
         }
+        // "geosite:" без имени
         if (/^geosite:\s*$/i.test(clean)) {
             errors.push({ field: `domain_${i}`, message: `Domain #${i + 1}: "geosite:" without a name` });
+            return;
+        }
+        // UPPERCASE после "geosite:" — Xray требует строго нижний регистр
+        const geoMatch = clean.match(/^(geosite:|domain:|full:|regexp:)(.+)$/i);
+        if (geoMatch && geoMatch[2] !== geoMatch[2].toLowerCase()) {
+            errors.push({
+                field: `domain_${i}`,
+                message: `Domain #${i + 1}: "${clean}" — geosite names must be lowercase (use "${clean.toLowerCase()}")`
+            });
         }
     });
- 
-    // 3. Проверяем записи в ip[]
-    //    Недопустимы: пустые строки, "geoip:" без имени
+
+    // ── 4. ip[] — пустые строки и geoip: без имени ───────────────────────────
     const ips: string[] = rule.ip || [];
     ips.forEach((ip, i) => {
         const clean = String(ip).trim();
@@ -206,11 +235,25 @@ export const validateRule = (rule: any): ValidationError[] => {
         }
         if (/^geoip:\s*$/i.test(clean)) {
             errors.push({ field: `ip_${i}`, message: `IP #${i + 1}: "geoip:" without a name` });
+            return;
+        }
+        // UPPERCASE после "geoip:"
+        const geoMatch = clean.match(/^(geoip:)(.+)$/i);
+        if (geoMatch && geoMatch[2] !== geoMatch[2].toLowerCase()) {
+            errors.push({
+                field: `ip_${i}`,
+                message: `IP #${i + 1}: "${clean}" — geoip names must be lowercase (use "${clean.toLowerCase()}")`
+            });
         }
     });
- 
+
     return errors;
 };
+
+// ── Хелпер: только критичные ошибки (блокируют Close) ────────────────────────
+// "matchers" — это предупреждение, не блокирует
+export const getCriticalRuleErrors = (rule: any): ValidationError[] =>
+    validateRule(rule).filter(e => e.field !== 'matchers');
  
  
 
