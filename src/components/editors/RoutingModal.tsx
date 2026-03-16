@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { createProtoWorker } from '../../utils/proto-worker';
 import { useConfigStore } from '../../store/configStore';
 import { Icon } from '../ui/Icon';
-import { validateRule, getCriticalRuleErrors } from '../../utils/validator';
+import { getCriticalRuleErrors } from '../../utils/validator';
 
 import { RuleList } from './routing/RuleList';
 import { RuleEditor } from './routing/RuleEditor';
@@ -15,39 +15,41 @@ export const RoutingModal = ({ onClose }: any) => {
     const { config, updateSection, reorderRules } = useConfigStore();
     const rules     = config?.routing?.rules    || [];
     const balancers = config?.routing?.balancers || [];
-    const outboundTags  = (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean);
-    const inboundTags   = (config?.inbounds  || []).map((i: any) => i.tag).filter(Boolean);
-    const balancerTags  = balancers.map((b: any) => b.tag).filter(Boolean);
+    const outboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean);
+    const inboundTags  = (config?.inbounds  || []).map((i: any) => i.tag).filter(Boolean);
+    const balancerTags = balancers.map((b: any) => b.tag).filter(Boolean);
 
     // ── UI state ──────────────────────────────────────────────────────────────
-    const [activeTab,        setActiveTab]        = useState<'rules' | 'balancers'>('rules');
-    const [activeRuleIdx,    setActiveRuleIdx]    = useState<number | null>(null);
-    const [activeBalancerIdx,setActiveBalancerIdx]= useState<number | null>(null);
-    const [rawMode,          setRawMode]          = useState(false);
-    const [mobileEditMode,   setMobileEditMode]   = useState(false);
-    const [searchQuery,      setSearchQuery]      = useState("");
+    const [activeTab,         setActiveTab]         = useState<'rules' | 'balancers'>('rules');
+    const [activeRuleIdx,     setActiveRuleIdx]     = useState<number | null>(null);
+    const [activeBalancerIdx, setActiveBalancerIdx] = useState<number | null>(null);
+    const [rawMode,           setRawMode]           = useState(false);
+    const [mobileEditMode,    setMobileEditMode]    = useState(false);
+    const [searchQuery,       setSearchQuery]       = useState("");
 
-    // ── Валидация: считаем все критические ошибки по всем правилам ────────────
-    // Критические = всё кроме "matchers" (catch-all предупреждение)
+    // ── Все сломанные правила (блокируют Close) ───────────────────────────────
     const brokenRules = rules
-        .map((r: any, i: number) => ({ idx: i, tag: r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`, errors: getCriticalRuleErrors(r) }))
+        .map((r: any, i: number) => ({
+            idx:    i,
+            label:  r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`,
+            errors: getCriticalRuleErrors(r)
+        }))
         .filter(r => r.errors.length > 0);
 
     const hasCriticalErrors = brokenRules.length > 0;
 
-    // ── Перехватываем onClose: если есть критические ошибки — не даём закрыть ─
+    // ── handleClose: блокируем если есть ошибки ───────────────────────────────
     const handleClose = () => {
         if (hasCriticalErrors) {
-            // Переключаемся на первое сломанное правило чтобы пользователь сразу видел
-            const firstBroken = brokenRules[0];
-            if (firstBroken) {
+            // Переходим к первому сломанному правилу
+            const first = brokenRules[0];
+            if (first) {
                 setActiveTab('rules');
-                setActiveRuleIdx(firstBroken.idx);
+                setActiveRuleIdx(first.idx);
                 setMobileEditMode(true);
                 setRawMode(false);
             }
-            // Не закрываем — блок произошёл, баннер уже видимый
-            return;
+            return; // не закрываем
         }
         onClose();
     };
@@ -59,13 +61,13 @@ export const RoutingModal = ({ onClose }: any) => {
             const q = searchQuery.toLowerCase();
             if (!q) return true;
             return (
-                rule.ruleTag?.toLowerCase().includes(q)      ||
-                rule.outboundTag?.toLowerCase().includes(q)  ||
-                rule.balancerTag?.toLowerCase().includes(q)  ||
+                rule.ruleTag?.toLowerCase().includes(q)     ||
+                rule.outboundTag?.toLowerCase().includes(q) ||
+                rule.balancerTag?.toLowerCase().includes(q) ||
                 rule.domain?.some((d: string) => d.toLowerCase().includes(q)) ||
-                rule.ip?.some((ip: string) => ip.toLowerCase().includes(q))   ||
+                rule.ip?.some((ip: string)   => ip.toLowerCase().includes(q)) ||
                 rule.inboundTag?.some((t: string) => t.toLowerCase().includes(q)) ||
-                rule.protocol?.some((p: string) => p.toLowerCase().includes(q))
+                rule.protocol?.some((p: string)   => p.toLowerCase().includes(q))
             );
         });
 
@@ -93,9 +95,9 @@ export const RoutingModal = ({ onClose }: any) => {
     }, [isResizing, resize, stopResizing]);
 
     // ── Geo data ──────────────────────────────────────────────────────────────
-    const [geoSites,    setGeoSites]    = useState([]);
-    const [geoIps,      setGeoIps]      = useState([]);
-    const [loadingGeo,  setLoadingGeo]  = useState(false);
+    const [geoSites,   setGeoSites]   = useState([]);
+    const [geoIps,     setGeoIps]     = useState([]);
+    const [loadingGeo, setLoadingGeo] = useState(false);
 
     useEffect(() => {
         setLoadingGeo(true);
@@ -112,7 +114,12 @@ export const RoutingModal = ({ onClose }: any) => {
 
     // ── Rule handlers ─────────────────────────────────────────────────────────
     const handleAddRule = () => {
-        const newRule = { type: "field", outboundTag: outboundTags[0] || "direct", domain: [] };
+        // Новое правило сразу валидное: есть destination + матчер network:tcp,udp
+        const newRule = {
+            type:       "field",
+            outboundTag: outboundTags[0] || "direct",
+            network:    "tcp,udp"
+        };
         reorderRules([newRule, ...rules]);
         setActiveRuleIdx(0);
         setRawMode(false);
@@ -145,8 +152,8 @@ export const RoutingModal = ({ onClose }: any) => {
     return (
         <Modal
             title="Routing Manager"
-            onClose={handleClose}   // ← перехваченный onClose
-            onSave={handleClose}    // ← та же логика
+            onClose={handleClose}
+            onSave={handleClose}
             extraButtons={
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
                     <button
@@ -160,12 +167,11 @@ export const RoutingModal = ({ onClose }: any) => {
                 </div>
             }
         >
-            {/* ── Топ-панель ─────────────────────────────────────────────────── */}
+            {/* ── Верхняя панель ────────────────────────────────────────────── */}
             <div className="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 {mobileEditMode && (
                     <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">Back</Button>
                 )}
-
                 <div className={`flex flex-col w-full md:w-auto ${mobileEditMode ? 'hidden md:flex' : ''}`}>
                     <label className="label-xs">Domain Strategy</label>
                     <select
@@ -189,30 +195,36 @@ export const RoutingModal = ({ onClose }: any) => {
                 )}
             </div>
 
-            {/* ── Баннер критических ошибок (блокирует Close) ────────────────── */}
+            {/* ── Баннер критических ошибок (блокирует Close) ──────────────── */}
             {hasCriticalErrors && (
                 <div className="mb-4 p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl animate-in fade-in">
                     <div className="flex items-start gap-2.5">
-                        <Icon name="WarningOctagon" className="text-rose-400 text-xl shrink-0 mt-0.5" weight="fill" />
+                        <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-xl shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                             <p className="text-rose-200 font-bold text-sm mb-1">
-                                Cannot close — {brokenRules.length} rule{brokenRules.length > 1 ? 's' : ''} will crash Xray
+                                Cannot close — {brokenRules.length} rule{brokenRules.length > 1 ? 's have' : ' has'} errors that will crash Xray
                             </p>
-                            <p className="text-rose-300/70 text-[11px] mb-2">
-                                Fix the errors below before closing. Common causes: uppercase geosite names, missing destination tag.
+                            <p className="text-rose-300/60 text-[11px] mb-2">
+                                Click a rule below to jump to it and fix the issue.
                             </p>
                             <ul className="space-y-1">
                                 {brokenRules.map(r => (
                                     <li key={r.idx}>
                                         <button
                                             className="text-[11px] text-left w-full text-rose-300 hover:text-white bg-rose-900/30 hover:bg-rose-800/50 border border-rose-700/40 rounded-lg px-3 py-1.5 transition-colors flex items-start gap-2"
-                                            onClick={() => { setActiveTab('rules'); setActiveRuleIdx(r.idx); setMobileEditMode(true); setRawMode(false); }}
+                                            onClick={() => {
+                                                setActiveTab('rules');
+                                                setActiveRuleIdx(r.idx);
+                                                setMobileEditMode(true);
+                                                setRawMode(false);
+                                            }}
                                         >
                                             <Icon name="ArrowRight" className="shrink-0 mt-0.5" />
                                             <span>
-                                                <b className="text-rose-200">{r.tag}</b>
+                                                <b className="text-rose-200">{r.label}</b>
                                                 {" — "}
-                                                {r.errors.map(e => e.message).join("; ")}
+                                                {r.errors[0].message}
+                                                {r.errors.length > 1 && <span className="text-rose-400/60"> (+{r.errors.length - 1} more)</span>}
                                             </span>
                                         </button>
                                     </li>
@@ -223,14 +235,13 @@ export const RoutingModal = ({ onClose }: any) => {
                 </div>
             )}
 
-            {/* ── Основной рабочий блок ──────────────────────────────────────── */}
+            {/* ── Основной блок ─────────────────────────────────────────────── */}
             <div
-                className="flex flex-col md:flex-row h-[560px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
+                className="flex flex-col md:flex-row h-[520px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
                 style={{ '--sidebar-width': `${sidebarWidth}px` } as any}
             >
                 {activeTab === 'rules' ? (
                     <>
-                        {/* Список правил */}
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50">
                                 <div className="flex justify-between items-center">
@@ -247,7 +258,6 @@ export const RoutingModal = ({ onClose }: any) => {
                                     />
                                 </div>
                             </div>
-
                             <RuleList
                                 rules={filteredRules}
                                 activeIndex={activeRuleIdx}
@@ -261,7 +271,6 @@ export const RoutingModal = ({ onClose }: any) => {
 
                         <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10 shrink-0" onMouseDown={startResizing} />
 
-                        {/* Редактор правила */}
                         <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
                             <RuleEditor
                                 rule={rules[activeRuleIdx!]}
@@ -276,7 +285,6 @@ export const RoutingModal = ({ onClose }: any) => {
                     </>
                 ) : (
                     <>
-                        {/* Список балансировщиков */}
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50 items-center">
                                 <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
