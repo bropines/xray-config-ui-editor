@@ -4,6 +4,15 @@ import { SmartTagInput } from '../../ui/SmartTagInput';
 import { TagSelector } from '../../ui/TagSelector';
 import { JsonField } from '../../ui/JsonField';
 
+// Простая проверка правила: нужен хотя бы один таргет (outboundTag или balancerTag)
+const getRuleErrors = (rule: any): string[] => {
+    const errs: string[] = [];
+    if (!rule.outboundTag && !rule.balancerTag) {
+        errs.push("Rule has no destination — set outboundTag or balancerTag, otherwise Xray will crash.");
+    }
+    return errs;
+};
+
 export const RuleEditor = ({
     rule,
     onChange,
@@ -22,7 +31,6 @@ export const RuleEditor = ({
         );
     }
 
-    // Исправление: w-full вместо w-0, так как родитель flex-col
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full p-4 bg-slate-950">
@@ -31,7 +39,7 @@ export const RuleEditor = ({
                     value={rule}
                     onChange={onChange}
                     className="h-full"
-                    schemaMode="rule" // <---
+                    schemaMode="rule"
                 />
             </div>
         );
@@ -53,10 +61,20 @@ export const RuleEditor = ({
     };
 
     const currentTarget = rule.balancerTag ? `bal:${rule.balancerTag}` : (rule.outboundTag || "");
+    const ruleErrors = getRuleErrors(rule);
 
     return (
-        // ИСПРАВЛЕНИЕ: w-full вместо w-0
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
+
+            {/* INLINE ОШИБКИ ПРАВИЛА */}
+            {ruleErrors.length > 0 && (
+                <div className="p-3 bg-rose-900/20 border border-rose-500/50 rounded-xl text-rose-300 text-[11px] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                    <Icon name="Warning" className="text-rose-400 mt-0.5 shrink-0 text-base" />
+                    <div>
+                        {ruleErrors.map((e, i) => <div key={i}>{e}</div>)}
+                    </div>
+                </div>
+            )}
 
             {/* RULE NAME */}
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg border-l-4 border-l-indigo-500">
@@ -73,14 +91,14 @@ export const RuleEditor = ({
             </div>
 
             {/* DESTINATION */}
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg">
+            <div className={`bg-slate-900 border p-4 rounded-xl shadow-lg ${ruleErrors.length > 0 ? 'border-rose-500/50' : 'border-slate-800'}`}>
                 <div className="flex justify-between items-center mb-2">
                     <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Traffic Destination</label>
                     <div className="text-[10px] text-slate-500 font-mono">Where to send traffic</div>
                 </div>
                 <div className="flex gap-2">
                     <select
-                        className="flex-1 input-base font-bold"
+                        className={`flex-1 input-base font-bold ${ruleErrors.length > 0 && !currentTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         value={currentTarget}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -98,11 +116,16 @@ export const RuleEditor = ({
                             </optgroup>
                         )}
                     </select>
-                    <input className="w-1/3 input-base text-slate-300"
+                    <input
+                        className="w-1/3 input-base text-slate-300"
                         placeholder="Custom tag..."
                         value={rule.outboundTag || rule.balancerTag || ""}
-                        onChange={e => update('outboundTag', e.target.value)} />
+                        onChange={e => update('outboundTag', e.target.value)}
+                    />
                 </div>
+                {ruleErrors.length > 0 && (
+                    <p className="text-[10px] text-rose-400 mt-1">Required — select or type a destination tag.</p>
+                )}
             </div>
 
             {/* SMART MATCHERS */}

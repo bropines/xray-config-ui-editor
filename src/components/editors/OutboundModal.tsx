@@ -6,7 +6,7 @@ import { TransportSettings } from './shared/TransportSettings';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
 import { generateLink } from '../../utils/link-generator';
-import { validateOutbound, checkOutboundDuplication, type ValidationError } from '../../utils/validator';
+import { validateOutbound, validateWireguard, checkOutboundDuplication, type ValidationError } from '../../utils/validator';
 import { OutboundImport } from './outbound/OutboundImport';
 import { OutboundGeneral } from './outbound/OutboundGeneral';
 import { OutboundServer } from './outbound/OutboundServer';
@@ -51,25 +51,32 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             newObj[path] = value;
         }
         setLocal(newObj);
-        setErrors([]);
+        // Сбрасываем ошибки при любом изменении
+        if (errors.length > 0) setErrors([]);
     };
 
     const handleSave = () => {
-        // 1. Валидация полей
-        const valErrors = validateOutbound(local);
-        if (valErrors.length > 0) {
-            setErrors(valErrors);
+        // 1. Валидация общих полей (тег, протокол, адрес, порт, reality)
+        const baseErrors = validateOutbound(local);
+
+        // 2. Дополнительная валидация специфики WireGuard
+        const wgErrors = local.protocol === 'wireguard' ? validateWireguard(local) : [];
+
+        const allErrors = [...baseErrors, ...wgErrors];
+        if (allErrors.length > 0) {
+            setErrors(allErrors);
             toast.error("Form validation failed");
             return;
         }
 
-        // 2. Проверка дубликатов
+        // 3. Проверка дубликатов
         const duplicateTag = checkOutboundDuplication(local, config?.outbounds || [], index);
         if (duplicateTag) {
             if (!confirm(`Duplicate detected! Similar configuration already exists in outbound tag: "${duplicateTag}". Save anyway?`)) {
                 return;
             }
         }
+
         onSave(local);
     };
 
@@ -82,7 +89,15 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
         navigator.clipboard.writeText(link).then(() => toast.success("Copied!"));
     };
 
+    // Хелпер: достаём сообщение ошибки по имени поля
     const getError = (field: string) => errors.find(e => e.field === field)?.message;
+
+    // Хелпер: собираем объект ошибок WireGuard-пиров (ключи вида peer_N_endpoint / peer_N_publicKey)
+    const wgPeerErrors = Object.fromEntries(
+        errors
+            .filter(e => e.field.startsWith('peer_'))
+            .map(e => [e.field, e.message])
+    );
 
     if (rawMode) return (
         <Modal 
@@ -112,26 +127,50 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             }
         >
             <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
+                {/* Блок ошибок */}
                 {errors.length > 0 && (
                     <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-lg text-rose-200 text-[11px]">
                         {errors.map((err, i) => <div key={i}>• {err.message}</div>)}
                     </div>
                 )}
                 
-                {/* Компонент импорта добавлен и сюда для удобства */}
+                {/* Импорт из ссылки */}
                 <OutboundImport onImport={handleImport} />
 
+                {/* Тег + протокол */}
                 <OutboundGeneral outbound={local} onChange={handleUpdate} errors={{ tag: getError('tag') }} />
                 
-                {/* Рендерим нужный редактор в зависимости от протокола */}
+                {/* Редактор, зависящий от протокола */}
                 {local.protocol === 'wireguard' ? (
-                    <OutboundWireguard outbound={local} onChange={handleUpdate} />
+                    <OutboundWireguard
+                        outbound={local}
+                        onChange={handleUpdate}
+                        errors={{
+                            secretKey: getError('secretKey'),
+                            peers:     getError('peers'),
+                            ...wgPeerErrors,
+                        }}
+                    />
                 ) : (
-                    <OutboundServer outbound={local} onChange={handleUpdate} errors={{ address: getError('address'), port: getError('port') }} />
+                    <OutboundServer
+                        outbound={local}
+                        onChange={handleUpdate}
+                        errors={{ address: getError('address'), port: getError('port') }}
+                    />
                 )}
                 
+                {/* Mux / Proxy chain */}
                 <OutboundProxyMux outbound={local} onChange={handleUpdate} allTags={allOutboundTags} />
-                <TransportSettings streamSettings={local.streamSettings} onChange={(s: any) => handleUpdate('streamSettings', s)} isClient={true} />
+
+                {/* Transport / Stream Settings (не нужен для WireGuard) */}
+                {local.protocol !== 'wireguard' && (
+                    <TransportSettings
+                        streamSettings={local.streamSettings}
+                        onChange={(s: any) => handleUpdate('streamSettings', s)}
+                        isClient={true}
+                        errors={{ reality: getError('reality') }}
+                    />
+                )}
             </div>
         </Modal>
     );

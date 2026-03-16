@@ -4,6 +4,9 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Правило считается сломанным, если у него нет ни outboundTag, ни balancerTag
+const isRuleBroken = (rule: any) => !rule.outboundTag && !rule.balancerTag;
+
 const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
     
@@ -13,11 +16,18 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
         zIndex: transform ? 999 : 'auto'
     };
 
+    const broken = isRuleBroken(rule);
+
     return (
         <div ref={setNodeRef} style={style} {...attributes}
             onClick={onClick}
             className={`p-2 rounded-lg cursor-pointer text-xs flex items-center gap-2 group transition-all border select-none mb-1
-                ${isActive ? 'bg-indigo-600/20 border-indigo-500/50' : 'bg-slate-900 border-transparent hover:border-slate-700'}`}
+                ${isActive
+                    ? 'bg-indigo-600/20 border-indigo-500/50'
+                    : broken
+                        ? 'bg-rose-950/30 border-rose-800/50 hover:border-rose-600/60'
+                        : 'bg-slate-900 border-transparent hover:border-slate-700'
+                }`}
         >
             {/* Drag Handle */}
             <div {...listeners} className="cursor-grab text-slate-600 hover:text-slate-300 p-2 touch-none">
@@ -26,20 +36,30 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
             
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                    {/* Точка цвета в зависимости от типа (Balancer/Outbound) */}
-                    <span className={`w-1.5 h-1.5 rounded-full ${rule.balancerTag ? 'bg-purple-400' : 'bg-blue-400'}`}></span>
+                    {/* Точка — красная если сломано, иначе цвет по типу */}
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        broken
+                            ? 'bg-rose-500 animate-pulse'
+                            : rule.balancerTag
+                                ? 'bg-purple-400'
+                                : 'bg-blue-400'
+                    }`} />
                     
-                    {/* Главный заголовок: Имя (ruleTag) или Тег назначения */}
                     <span className="font-bold truncate text-slate-200 text-sm">
                         {rule.ruleTag || rule.outboundTag || rule.balancerTag || "Unnamed Rule"}
                     </span>
+
+                    {/* Иконка-предупреждение для сломанных правил */}
+                    {broken && (
+                        <Icon name="Warning" className="text-rose-400 shrink-0 text-base" title="No destination tag — Xray will crash!" />
+                    )}
                 </div>
 
-                {/* Если задано имя, показываем куда оно ведет маленьким шрифтом */}
+                {/* Если задано имя, показываем куда оно ведёт */}
                 {rule.ruleTag && (
                     <div className="text-[9px] text-slate-500 uppercase flex items-center gap-1 ml-3 mt-0.5">
                         <Icon name="ArrowElbowDownRight" className="text-[8px]" />
-                        Target: {rule.outboundTag || rule.balancerTag}
+                        Target: {rule.outboundTag || rule.balancerTag || <span className="text-rose-400">none!</span>}
                     </div>
                 )}
 
@@ -61,6 +81,8 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
 };
 
 export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }) => {
+    const brokenCount = rules.filter(isRuleBroken).length;
+
     const handleDragEnd = (event) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -76,7 +98,17 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }) 
     };
 
     return (
-        <div className="flex-1 overflow-y-auto custom-scroll p-2">
+        <div className="flex-1 overflow-y-auto custom-scroll p-2 flex flex-col gap-1">
+            {/* Баннер сломанных правил */}
+            {brokenCount > 0 && (
+                <div className="mx-1 mb-2 px-3 py-2 bg-rose-900/20 border border-rose-500/40 rounded-lg text-rose-300 text-[10px] flex items-center gap-2">
+                    <Icon name="Warning" className="shrink-0" />
+                    <span>
+                        <b>{brokenCount}</b> rule{brokenCount > 1 ? 's' : ''} without destination — Xray will crash!
+                    </span>
+                </div>
+            )}
+
             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={rules.map((_, i) => `rule-${i}`)} strategy={verticalListSortingStrategy}>
                     {rules.map((rule, i) => (

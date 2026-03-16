@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-import { generateUUID, generateShortId } from '../../../utils/generators'; 
+import { generateUUID, generateShortId } from '../../../utils/generators';
 
-export const InboundClients = ({ inbound, onChange }) => {
+export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
     const proto = inbound.protocol;
 
     // 1. Shadowsocks
@@ -11,7 +11,7 @@ export const InboundClients = ({ inbound, onChange }) => {
         return (
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-                    <Icon name="Key"/> Shadowsocks Credentials
+                    <Icon name="Key" /> Shadowsocks Credentials
                 </h4>
                 {/* Адаптивный грид: 1 колонка на мобиле, 2 на десктопе */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -29,13 +29,14 @@ export const InboundClients = ({ inbound, onChange }) => {
                     <div>
                         <label className="label-xs">Password</label>
                         <div className="flex gap-2">
-                            <input className="input-base font-mono"
+                            <input className={`input-base font-mono ${errors.password ? 'border-rose-500 bg-rose-500/10' : ''}`}
                                 value={inbound.settings?.password || ""}
                                 onChange={e => onChange(['settings', 'password'], e.target.value)}
                             />
-                            <button onClick={() => onChange(['settings', 'password'], generateShortId() + generateShortId())} 
+                            {errors.password && <span className="text-[10px] text-rose-500 mt-1 block">{errors.password}</span>}
+                            <button onClick={() => onChange(['settings', 'password'], generateShortId() + generateShortId())}
                                 className="bg-slate-800 p-2 rounded text-slate-400 hover:text-white transition-colors">
-                                <Icon name="DiceFive"/>
+                                <Icon name="DiceFive" />
                             </button>
                         </div>
                     </div>
@@ -49,7 +50,7 @@ export const InboundClients = ({ inbound, onChange }) => {
         return (
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-                    <Icon name="UserCircle"/> Authentication
+                    <Icon name="UserCircle" /> Authentication
                 </h4>
                 <div>
                     <label className="label-xs">Auth Type</label>
@@ -100,37 +101,42 @@ export const InboundClients = ({ inbound, onChange }) => {
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
             <div className="flex justify-between items-center mb-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                    <Icon name="Users"/> Clients / Users
+                    <Icon name="Users" /> Clients / Users
                 </h4>
                 <Button variant="ghost" className="px-2 py-1 text-xs" onClick={addClient} icon="Plus">Add</Button>
             </div>
 
+            {errors.clients && (
+                <div className="mb-3 p-2 bg-rose-900/20 border border-rose-500/40 rounded text-rose-300 text-[11px]">
+                    ⚠ {errors.clients}
+                </div>
+            )}
             <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scroll pr-1">
                 {clients.map((c, i) => (
                     <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group hover:border-slate-600 transition-colors">
                         <button onClick={() => removeClient(i)} className="absolute top-2 right-2 text-slate-600 hover:text-rose-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <Icon name="Trash"/>
+                            <Icon name="Trash" />
                         </button>
-                        
+
                         {/* Адаптивный грид клиентов */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
                             <div>
                                 <label className="label-xs">Email</label>
                                 <input className="input-base py-1.5 text-xs"
-                                    value={c.email || ""} 
-                                    onChange={e => updateClient(i, 'email', e.target.value)} 
+                                    value={c.email || ""}
+                                    onChange={e => updateClient(i, 'email', e.target.value)}
                                 />
                             </div>
                             <div>
                                 <label className="label-xs">{idKey === 'id' ? 'UUID' : 'Password'}</label>
                                 <div className="flex gap-2">
                                     <input className="input-base py-1.5 text-xs font-mono"
-                                        value={c[idKey] || ""} 
-                                        onChange={e => updateClient(i, idKey, e.target.value)} 
+                                        value={c[idKey] || ""}
+                                        onChange={e => updateClient(i, idKey, e.target.value)}
                                     />
-                                    <button onClick={() => updateClient(i, idKey, idKey === 'id' ? generateUUID() : generateShortId())} 
+                                    <button onClick={() => updateClient(i, idKey, idKey === 'id' ? generateUUID() : generateShortId())}
                                         className="text-slate-500 hover:text-white transition-colors">
-                                        <Icon name="DiceFive"/>
+                                        <Icon name="DiceFive" />
                                     </button>
                                 </div>
                             </div>
@@ -138,7 +144,7 @@ export const InboundClients = ({ inbound, onChange }) => {
                                 <div className="md:col-span-2">
                                     <label className="label-xs">Flow</label>
                                     <select className="input-base py-1.5 text-xs"
-                                        value={c.flow || ""} 
+                                        value={c.flow || ""}
                                         onChange={e => updateClient(i, 'flow', e.target.value)}>
                                         <option value="">None</option>
                                         <option value="xtls-rprx-vision">xtls-rprx-vision</option>
