@@ -142,6 +142,35 @@ export const validateOutbound = (data: any): ValidationError[] => {
     return errors;
 };
 
+export const validateWireguard = (data: any): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    const s = data.settings || {};
+ 
+    // 1. Приватный ключ обязателен
+    if (!s.secretKey || String(s.secretKey).trim() === "") {
+        errors.push({ field: "secretKey", message: "WireGuard Secret Key is required" });
+    }
+ 
+    // 2. Нужен хотя бы один пир
+    const peers: any[] = s.peers || [];
+    if (peers.length === 0) {
+        errors.push({ field: "peers", message: "At least one WireGuard peer is required" });
+    }
+ 
+    // 3. В каждом пире — обязательны publicKey и endpoint
+    peers.forEach((peer: any, i: number) => {
+        if (!peer.publicKey || String(peer.publicKey).trim() === "") {
+            errors.push({ field: `peer_${i}_publicKey`, message: `Peer #${i + 1}: Public Key is required` });
+        }
+        if (!peer.endpoint || String(peer.endpoint).trim() === "") {
+            errors.push({ field: `peer_${i}_endpoint`, message: `Peer #${i + 1}: Endpoint is required` });
+        }
+    });
+ 
+    return errors;
+};
+ 
+
 export const validateBalancer = (balancer: any): ValidationError[] => {
     const errors: ValidationError[] = [];
     if (!balancer.tag || balancer.tag.trim() === "") {

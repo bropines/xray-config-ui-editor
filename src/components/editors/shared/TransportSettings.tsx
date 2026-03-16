@@ -10,9 +10,10 @@ interface TransportProps {
     streamSettings: any;
     onChange: (newSettings: any) => void;
     isClient?: boolean;
+    errors?: Record<string, string | undefined>;
 }
 
-export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false }: TransportProps) => {
+export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {} }: TransportProps) => {
     const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -86,7 +87,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             </div>
 
             {/* --- NETWORK SPECIFIC SETTINGS --- */}
-            
+
             {/* TCP (RAW) */}
             {net === 'tcp' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
@@ -220,29 +221,64 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             )}
 
-
             {/* --- SECURITY SETTINGS --- */}
+
             {/* 1. REALITY SETTINGS */}
             {sec === 'reality' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="flex justify-between items-center"><span className="text-xs font-bold text-purple-400">REALITY Keys</span><Button variant="secondary" className="px-2 py-1 text-[10px]" onClick={handleGenKeys}>Gen Keys Pair</Button></div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-purple-400">REALITY Keys</span>
+                        <Button variant="secondary" className="px-2 py-1 text-[10px]" onClick={handleGenKeys}>Gen Keys Pair</Button>
+                    </div>
                     
                     {!isClient && tempPublicKey && (
-                        <div className="bg-emerald-900/20 border border-emerald-500/50 p-3 rounded-lg"><label className="label-xs text-emerald-400">Generated Public Key</label><div className="flex gap-2"><code className="flex-1 bg-black/30 p-2 rounded text-xs font-mono break-all text-emerald-200">{tempPublicKey}</code><Button variant="ghost" icon="Copy" onClick={() => navigator.clipboard.writeText(tempPublicKey)} /></div></div>
+                        <div className="bg-emerald-900/20 border border-emerald-500/50 p-3 rounded-lg">
+                            <label className="label-xs text-emerald-400">Generated Public Key</label>
+                            <div className="flex gap-2">
+                                <code className="flex-1 bg-black/30 p-2 rounded text-xs font-mono break-all text-emerald-200">{tempPublicKey}</code>
+                                <Button variant="ghost" icon="Copy" onClick={() => navigator.clipboard.writeText(tempPublicKey)} />
+                            </div>
+                        </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {isClient ? (
                             <>
-                                <div><label className="label-xs text-purple-400">Public Key</label><input className="input-base font-mono" value={streamSettings.realitySettings?.publicKey || ""} onChange={e => update(['realitySettings', 'publicKey'], e.target.value)} /></div>
-                                <div><label className="label-xs text-purple-400">Short ID</label><input className="input-base font-mono" value={streamSettings.realitySettings?.shortId || ""} onChange={e => update(['realitySettings', 'shortId'], e.target.value)} /></div>
-                                <div className="md:col-span-2"><label className="label-xs text-purple-400">SpiderX</label><input className="input-base font-mono" value={streamSettings.realitySettings?.spiderX || ""} onChange={e => update(['realitySettings', 'spiderX'], e.target.value)} /></div>
+                                {/* Public Key — единственное обязательное поле для клиента */}
+                                <div>
+                                    <label className="label-xs text-purple-400">Public Key</label>
+                                    <input
+                                        className={`input-base font-mono ${errors.reality ? 'border-rose-500 bg-rose-500/10 focus:border-rose-500' : ''}`}
+                                        value={streamSettings.realitySettings?.publicKey || ""}
+                                        onChange={e => update(['realitySettings', 'publicKey'], e.target.value)}
+                                    />
+                                    {errors.reality && (
+                                        <span className="text-[10px] text-rose-500 mt-1 block">{errors.reality}</span>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="label-xs text-purple-400">Short ID</label>
+                                    <input className="input-base font-mono" value={streamSettings.realitySettings?.shortId || ""} onChange={e => update(['realitySettings', 'shortId'], e.target.value)} />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="label-xs text-purple-400">SpiderX</label>
+                                    <input className="input-base font-mono" value={streamSettings.realitySettings?.spiderX || ""} onChange={e => update(['realitySettings', 'spiderX'], e.target.value)} />
+                                </div>
                             </>
                         ) : (
                             <>
-                                <div><label className="label-xs">Dest</label><input className="input-base font-mono" placeholder="google.com:443" value={streamSettings.realitySettings?.dest || ""} onChange={e => update(['realitySettings', 'dest'], e.target.value)} /></div>
-                                <div><label className="label-xs">Private Key</label><input className="input-base font-mono text-emerald-400" value={streamSettings.realitySettings?.privateKey || ""} onChange={e => update(['realitySettings', 'privateKey'], e.target.value)} /></div>
-                                <div><label className="label-xs">Short IDs (CSV)</label><input className="input-base font-mono" placeholder="a1b2, c3d4" value={(streamSettings.realitySettings?.shortIds || []).join(', ')} onChange={e => update(['realitySettings', 'shortIds'], e.target.value.split(',').map((s:string) => s.trim()))} /></div>
+                                <div>
+                                    <label className="label-xs">Dest</label>
+                                    <input className="input-base font-mono" placeholder="google.com:443" value={streamSettings.realitySettings?.dest || ""} onChange={e => update(['realitySettings', 'dest'], e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="label-xs">Private Key</label>
+                                    <input className="input-base font-mono text-emerald-400" value={streamSettings.realitySettings?.privateKey || ""} onChange={e => update(['realitySettings', 'privateKey'], e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="label-xs">Short IDs (CSV)</label>
+                                    <input className="input-base font-mono" placeholder="a1b2, c3d4" value={(streamSettings.realitySettings?.shortIds || []).join(', ')} onChange={e => update(['realitySettings', 'shortIds'], e.target.value.split(',').map((s:string) => s.trim()))} />
+                                </div>
                             </>
                         )}
                         

@@ -5,7 +5,7 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     if (!['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(proto)) return null;
 
     const settings = outbound.settings || {};
-    
+
     // Опеределяем структуру: vnext (vless/vmess), servers (ss/trojan/socks/http) или плоская
     const isVnext = Array.isArray(settings.vnext) && settings.vnext.length > 0;
     const isServers = Array.isArray(settings.servers) && settings.servers.length > 0;
@@ -70,11 +70,11 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     Format: {isVnext ? 'vnext' : isServers ? 'servers' : 'flat'}
                 </span>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="md:col-span-2">
                     <label className="label-xs">Address</label>
-                    <input 
+                    <input
                         className={`input-base font-mono ${errors.address ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         value={currentAddress}
                         onChange={e => update('address', e.target.value)}
@@ -84,20 +84,21 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 </div>
                 <div>
                     <label className="label-xs">Port</label>
-                    <input 
-                        type="number" 
+                    <input
+                        type="number"
                         className={`input-base font-mono ${errors.port ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         value={currentPort}
                         onChange={e => update('port', parseInt(e.target.value) || 0)}
                     />
+                    {errors.port && <span className="text-[10px] text-rose-500 mt-1 block">{errors.port}</span>}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className={`${proto !== 'vless' ? 'md:col-span-2' : ''}`}>
                     <label className="label-xs">{keyLabel}</label>
-                    <input 
-                        className="input-base font-mono text-xs" 
+                    <input
+                        className="input-base font-mono text-xs"
                         value={currentKey}
                         onChange={e => update('key', e.target.value)}
                         placeholder="Your ID or Password"
@@ -107,7 +108,7 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 {proto === 'vless' && (
                     <div>
                         <label className="label-xs">Flow</label>
-                        <select 
+                        <select
                             className="input-base"
                             value={currentFlow}
                             onChange={e => update('flow', e.target.value)}
