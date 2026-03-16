@@ -173,36 +173,39 @@ export const validateWireguard = (data: any): ValidationError[] => {
 
 export const validateRule = (rule: any): ValidationError[] => {
     const errors: ValidationError[] = [];
-
+ 
     // ── 1. Обязательный destination ──────────────────────────────────────────
-    // Без outboundTag или balancerTag Xray падает при старте
     if (!rule.outboundTag && !rule.balancerTag) {
         errors.push({
             field: "target",
             message: "No destination tag (outboundTag / balancerTag) — Xray will crash"
         });
     }
-
-    // ── 2. Пустое правило (нет ни одного матчера) ────────────────────────────
-    // Правило без матчеров — это "match:all". Само по себе не краш, но
-    // если оно стоит НЕ последним, оно поглощает весь трафик.
-    // Мы предупреждаем, но не блокируем (это может быть умысел).
+ 
+    // ── 2. Нет ни одного матчера — краш (не catch-all!) ──────────────────────
+    // Документация Xray говорит: правильный catch-all = { "network": "tcp,udp" }.
+    // Полностью пустое правило (без domain/ip/port/network/protocol/inboundTag)
+    // не является валидным и вызывает падение ядра.
     const hasMatchers = !!(
-        rule.domain?.length ||
-        rule.ip?.length ||
-        rule.port ||
+        rule.domain?.length   ||
+        rule.ip?.length       ||
+        rule.port             ||
+        rule.network          ||
         rule.protocol?.length ||
         rule.inboundTag?.length ||
-        rule.source?.length
+        rule.source?.length   ||
+        rule.sourcePort       ||
+        rule.user?.length     ||
+        rule.process?.length
     );
     if (!hasMatchers) {
         errors.push({
             field: "matchers",
-            message: "Rule has no matchers — it will match ALL traffic (catch-all). Move to the last position if intentional."
+            message: 'Rule has no matchers — Xray will crash. Add "network: tcp,udp" to make it a proper catch-all, or add at least one matcher.'
         });
     }
-
-    // ── 3. domain[] — пустые строки и geosite: без имени ────────────────────
+ 
+    // ── 3. domain[] ──────────────────────────────────────────────────────────
     const domains: string[] = rule.domain || [];
     domains.forEach((d, i) => {
         const clean = String(d).trim();
@@ -210,22 +213,21 @@ export const validateRule = (rule: any): ValidationError[] => {
             errors.push({ field: `domain_${i}`, message: `Domain entry #${i + 1} is empty` });
             return;
         }
-        // "geosite:" без имени
         if (/^geosite:\s*$/i.test(clean)) {
             errors.push({ field: `domain_${i}`, message: `Domain #${i + 1}: "geosite:" without a name` });
             return;
         }
-        // UPPERCASE после "geosite:" — Xray требует строго нижний регистр
+        // UPPERCASE — Xray требует строго lowercase для geosite/domain/full/regexp
         const geoMatch = clean.match(/^(geosite:|domain:|full:|regexp:)(.+)$/i);
         if (geoMatch && geoMatch[2] !== geoMatch[2].toLowerCase()) {
             errors.push({
                 field: `domain_${i}`,
-                message: `Domain #${i + 1}: "${clean}" — geosite names must be lowercase (use "${clean.toLowerCase()}")`
+                message: `Domain #${i + 1}: "${clean}" must be lowercase → "${clean.toLowerCase()}"`
             });
         }
     });
-
-    // ── 4. ip[] — пустые строки и geoip: без имени ───────────────────────────
+ 
+    // ── 4. ip[] ──────────────────────────────────────────────────────────────
     const ips: string[] = rule.ip || [];
     ips.forEach((ip, i) => {
         const clean = String(ip).trim();
@@ -238,24 +240,22 @@ export const validateRule = (rule: any): ValidationError[] => {
             return;
         }
         // UPPERCASE после "geoip:"
-        const geoMatch = clean.match(/^(geoip:)(.+)$/i);
+        const geoMatch = clean.match(/^(!?geoip:)(.+)$/i);
         if (geoMatch && geoMatch[2] !== geoMatch[2].toLowerCase()) {
             errors.push({
                 field: `ip_${i}`,
-                message: `IP #${i + 1}: "${clean}" — geoip names must be lowercase (use "${clean.toLowerCase()}")`
+                message: `IP #${i + 1}: "${clean}" must be lowercase → "${clean.toLowerCase()}"`
             });
         }
     });
-
+ 
     return errors;
 };
-
-// ── Хелпер: только критичные ошибки (блокируют Close) ────────────────────────
-// "matchers" — это предупреждение, не блокирует
+ 
+// Все ошибки критические — блокируют Close
 export const getCriticalRuleErrors = (rule: any): ValidationError[] =>
-    validateRule(rule).filter(e => e.field !== 'matchers');
- 
- 
+    validateRule(rule);
+
 
 export const validateBalancer = (balancer: any): ValidationError[] => {
     const errors: ValidationError[] = [];

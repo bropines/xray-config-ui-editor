@@ -43,28 +43,26 @@ export const RuleEditor = ({
         onChange(newRule);
     };
 
-    // ── Авто-фикс uppercase: приводим все geosite/geoip к нижнему регистру ───
-    const handleAutofix = () => {
-        const newRule = { ...rule };
-        if (newRule.domain) {
-            newRule.domain = newRule.domain.map((d: string) => d.toLowerCase());
-        }
-        if (newRule.ip) {
-            newRule.ip = newRule.ip.map((ip: string) => ip.toLowerCase());
-        }
-        onChange(newRule);
+    // ── Авто-фикс: lowercase для всех geosite/geoip ───────────────────────────
+    const handleAutofixCase = () => {
+        onChange({
+            ...rule,
+            ...(rule.domain ? { domain: rule.domain.map((d: string) => d.toLowerCase()) } : {}),
+            ...(rule.ip     ? { ip:     rule.ip.map((ip: string)   => ip.toLowerCase())  } : {}),
+        });
     };
 
-    // ── Валидация ─────────────────────────────────────────────────────────────
-    const ruleErrors   = validateRule(rule);
-    const criticalErrs = ruleErrors.filter(e => e.field !== 'matchers');
-    const warnErrs     = ruleErrors.filter(e => e.field === 'matchers');
+    // ── Авто-фикс: добавить network:tcp,udp (правильный catch-all) ────────────
+    const handleAutofixMatchers = () => {
+        onChange({ ...rule, network: "tcp,udp" });
+    };
 
-    const hasUppercase = ruleErrors.some(e =>
-        e.field.startsWith('domain_') || e.field.startsWith('ip_')
-    );
+    // ── Валидация (все ошибки теперь критические) ─────────────────────────────
+    const ruleErrors = validateRule(rule);
+    const hasUppercase = ruleErrors.some(e => e.field.startsWith('domain_') || e.field.startsWith('ip_'));
+    const hasMissingMatchers = ruleErrors.some(e => e.field === 'matchers');
+    const missingTarget = ruleErrors.some(e => e.field === 'target');
 
-    // Невалидные теги для подсветки внутри SmartTagInput
     const invalidDomains = ruleErrors
         .filter(e => e.field.startsWith('domain_'))
         .map(e => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
@@ -75,41 +73,42 @@ export const RuleEditor = ({
         .map(e => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
 
-    const missingTarget = ruleErrors.some(e => e.field === 'target');
     const currentTarget = rule.balancerTag ? `bal:${rule.balancerTag}` : (rule.outboundTag || "");
 
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
 
-            {/* ── Критические ошибки ─────────────────────────────────────────── */}
-            {criticalErrs.length > 0 && (
-                <div className="p-3 bg-rose-950/50 border border-rose-500/60 rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
-                    <Icon name="WarningOctagon" className="text-rose-400 text-xl shrink-0 mt-0.5" weight="fill" />
-                    <div className="flex-1 min-w-0">
+            {/* ── Баннер ошибок ─────────────────────────────────────────────── */}
+            {ruleErrors.length > 0 && (
+                <div className="p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
+                    <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-xl shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
                         <ul className="space-y-1 text-[11px] text-rose-200">
-                            {criticalErrs.map((e, i) => <li key={i}>{e.message}</li>)}
+                            {ruleErrors.map((e, i) => <li key={i}>{e.message}</li>)}
                         </ul>
-                        {/* Кнопка авто-фикса для uppercase */}
+
+                        {/* Кнопка фикса uppercase */}
                         {hasUppercase && (
                             <button
-                                onClick={handleAutofix}
-                                className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/40 rounded-lg px-3 py-1.5 transition-colors"
+                                onClick={handleAutofixCase}
+                                className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/40 rounded-lg px-3 py-1.5 transition-colors"
                             >
                                 <Icon name="MagicWand" />
-                                Auto-fix: convert all to lowercase
+                                Auto-fix: convert to lowercase
+                            </button>
+                        )}
+
+                        {/* Кнопка фикса пустых матчеров */}
+                        {hasMissingMatchers && (
+                            <button
+                                onClick={handleAutofixMatchers}
+                                className="flex items-center gap-1.5 text-[11px] font-bold text-blue-300 hover:text-blue-200 bg-blue-900/30 hover:bg-blue-800/40 border border-blue-700/40 rounded-lg px-3 py-1.5 transition-colors"
+                            >
+                                <Icon name="MagicWand" />
+                                Auto-fix: add network: tcp,udp (proper catch-all)
                             </button>
                         )}
                     </div>
-                </div>
-            )}
-
-            {/* ── Предупреждения (catch-all) ────────────────────────────────── */}
-            {warnErrs.length > 0 && (
-                <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl flex items-start gap-2.5 animate-in fade-in">
-                    <Icon name="Warning" className="text-amber-400 text-base shrink-0 mt-0.5" weight="fill" />
-                    <ul className="text-[11px] text-amber-200 space-y-0.5">
-                        {warnErrs.map((e, i) => <li key={i}>{e.message}</li>)}
-                    </ul>
                 </div>
             )}
 
@@ -198,15 +197,28 @@ export const RuleEditor = ({
 
                 {/* Advanced Matchers */}
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 space-y-4">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">Advanced Matchers</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">
+                        Advanced Matchers
+                    </label>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <TagSelector label="Inbound Source" availableTags={inboundTags} selected={rule.inboundTag || []}
                                 onChange={v => update('inboundTag', v)} multi={true} />
                         </div>
                         <div>
-                            <TagSelector label="Network" availableTags={['tcp', 'udp']} selected={rule.network ? rule.network.split(',') : []}
-                                onChange={v => update('network', Array.isArray(v) ? v.join(',') : v)} multi={true} />
+                            {/* Network — подсвечиваем если пустые матчеры */}
+                            <TagSelector
+                                label="Network"
+                                availableTags={['tcp', 'udp']}
+                                selected={rule.network ? rule.network.split(',') : []}
+                                onChange={v => update('network', Array.isArray(v) ? v.join(',') : v)}
+                                multi={true}
+                            />
+                            {hasMissingMatchers && (
+                                <p className="text-[10px] text-blue-400 mt-1">
+                                    ↑ Select tcp + udp here for a proper catch-all
+                                </p>
+                            )}
                         </div>
                         <div>
                             <TagSelector label="Protocol" availableTags={['http', 'tls', 'bittorrent']} selected={rule.protocol || []}
