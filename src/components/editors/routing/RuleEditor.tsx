@@ -3,7 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { SmartTagInput } from '../../ui/SmartTagInput';
 import { TagSelector } from '../../ui/TagSelector';
 import { JsonField } from '../../ui/JsonField';
-import { validateRule } from '../../../utils/validator';
+import { validateRule, lintRule } from '../../../utils/validator';
 
 export const RuleEditor = ({
     rule,
@@ -43,32 +43,41 @@ export const RuleEditor = ({
         onChange(newRule);
     };
 
-    // ── Авто-фикс: lowercase для всех geosite/geoip ───────────────────────────
-    const handleAutofixCase = () => {
-        onChange({
-            ...rule,
-            ...(rule.domain ? { domain: rule.domain.map((d: string) => d.toLowerCase()) } : {}),
-            ...(rule.ip     ? { ip:     rule.ip.map((ip: string)   => ip.toLowerCase())  } : {}),
-        });
-    };
+    // ── Авто-фикс: добавить network:tcp,udp ───────────────────────────────────
+    const handleAutofixMatchers = () => onChange({ ...rule, network: "tcp,udp" });
 
-    // ── Авто-фикс: добавить network:tcp,udp (правильный catch-all) ────────────
-    const handleAutofixMatchers = () => {
-        onChange({ ...rule, network: "tcp,udp" });
-    };
+    // ── Авто-фикс: lowercase (lint) ───────────────────────────────────────────
+    const handleAutofixCase = () => onChange({
+        ...rule,
+        ...(rule.domain ? { domain: rule.domain.map((d: string) => d.toLowerCase()) } : {}),
+        ...(rule.ip     ? { ip:     rule.ip.map((ip: string)   => ip.toLowerCase())  } : {}),
+    });
 
-    // ── Валидация (все ошибки теперь критические) ─────────────────────────────
-    const ruleErrors = validateRule(rule);
-    const hasUppercase = ruleErrors.some(e => e.field.startsWith('domain_') || e.field.startsWith('ip_'));
-    const hasMissingMatchers = ruleErrors.some(e => e.field === 'matchers');
-    const missingTarget = ruleErrors.some(e => e.field === 'target');
+    // ── Валидация ─────────────────────────────────────────────────────────────
+    const errors   = validateRule(rule);
+    const warnings = lintRule(rule);
 
-    const invalidDomains = ruleErrors
+    const hasMissingMatchers = errors.some(e => e.field === 'matchers');
+    const missingTarget      = errors.some(e => e.field === 'target');
+
+    // Поля с критическими ошибками для SmartTagInput
+    const invalidDomains = errors
         .filter(e => e.field.startsWith('domain_'))
         .map(e => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
 
-    const invalidIPs = ruleErrors
+    const invalidIPs = errors
+        .filter(e => e.field.startsWith('ip_'))
+        .map(e => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
+        .filter((v): v is string => v !== undefined);
+
+    // Поля с lint-предупреждениями для SmartTagInput (желтые)
+    const warnDomains = warnings
+        .filter(e => e.field.startsWith('domain_'))
+        .map(e => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
+        .filter((v): v is string => v !== undefined);
+
+    const warnIPs = warnings
         .filter(e => e.field.startsWith('ip_'))
         .map(e => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
@@ -78,27 +87,14 @@ export const RuleEditor = ({
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
 
-            {/* ── Баннер ошибок ─────────────────────────────────────────────── */}
-            {ruleErrors.length > 0 && (
+            {/* ── Критические ошибки (красные, блокируют Close) ──────────────── */}
+            {errors.length > 0 && (
                 <div className="p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
                     <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-xl shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0 space-y-1.5">
                         <ul className="space-y-1 text-[11px] text-rose-200">
-                            {ruleErrors.map((e, i) => <li key={i}>{e.message}</li>)}
+                            {errors.map((e, i) => <li key={i}>{e.message}</li>)}
                         </ul>
-
-                        {/* Кнопка фикса uppercase */}
-                        {hasUppercase && (
-                            <button
-                                onClick={handleAutofixCase}
-                                className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/40 rounded-lg px-3 py-1.5 transition-colors"
-                            >
-                                <Icon name="MagicWand" />
-                                Auto-fix: convert to lowercase
-                            </button>
-                        )}
-
-                        {/* Кнопка фикса пустых матчеров */}
                         {hasMissingMatchers && (
                             <button
                                 onClick={handleAutofixMatchers}
@@ -108,6 +104,26 @@ export const RuleEditor = ({
                                 Auto-fix: add network: tcp,udp (proper catch-all)
                             </button>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Lint-предупреждения (жёлтые, НЕ блокируют) ────────────────── */}
+            {warnings.length > 0 && (
+                <div className="p-3 bg-amber-950/30 border border-amber-500/40 rounded-xl flex items-start gap-2.5 animate-in fade-in">
+                    <Icon name="Warning" weight="fill" className="text-amber-400 text-base shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                        <p className="text-[10px] text-amber-400/70 font-bold uppercase tracking-wide">Style lint</p>
+                        <ul className="space-y-0.5 text-[11px] text-amber-200/80">
+                            {warnings.map((w, i) => <li key={i}>{w.message}</li>)}
+                        </ul>
+                        <button
+                            onClick={handleAutofixCase}
+                            className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300 hover:text-amber-200 bg-amber-900/20 hover:bg-amber-800/30 border border-amber-700/30 rounded-lg px-3 py-1.5 transition-colors"
+                        >
+                            <Icon name="MagicWand" />
+                            Auto-fix: convert to lowercase
+                        </button>
                     </div>
                 </div>
             )}
@@ -179,6 +195,7 @@ export const RuleEditor = ({
                             suggestions={geoData.sites}
                             isLoading={geoData.loading}
                             invalidTags={invalidDomains}
+                            warnTags={warnDomains}
                         />
                     </div>
                     <div className="col-span-2">
@@ -191,6 +208,7 @@ export const RuleEditor = ({
                             suggestions={geoData.ips}
                             isLoading={geoData.loading}
                             invalidTags={invalidIPs}
+                            warnTags={warnIPs}
                         />
                     </div>
                 </div>
@@ -206,7 +224,6 @@ export const RuleEditor = ({
                                 onChange={v => update('inboundTag', v)} multi={true} />
                         </div>
                         <div>
-                            {/* Network — подсвечиваем если пустые матчеры */}
                             <TagSelector
                                 label="Network"
                                 availableTags={['tcp', 'udp']}
@@ -216,7 +233,7 @@ export const RuleEditor = ({
                             />
                             {hasMissingMatchers && (
                                 <p className="text-[10px] text-blue-400 mt-1">
-                                    ↑ Select tcp + udp here for a proper catch-all
+                                    ↑ Select tcp + udp for a proper catch-all
                                 </p>
                             )}
                         </div>

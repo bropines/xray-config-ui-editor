@@ -11,10 +11,11 @@ interface SmartTagInputProps {
     value: string[];
     onChange: (val: string[]) => void;
     suggestions: Suggestion[];
-    prefix: string;           // "geosite:" или "geoip:"
+    prefix: string;
     placeholder?: string;
     isLoading?: boolean;
-    invalidTags?: string[];   // Теги с ошибкой — подсвечиваются красным
+    invalidTags?: string[];   // красные — реальная ошибка
+    warnTags?: string[];      // жёлтые — lint/стиль
 }
 
 export const SmartTagInput = ({
@@ -26,30 +27,27 @@ export const SmartTagInput = ({
     placeholder,
     isLoading,
     invalidTags = [],
+    warnTags    = [],
 }: SmartTagInputProps) => {
     const [input, setInput] = useState("");
     const [showSuggest, setShowSuggest] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     const filteredSuggestions = input
-        ? suggestions.filter(s =>
-            s.code.toLowerCase().includes(input.toLowerCase().replace(prefix, ""))
-          ).slice(0, 10)
+        ? suggestions
+            .filter(s => s.code.toLowerCase().includes(input.toLowerCase().replace(prefix, "")))
+            .slice(0, 10)
         : [];
 
     const addTag = (tag: string) => {
-        const cleanTag = tag.trim();
-        if (!cleanTag) return;
-        if (!value.includes(cleanTag)) {
-            onChange([...value, cleanTag]);
-        }
+        const clean = tag.trim();
+        if (!clean) return;
+        if (!value.includes(clean)) onChange([...value, clean]);
         setInput("");
         setShowSuggest(false);
     };
 
-    const removeTag = (tagToRemove: string) => {
-        onChange(value.filter(t => t !== tagToRemove));
-    };
+    const removeTag = (t: string) => onChange(value.filter(v => v !== t));
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.keyCode === 13) {
@@ -63,16 +61,23 @@ export const SmartTagInput = ({
     };
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        const handler = (e: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
                 setShowSuggest(false);
-            }
         };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
     }, []);
 
     const hasInvalid = invalidTags.length > 0;
+    const hasWarn    = warnTags.length > 0;
+
+    // Бордер контейнера: красный > янтарный > обычный
+    const containerBorder = hasInvalid
+        ? 'border-rose-500/70 focus-within:border-rose-500 focus-within:ring-rose-500/30'
+        : hasWarn
+            ? 'border-amber-500/50 focus-within:border-amber-400 focus-within:ring-amber-400/20'
+            : 'border-slate-700 focus-within:border-indigo-500 focus-within:ring-indigo-500/50';
 
     return (
         <div className="flex flex-col gap-2" ref={wrapperRef}>
@@ -80,9 +85,15 @@ export const SmartTagInput = ({
                 <span className="flex items-center gap-1.5">
                     {label}
                     {hasInvalid && (
-                        <span className="text-rose-400 flex items-center gap-1 normal-case font-normal">
-                            <Icon name="Warning" className="text-[12px]" />
-                            {invalidTags.length} invalid
+                        <span className="text-rose-400 flex items-center gap-1 normal-case font-normal text-[10px]">
+                            <Icon name="WarningOctagon" weight="fill" className="text-[11px]" />
+                            {invalidTags.length} error{invalidTags.length > 1 ? 's' : ''}
+                        </span>
+                    )}
+                    {!hasInvalid && hasWarn && (
+                        <span className="text-amber-400 flex items-center gap-1 normal-case font-normal text-[10px]">
+                            <Icon name="Warning" weight="fill" className="text-[11px]" />
+                            {warnTags.length} lint
                         </span>
                     )}
                 </span>
@@ -94,30 +105,34 @@ export const SmartTagInput = ({
             </label>
 
             <div
-                className={`bg-slate-950 border rounded-lg p-2 flex flex-wrap gap-2 focus-within:ring-1 transition-all min-h-[42px] ${
-                    hasInvalid
-                        ? 'border-rose-500/70 focus-within:border-rose-500 focus-within:ring-rose-500/30'
-                        : 'border-slate-700 focus-within:border-indigo-500 focus-within:ring-indigo-500/50'
-                }`}
+                className={`bg-slate-950 border rounded-lg p-2 flex flex-wrap gap-2 focus-within:ring-1 transition-all min-h-[42px] ${containerBorder}`}
                 onClick={() => wrapperRef.current?.querySelector('input')?.focus()}
             >
                 {value.map((tag, i) => {
                     const isInvalid = invalidTags.includes(tag);
+                    const isWarn    = !isInvalid && warnTags.includes(tag);
                     return (
                         <span
                             key={i}
-                            className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border ${
+                            title={isInvalid ? "Error — will crash Xray" : isWarn ? "Style lint — works but convention is lowercase" : undefined}
+                            className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-colors ${
                                 isInvalid
                                     ? 'bg-rose-900/40 border-rose-500/70 text-rose-200'
-                                    : 'bg-slate-800 border-slate-700 text-slate-200'
+                                    : isWarn
+                                        ? 'bg-amber-900/30 border-amber-500/50 text-amber-200'
+                                        : 'bg-slate-800 border-slate-700 text-slate-200'
                             }`}
-                            title={isInvalid ? "Invalid entry — will crash Xray" : undefined}
                         >
-                            {isInvalid && <Icon name="Warning" className="text-rose-400 text-[11px]" />}
+                            {isInvalid && <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-[10px]" />}
+                            {isWarn    && <Icon name="Warning"        weight="fill" className="text-amber-400 text-[10px]" />}
                             {tag}
                             <button
-                                onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-                                className={isInvalid ? 'hover:text-red-300 text-rose-400' : 'hover:text-red-400'}
+                                onClick={e => { e.stopPropagation(); removeTag(tag); }}
+                                className={
+                                    isInvalid ? 'hover:text-red-300 text-rose-400'
+                                    : isWarn  ? 'hover:text-amber-100 text-amber-400'
+                                    : 'hover:text-red-400 text-slate-400'
+                                }
                             >
                                 <Icon name="x" />
                             </button>
@@ -137,10 +152,9 @@ export const SmartTagInput = ({
                         inputMode="text"
                         autoComplete="off"
                     />
-
                     {showSuggest && input && filteredSuggestions.length > 0 && (
                         <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto custom-scroll">
-                            {filteredSuggestions.map((s) => (
+                            {filteredSuggestions.map(s => (
                                 <button
                                     key={s.code}
                                     className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-600 hover:text-white text-slate-300 flex justify-between group"
