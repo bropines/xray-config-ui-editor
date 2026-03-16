@@ -169,6 +169,49 @@ export const validateWireguard = (data: any): ValidationError[] => {
  
     return errors;
 };
+
+export const validateRule = (rule: any): ValidationError[] => {
+    const errors: ValidationError[] = [];
+ 
+    // 1. Обязательный destination — без него Xray падает при старте
+    if (!rule.outboundTag && !rule.balancerTag) {
+        errors.push({
+            field: "target",
+            message: "Rule has no destination — set outboundTag or balancerTag"
+        });
+    }
+ 
+    // 2. Проверяем записи в domain[]
+    //    Недопустимы: пустые строки, "geosite:" без имени (типа юзер нажал Enter не дописав)
+    const domains: string[] = rule.domain || [];
+    domains.forEach((d, i) => {
+        const clean = String(d).trim();
+        if (!clean) {
+            errors.push({ field: `domain_${i}`, message: `Domain entry #${i + 1} is empty` });
+            return;
+        }
+        if (/^geosite:\s*$/i.test(clean)) {
+            errors.push({ field: `domain_${i}`, message: `Domain #${i + 1}: "geosite:" without a name` });
+        }
+    });
+ 
+    // 3. Проверяем записи в ip[]
+    //    Недопустимы: пустые строки, "geoip:" без имени
+    const ips: string[] = rule.ip || [];
+    ips.forEach((ip, i) => {
+        const clean = String(ip).trim();
+        if (!clean) {
+            errors.push({ field: `ip_${i}`, message: `IP entry #${i + 1} is empty` });
+            return;
+        }
+        if (/^geoip:\s*$/i.test(clean)) {
+            errors.push({ field: `ip_${i}`, message: `IP #${i + 1}: "geoip:" without a name` });
+        }
+    });
+ 
+    return errors;
+};
+ 
  
 
 export const validateBalancer = (balancer: any): ValidationError[] => {
