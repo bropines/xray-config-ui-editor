@@ -14,8 +14,9 @@ interface SmartTagInputProps {
     prefix: string;
     placeholder?: string;
     isLoading?: boolean;
-    invalidTags?: string[];   // красные — реальная ошибка
-    warnTags?: string[];      // жёлтые — lint/стиль
+    invalidTags?: string[];
+    warnTags?: string[];
+    onTagClick?: (tag: string) => void;
 }
 
 export const SmartTagInput = ({
@@ -27,7 +28,8 @@ export const SmartTagInput = ({
     placeholder,
     isLoading,
     invalidTags = [],
-    warnTags    = [],
+    warnTags = [],
+    onTagClick,
 }: SmartTagInputProps) => {
     const [input, setInput] = useState("");
     const [showSuggest, setShowSuggest] = useState(false);
@@ -39,10 +41,25 @@ export const SmartTagInput = ({
             .slice(0, 10)
         : [];
 
-    const addTag = (tag: string) => {
-        const clean = tag.trim();
-        if (!clean) return;
-        if (!value.includes(clean)) onChange([...value, clean]);
+    // Универсальный супер-парсер: ест пробелы, запятые, табы, переносы строк и сноски [1]
+    const processAndAddTags = (rawInput: string) => {
+        // Разбиваем по любому сочетанию запятых, пробелов и переносов строк
+        const rawTags = rawInput.split(/[\n,\s]+/);
+        let newTags = [...value];
+        let added = false;
+
+        rawTags.forEach(rawTag => {
+            // Вырезаем сноски вроде [1], [23] и чистим края
+            const cleanTag = rawTag.replace(/\[\d+\]/g, '').trim();
+            if (cleanTag && !newTags.includes(cleanTag)) {
+                newTags.push(cleanTag);
+                added = true;
+            }
+        });
+
+        if (added) {
+            onChange(newTags);
+        }
         setInput("");
         setShowSuggest(false);
     };
@@ -53,11 +70,17 @@ export const SmartTagInput = ({
         if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
             e.stopPropagation();
-            addTag(input);
+            processAndAddTags(input);
         }
         if (e.key === 'Backspace' && !input && value.length > 0) {
             removeTag(value[value.length - 1]);
         }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        const pastedText = e.clipboardData.getData("Text");
+        processAndAddTags(pastedText);
     };
 
     useEffect(() => {
@@ -70,9 +93,8 @@ export const SmartTagInput = ({
     }, []);
 
     const hasInvalid = invalidTags.length > 0;
-    const hasWarn    = warnTags.length > 0;
+    const hasWarn = warnTags.length > 0;
 
-    // Бордер контейнера: красный > янтарный > обычный
     const containerBorder = hasInvalid
         ? 'border-rose-500/70 focus-within:border-rose-500 focus-within:ring-rose-500/30'
         : hasWarn
@@ -110,28 +132,32 @@ export const SmartTagInput = ({
             >
                 {value.map((tag, i) => {
                     const isInvalid = invalidTags.includes(tag);
-                    const isWarn    = !isInvalid && warnTags.includes(tag);
+                    const isWarn = !isInvalid && warnTags.includes(tag);
+
                     return (
                         <span
                             key={i}
-                            title={isInvalid ? "Error — will crash Xray" : isWarn ? "Style lint — works but convention is lowercase" : undefined}
-                            className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-colors ${
-                                isInvalid
+                            title={isInvalid ? "Error — will crash Xray" : isWarn ? "Style lint — works but convention is lowercase" : "Click to view contents"}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onTagClick) onTagClick(prefix + tag);
+                            }}
+                            className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-colors cursor-pointer hover:ring-1 hover:ring-indigo-500 ${isInvalid
                                     ? 'bg-rose-900/40 border-rose-500/70 text-rose-200'
                                     : isWarn
                                         ? 'bg-amber-900/30 border-amber-500/50 text-amber-200'
                                         : 'bg-slate-800 border-slate-700 text-slate-200'
-                            }`}
+                                }`}
                         >
                             {isInvalid && <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-[10px]" />}
-                            {isWarn    && <Icon name="Warning"        weight="fill" className="text-amber-400 text-[10px]" />}
+                            {isWarn && <Icon name="Warning" weight="fill" className="text-amber-400 text-[10px]" />}
                             {tag}
                             <button
                                 onClick={e => { e.stopPropagation(); removeTag(tag); }}
                                 className={
                                     isInvalid ? 'hover:text-red-300 text-rose-400'
-                                    : isWarn  ? 'hover:text-amber-100 text-amber-400'
-                                    : 'hover:text-red-400 text-slate-400'
+                                        : isWarn ? 'hover:text-amber-100 text-amber-400'
+                                            : 'hover:text-red-400 text-slate-400'
                                 }
                             >
                                 <Icon name="x" />
@@ -146,6 +172,7 @@ export const SmartTagInput = ({
                         value={input}
                         onChange={e => { setInput(e.target.value); setShowSuggest(true); }}
                         onKeyDown={handleKeyDown}
+                        onPaste={handlePaste}
                         onFocus={() => setShowSuggest(true)}
                         placeholder={placeholder}
                         enterKeyHint="done"
@@ -158,7 +185,7 @@ export const SmartTagInput = ({
                                 <button
                                     key={s.code}
                                     className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-600 hover:text-white text-slate-300 flex justify-between group"
-                                    onClick={() => addTag(`${prefix}${s.code}`)}
+                                    onClick={() => processAndAddTags(`${prefix}${s.code}`)}
                                 >
                                     <span className="font-bold">
                                         {prefix}<span className="text-white group-hover:text-white">{s.code}</span>

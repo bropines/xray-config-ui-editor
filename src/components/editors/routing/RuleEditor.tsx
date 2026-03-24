@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { SmartTagInput } from '../../ui/SmartTagInput';
 import { TagSelector } from '../../ui/TagSelector';
 import { JsonField } from '../../ui/JsonField';
 import { validateRule, lintRule } from '../../../utils/validator';
+import { TagDetailsModal } from '../TagDetailsModal';
 
 export const RuleEditor = ({
     rule,
@@ -13,7 +14,10 @@ export const RuleEditor = ({
     inboundTags,
     geoData,
     rawMode
-}) => {
+}: any) => {
+    // Стейт для просмотра деталей тега по клику
+    const [viewTag, setViewTag] = useState<string | null>(null);
+
     if (!rule) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 h-full">
@@ -43,57 +47,50 @@ export const RuleEditor = ({
         onChange(newRule);
     };
 
-    // ── Авто-фикс: добавить network:tcp,udp ───────────────────────────────────
     const handleAutofixMatchers = () => onChange({ ...rule, network: "tcp,udp" });
-
-    // ── Авто-фикс: lowercase (lint) ───────────────────────────────────────────
     const handleAutofixCase = () => onChange({
         ...rule,
         ...(rule.domain ? { domain: rule.domain.map((d: string) => d.toLowerCase()) } : {}),
         ...(rule.ip     ? { ip:     rule.ip.map((ip: string)   => ip.toLowerCase())  } : {}),
     });
 
-    // ── Валидация ─────────────────────────────────────────────────────────────
     const errors   = validateRule(rule);
     const warnings = lintRule(rule);
 
-    const hasMissingMatchers = errors.some(e => e.field === 'matchers');
-    const missingTarget      = errors.some(e => e.field === 'target');
+    const hasMissingMatchers = errors.some((e: any) => e.field === 'matchers');
+    const missingTarget      = errors.some((e: any) => e.field === 'target');
 
-    // Поля с критическими ошибками для SmartTagInput
     const invalidDomains = errors
-        .filter(e => e.field.startsWith('domain_'))
-        .map(e => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
+        .filter((e: any) => e.field.startsWith('domain_'))
+        .map((e: any) => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
 
     const invalidIPs = errors
-        .filter(e => e.field.startsWith('ip_'))
-        .map(e => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
+        .filter((e: any) => e.field.startsWith('ip_'))
+        .map((e: any) => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
 
-    // Поля с lint-предупреждениями для SmartTagInput (желтые)
     const warnDomains = warnings
-        .filter(e => e.field.startsWith('domain_'))
-        .map(e => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
+        .filter((e: any) => e.field.startsWith('domain_'))
+        .map((e: any) => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
 
     const warnIPs = warnings
-        .filter(e => e.field.startsWith('ip_'))
-        .map(e => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
+        .filter((e: any) => e.field.startsWith('ip_'))
+        .map((e: any) => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
         .filter((v): v is string => v !== undefined);
 
     const currentTarget = rule.balancerTag ? `bal:${rule.balancerTag}` : (rule.outboundTag || "");
 
     return (
-        <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
+        <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full relative">
 
-            {/* ── Критические ошибки (красные, блокируют Close) ──────────────── */}
             {errors.length > 0 && (
                 <div className="p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
                     <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-xl shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0 space-y-1.5">
                         <ul className="space-y-1 text-[11px] text-rose-200">
-                            {errors.map((e, i) => <li key={i}>{e.message}</li>)}
+                            {errors.map((e: any, i: number) => <li key={i}>{e.message}</li>)}
                         </ul>
                         {hasMissingMatchers && (
                             <button
@@ -108,14 +105,13 @@ export const RuleEditor = ({
                 </div>
             )}
 
-            {/* ── Lint-предупреждения (жёлтые, НЕ блокируют) ────────────────── */}
             {warnings.length > 0 && (
                 <div className="p-3 bg-amber-950/30 border border-amber-500/40 rounded-xl flex items-start gap-2.5 animate-in fade-in">
                     <Icon name="Warning" weight="fill" className="text-amber-400 text-base shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0 space-y-1.5">
                         <p className="text-[10px] text-amber-400/70 font-bold uppercase tracking-wide">Style lint</p>
                         <ul className="space-y-0.5 text-[11px] text-amber-200/80">
-                            {warnings.map((w, i) => <li key={i}>{w.message}</li>)}
+                            {warnings.map((w: any, i: number) => <li key={i}>{w.message}</li>)}
                         </ul>
                         <button
                             onClick={handleAutofixCase}
@@ -128,7 +124,6 @@ export const RuleEditor = ({
                 </div>
             )}
 
-            {/* ── Rule name ─────────────────────────────────────────────────── */}
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg border-l-4 border-l-indigo-500">
                 <label className="label-xs text-indigo-400">Rule Alias / Name (ruleTag)</label>
                 <input
@@ -142,7 +137,6 @@ export const RuleEditor = ({
                 </p>
             </div>
 
-            {/* ── Destination ───────────────────────────────────────────────── */}
             <div className={`bg-slate-900 border p-4 rounded-xl shadow-lg ${missingTarget ? 'border-rose-500/60' : 'border-slate-800'}`}>
                 <div className="flex justify-between items-center mb-2">
                     <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Traffic Destination</label>
@@ -160,11 +154,11 @@ export const RuleEditor = ({
                     >
                         <option value="" disabled>Select Target...</option>
                         <optgroup label="Outbounds (Direct)">
-                            {outboundTags.map(t => <option key={t} value={t}>{t}</option>)}
+                            {outboundTags.map((t: string) => <option key={t} value={t}>{t}</option>)}
                         </optgroup>
                         {balancerTags.length > 0 && (
                             <optgroup label="Balancers (Load Balance)">
-                                {balancerTags.map(t => <option key={t} value={`bal:${t}`}>⚡ {t}</option>)}
+                                {balancerTags.map((t: string) => <option key={t} value={`bal:${t}`}>⚡ {t}</option>)}
                             </optgroup>
                         )}
                     </select>
@@ -182,7 +176,6 @@ export const RuleEditor = ({
                 )}
             </div>
 
-            {/* ── Smart Matchers ────────────────────────────────────────────── */}
             <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-2">
@@ -196,6 +189,7 @@ export const RuleEditor = ({
                             isLoading={geoData.loading}
                             invalidTags={invalidDomains}
                             warnTags={warnDomains}
+                            onTagClick={setViewTag}
                         />
                     </div>
                     <div className="col-span-2">
@@ -209,11 +203,11 @@ export const RuleEditor = ({
                             isLoading={geoData.loading}
                             invalidTags={invalidIPs}
                             warnTags={warnIPs}
+                            onTagClick={setViewTag}
                         />
                     </div>
                 </div>
 
-                {/* Advanced Matchers */}
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 space-y-4">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">
                         Advanced Matchers
@@ -241,6 +235,23 @@ export const RuleEditor = ({
                             <TagSelector label="Protocol" availableTags={['http', 'tls', 'bittorrent']} selected={rule.protocol || []}
                                 onChange={v => update('protocol', v)} multi={true} />
                         </div>
+                        
+                        {/* Domain Strategy (Force IP) */}
+                        <div>
+                            <label className="label-xs text-indigo-400">Domain Strategy (Force IP)</label>
+                            <select 
+                                className="input-base text-xs font-mono"
+                                value={rule.domainStrategy || ""}
+                                onChange={e => update('domainStrategy', e.target.value || undefined)}
+                            >
+                                <option value="">Default (Inherit)</option>
+                                <option value="AsIs">AsIs</option>
+                                <option value="UseIP">UseIP</option>
+                                <option value="UseIPv4">UseIPv4</option>
+                                <option value="UseIPv6">UseIPv6</option>
+                            </select>
+                        </div>
+
                         <div className="space-y-3">
                             <div>
                                 <label className="label-xs">Target Port</label>
@@ -257,6 +268,9 @@ export const RuleEditor = ({
                     </div>
                 </div>
             </div>
+
+            {/* Рендерим модалку деталей тега поверх формы */}
+            {viewTag && <TagDetailsModal tag={viewTag} onClose={() => setViewTag(null)} />}
         </div>
     );
 };

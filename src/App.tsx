@@ -12,6 +12,7 @@ import { TopologyModal } from "./components/topology/TopologyModal";
 import { RemnawaveModal } from "./components/editors/RemnawaveModal";
 import { SectionJsonModal } from "./components/editors/SectionJsonModal";
 import { BatchOutboundModal } from "./components/editors/outbound/BatchOutboundModal";
+import { GeoViewerModal } from "./components/editors/GeoViewerModal"; // <--- НОВЫЙ ИМПОРТ
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
 import { getPresets } from "./utils/presets";
@@ -37,88 +38,58 @@ const Card = ({ title, icon, color, children, actions, className = "" }: any) =>
 );
 
 // ---------------------------------------------------------------------------
-// About modal — ссылка на репо и инфа о разработчике
+// About modal
 // ---------------------------------------------------------------------------
 const AboutModal = ({ onClose }: { onClose: () => void }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-        <div
-            className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
-            onClick={e => e.stopPropagation()}
-        >
-            {/* Logo */}
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20">
                     <Icon name="Planet" weight="fill" className="text-2xl" />
                 </div>
                 <div>
-                    <div className="font-black text-white text-lg tracking-tight uppercase">Xray Config UI</div>
+                  <div className="font-black text-white text-lg tracking-tight uppercase">Xray Config UI</div>
                     <div className="text-[11px] text-slate-500">Visual editor for Xray-core</div>
                 </div>
             </div>
 
             <div className="space-y-3 text-sm">
-                {/* Разработчик */}
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
                     <Icon name="User" className="text-indigo-400 text-lg shrink-0" />
                     <div>
                         <div className="text-[10px] uppercase text-slate-500 font-bold mb-0.5">Developer</div>
-                        <a
-                            href="https://github.com/bropines"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-300 hover:text-indigo-200 font-bold transition-colors"
-                        >
+                        <a href="https://github.com/bropines" target="_blank" rel="noopener noreferrer" className="text-indigo-300 hover:text-indigo-200 font-bold transition-colors">
                             @bropines
                         </a>
                     </div>
                 </div>
 
-                {/* Репозиторий */}
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
                     <Icon name="GithubLogo" className="text-slate-300 text-lg shrink-0" weight="fill" />
                     <div>
                         <div className="text-[10px] uppercase text-slate-500 font-bold mb-0.5">Repository</div>
-                        <a
-                            href="https://github.com/bropines/xray-config-ui-editor"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-slate-300 hover:text-white font-mono text-xs transition-colors break-all"
-                        >
+                        <a href="https://github.com/bropines/xray-config-ui-editor" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white font-mono text-xs transition-colors break-all">
                             bropines/xray-config-ui-editor
                         </a>
                     </div>
                 </div>
 
-                {/* Связанные проекты */}
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
                     <Icon name="Cloud" className="text-emerald-400 text-lg shrink-0" />
                     <div>
                         <div className="text-[10px] uppercase text-slate-500 font-bold mb-0.5">Powered by</div>
-                        <a
-                            href="https://github.com/remnawave"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
-                        >
+                        <a href="https://github.com/remnawave" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
                             Remnawave Panel
                         </a>
                         <span className="text-slate-600 mx-1.5">·</span>
-                        <a
-                            href="https://github.com/XTLS/Xray-core"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-slate-400 hover:text-white transition-colors"
-                        >
+                        <a href="https://github.com/XTLS/Xray-core" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">
                             Xray-core
                         </a>
                     </div>
                 </div>
             </div>
 
-            <button
-                onClick={onClose}
-                className="mt-5 w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-colors"
-            >
+            <button onClick={onClose} className="mt-5 w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-colors">
                 Close
             </button>
         </div>
@@ -146,9 +117,9 @@ export const App = () => {
     const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({
         open: false, title: "", section: "", data: null, schemaMode: "full"
     });
-
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
     const [batchModalOpen, setBatchModalOpen] = useState(false);
+    const [geoViewerOpen, setGeoViewerOpen] = useState(false); // <--- СОСТОЯНИЕ ДЛЯ GEO VIEWER
     const [aboutOpen, setAboutOpen] = useState(false);
     const [rawMode, setRawMode] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -164,7 +135,6 @@ export const App = () => {
 
     const handleRealPush = () => { saveToRemnawave(); setPushStage('idle'); };
 
-    // --- File Handlers ---
     const loadFile = (file: File) => {
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
@@ -178,6 +148,7 @@ export const App = () => {
         };
         reader.readAsText(file);
     };
+
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files?.[0]) loadFile(e.target.files[0]); };
     const downloadConfig = () => {
         const a = document.createElement('a');
@@ -186,8 +157,7 @@ export const App = () => {
         a.click();
     };
 
-    // --- Drag & Drop ---
-    const handleDragOver  = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+    const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
     const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         if (e.relatedTarget === null || !e.currentTarget.contains(e.relatedTarget as Node)) setIsDragging(false);
@@ -197,17 +167,18 @@ export const App = () => {
         if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
     };
 
-    // --- Modal Helpers ---
     const handleSaveModal = (data: any) => {
         const { type, index } = modal;
-        if (type === 'inbound')  index !== null ? updateItem('inbounds', index, data)  : addItem('inbounds', data);
+        if (type === 'inbound') index !== null ? updateItem('inbounds', index, data) : addItem('inbounds', data);
         if (type === 'outbound') index !== null ? updateItem('outbounds', index, data) : addItem('outbounds', data);
         setModal({ type: null, data: null, index: null });
     };
+
     const handleSaveSection = (newData: any) => {
         updateSection(sectionModal.section as any, newData);
         setSectionModal({ ...sectionModal, open: false });
     };
+
     const openSectionJson = (section: string, title: string) => {
         const modeMap: Record<string, string> = { inbounds: 'inbounds', outbounds: 'outbounds', routing: 'routing', dns: 'dns' };
         setSectionModal({
@@ -219,7 +190,6 @@ export const App = () => {
 
     const presets = getPresets();
 
-    // --- Config-wide validation ---
     const getFullConfigValidation = () => {
         if (!config) return [];
         const errs: string[] = [];
@@ -232,7 +202,6 @@ export const App = () => {
     };
     const configErrors = getFullConfigValidation();
 
-    // --- Filter Outbounds ---
     const filteredOutbounds = (config?.outbounds || [])
         .map((ob: any, i: number) => ({ ...ob, i }))
         .filter((ob: any) => {
@@ -250,16 +219,9 @@ export const App = () => {
         });
 
     return (
-        // ROOT — жёстко занимает весь вьюпорт, ничего не выходит за пределы
-        <div
-            className="h-dvh flex flex-col bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 overflow-hidden relative"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
+        <div className="h-dvh flex flex-col bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 overflow-hidden relative" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
             <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: '#1e293b', border: '1px solid #334155', color: 'white' } }} />
 
-            {/* Drag Overlay */}
             {isDragging && (
                 <div className="absolute inset-0 z-50 bg-indigo-900/80 backdrop-blur-sm border-4 border-indigo-500 border-dashed flex flex-col items-center justify-center pointer-events-none">
                     <Icon name="FileArrowDown" className="text-8xl text-indigo-400 mb-4 animate-bounce" weight="fill" />
@@ -267,12 +229,7 @@ export const App = () => {
                 </div>
             )}
 
-            {/* ------------------------------------------------------------------ */}
-            {/* NAVBAR — фиксированная высота, не скроллится                       */}
-            {/* ------------------------------------------------------------------ */}
             <nav className="h-14 shrink-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50 px-4 shadow-2xl flex items-center justify-between">
-
-                {/* LEFT: Logo + status + errors */}
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/20 shrink-0">
                         <Icon name="Planet" weight="fill" className="text-xl" />
@@ -290,39 +247,25 @@ export const App = () => {
                     </div>
 
                     {configErrors.length > 0 && (
-                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2"
-                            title={configErrors.join('\n')}>
+                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2" title={configErrors.join('\n')}>
                             <Icon name="Warning" />
                             <span className="text-[10px] font-bold uppercase hidden md:inline">Invalid Config</span>
                         </div>
                     )}
                 </div>
 
-                {/* RIGHT: Actions */}
                 <div className="flex items-center gap-1.5 md:gap-3">
-
-                    {/* Cloud Actions */}
                     {remnawave.connected && (
                         <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1">
-                            <button onClick={() => setRemnawaveModalOpen(true)}
-                                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
-                                title="Switch Profile">
+                            <button onClick={() => setRemnawaveModalOpen(true)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all" title="Switch Profile">
                                 <Icon name="ListDashes" weight="bold" />
                             </button>
-                            <button
-                                onClick={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${pushStage === 'confirm'
-                                    ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
-                                    : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
-                                }`}
-                            >
+                            <button onClick={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${pushStage === 'confirm' ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce' : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'}`}>
                                 <Icon name={pushStage === 'confirm' ? "SealCheck" : "CloudArrowUp"} weight="bold" className="text-base" />
                                 <span className="hidden lg:inline">{pushStage === 'confirm' ? 'Confirm Push?' : 'Push'}</span>
                             </button>
                             <div className="w-px h-4 bg-slate-800 mx-1" />
-                            <button onClick={disconnectRemnawave}
-                                className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
-                                title="Disconnect">
+                            <button onClick={disconnectRemnawave} className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all" title="Disconnect">
                                 <Icon name="LinkBreak" weight="bold" />
                             </button>
                         </div>
@@ -336,7 +279,6 @@ export const App = () => {
 
                     <div className="w-px h-8 bg-slate-800/50 mx-1 hidden sm:block" />
 
-                    {/* File Actions */}
                     <div className="flex gap-1.5">
                         <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-xl cursor-pointer transition-all border border-slate-700 flex items-center gap-2 text-sm h-9" title="Load JSON">
                             <Icon name="FolderOpen" />
@@ -349,23 +291,13 @@ export const App = () => {
 
                     <div className="w-px h-8 bg-slate-800/50 mx-1 hidden sm:block" />
 
-                    {/* About button */}
-                    <button
-                        onClick={() => setAboutOpen(true)}
-                        className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-300 transition-all border border-transparent hover:border-slate-700"
-                        title="About / Repository"
-                    >
+                    <button onClick={() => setAboutOpen(true)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-300 transition-all border border-transparent hover:border-slate-700" title="About / Repository">
                         <Icon name="Info" className="text-lg" />
                     </button>
                 </div>
             </nav>
 
-            {/* ------------------------------------------------------------------ */}
-            {/* MAIN — занимает всё оставшееся место                               */}
-            {/* ------------------------------------------------------------------ */}
             <main className="flex-1 min-h-0 flex flex-col p-3 md:p-4 max-w-[1800px] mx-auto w-full overflow-hidden">
-
-                {/* Welcome screen */}
                 {!config ? (
                     <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scroll">
                         <div className="text-center mb-10">
@@ -377,10 +309,7 @@ export const App = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl px-4">
                             {presets.map((preset, i) => (
-                                <div key={i}
-                                    onClick={() => setConfig(preset.config as any)}
-                                    className="bg-slate-900/50 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-6 cursor-pointer transition-all group shadow-lg hover:shadow-indigo-500/10 flex flex-col gap-3"
-                                >
+                                <div key={i} onClick={() => setConfig(preset.config as any)} className="bg-slate-900/50 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-6 cursor-pointer transition-all group shadow-lg hover:shadow-indigo-500/10 flex flex-col gap-3">
                                     <div className="bg-slate-950 w-12 h-12 rounded-lg flex items-center justify-center border border-slate-800 group-hover:border-indigo-500/50 group-hover:text-indigo-400 transition-colors">
                                         <Icon name={preset.icon} className="text-2xl" weight="duotone" />
                                     </div>
@@ -406,61 +335,55 @@ export const App = () => {
                         </div>
                     </div>
                 ) : (
-                    // Config loaded — всё занимает ровно доступную высоту
                     <div className="flex-1 min-h-0 flex flex-col gap-3">
+                        <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg gap-4">
+                            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
+                                <h2 className="font-bold text-slate-300 flex items-center gap-2 text-base">
+                                    <Icon name="SlidersHorizontal" /> Core Modules
+                                </h2>
 
-                        {/* TOOLBAR */}
-                        <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl shadow-lg gap-3">
-                            <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm md:text-base">
-                                <Icon name="SlidersHorizontal" /> Core Modules
-                            </h2>
-                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'topology', data: null, index: null })} icon="GitMerge" title="Topology" />
-                                <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'reverse', data: null, index: null })} icon="ArrowsLeftRight" title="Reverse" />
-                                <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">Settings</Button>
-                                <div className="hidden md:block w-px bg-slate-800 mx-2" />
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => setRawMode(!rawMode)}
-                                    icon={rawMode ? "Layout" : "Code"}
-                                    className={`flex-1 md:flex-none text-xs ${rawMode ? "bg-indigo-600 border-indigo-500 text-white" : ""}`}
-                                >
-                                    {rawMode ? "UI" : "JSON"}
+                                <div className="hidden md:block w-px h-6 bg-slate-800" />
+
+                                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">
+                                        Core Settings
+                                    </Button>
+                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'reverse', data: null, index: null })} icon="ArrowsLeftRight">
+                                        Reverse Proxy
+                                    </Button>
+                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'topology', data: null, index: null })} icon="GitMerge">
+                                        Topology
+                                    </Button>
+                                    {/* ДОБАВЛЕНА КНОПКА GEO VIEWER */}
+                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setGeoViewerOpen(true)} icon="GlobeHemisphereWest">
+                                        Geo Viewer
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 w-full md:w-auto pt-4 md:pt-0 border-t border-slate-800 md:border-transparent">
+                                <Button variant="secondary" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"} className={`flex-1 md:flex-none text-xs ${rawMode ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : ""}`}>
+                                    {rawMode ? "UI Mode" : "JSON Mode"}
                                 </Button>
-                                <Button variant="danger" className="text-xs px-3 ml-2" onClick={() => { if (confirm('Clear config?')) setConfig(null); }} icon="XCircle" title="Close Config" />
+                                <Button variant="danger" className="text-xs px-3" onClick={() => { if (confirm('Clear config?')) setConfig(null as any); }} icon="XCircle" title="Close Config">
+                                    <span className="hidden md:inline">Clear</span>
+                                </Button>
                             </div>
                         </div>
 
-                        {/* CONTENT AREA — flex-1 + min-h-0 чтобы не вылезало */}
                         {rawMode ? (
                             <div className="flex-1 min-h-0 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-4 shadow-2xl flex flex-col">
-                                <JsonField
-                                    label="Full Configuration (Auto-saved)"
-                                    value={config}
-                                    onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }}
-                                    className="flex-1 relative min-h-0"
-                                />
+                                <JsonField label="Full Configuration (Auto-saved)" value={config} onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }} className="flex-1 relative min-h-0" />
                             </div>
                         ) : (
-                            // Три колонки + DNS: колонки растягиваются, DNS скроллится внутри общей обёртки
                             <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto custom-scroll">
-
-                                {/* Три основные колонки */}
                                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 xl:flex-1 xl:min-h-0" style={{ minHeight: 0, flex: '1 1 0' }}>
-
-                                    {/* Inbounds */}
-                                    <Card
-                                        title={`Inbounds (${config.inbounds?.length || 0})`}
-                                        icon="ArrowCircleDown"
-                                        color="bg-emerald-600"
-                                        className="h-[480px] xl:h-full"
-                                        actions={
+                                    <Card title={`Inbounds (${config.inbounds?.length || 0})`} icon="ArrowCircleDown" color="bg-emerald-600" className="h-[480px] xl:h-full" actions={
                                             <div className="flex gap-1">
                                                 <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("inbounds", "Inbounds")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus" />
                                             </div>
-                                        }
-                                    >
+                                        }>
                                         {(config.inbounds || []).map((ib: any, i: number) => (
                                             <div key={i} className="card-item group flex justify-between items-start">
                                                 <div className="min-w-0 pr-2">
@@ -475,19 +398,12 @@ export const App = () => {
                                         ))}
                                     </Card>
 
-                                    {/* Routing */}
-                                    <Card
-                                        title="Routing"
-                                        icon="ArrowsSplit"
-                                        color="bg-purple-600"
-                                        className="h-[480px] xl:h-full"
-                                        actions={
+                                    <Card title="Routing" icon="ArrowsSplit" color="bg-purple-600" className="h-[480px] xl:h-full" actions={
                                             <div className="flex gap-1">
                                                 <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("routing", "Routing")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>
                                             </div>
-                                        }
-                                    >
+                                        }>
                                         <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20 flex justify-between px-4">
                                             <span className="opacity-70">Strategy:</span>
                                             <span className="font-bold text-white">{config.routing?.domainStrategy || "AsIs"}</span>
@@ -495,12 +411,12 @@ export const App = () => {
 
                                         <div className="space-y-2">
                                             {(config.routing?.rules || []).slice(0, 20).map((rule: any, i: number) => {
-                                                const hasName   = !!rule.ruleTag;
+                                                const hasName = !!rule.ruleTag;
                                                 const conditions: string[] = [];
-                                                if (rule.domain)    conditions.push(`${rule.domain.length} dom`);
-                                                if (rule.ip)        conditions.push(`${rule.ip.length} ip`);
-                                                if (rule.port)      conditions.push('port');
-                                                if (rule.protocol)  conditions.push('proto');
+                                                if (rule.domain) conditions.push(`${rule.domain.length} dom`);
+                                                if (rule.ip) conditions.push(`${rule.ip.length} ip`);
+                                                if (rule.port) conditions.push('port');
+                                                if (rule.protocol) conditions.push('proto');
                                                 if (rule.inboundTag) conditions.push('inbound');
                                                 if (conditions.length === 0) conditions.push('match all');
                                                 const isBalancer = !!rule.balancerTag;
@@ -538,29 +454,17 @@ export const App = () => {
                                         </div>
                                     </Card>
 
-                                    {/* Outbounds */}
-                                    <Card
-                                        title={`Outbounds (${config.outbounds?.length || 0})`}
-                                        icon="ArrowCircleUp"
-                                        color="bg-blue-600"
-                                        className="h-[480px] xl:h-full"
-                                        actions={
+                                    <Card title={`Outbounds (${config.outbounds?.length || 0})`} icon="ArrowCircleUp" color="bg-blue-600" className="h-[480px] xl:h-full" actions={
                                             <div className="flex gap-2 items-center">
                                                 <div className="relative hidden md:block">
                                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
-                                                    <input
-                                                        className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white placeholder:text-slate-600"
-                                                        placeholder="Filter IP, Tag..."
-                                                        value={obSearch}
-                                                        onChange={e => setObSearch(e.target.value)}
-                                                    />
+                                                    <input className="bg-slate-900 border border-slate-700 rounded-md pl-7 pr-2 py-1 text-[10px] w-32 outline-none focus:w-48 focus:border-indigo-500 transition-all text-white placeholder:text-slate-600" placeholder="Filter IP, Tag..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
                                                 </div>
                                                 <Button variant="ghost" className="p-1.5" onClick={() => setBatchModalOpen(true)} icon="Stack" title="Batch Import/Export" />
                                                 <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("outbounds", "Outbounds")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus" title="Add New Outbound" />
                                             </div>
-                                        }
-                                    >
+                                        }>
                                         <div className="md:hidden mb-3 relative">
                                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
                                             <input className="input-base pl-8 text-xs py-2 bg-slate-950/50" placeholder="Search outbounds..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
@@ -598,19 +502,12 @@ export const App = () => {
                                     </Card>
                                 </div>
 
-                                {/* DNS — ниже трёх колонок, скроллится вместе с ними */}
-                                <Card
-                                    title="DNS"
-                                    icon="Globe"
-                                    color="bg-indigo-600"
-                                    className="shrink-0 mb-1"
-                                    actions={
+                                <Card title="DNS" icon="Globe" color="bg-indigo-600" className="shrink-0 mb-1" actions={
                                         <div className="flex gap-1">
                                             <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("dns", "DNS Config")} icon="Code" title="View JSON" />
                                             <Button variant="ghost" onClick={() => { initDns(); setModal({ type: 'dns', data: null, index: null }); }} icon="PencilSimple">Edit</Button>
                                         </div>
-                                    }
-                                >
+                                    }>
                                     {config.dns ? (
                                         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                                             <div className="grid grid-cols-2 gap-2 text-xs flex-1">
@@ -644,18 +541,17 @@ export const App = () => {
                 )}
             </main>
 
-            {/* ------------------------------------------------------------------ */}
-            {/* MODALS                                                              */}
-            {/* ------------------------------------------------------------------ */}
-            {modal.type === 'inbound'  && <InboundModal  data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} onSave={handleSaveModal} />}
+            {modal.type === 'inbound' && <InboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} onSave={handleSaveModal} />}
             {modal.type === 'outbound' && <OutboundModal data={modal.data} onClose={() => setModal({ type: null, data: null, index: null })} index={modal.index} onSave={handleSaveModal} />}
-            {modal.type === 'routing'  && <RoutingModal  onClose={() => setModal({ type: null, data: null, index: null })} />}
-            {modal.type === 'dns'      && <DnsModal      onClose={() => setModal({ type: null, data: null, index: null })} />}
+            {modal.type === 'routing' && <RoutingModal onClose={() => setModal({ type: null, data: null, index: null })} />}
+            {modal.type === 'dns' && <DnsModal onClose={() => setModal({ type: null, data: null, index: null })} />}
             {modal.type === 'settings' && <SettingsModal onClose={() => setModal({ type: null, data: null, index: null })} />}
-            {modal.type === 'reverse'  && <ReverseModal  onClose={() => setModal({ type: null, data: null, index: null })} />}
+            {modal.type === 'reverse' && <ReverseModal onClose={() => setModal({ type: null, data: null, index: null })} />}
             {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null, data: null, index: null })} />}
 
-            {batchModalOpen   && <BatchOutboundModal onClose={() => setBatchModalOpen(false)} />}
+            {batchModalOpen && <BatchOutboundModal onClose={() => setBatchModalOpen(false)} />}
+            {geoViewerOpen && <GeoViewerModal onClose={() => setGeoViewerOpen(false)} />} {/* <--- НОВАЯ МОДАЛКА ЗДЕСЬ */}
+            
             {sectionModal.open && (
                 <SectionJsonModal
                     title={sectionModal.title}
@@ -666,7 +562,7 @@ export const App = () => {
                 />
             )}
             {remnawaveModalOpen && <RemnawaveModal onClose={() => setRemnawaveModalOpen(false)} />}
-            {aboutOpen          && <AboutModal    onClose={() => setAboutOpen(false)} />}
+            {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
         </div>
     );
 };
