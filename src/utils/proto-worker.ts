@@ -28,12 +28,22 @@ const formatIp = (bytes) => {
     return '';
 };
 
-// Хелпер каскадных прокси
+// Мощный каскад прокси-серверов
 const fetchWithFallback = async (url, method = 'GET') => {
     const isGithub = url.includes('github.com') || url.includes('raw.githubusercontent.com');
+    
+    // Используем надежные зеркала, которые правильно обрабатывают редиректы GitHub Releases на AWS S3
     const proxies = isGithub 
-        ? [\`https://ghproxy.net/\${url}\`, \`https://corsproxy.io/?\${encodeURIComponent(url)}\`]
-        : [\`https://corsproxy.io/?\${encodeURIComponent(url)}\`, \`https://ghproxy.net/\${url}\`];
+        ? [
+            \`https://mirror.ghproxy.com/\${url}\`,
+            \`https://gh-proxy.com/\${url}\`,
+            \`https://ghproxy.net/\${url}\`,
+            \`https://corsproxy.io/?\${encodeURIComponent(url)}\`
+          ]
+        : [
+            \`https://corsproxy.io/?\${encodeURIComponent(url)}\`,
+            \`https://mirror.ghproxy.com/\${url}\`
+          ];
     
     let lastErr;
     for (const proxy of proxies) {
@@ -47,22 +57,26 @@ const fetchWithFallback = async (url, method = 'GET') => {
         if (res.ok) return res;
     } catch(e) { lastErr = e; }
     
-    throw lastErr || new Error("Failed to fetch");
+    throw lastErr || new Error("Failed to fetch from all proxies");
 };
 
 self.onmessage = async (e) => {
-    const { type, customUrl, dataType, targetCode, cachedMeta, force } = e.data;
+    const { type, customUrl, dataType, targetCode, cachedMeta, force, fileBuffer } = e.data;
     
     try {
-        // 1. Детализация тегов (вызывается при клике на тег)
+        // 1. Детализация тегов (клик по списку)
         if (type === 'get_details') {
             const isGeoSite = dataType === 'geosite';
             const defaultUrl = isGeoSite ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
             const url = customUrl || defaultUrl;
 
             let buffer;
-            if (url.includes('jsdelivr.net')) buffer = await (await fetch(url)).arrayBuffer();
-            else buffer = await (await fetchWithFallback(url, 'GET')).arrayBuffer();
+            if (fileBuffer) {
+                buffer = fileBuffer;
+            } else {
+                if (url.includes('jsdelivr.net')) buffer = await (await fetch(url)).arrayBuffer();
+                else buffer = await (await fetchWithFallback(url, 'GET')).arrayBuffer();
+            }
             
             const root = new protobuf.Root();
             protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
@@ -88,41 +102,43 @@ self.onmessage = async (e) => {
         const url = customUrl || defaultUrl;
         let meta = { etag: null, lastModified: null, size: null };
 
-        // УМНЫЙ КЭШ: Проверяем заголовки (Etag / Size), если у нас есть локальный кэш и это не принудительный Fetch
-        if (cachedMeta && !force) {
-            try {
-                let headRes;
-                if (url.includes('jsdelivr.net')) headRes = await fetch(url, { method: 'HEAD' });
-                else headRes = await fetchWithFallback(url, 'HEAD');
-                
-                meta.etag = headRes.headers.get('etag');
-                meta.lastModified = headRes.headers.get('last-modified');
-                meta.size = headRes.headers.get('content-length');
+        let buffer;
 
-                const matchEtag = meta.etag && meta.etag === cachedMeta.etag;
-                const matchLastMod = meta.lastModified && meta.lastModified === cachedMeta.lastModified;
-                const matchSize = meta.size && meta.size === cachedMeta.size;
+        if (fileBuffer) {
+            buffer = fileBuffer;
+        } else {
+            if (cachedMeta && !force) {
+                try {
+                    let headRes;
+                    if (url.includes('jsdelivr.net')) headRes = await fetch(url, { method: 'HEAD' });
+                    else headRes = await fetchWithFallback(url, 'HEAD');
+                    
+                    meta.etag = headRes.headers.get('etag');
+                    meta.lastModified = headRes.headers.get('last-modified');
+                    meta.size = headRes.headers.get('content-length');
 
-                // Если файл на сервере не менялся - возвращаем Cache Hit!
-                if (matchEtag || matchLastMod || matchSize) {
-                    self.postMessage({ type: 'cache_hit', targetType: type });
-                    return;
-                }
-            } catch(err) { /* Игнорируем ошибки HEAD и качаем заново */ }
+                    const matchEtag = meta.etag && meta.etag === cachedMeta.etag;
+                    const matchLastMod = meta.lastModified && meta.lastModified === cachedMeta.lastModified;
+                    const matchSize = meta.size && meta.size === cachedMeta.size;
+
+                    if (matchEtag || matchLastMod || matchSize) {
+                        self.postMessage({ type: 'cache_hit', targetType: type });
+                        return;
+                    }
+                } catch(err) { /* Игнорируем ошибки HEAD */ }
+            }
+
+            let finalRes;
+            if (url.includes('jsdelivr.net')) finalRes = await fetch(url);
+            else finalRes = await fetchWithFallback(url, 'GET');
+            
+            if (!finalRes.ok) throw new Error("HTTP " + finalRes.status);
+            buffer = await finalRes.arrayBuffer();
+
+            meta.etag = meta.etag || finalRes.headers.get('etag');
+            meta.lastModified = meta.lastModified || finalRes.headers.get('last-modified');
+            meta.size = meta.size || finalRes.headers.get('content-length');
         }
-
-        // КЭШ УСТАРЕЛ ИЛИ ЕГО НЕТ: Качаем и парсим заново
-        let finalRes;
-        if (url.includes('jsdelivr.net')) finalRes = await fetch(url);
-        else finalRes = await fetchWithFallback(url, 'GET');
-        
-        if (!finalRes.ok) throw new Error("HTTP " + finalRes.status);
-        const buffer = await finalRes.arrayBuffer();
-
-        // Обновляем мету, если HEAD провалился, но мы всё равно скачали
-        meta.etag = meta.etag || finalRes.headers.get('etag');
-        meta.lastModified = meta.lastModified || finalRes.headers.get('last-modified');
-        meta.size = meta.size || finalRes.headers.get('content-length');
 
         const root = new protobuf.Root();
         protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
@@ -136,7 +152,6 @@ self.onmessage = async (e) => {
             count: (en.domain || en.cidr || []).length
         }));
 
-        // Отправляем распарсенные данные и новую мету
         self.postMessage({ type: 'success', targetType: type, data: result, meta });
 
     } catch (err) {
