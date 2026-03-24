@@ -28,7 +28,6 @@ const formatIp = (bytes) => {
     return '';
 };
 
-// Твой Cloudflare Worker с каскадными фоллбэками
 const fetchWithFallback = async (url, method = 'GET') => {
     let targets = [];
     const myProxy = \`https://crs.bropines.workers.dev/\${url}\`;
@@ -61,38 +60,37 @@ self.onmessage = async (e) => {
             : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
         const url = customUrl || defaultUrl;
 
-        // --- УМНЫЙ КЭШ БИНАРНИКОВ (Cache API) ---
-        // Открываем постоянное хранилище браузера
-        const cache = await caches.open('geo-dat-binary-cache');
+        // БЕЗОПАСНАЯ ПРОВЕРКА Cache API (чтобы не падало на HTTP)
+        const hasCacheApi = typeof caches !== 'undefined';
+        let cache = null;
         
-        // Если пользователь нажал кнопку Fetch (force=true), вычищаем старый файл
-        if (force) {
-            await cache.delete(url);
+        if (hasCacheApi) {
+            cache = await caches.open('geo-dat-binary-cache');
+            if (force) await cache.delete(url);
         }
 
-        // Хелпер: отдает ArrayBuffer либо из переданного файла, либо из кэша, либо качает
         const getBuffer = async () => {
-            if (fileBuffer) return fileBuffer; // Если загрузили локальный файл
+            if (fileBuffer) return fileBuffer;
             
-            // Ищем готовый бинарник в кэше браузера
-            const cachedRes = await cache.match(url);
-            if (cachedRes) return await cachedRes.arrayBuffer();
+            if (hasCacheApi && cache) {
+                const cachedRes = await cache.match(url);
+                if (cachedRes) return await cachedRes.arrayBuffer();
+            }
 
-            // Если в кэше пусто — качаем по сети
             let res;
             if (url.includes('jsdelivr.net')) res = await fetch(url);
             else res = await fetchWithFallback(url, 'GET');
             
             if (!res.ok) throw new Error("HTTP " + res.status);
             
-            // Клонируем ответ и кладем в кэш, чтобы больше никогда не качать его при кликах!
-            await cache.put(url, res.clone());
+            if (hasCacheApi && cache) {
+                await cache.put(url, res.clone());
+            }
             return await res.arrayBuffer();
         };
 
-        // 1. Детализация тегов (вызывается при клике по списку)
+        // 1. Детализация тегов
         if (type === 'get_details') {
-            // Теперь это выполнится моментально и без сети!
             const buffer = await getBuffer();
             
             const root = new protobuf.Root();
@@ -117,7 +115,6 @@ self.onmessage = async (e) => {
         if (fileBuffer) {
             buffer = fileBuffer;
         } else {
-            // Быстрая проверка меты (HTTP HEAD), если у нас есть кэш списка
             if (cachedMeta && !force) {
                 try {
                     let headRes;
@@ -132,7 +129,6 @@ self.onmessage = async (e) => {
                     const matchLastMod = meta.lastModified && meta.lastModified === cachedMeta.lastModified;
                     const matchSize = meta.size && meta.size === cachedMeta.size;
 
-                    // Если файл на сервере не изменился - прерываемся, UI возьмет данные из localStorage
                     if (matchEtag || matchLastMod || matchSize) {
                         self.postMessage({ type: 'cache_hit', targetType: type });
                         return;
@@ -140,19 +136,18 @@ self.onmessage = async (e) => {
                 } catch(err) { /* Игнорируем ошибки HEAD */ }
             }
 
-            // Получаем буфер (сеть или Cache API)
             buffer = await getBuffer();
 
-            // Достаем мету из кэшированного ответа для сохранения в localStorage
-            const cachedRes = await cache.match(url);
-            if (cachedRes) {
-                 meta.etag = cachedRes.headers.get('etag');
-                 meta.lastModified = cachedRes.headers.get('last-modified');
-                 meta.size = cachedRes.headers.get('content-length');
+            if (hasCacheApi && cache) {
+                const cachedRes = await cache.match(url);
+                if (cachedRes) {
+                     meta.etag = cachedRes.headers.get('etag');
+                     meta.lastModified = cachedRes.headers.get('last-modified');
+                     meta.size = cachedRes.headers.get('content-length');
+                }
             }
         }
 
-        // Парсим Protobuf
         const root = new protobuf.Root();
         protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
         const ListType = root.lookupType(isGeoSite ? "router.GeoSiteList" : "router.GeoIPList");
@@ -160,7 +155,6 @@ self.onmessage = async (e) => {
         const message = ListType.decode(new Uint8Array(buffer));
         const object = ListType.toObject(message, { defaults: true });
 
-        // Упрощаем для UI
         const result = object.entry.map(en => ({
             code: en.countryCode || en.country_code,
             count: (en.domain || en.cidr || []).length
