@@ -202,24 +202,33 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         
         if (customFormat === 'text') {
             try {
-                const fetchWithFallbackText = async (target: string) => {
-                    const isGithub = target.includes('github.com') || target.includes('raw.githubusercontent.com');
-                    const proxies = isGithub 
-                        ? [
-                            `https://mirror.ghproxy.com/${target}`,
-                            `https://gh-proxy.com/${target}`,
-                            `https://ghproxy.net/${target}`,
-                            `https://corsproxy.io/?${encodeURIComponent(target)}`
-                          ] 
-                        : [
-                            `https://corsproxy.io/?${encodeURIComponent(target)}`,
-                            `https://mirror.ghproxy.com/${target}`
-                          ];
+                const fetchWithFallbackText = async (targetUrl: string) => {
+                    let targets = [];
+                    const myProxy = `https://crs.bropines.workers.dev/${targetUrl}`;
+                    
+                    if (targetUrl.includes('raw.githubusercontent.com')) {
+                        targets = [targetUrl, myProxy, `https://mirror.ghproxy.com/${targetUrl}`];
+                    } else if (targetUrl.includes('github.com')) {
+                        targets = [
+                            myProxy,
+                            `https://mirror.ghproxy.com/${targetUrl}`,
+                            `https://ghproxy.net/${targetUrl}`,
+                            targetUrl
+                        ];
+                    } else {
+                        targets = [targetUrl, myProxy];
+                    }
                     
                     let lastErr;
-                    for (const p of proxies) { try { const res = await fetch(p); if (res.ok) return await res.text(); } catch (e) { lastErr = e; } }
-                    try { const res = await fetch(target); if (res.ok) return await res.text(); } catch (e) { lastErr = e; }
-                    throw lastErr || new Error("Failed to fetch");
+                    for (const target of targets) { 
+                        try { 
+                            const res = await fetch(target); 
+                            if (res.ok) return await res.text(); 
+                        } catch (e) { 
+                            lastErr = e; 
+                        } 
+                    }
+                    throw lastErr || new Error("Failed to fetch text");
                 };
 
                 const text = await fetchWithFallbackText(customUrl);
