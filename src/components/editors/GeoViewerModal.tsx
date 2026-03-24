@@ -13,11 +13,49 @@ const CUSTOM_PRESETS = [
     { label: '🇷🇺 Runet GeoIP', format: 'geoip', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat' },
 ];
 
-const loadCachedData = (key: string) => {
-    try { const c = localStorage.getItem(`geo_data_${key}`); return c ? JSON.parse(c) : null; } catch { return null; }
+// ============================================================================
+// IndexedDB Кеширование (Замена localStorage)
+// ============================================================================
+const DB_NAME = 'GeoCacheDB';
+const STORE_NAME = 'geo_data';
+
+const initDB = (): Promise<IDBDatabase> => {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = () => {
+            if (!request.result.objectStoreNames.contains(STORE_NAME)) {
+                request.result.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
 };
-const saveCachedData = (key: string, data: any, meta: any) => {
-    try { localStorage.setItem(`geo_data_${key}`, JSON.stringify({ meta, data })); } catch { console.warn("Geo cache full"); }
+
+const loadCachedData = async (key: string): Promise<any> => {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+    } catch { return null; }
+};
+
+const saveCachedData = async (key: string, data: any, meta: any) => {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.put({ meta, data }, key);
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => reject(req.error);
+        });
+    } catch (err) { console.warn("Geo cache write failed", err); }
 };
 
 // ============================================================================
@@ -42,7 +80,7 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
             }
             setLoading(false);
         };
-        
+       
         worker.postMessage({ type: 'get_details', dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), targetCode, customUrl, fileBuffer: customFileBuffer });
         return () => worker.terminate();
     }, [tag, customUrl, customFormat, customFileBuffer]);
@@ -51,7 +89,8 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
         try {
             if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
             else {
-                const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.left = "-999999px";
+                const ta = document.createElement("textarea");
+                ta.value = text; ta.style.position = "fixed"; ta.style.left = "-999999px";
                 document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
             }
             toast.success("Copied to clipboard!");
@@ -89,61 +128,69 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
 // ============================================================================
 export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-
     const [activeTab, setActiveTab] = useState<'geosite' | 'geoip' | 'custom'>(() => (localStorage.getItem('geo_tab') as any) || 'geosite');
     const [customUrl, setCustomUrl] = useState(() => localStorage.getItem('geo_url') || "");
     const [customFormat, setCustomFormat] = useState<'text' | 'geosite' | 'geoip'>(() => (localStorage.getItem('geo_format') as any) || 'geoip');
     
     const [customFileBuffer, setCustomFileBuffer] = useState<ArrayBuffer | null>(null);
-
-    const [customData, setCustomData] = useState<GeoItem[]>(() => {
-        const url = localStorage.getItem('geo_url');
-        if (url) return loadCachedData(url)?.data || [];
-        return [];
-    });
-
+    const [customData, setCustomData] = useState<GeoItem[]>([]);
+    
     const [geoSites, setGeoSites] = useState<GeoItem[]>([]);
     const [geoIps, setGeoIps] = useState<GeoItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [customLoading, setCustomLoading] = useState(false);
-
     const [search, setSearch] = useState("");
     const [viewTag, setViewTag] = useState<{ tag: string, code: string, url?: string, format?: string } | null>(null);
 
     const customWorkerRef = useRef<Worker | null>(null);
 
+    // Сохранение настроек UI в localStorage (строки можно)
     useEffect(() => {
         localStorage.setItem('geo_tab', activeTab);
         localStorage.setItem('geo_url', customUrl);
         localStorage.setItem('geo_format', customFormat);
     }, [activeTab, customUrl, customFormat]);
 
+    // Асинхронная загрузка сохраненного custom-источника при старте
+    useEffect(() => {
+        const url = localStorage.getItem('geo_url');
+        if (url) {
+            loadCachedData(url).then(cache => {
+                if (cache?.data) setCustomData(cache.data);
+            });
+        }
+    }, []);
+
     useEffect(() => {
         const worker = createProtoWorker();
         const geositeUrl = "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat";
         const geoipUrl = "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
 
-        const cacheSite = loadCachedData(geositeUrl);
-        const cacheIp = loadCachedData(geoipUrl);
+        const loadCachesAndStart = async () => {
+            setLoading(true);
+            const cacheSite = await loadCachedData(geositeUrl);
+            const cacheIp = await loadCachedData(geoipUrl);
 
-        if (cacheSite) setGeoSites(cacheSite.data);
-        if (cacheIp) setGeoIps(cacheIp.data);
-        if (!cacheSite || !cacheIp) setLoading(true);
+            if (cacheSite) setGeoSites(cacheSite.data);
+            if (cacheIp) setGeoIps(cacheIp.data);
 
-        worker.onmessage = (e) => {
-            const { type, targetType, data, meta } = e.data;
-            if (type === 'cache_hit') { /* ok */ } 
-            else if (type === 'success') {
-                const url = targetType === 'geosite' ? geositeUrl : geoipUrl;
-                saveCachedData(url, data, meta);
-                if (targetType === 'geosite') setGeoSites(data);
-                if (targetType === 'geoip') setGeoIps(data);
-            }
-            setLoading(false);
+            worker.onmessage = (e) => {
+                const { type, targetType, data, meta } = e.data;
+                if (type === 'cache_hit') { /* ok */ } 
+                else if (type === 'success') {
+                    const url = targetType === 'geosite' ? geositeUrl : geoipUrl;
+                    saveCachedData(url, data, meta);
+                    if (targetType === 'geosite') setGeoSites(data);
+                    if (targetType === 'geoip') setGeoIps(data);
+                }
+                setLoading(false);
+            };
+            
+            worker.postMessage({ type: 'geosite', cachedMeta: cacheSite?.meta });
+            worker.postMessage({ type: 'geoip', cachedMeta: cacheIp?.meta });
         };
-        
-        worker.postMessage({ type: 'geosite', cachedMeta: cacheSite?.meta });
-        worker.postMessage({ type: 'geoip', cachedMeta: cacheIp?.meta });
+
+        loadCachesAndStart();
         
         return () => worker.terminate();
     }, []);
@@ -199,7 +246,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         
         setCustomLoading(true);
         setCustomFileBuffer(null);
-        
+
         if (customFormat === 'text') {
             try {
                 const fetchWithFallbackText = async (targetUrl: string) => {
@@ -222,10 +269,10 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                     let lastErr;
                     for (const target of targets) { 
                         try { 
-                            const res = await fetch(target); 
+                            const res = await fetch(target);
                             if (res.ok) return await res.text(); 
                         } catch (e) { 
-                            lastErr = e; 
+                            lastErr = e;
                         } 
                     }
                     throw lastErr || new Error("Failed to fetch text");
@@ -235,7 +282,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('//'));
                 const formattedData = lines.map(line => ({ code: line, count: 1 }));
                 
-                saveCachedData(customUrl, formattedData, { size: text.length });
+                await saveCachedData(customUrl, formattedData, { size: text.length });
                 setCustomData(formattedData);
                 setViewTag(null);
                 toast.success(`Loaded ${formattedData.length} items`);
@@ -249,11 +296,11 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
 
         if (customWorkerRef.current) customWorkerRef.current.terminate();
         customWorkerRef.current = createProtoWorker();
-        
-        customWorkerRef.current.onmessage = (e) => {
+
+        customWorkerRef.current.onmessage = async (e) => {
             if (e.data.error) toast.error("Failed to fetch/parse DAT", { description: e.data.error });
             else if (e.data.type === 'success') {
-                saveCachedData(customUrl, e.data.data, e.data.meta);
+                await saveCachedData(customUrl, e.data.data, e.data.meta);
                 setCustomData(e.data.data);
                 setViewTag(null);
                 toast.success(`Loaded ${e.data.data.length} categories`);
@@ -283,7 +330,8 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         try {
             if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(textToCopy);
             else {
-                const ta = document.createElement("textarea"); ta.value = textToCopy; ta.style.position = "fixed"; ta.style.left = "-999999px";
+                const ta = document.createElement("textarea");
+                ta.value = textToCopy; ta.style.position = "fixed"; ta.style.left = "-999999px";
                 document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
             }
             toast.success(`Copied ${displayData.length} items`);
@@ -291,7 +339,8 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleTabChange = (tab: 'geosite' | 'geoip' | 'custom') => {
-        setActiveTab(tab); setSearch(""); setViewTag(null);
+        setActiveTab(tab); setSearch("");
+        setViewTag(null);
     };
 
     return (
