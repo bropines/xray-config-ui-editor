@@ -1,125 +1,113 @@
-export const generateLink = (outbound: any): string => {
+export const generateLink = (outbound: any): string | null => {
+    if (!outbound || !outbound.protocol) return null;
+
     try {
         const proto = outbound.protocol;
-        const tag = outbound.tag || "";
-        const stream = outbound.streamSettings || {};
         const settings = outbound.settings || {};
+        const stream = outbound.streamSettings || {};
+        const tag = outbound.tag || "Proxy";
 
-        // --- 1. SHADOWSOCKS ---
-        if (proto === 'shadowsocks') {
-            // Поддержка и servers (стандарт), и плоской структуры
-            const server = settings.servers?.[0] || settings;
-            if (!server || !server.address) return "";
-            
-            const userInfo = btoa(`${server.method}:${server.password}`);
-            return `ss://${userInfo}@${server.address}:${server.port}#${encodeURIComponent(tag)}`;
+        let address = "";
+        let port = 0;
+        let id = "";
+        let flow = "";
+        let method = "";
+        
+        if (settings.vnext && settings.vnext.length > 0) {
+            address = settings.vnext[0].address;
+            port = settings.vnext[0].port;
+            id = settings.vnext[0].users?.[0]?.id || "";
+            flow = settings.vnext[0].users?.[0]?.flow || "";
+        } else if (settings.servers && settings.servers.length > 0) {
+            address = settings.servers[0].address;
+            port = settings.servers[0].port;
+            id = settings.servers[0].password || settings.servers[0].id || "";
+            method = settings.servers[0].method || "aes-256-gcm";
+        } else {
+            address = settings.address || "";
+            port = settings.port || 0;
+            id = settings.password || settings.id || settings.secretKey || "";
+            method = settings.method || "aes-256-gcm";
         }
 
-        // --- 2. VLESS / TROJAN / VMESS ---
-        if (['vless', 'trojan', 'vmess'].includes(proto)) {
-            let address, port, uuid, flow, encryption, security;
+        if (!address || !port) return null;
 
-            // ПОПЫТКА 1: Стандартный Xray (settings.vnext[0].users[0])
-            if (settings.vnext && settings.vnext.length > 0) {
-                const vnext = settings.vnext[0];
-                address = vnext.address;
-                port = vnext.port;
-                if (vnext.users && vnext.users.length > 0) {
-                    const user = vnext.users[0];
-                    uuid = user.id || user.password; // Trojan uses password
-                    flow = user.flow;
-                    encryption = user.encryption;
-                    security = user.security;
-                }
-            } 
-            // ПОПЫТКА 2: Плоская структура (Твой случай)
-            else if (settings.address) {
-                address = settings.address;
-                port = settings.port;
-                uuid = settings.id || settings.password; // id для vmess/vless, password для trojan
-                flow = settings.flow;
-                encryption = settings.encryption;
-                security = settings.security;
-            }
+        const network = stream.network || "tcp";
+        const security = stream.security || "none";
+        const sni = stream.tlsSettings?.serverName || stream.realitySettings?.serverName || "";
+        const pbk = stream.realitySettings?.publicKey || "";
+        const sid = stream.realitySettings?.shortId || "";
+        const fp = stream.tlsSettings?.fingerprint || stream.realitySettings?.fingerprint || "";
+        const alpn = (stream.tlsSettings?.alpn || stream.realitySettings?.alpn || []).join(",");
+        
+        const netSettings = stream[`${network}Settings`] || {};
+        const path = netSettings.path || "";
+        const host = netSettings.host?.join ? netSettings.host.join(",") : (netSettings.host || "");
+        const type = netSettings.header?.type || "none";
 
-            // Если обязательные поля не найдены - выходим
-            if (!address || !port || !uuid) return "";
+        const params = new URLSearchParams();
+        if (security !== "none") params.set("security", security);
+        if (sni) params.set("sni", sni);
+        if (pbk) params.set("pbk", pbk);
+        if (sid) params.set("sid", sid);
+        if (fp) params.set("fp", fp);
+        if (alpn) params.set("alpn", alpn);
 
-            // --- VMESS (JSON Format) ---
-            if (proto === 'vmess') {
-                const vmessJson = {
-                    v: "2",
-                    ps: tag,
-                    add: address,
-                    port: port,
-                    id: uuid,
-                    aid: "0",
-                    scy: security || "auto",
-                    net: stream.network || "tcp",
-                    type: stream.kcpSettings?.header?.type || "none",
-                    host: stream.wsSettings?.headers?.Host || 
-                          stream.httpSettings?.host?.[0] || 
-                          stream.xhttpSettings?.host || "",
-                    path: stream.wsSettings?.path || 
-                          stream.xhttpSettings?.path || 
-                          stream.httpSettings?.path || "",
-                    tls: stream.security === "tls" || stream.security === "reality" ? "tls" : "",
-                    sni: stream.tlsSettings?.serverName || 
-                         stream.realitySettings?.serverName || "",
-                    alpn: "",
-                    fp: stream.tlsSettings?.fingerprint || 
-                        stream.realitySettings?.fingerprint || ""
-                };
-                return `vmess://${btoa(JSON.stringify(vmessJson))}`;
-            }
-
-            // --- VLESS / TROJAN (Query String Format) ---
-            const params = new URLSearchParams();
-            
-            params.set("type", stream.network || "tcp");
-            params.set("security", stream.security || "none");
-
-            if (proto === 'vless' && flow) params.set("flow", flow);
-            if (proto === 'vless' && encryption) params.set("encryption", encryption);
-
-            // Transport details
-            if (stream.network === 'ws') {
-                if(stream.wsSettings?.path) params.set("path", stream.wsSettings.path);
-                if(stream.wsSettings?.headers?.Host) params.set("host", stream.wsSettings.headers.Host);
-            }
-            if (stream.network === 'grpc') {
-                if(stream.grpcSettings?.serviceName) params.set("serviceName", stream.grpcSettings.serviceName);
-                if(stream.grpcSettings?.multiMode) params.set("mode", "multi");
-            }
-            if (stream.network === 'xhttp') {
-                if(stream.xhttpSettings?.mode) params.set("mode", stream.xhttpSettings.mode);
-                if(stream.xhttpSettings?.path) params.set("path", stream.xhttpSettings.path);
-                if(stream.xhttpSettings?.host) params.set("host", stream.xhttpSettings.host);
-                if(stream.xhttpSettings?.extra) params.set("extra", JSON.stringify(stream.xhttpSettings.extra));
-            }
-
-            // TLS / Reality
-            if (stream.security === 'tls') {
-                if(stream.tlsSettings?.serverName) params.set("sni", stream.tlsSettings.serverName);
-                if(stream.tlsSettings?.fingerprint) params.set("fp", stream.tlsSettings.fingerprint);
-                if(stream.tlsSettings?.alpn?.length) params.set("alpn", stream.tlsSettings.alpn.join(','));
-                if(stream.tlsSettings?.allowInsecure) params.set("allowInsecure", "1");
-            }
-            if (stream.security === 'reality') {
-                if(stream.realitySettings?.serverName) params.set("sni", stream.realitySettings.serverName);
-                if(stream.realitySettings?.publicKey) params.set("pbk", stream.realitySettings.publicKey);
-                if(stream.realitySettings?.shortId) params.set("sid", stream.realitySettings.shortId);
-                if(stream.realitySettings?.fingerprint) params.set("fp", stream.realitySettings.fingerprint);
-                if(stream.realitySettings?.spiderX) params.set("spx", stream.realitySettings.spiderX);
-                // Для Reality параметр type остается из network (tcp/h2/grpc), security игнорируется клиентами обычно, но ссылка должна быть валидной
-            }
-
-            return `${proto}://${uuid}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag)}`;
+        params.set("type", network);
+        
+        if (network === "tcp" && type !== "none") params.set("headerType", type);
+        if (network === "kcp") params.set("headerType", netSettings.header?.type || "none");
+        if (network === "ws") {
+            if (path) params.set("path", path);
+            if (host) params.set("host", host);
+        }
+        if (network === "grpc") {
+            if (netSettings.serviceName) params.set("serviceName", netSettings.serviceName);
+            if (netSettings.multiMode) params.set("mode", "multi");
+        }
+        if (network === "xhttp") {
+            if (netSettings.path) params.set("path", netSettings.path);
+            if (netSettings.host) params.set("host", netSettings.host);
         }
 
-        return "";
+        if (proto === "vless") {
+            if (flow) params.set("flow", flow);
+            return `vless://${id}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag)}`;
+        }
+
+        if (proto === "vmess") {
+            const vmessObj = {
+                v: "2",
+                ps: tag,
+                add: address,
+                port: port,
+                id: id,
+                aid: 0,
+                scy: "auto",
+                net: network,
+                type: network === "tcp" ? type : (network === "kcp" ? netSettings.header?.type : "none"),
+                host: host,
+                path: path,
+                tls: security === "tls" ? "tls" : "",
+                sni: sni,
+                alpn: alpn,
+                fp: fp
+            };
+            return `vmess://${btoa(JSON.stringify(vmessObj))}`;
+        }
+
+        if (proto === "trojan") {
+            return `trojan://${id}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag)}`;
+        }
+
+        if (proto === "shadowsocks") {
+            const userInfo = btoa(`${method}:${id}`);
+            return `ss://${userInfo}@${address}:${port}#${encodeURIComponent(tag)}`;
+        }
+
+        return null;
     } catch (e) {
-        console.error("Link gen error", e);
-        return "";
+        console.error("Link generation failed", e);
+        return null;
     }
 };
