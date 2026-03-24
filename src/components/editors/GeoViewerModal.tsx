@@ -14,7 +14,12 @@ const CUSTOM_PRESETS = [
 ];
 
 // ============================================================================
-// IndexedDB Кеширование (Замена localStorage)
+// Глобальный кэш бинарников в памяти
+// ============================================================================
+const binaryCache = new Map<string, ArrayBuffer>();
+
+// ============================================================================
+// IndexedDB Кеширование
 // ============================================================================
 const DB_NAME = 'GeoCacheDB';
 const STORE_NAME = 'geo_data';
@@ -45,13 +50,15 @@ const loadCachedData = async (key: string): Promise<any> => {
     } catch { return null; }
 };
 
-const saveCachedData = async (key: string, data: any, meta: any) => {
+const saveCachedData = async (key: string, data: any, meta: any, rawBuffer?: ArrayBuffer) => {
     try {
         const db = await initDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
-            const req = store.put({ meta, data }, key);
+            const payload: any = { meta: { ...meta, timestamp: Date.now() }, data };
+            if (rawBuffer) payload.buffer = rawBuffer;
+            const req = store.put(payload, key);
             req.onsuccess = () => resolve(true);
             req.onerror = () => reject(req.error);
         });
@@ -66,23 +73,92 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isCancelled = false;
         setLoading(true);
         const isGeosite = tag.startsWith('geosite:');
         const targetCode = tag.replace('geosite:', '').replace('geoip:', '');
         
-        const worker = createProtoWorker();
-        worker.onmessage = (e) => {
-            if (e.data.error) {
-                toast.error("Failed to load details");
-                setText("Error loading data.\n" + e.data.error);
-            } else if (e.data.type === 'details') {
-                setText(e.data.data || "No records found.");
+        const defaultUrl = isGeosite 
+            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
+            : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
+        
+        const currentUrl = customUrl || defaultUrl;
+        let activeWorker: Worker | null = null;
+
+        const loadData = async () => {
+            let buffer = customFileBuffer;
+
+            if (!buffer) {
+                if (binaryCache.has(currentUrl)) {
+                    buffer = binaryCache.get(currentUrl)!;
+                } else {
+                    try {
+                        const cached = await loadCachedData(currentUrl + "_raw");
+                        if (cached && cached.buffer) {
+                            buffer = cached.buffer;
+                            binaryCache.set(currentUrl, buffer);
+                        } else {
+                            const myProxy = `https://crs.bropines.workers.dev/${currentUrl}`;
+                            const targets = currentUrl.includes('github') || currentUrl.includes('jsdelivr') 
+                                ? [myProxy, currentUrl, `https://mirror.ghproxy.com/${currentUrl}`] 
+                                : [currentUrl, myProxy];
+                            
+                            let res;
+                            for (const target of targets) {
+                                try {
+                                    res = await fetch(target);
+                                    if (res.ok) break;
+                                } catch (e) {}
+                            }
+
+                            if (res && res.ok) {
+                                buffer = await res.arrayBuffer();
+                                binaryCache.set(currentUrl, buffer);
+                                await saveCachedData(currentUrl + "_raw", null, {}, buffer);
+                            } else {
+                                throw new Error("Fetch failed");
+                            }
+                        }
+                    } catch (err) {
+                        if (!isCancelled) {
+                            toast.error("Failed to download database for extraction");
+                            setText("Network error.");
+                            setLoading(false);
+                        }
+                        return;
+                    }
+                }
             }
-            setLoading(false);
+
+            if (isCancelled) return;
+
+            activeWorker = createProtoWorker();
+            activeWorker.onmessage = (e) => {
+                if (isCancelled) return;
+                if (e.data.error) {
+                    toast.error("Failed to load details");
+                    setText("Error loading data.\n" + e.data.error);
+                } else if (e.data.type === 'details') {
+                    setText(e.data.data || "No records found.");
+                }
+                setLoading(false);
+            };
+           
+            activeWorker.postMessage({ 
+                type: 'get_details', 
+                dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), 
+                targetCode, 
+                customUrl: undefined,
+                fileBuffer: buffer 
+            });
         };
-       
-        worker.postMessage({ type: 'get_details', dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), targetCode, customUrl, fileBuffer: customFileBuffer });
-        return () => worker.terminate();
+
+        loadData();
+
+        return () => {
+            isCancelled = true;
+            if (activeWorker) activeWorker.terminate();
+        };
     }, [tag, customUrl, customFormat, customFileBuffer]);
 
     const handleCopy = async () => {
@@ -124,6 +200,86 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
 };
 
 // ============================================================================
+// VIRTUAL GRID (Кастомный рендер для 1+ млн строк)
+// ============================================================================
+const VirtualGrid = ({ items, activeTab, customFormat, customUrl, viewTag, setViewTag }: any) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scrollTop, setScrollTop] = useState(0);
+    const [dimensions, setDimensions] = useState({ width: 0, height: 600 });
+
+    useEffect(() => {
+        const observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                setDimensions({ width: entry.contentRect.width, height: entry.contentRect.height });
+            }
+        });
+        if (containerRef.current) observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    const cols = useMemo(() => {
+        const w = dimensions.width;
+        if (viewTag) {
+            if (w >= 1280) return 3; // xl
+            if (w >= 640) return 2;  // sm
+            return 1;
+        } else {
+            if (w >= 1024) return 4; // lg
+            if (w >= 768) return 3;  // md
+            if (w >= 640) return 2;  // sm
+            return 1;
+        }
+    }, [dimensions.width, viewTag]);
+
+    const ROW_HEIGHT = 46; // 38px высота элемента + 8px gap
+    const OVERSCAN = 10; // Сколько невидимых рядов рендерить сверху и снизу для плавности
+
+    const totalRows = Math.ceil(items.length / cols);
+    const totalHeight = totalRows * ROW_HEIGHT;
+
+    const startRow = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+    const endRow = Math.min(totalRows, Math.floor((scrollTop + dimensions.height) / ROW_HEIGHT) + OVERSCAN);
+
+    const visibleItems = items.slice(startRow * cols, endRow * cols);
+    const offsetY = startRow * ROW_HEIGHT;
+
+    return (
+        <div 
+            ref={containerRef} 
+            onScroll={(e: any) => setScrollTop(e.target.scrollTop)} 
+            className="flex-1 overflow-y-auto custom-scroll bg-slate-950 rounded-xl border border-slate-800 relative"
+        >
+            <div style={{ height: totalHeight + 32, minHeight: '100%' }}> {/* 32px для отступов */}
+                <div style={{ transform: `translateY(${offsetY + 16}px)`, padding: '0 16px', position: 'absolute', left: 0, right: 0 }}>
+                    <div className={`grid gap-2 content-start transition-all duration-300 ${viewTag ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
+                        {visibleItems.map((item: any) => {
+                            const isText = activeTab === 'custom' && customFormat === 'text';
+                            const isActive = viewTag?.code === item.code;
+                            return (
+                                <div 
+                                    key={item.code} 
+                                    onClick={() => {
+                                        if (isText) return;
+                                        const prefix = activeTab === 'geosite' ? 'geosite:' : activeTab === 'geoip' ? 'geoip:' : customFormat === 'geosite' ? 'geosite:' : 'geoip:';
+                                        setViewTag({ tag: `${prefix}${item.code}`, code: item.code, url: activeTab === 'custom' ? customUrl : undefined, format: activeTab === 'custom' ? customFormat : undefined });
+                                    }}
+                                    className={`flex justify-between items-center p-2.5 h-[38px] rounded-lg transition-all group ${isText ? 'bg-slate-900 border border-slate-800' : isActive ? 'bg-indigo-900/40 border border-indigo-500 ring-1 ring-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-slate-900 border border-slate-800 cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/80'}`}
+                                >
+                                    <span className={`font-mono text-xs truncate pr-2 transition-colors ${isActive ? 'text-white font-bold' : 'text-slate-200 group-hover:text-white'}`} title={item.code}>{item.code}</span>
+                                    {!isText && (
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 border transition-colors ${isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-slate-950 text-slate-500 border-transparent group-hover:border-indigo-500/50 group-hover:text-indigo-300'}`}>{item.count}</span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
 // Основной Вьювер
 // ============================================================================
 export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
@@ -139,19 +295,26 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     const [geoIps, setGeoIps] = useState<GeoItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [customLoading, setCustomLoading] = useState(false);
+    
+    // Стейты для Debounce поиска
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [viewTag, setViewTag] = useState<{ tag: string, code: string, url?: string, format?: string } | null>(null);
 
     const customWorkerRef = useRef<Worker | null>(null);
 
-    // Сохранение настроек UI в localStorage (строки можно)
+    // Debounce эффект для поиска (чтобы интерфейс не вис при поиске по миллиону элементов)
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(search), 300);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     useEffect(() => {
         localStorage.setItem('geo_tab', activeTab);
         localStorage.setItem('geo_url', customUrl);
         localStorage.setItem('geo_format', customFormat);
     }, [activeTab, customUrl, customFormat]);
 
-    // Асинхронная загрузка сохраненного custom-источника при старте
     useEffect(() => {
         const url = localStorage.getItem('geo_url');
         if (url) {
@@ -162,37 +325,59 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     }, []);
 
     useEffect(() => {
+        let isMounted = true;
         const worker = createProtoWorker();
         const geositeUrl = "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat";
         const geoipUrl = "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
+        
+        const CACHE_TTL = 24 * 60 * 60 * 1000;
 
         const loadCachesAndStart = async () => {
             setLoading(true);
+            const now = Date.now();
+
             const cacheSite = await loadCachedData(geositeUrl);
             const cacheIp = await loadCachedData(geoipUrl);
 
-            if (cacheSite) setGeoSites(cacheSite.data);
-            if (cacheIp) setGeoIps(cacheIp.data);
+            if (cacheSite?.data && isMounted) setGeoSites(cacheSite.data);
+            if (cacheIp?.data && isMounted) setGeoIps(cacheIp.data);
+
+            const siteNeedsUpdate = !cacheSite || (now - (cacheSite.meta?.timestamp || 0) > CACHE_TTL);
+            const ipNeedsUpdate = !cacheIp || (now - (cacheIp.meta?.timestamp || 0) > CACHE_TTL);
+
+            if (!siteNeedsUpdate && !ipNeedsUpdate) {
+                if (isMounted) setLoading(false);
+                return;
+            }
 
             worker.onmessage = (e) => {
+                if (!isMounted) return;
                 const { type, targetType, data, meta } = e.data;
-                if (type === 'cache_hit') { /* ok */ } 
+                
+                if (type === 'cache_hit') { 
+                    if (targetType === 'geosite' && cacheSite?.data) setGeoSites(cacheSite.data);
+                    if (targetType === 'geoip' && cacheIp?.data) setGeoIps(cacheIp.data);
+                } 
                 else if (type === 'success') {
                     const url = targetType === 'geosite' ? geositeUrl : geoipUrl;
                     saveCachedData(url, data, meta);
                     if (targetType === 'geosite') setGeoSites(data);
                     if (targetType === 'geoip') setGeoIps(data);
                 }
+                
                 setLoading(false);
             };
             
-            worker.postMessage({ type: 'geosite', cachedMeta: cacheSite?.meta });
-            worker.postMessage({ type: 'geoip', cachedMeta: cacheIp?.meta });
+            if (siteNeedsUpdate) worker.postMessage({ type: 'geosite', cachedMeta: cacheSite?.meta });
+            if (ipNeedsUpdate) worker.postMessage({ type: 'geoip', cachedMeta: cacheIp?.meta });
         };
 
         loadCachesAndStart();
         
-        return () => worker.terminate();
+        return () => {
+            isMounted = false;
+            worker.terminate();
+        };
     }, []);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,38 +432,28 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         setCustomLoading(true);
         setCustomFileBuffer(null);
 
-        if (customFormat === 'text') {
-            try {
-                const fetchWithFallbackText = async (targetUrl: string) => {
-                    let targets = [];
-                    const myProxy = `https://crs.bropines.workers.dev/${targetUrl}`;
-                    
-                    if (targetUrl.includes('raw.githubusercontent.com')) {
-                        targets = [targetUrl, myProxy, `https://mirror.ghproxy.com/${targetUrl}`];
-                    } else if (targetUrl.includes('github.com')) {
-                        targets = [
-                            myProxy,
-                            `https://mirror.ghproxy.com/${targetUrl}`,
-                            `https://ghproxy.net/${targetUrl}`,
-                            targetUrl
-                        ];
-                    } else {
-                        targets = [targetUrl, myProxy];
-                    }
-                    
-                    let lastErr;
-                    for (const target of targets) { 
-                        try { 
-                            const res = await fetch(target);
-                            if (res.ok) return await res.text(); 
-                        } catch (e) { 
-                            lastErr = e;
-                        } 
-                    }
-                    throw lastErr || new Error("Failed to fetch text");
-                };
+        try {
+            const myProxy = `https://crs.bropines.workers.dev/${customUrl}`;
+            let targets = [];
+            if (customUrl.includes('raw.githubusercontent.com')) {
+                targets = [customUrl, myProxy, `https://mirror.ghproxy.com/${customUrl}`];
+            } else if (customUrl.includes('github.com')) {
+                targets = [myProxy, `https://mirror.ghproxy.com/${customUrl}`, `https://ghproxy.net/${customUrl}`, customUrl];
+            } else {
+                targets = [customUrl, myProxy];
+            }
+            
+            let res;
+            for (const target of targets) { 
+                try { 
+                    res = await fetch(target);
+                    if (res.ok) break;
+                } catch (e) {} 
+            }
+            if (!res || !res.ok) throw new Error("Failed to fetch list from URL");
 
-                const text = await fetchWithFallbackText(customUrl);
+            if (customFormat === 'text') {
+                const text = await res.text();
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('//'));
                 const formattedData = lines.map(line => ({ code: line, count: 1 }));
                 
@@ -286,29 +461,32 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 setCustomData(formattedData);
                 setViewTag(null);
                 toast.success(`Loaded ${formattedData.length} items`);
-            } catch (err: any) {
-                toast.error("Failed to fetch list", { description: err.message });
-            } finally {
                 setCustomLoading(false);
-            }
-            return;
-        }
+            } else {
+                const buffer = await res.arrayBuffer();
+                binaryCache.set(customUrl, buffer);
+                await saveCachedData(customUrl + "_raw", null, { timestamp: Date.now() }, buffer);
 
-        if (customWorkerRef.current) customWorkerRef.current.terminate();
-        customWorkerRef.current = createProtoWorker();
+                if (customWorkerRef.current) customWorkerRef.current.terminate();
+                customWorkerRef.current = createProtoWorker();
 
-        customWorkerRef.current.onmessage = async (e) => {
-            if (e.data.error) toast.error("Failed to fetch/parse DAT", { description: e.data.error });
-            else if (e.data.type === 'success') {
-                await saveCachedData(customUrl, e.data.data, e.data.meta);
-                setCustomData(e.data.data);
-                setViewTag(null);
-                toast.success(`Loaded ${e.data.data.length} categories`);
+                customWorkerRef.current.onmessage = async (e) => {
+                    if (e.data.error) toast.error("Failed to parse DAT", { description: e.data.error });
+                    else if (e.data.type === 'success') {
+                        await saveCachedData(customUrl, e.data.data, e.data.meta || { timestamp: Date.now() });
+                        setCustomData(e.data.data);
+                        setViewTag(null);
+                        toast.success(`Loaded ${e.data.data.length} categories`);
+                    }
+                    setCustomLoading(false);
+                };
+
+                customWorkerRef.current.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
             }
+        } catch (err: any) {
+            toast.error("Failed to fetch list", { description: err.message });
             setCustomLoading(false);
-        };
-
-        customWorkerRef.current.postMessage({ type: 'custom', customUrl, dataType: customFormat, force: true });
+        }
     };
 
     const displayData = useMemo(() => {
@@ -317,10 +495,11 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         if (activeTab === 'geoip') currentData = geoIps;
         if (activeTab === 'custom') currentData = customData;
 
-        if (!search) return currentData;
-        const lowerSearch = search.toLowerCase();
+        // Поиск теперь использует debouncedSearch
+        if (!debouncedSearch) return currentData;
+        const lowerSearch = debouncedSearch.toLowerCase();
         return currentData.filter(item => item.code.toLowerCase().includes(lowerSearch));
-    }, [activeTab, geoSites, geoIps, customData, search]);
+    }, [activeTab, geoSites, geoIps, customData, debouncedSearch]);
 
     const handleCopyAll = async () => {
         if (displayData.length === 0) return toast.warning("Nothing to copy");
@@ -339,7 +518,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleTabChange = (tab: 'geosite' | 'geoip' | 'custom') => {
-        setActiveTab(tab); setSearch("");
+        setActiveTab(tab); setSearch(""); setDebouncedSearch("");
         setViewTag(null);
     };
 
@@ -408,44 +587,27 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
 
                 <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
-                    <div className="flex-1 overflow-y-auto custom-scroll bg-slate-950 rounded-xl border border-slate-800 p-4 relative">
-                        {loading && activeTab !== 'custom' ? (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
-                                <Icon name="Spinner" className="text-4xl animate-spin mb-4 text-indigo-500" />
-                                <p>Validating database hash...</p>
-                            </div>
-                        ) : displayData.length === 0 ? (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
-                                <Icon name="Database" className="text-6xl mb-4 opacity-20" />
-                                <p>{activeTab === 'custom' && customData.length === 0 ? "Select a preset, URL, or upload file." : "No items found."}</p>
-                            </div>
-                        ) : (
-                            <div className={`grid gap-2 content-start transition-all duration-300 ${viewTag ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
-                                {displayData.slice(0, 3000).map((item, i) => {
-                                    const isText = activeTab === 'custom' && customFormat === 'text';
-                                    const isActive = viewTag?.code === item.code;
-                                    
-                                    return (
-                                        <div 
-                                            key={i} 
-                                            onClick={() => {
-                                                if (isText) return;
-                                                const prefix = activeTab === 'geosite' ? 'geosite:' : activeTab === 'geoip' ? 'geoip:' : customFormat === 'geosite' ? 'geosite:' : 'geoip:';
-                                                setViewTag({ tag: `${prefix}${item.code}`, code: item.code, url: activeTab === 'custom' ? customUrl : undefined, format: activeTab === 'custom' ? customFormat : undefined });
-                                            }}
-                                            className={`flex justify-between items-center p-2.5 rounded-lg transition-all group ${isText ? 'bg-slate-900 border border-slate-800' : isActive ? 'bg-indigo-900/40 border border-indigo-500 ring-1 ring-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-slate-900 border border-slate-800 cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/80'}`}
-                                        >
-                                            <span className={`font-mono text-xs truncate pr-2 transition-colors ${isActive ? 'text-white font-bold' : 'text-slate-200 group-hover:text-white'}`} title={item.code}>{item.code}</span>
-                                            {!isText && (
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 border transition-colors ${isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-slate-950 text-slate-500 border-transparent group-hover:border-indigo-500/50 group-hover:text-indigo-300'}`}>{item.count}</span>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                                {displayData.length > 3000 && <div className="col-span-full text-center py-4 text-xs text-slate-500 italic">Showing first 3000 items. Use search to filter.</div>}
-                            </div>
-                        )}
-                    </div>
+                    {loading && activeTab !== 'custom' ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-slate-500 bg-slate-950 rounded-xl border border-slate-800">
+                            <Icon name="Spinner" className="text-4xl animate-spin mb-4 text-indigo-500" />
+                            <p>Validating database hash...</p>
+                        </div>
+                    ) : displayData.length === 0 ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-slate-600 bg-slate-950 rounded-xl border border-slate-800">
+                            <Icon name="Database" className="text-6xl mb-4 opacity-20" />
+                            <p>{activeTab === 'custom' && customData.length === 0 ? "Select a preset, URL, or upload file." : "No items found."}</p>
+                        </div>
+                    ) : (
+                        // Используем наш VirtualGrid вместо обычного map()
+                        <VirtualGrid 
+                            items={displayData} 
+                            activeTab={activeTab} 
+                            customFormat={customFormat} 
+                            customUrl={customUrl} 
+                            viewTag={viewTag} 
+                            setViewTag={setViewTag} 
+                        />
+                    )}
 
                     {viewTag && <TagDetailsPanel tag={viewTag.tag} customUrl={viewTag.url} customFormat={viewTag.format} customFileBuffer={customFileBuffer} onClose={() => setViewTag(null)} />}
                 </div>
