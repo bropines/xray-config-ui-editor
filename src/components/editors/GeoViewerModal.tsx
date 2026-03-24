@@ -7,29 +7,23 @@ import { toast } from 'sonner';
 
 interface GeoItem { code: string; count: number; }
 
-// ============================================================================
-// ПРЕСЕТЫ (Быстрые ссылки)
-// ============================================================================
 const CUSTOM_PRESETS = [
     { label: '🇷🇺 Zapret (.dat)', format: 'geosite', url: 'https://github.com/kutovoys/ru_gov_zapret/releases/latest/download/zapret.dat' },
     { label: '🇷🇺 Runet GeoSite', format: 'geosite', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geosite.dat' },
     { label: '🇷🇺 Runet GeoIP', format: 'geoip', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat' },
 ];
 
-// Утилиты кэширования данных в LocalStorage
 const loadCachedData = (key: string) => {
-    try { const c = localStorage.getItem(`geo_data_${key}`); return c ? JSON.parse(c) : null; } 
-    catch { return null; }
+    try { const c = localStorage.getItem(`geo_data_${key}`); return c ? JSON.parse(c) : null; } catch { return null; }
 };
 const saveCachedData = (key: string, data: any, meta: any) => {
-    try { localStorage.setItem(`geo_data_${key}`, JSON.stringify({ meta, data })); } 
-    catch { console.warn("Geo cache full"); }
+    try { localStorage.setItem(`geo_data_${key}`, JSON.stringify({ meta, data })); } catch { console.warn("Geo cache full"); }
 };
 
 // ============================================================================
-// Боковая панель деталей
+// Боковая панель
 // ============================================================================
-const TagDetailsPanel = ({ tag, customUrl, customFormat, onClose }: { tag: string, customUrl?: string, customFormat?: string, onClose: () => void }) => {
+const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClose }: { tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null, onClose: () => void }) => {
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
 
@@ -49,16 +43,15 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, onClose }: { tag: strin
             setLoading(false);
         };
         
-        worker.postMessage({ type: 'get_details', dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), targetCode, customUrl });
+        worker.postMessage({ type: 'get_details', dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), targetCode, customUrl, fileBuffer: customFileBuffer });
         return () => worker.terminate();
-    }, [tag, customUrl, customFormat]);
+    }, [tag, customUrl, customFormat, customFileBuffer]);
 
     const handleCopy = async () => {
         try {
             if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
             else {
-                const ta = document.createElement("textarea");
-                ta.value = text; ta.style.position = "fixed"; ta.style.left = "-999999px";
+                const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.left = "-999999px";
                 document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
             }
             toast.success("Copied to clipboard!");
@@ -95,10 +88,14 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, onClose }: { tag: strin
 // Основной Вьювер
 // ============================================================================
 export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [activeTab, setActiveTab] = useState<'geosite' | 'geoip' | 'custom'>(() => (localStorage.getItem('geo_tab') as any) || 'geosite');
     const [customUrl, setCustomUrl] = useState(() => localStorage.getItem('geo_url') || "");
     const [customFormat, setCustomFormat] = useState<'text' | 'geosite' | 'geoip'>(() => (localStorage.getItem('geo_format') as any) || 'geoip');
     
+    const [customFileBuffer, setCustomFileBuffer] = useState<ArrayBuffer | null>(null);
+
     const [customData, setCustomData] = useState<GeoItem[]>(() => {
         const url = localStorage.getItem('geo_url');
         if (url) return loadCachedData(url)?.data || [];
@@ -135,9 +132,8 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
 
         worker.onmessage = (e) => {
             const { type, targetType, data, meta } = e.data;
-            if (type === 'cache_hit') {
-                // Все ок, серверный файл не изменился
-            } else if (type === 'success') {
+            if (type === 'cache_hit') { /* ok */ } 
+            else if (type === 'success') {
                 const url = targetType === 'geosite' ? geositeUrl : geoipUrl;
                 saveCachedData(url, data, meta);
                 if (targetType === 'geosite') setGeoSites(data);
@@ -152,24 +148,81 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         return () => worker.terminate();
     }, []);
 
-    const fetchCustomList = async () => {
-        if (!customUrl) return toast.error("Please enter a URL");
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
         setCustomLoading(true);
+        setCustomUrl(file.name); 
+        setCustomFileBuffer(null);
+
+        try {
+            if (customFormat === 'text') {
+                const text = await file.text();
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('//'));
+                const formattedData = lines.map(line => ({ code: line, count: 1 }));
+                setCustomData(formattedData);
+                setViewTag(null);
+                toast.success(`Loaded ${formattedData.length} items from local file`);
+                setCustomLoading(false);
+            } else {
+                const buffer = await file.arrayBuffer();
+                setCustomFileBuffer(buffer);
+
+                if (customWorkerRef.current) customWorkerRef.current.terminate();
+                customWorkerRef.current = createProtoWorker();
+                
+                customWorkerRef.current.onmessage = (evt) => {
+                    if (evt.data.error) toast.error("Failed to parse DAT", { description: evt.data.error });
+                    else if (evt.data.type === 'success') {
+                        setCustomData(evt.data.data);
+                        setViewTag(null);
+                        toast.success(`Loaded ${evt.data.data.length} categories from local file`);
+                    }
+                    setCustomLoading(false);
+                };
+
+                customWorkerRef.current.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
+            }
+        } catch (err: any) {
+            toast.error("File read error", { description: err.message });
+            setCustomLoading(false);
+        }
+        e.target.value = '';
+    };
+
+    const fetchCustomList = async () => {
+        if (!customUrl || customUrl.includes('.')) { 
+            if (customFileBuffer) return toast.info("Local file already loaded");
+        }
+        if (!customUrl.startsWith('http')) return toast.error("Please enter a valid URL");
+        
+        setCustomLoading(true);
+        setCustomFileBuffer(null);
         
         if (customFormat === 'text') {
             try {
-                const fetchWithFallback = async (target: string) => {
+                const fetchWithFallbackText = async (target: string) => {
                     const isGithub = target.includes('github.com') || target.includes('raw.githubusercontent.com');
                     const proxies = isGithub 
-                        ? [`https://ghproxy.net/${target}`, `https://corsproxy.io/?${encodeURIComponent(target)}`]
-                        : [`https://corsproxy.io/?${encodeURIComponent(target)}`, `https://ghproxy.net/${target}`];
+                        ? [
+                            `https://mirror.ghproxy.com/${target}`,
+                            `https://gh-proxy.com/${target}`,
+                            `https://ghproxy.net/${target}`,
+                            `https://corsproxy.io/?${encodeURIComponent(target)}`
+                          ] 
+                        : [
+                            `https://corsproxy.io/?${encodeURIComponent(target)}`,
+                            `https://mirror.ghproxy.com/${target}`
+                          ];
+                    
                     let lastErr;
                     for (const p of proxies) { try { const res = await fetch(p); if (res.ok) return await res.text(); } catch (e) { lastErr = e; } }
                     try { const res = await fetch(target); if (res.ok) return await res.text(); } catch (e) { lastErr = e; }
                     throw lastErr || new Error("Failed to fetch");
                 };
 
-                const text = await fetchWithFallback(customUrl);
+                const text = await fetchWithFallbackText(customUrl);
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('//'));
                 const formattedData = lines.map(line => ({ code: line, count: 1 }));
                 
@@ -189,7 +242,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         customWorkerRef.current = createProtoWorker();
         
         customWorkerRef.current.onmessage = (e) => {
-            if (e.data.error) toast.error("Failed to parse DAT", { description: e.data.error });
+            if (e.data.error) toast.error("Failed to fetch/parse DAT", { description: e.data.error });
             else if (e.data.type === 'success') {
                 saveCachedData(customUrl, e.data.data, e.data.meta);
                 setCustomData(e.data.data);
@@ -244,28 +297,18 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         >
             <div className="h-[650px] flex flex-col gap-4 relative">
                 
-                {/* Custom Load Section */}
                 {activeTab === 'custom' && (
                     <div className="flex flex-col gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800 shrink-0 animate-in fade-in slide-in-from-top-2">
                         
-                        {/* Пресеты */}
                         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
                             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mr-1">Quick Presets:</span>
                             {CUSTOM_PRESETS.map((p, i) => (
-                                <button 
-                                    key={i}
-                                    onClick={() => {
-                                        setCustomUrl(p.url);
-                                        setCustomFormat(p.format as any);
-                                    }}
-                                    className="px-2.5 py-1 text-[10px] font-bold bg-slate-950 border border-slate-700 text-slate-300 rounded hover:border-indigo-500 hover:bg-indigo-600/10 hover:text-indigo-300 transition-colors"
-                                >
+                                <button key={i} onClick={() => { setCustomUrl(p.url); setCustomFormat(p.format as any); }} className="px-2.5 py-1 text-[10px] font-bold bg-slate-950 border border-slate-700 text-slate-300 rounded hover:border-indigo-500 hover:bg-indigo-600/10 hover:text-indigo-300 transition-colors">
                                     {p.label}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Инпуты */}
                         <div className="flex flex-col md:flex-row gap-2">
                             <select className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-emerald-500 outline-none w-full md:w-auto" value={customFormat} onChange={(e: any) => { setCustomFormat(e.target.value); setViewTag(null); }}>
                                 <option value="geoip">GeoIP (.dat)</option>
@@ -273,10 +316,18 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                                 <option value="text">Raw Text (.txt)</option>
                             </select>
                             
-                            <div className="flex-1 relative">
-                                <Icon name="Link" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono" placeholder="Paste direct link (github releases supported)" value={customUrl} onChange={e => setCustomUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchCustomList()} />
+                            <div className="flex-1 flex gap-2">
+                                <div className="flex-1 relative">
+                                    <Icon name="Link" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono" placeholder="Paste URL or select local file..." value={customUrl} onChange={e => { setCustomUrl(e.target.value); setCustomFileBuffer(null); }} onKeyDown={e => e.key === 'Enter' && fetchCustomList()} />
+                                </div>
+                                
+                                <input type="file" ref={fileInputRef} className="hidden" accept=".dat,.txt" onChange={handleFileUpload} />
+                                <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="shrink-0" title="Upload Local File">
+                                    <Icon name="UploadSimple" />
+                                </Button>
                             </div>
+
                             <Button variant="success" onClick={fetchCustomList} disabled={customLoading}>
                                 {customLoading ? <Icon name="Spinner" className="animate-spin" /> : <Icon name="DownloadSimple" />}
                                 <span className="hidden md:inline">Fetch</span>
@@ -308,7 +359,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                         ) : displayData.length === 0 ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
                                 <Icon name="Database" className="text-6xl mb-4 opacity-20" />
-                                <p>{activeTab === 'custom' && customData.length === 0 ? "Select a preset or paste URL to fetch data." : "No items found."}</p>
+                                <p>{activeTab === 'custom' && customData.length === 0 ? "Select a preset, URL, or upload file." : "No items found."}</p>
                             </div>
                         ) : (
                             <div className={`grid gap-2 content-start transition-all duration-300 ${viewTag ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
@@ -338,7 +389,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                         )}
                     </div>
 
-                    {viewTag && <TagDetailsPanel tag={viewTag.tag} customUrl={viewTag.url} customFormat={viewTag.format} onClose={() => setViewTag(null)} />}
+                    {viewTag && <TagDetailsPanel tag={viewTag.tag} customUrl={viewTag.url} customFormat={viewTag.format} customFileBuffer={customFileBuffer} onClose={() => setViewTag(null)} />}
                 </div>
             </div>
         </Modal>
