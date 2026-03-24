@@ -28,35 +28,26 @@ const formatIp = (bytes) => {
     return '';
 };
 
-// Мощный каскад прокси-серверов
+// Твой Cloudflare Worker с каскадными фоллбэками
 const fetchWithFallback = async (url, method = 'GET') => {
-    const isGithub = url.includes('github.com') || url.includes('raw.githubusercontent.com');
+    let targets = [];
+    const myProxy = \`https://crs.bropines.workers.dev/\${url}\`;
     
-    // Используем надежные зеркала, которые правильно обрабатывают редиректы GitHub Releases на AWS S3
-    const proxies = isGithub 
-        ? [
-            \`https://mirror.ghproxy.com/\${url}\`,
-            \`https://gh-proxy.com/\${url}\`,
-            \`https://ghproxy.net/\${url}\`,
-            \`https://corsproxy.io/?\${encodeURIComponent(url)}\`
-          ]
-        : [
-            \`https://corsproxy.io/?\${encodeURIComponent(url)}\`,
-            \`https://mirror.ghproxy.com/\${url}\`
-          ];
+    if (url.includes('raw.githubusercontent.com')) {
+        targets = [url, myProxy, \`https://mirror.ghproxy.com/\${url}\`];
+    } else if (url.includes('github.com')) {
+        targets = [myProxy, \`https://mirror.ghproxy.com/\${url}\`, \`https://ghproxy.net/\${url}\`, url];
+    } else {
+        targets = [url, myProxy];
+    }
     
     let lastErr;
-    for (const proxy of proxies) {
+    for (const target of targets) {
         try {
-            const res = await fetch(proxy, { method });
+            const res = await fetch(target, { method });
             if (res.ok) return res;
         } catch (e) { lastErr = e; }
     }
-    try {
-        const res = await fetch(url, { method });
-        if (res.ok) return res;
-    } catch(e) { lastErr = e; }
-    
     throw lastErr || new Error("Failed to fetch from all proxies");
 };
 
@@ -64,19 +55,45 @@ self.onmessage = async (e) => {
     const { type, customUrl, dataType, targetCode, cachedMeta, force, fileBuffer } = e.data;
     
     try {
-        // 1. Детализация тегов (клик по списку)
-        if (type === 'get_details') {
-            const isGeoSite = dataType === 'geosite';
-            const defaultUrl = isGeoSite ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
-            const url = customUrl || defaultUrl;
+        const isGeoSite = dataType === 'geosite' || type === 'geosite';
+        const defaultUrl = isGeoSite 
+            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
+            : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
+        const url = customUrl || defaultUrl;
 
-            let buffer;
-            if (fileBuffer) {
-                buffer = fileBuffer;
-            } else {
-                if (url.includes('jsdelivr.net')) buffer = await (await fetch(url)).arrayBuffer();
-                else buffer = await (await fetchWithFallback(url, 'GET')).arrayBuffer();
-            }
+        // --- УМНЫЙ КЭШ БИНАРНИКОВ (Cache API) ---
+        // Открываем постоянное хранилище браузера
+        const cache = await caches.open('geo-dat-binary-cache');
+        
+        // Если пользователь нажал кнопку Fetch (force=true), вычищаем старый файл
+        if (force) {
+            await cache.delete(url);
+        }
+
+        // Хелпер: отдает ArrayBuffer либо из переданного файла, либо из кэша, либо качает
+        const getBuffer = async () => {
+            if (fileBuffer) return fileBuffer; // Если загрузили локальный файл
+            
+            // Ищем готовый бинарник в кэше браузера
+            const cachedRes = await cache.match(url);
+            if (cachedRes) return await cachedRes.arrayBuffer();
+
+            // Если в кэше пусто — качаем по сети
+            let res;
+            if (url.includes('jsdelivr.net')) res = await fetch(url);
+            else res = await fetchWithFallback(url, 'GET');
+            
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            
+            // Клонируем ответ и кладем в кэш, чтобы больше никогда не качать его при кликах!
+            await cache.put(url, res.clone());
+            return await res.arrayBuffer();
+        };
+
+        // 1. Детализация тегов (вызывается при клике по списку)
+        if (type === 'get_details') {
+            // Теперь это выполнится моментально и без сети!
+            const buffer = await getBuffer();
             
             const root = new protobuf.Root();
             protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
@@ -94,19 +111,13 @@ self.onmessage = async (e) => {
         }
 
         // 2. Обработка основных списков
-        const isGeoSite = type === 'geosite' || dataType === 'geosite';
-        const defaultUrl = isGeoSite 
-            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat"
-            : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
-            
-        const url = customUrl || defaultUrl;
         let meta = { etag: null, lastModified: null, size: null };
-
         let buffer;
 
         if (fileBuffer) {
             buffer = fileBuffer;
         } else {
+            // Быстрая проверка меты (HTTP HEAD), если у нас есть кэш списка
             if (cachedMeta && !force) {
                 try {
                     let headRes;
@@ -121,6 +132,7 @@ self.onmessage = async (e) => {
                     const matchLastMod = meta.lastModified && meta.lastModified === cachedMeta.lastModified;
                     const matchSize = meta.size && meta.size === cachedMeta.size;
 
+                    // Если файл на сервере не изменился - прерываемся, UI возьмет данные из localStorage
                     if (matchEtag || matchLastMod || matchSize) {
                         self.postMessage({ type: 'cache_hit', targetType: type });
                         return;
@@ -128,18 +140,19 @@ self.onmessage = async (e) => {
                 } catch(err) { /* Игнорируем ошибки HEAD */ }
             }
 
-            let finalRes;
-            if (url.includes('jsdelivr.net')) finalRes = await fetch(url);
-            else finalRes = await fetchWithFallback(url, 'GET');
-            
-            if (!finalRes.ok) throw new Error("HTTP " + finalRes.status);
-            buffer = await finalRes.arrayBuffer();
+            // Получаем буфер (сеть или Cache API)
+            buffer = await getBuffer();
 
-            meta.etag = meta.etag || finalRes.headers.get('etag');
-            meta.lastModified = meta.lastModified || finalRes.headers.get('last-modified');
-            meta.size = meta.size || finalRes.headers.get('content-length');
+            // Достаем мету из кэшированного ответа для сохранения в localStorage
+            const cachedRes = await cache.match(url);
+            if (cachedRes) {
+                 meta.etag = cachedRes.headers.get('etag');
+                 meta.lastModified = cachedRes.headers.get('last-modified');
+                 meta.size = cachedRes.headers.get('content-length');
+            }
         }
 
+        // Парсим Protobuf
         const root = new protobuf.Root();
         protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
         const ListType = root.lookupType(isGeoSite ? "router.GeoSiteList" : "router.GeoIPList");
@@ -147,6 +160,7 @@ self.onmessage = async (e) => {
         const message = ListType.decode(new Uint8Array(buffer));
         const object = ListType.toObject(message, { defaults: true });
 
+        // Упрощаем для UI
         const result = object.entry.map(en => ({
             code: en.countryCode || en.country_code,
             count: (en.domain || en.cidr || []).length
