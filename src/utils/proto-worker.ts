@@ -1,4 +1,5 @@
-const workerCode = `
+export const createProtoWorker = () => {
+    const workerCode = `
 importScripts("https://cdn.jsdelivr.net/npm/protobufjs@7.2.4/dist/protobuf.min.js");
 
 const GEOIP_PROTO = \`
@@ -28,130 +29,130 @@ const formatIp = (bytes) => {
     return '';
 };
 
-const fetchWithFallback = async (url, method = 'GET') => {
-    let targets = [];
-    const myProxy = \`https://crs.bropines.workers.dev/\${url}\`;
-    
-    if (url.includes('raw.githubusercontent.com')) {
-        targets = [url, myProxy, \`https://mirror.ghproxy.com/\${url}\`];
-    } else if (url.includes('github.com')) {
-        targets = [myProxy, \`https://mirror.ghproxy.com/\${url}\`, \`https://ghproxy.net/\${url}\`, url];
-    } else {
-        targets = [url, myProxy];
-    }
-    
-    let lastErr;
-    for (const target of targets) {
-        try {
-            const res = await fetch(target, { method });
-            if (res.ok) return res;
-        } catch (e) { lastErr = e; }
-    }
-    throw lastErr || new Error("Failed to fetch from all proxies");
-};
-
 self.onmessage = async (e) => {
-    const { type, customUrl, dataType, targetCode, cachedMeta, force, fileBuffer } = e.data;
-    
-    try {
-        const isGeoSite = dataType === 'geosite' || type === 'geosite';
-        const defaultUrl = isGeoSite 
-            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
-            : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
-        const url = customUrl || defaultUrl;
+    const msg = e.data;
+    const { type, dataType, targetCode, customUrl, fileBuffer, cachedMeta, force, query } = msg;
+    const isGeoSite = type === 'geosite' || dataType === 'geosite';
 
-        // БЕЗОПАСНАЯ ПРОВЕРКА Cache API (чтобы не падало на HTTP)
-        const hasCacheApi = typeof caches !== 'undefined';
-        let cache = null;
-        
-        if (hasCacheApi) {
-            cache = await caches.open('geo-dat-binary-cache');
-            if (force) await cache.delete(url);
-        }
+    try {
+        let buffer = fileBuffer;
 
         const getBuffer = async () => {
-            if (fileBuffer) return fileBuffer;
-            
-            if (hasCacheApi && cache) {
-                const cachedRes = await cache.match(url);
-                if (cachedRes) return await cachedRes.arrayBuffer();
+            const url = customUrl || (isGeoSite ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat");
+            const targets = [url, \`https://crs.bropines.workers.dev/\${url}\`, \`https://mirror.ghproxy.com/\${url}\`];
+            for (const t of targets) {
+                try {
+                    const res = await fetch(t);
+                    if (res.ok) return await res.arrayBuffer();
+                } catch(err) {}
             }
-
-            let res;
-            if (url.includes('jsdelivr.net')) res = await fetch(url);
-            else res = await fetchWithFallback(url, 'GET');
-            
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            
-            if (hasCacheApi && cache) {
-                await cache.put(url, res.clone());
-            }
-            return await res.arrayBuffer();
+            throw new Error("Failed to download DAT file");
         };
 
-        // 1. Детализация тегов
-        if (type === 'get_details') {
-            const buffer = await getBuffer();
-            
+        if (!buffer && (type === 'get_details' || type === 'deep_search')) {
+            buffer = await getBuffer();
+        }
+
+        // ==========================================
+        // НОВАЯ ФИЧА: ГЛУБОКИЙ ПОИСК ПО СОДЕРЖИМОМУ
+        // ==========================================
+        if (type === 'deep_search') {
             const root = new protobuf.Root();
             protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
             const ListType = root.lookupType(isGeoSite ? "router.GeoSiteList" : "router.GeoIPList");
-            const object = ListType.toObject(ListType.decode(new Uint8Array(buffer)), { defaults: true });
+            const message = ListType.decode(new Uint8Array(buffer));
+            const object = ListType.toObject(message, { defaults: true });
 
-            const target = object.entry.find(en => (en.countryCode || en.country_code) === targetCode);
-            let list = [];
-            if (target) {
-                if (target.domain) list = target.domain.map(d => d.value);
-                if (target.cidr) list = target.cidr.map(c => \`\${formatIp(c.ip)}/\${c.prefix}\`);
+            const q = query.toLowerCase();
+            const results = [];
+
+            for (const en of object.entry) {
+                let match = false;
+                if (isGeoSite) {
+                    const domains = en.domain || [];
+                    for (let i = 0; i < domains.length; i++) {
+                        if (domains[i].value && domains[i].value.toLowerCase().includes(q)) {
+                            match = true; break;
+                        }
+                    }
+                } else {
+                    const cidrs = en.cidr || [];
+                    for (let i = 0; i < cidrs.length; i++) {
+                        const ipStr = formatIp(cidrs[i].ip);
+                        if (ipStr.includes(q)) { match = true; break; }
+                    }
+                }
+
+                if (match) {
+                    results.push({
+                        code: en.countryCode || en.country_code,
+                        count: (en.domain || en.cidr || []).length
+                    });
+                }
             }
-            self.postMessage({ type: 'details', data: list.join('\\n') });
+            self.postMessage({ type: 'deep_search_result', data: results });
             return;
         }
 
-        // 2. Обработка основных списков
-        let meta = { etag: null, lastModified: null, size: null };
-        let buffer;
+        // ==========================================
+        // ИЗВЛЕЧЕНИЕ ТЕКСТА ДЛЯ МОНАКО ЭДИТОРА
+        // ==========================================
+        if (type === 'get_details') {
+            const root = new protobuf.Root();
+            protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
+            const ListType = root.lookupType(isGeoSite ? "router.GeoSiteList" : "router.GeoIPList");
+            const message = ListType.decode(new Uint8Array(buffer));
+            const object = ListType.toObject(message, { defaults: true });
 
-        if (fileBuffer) {
-            buffer = fileBuffer;
-        } else {
-            if (cachedMeta && !force) {
+            const targetList = object.entry.find(en => (en.countryCode || en.country_code) === targetCode);
+            if (!targetList) {
+                self.postMessage({ type: 'details', data: '' });
+                return;
+            }
+
+            let resultStr = "";
+            if (isGeoSite) {
+                resultStr = (targetList.domain || []).map(d => {
+                    let prefix = "";
+                    if (d.type === 1) prefix = "regexp:";
+                    else if (d.type === 2) prefix = "domain:";
+                    else if (d.type === 3) prefix = "full:";
+                    return prefix + d.value;
+                }).join('\\n');
+            } else {
+                resultStr = (targetList.cidr || []).map(c => \`\${formatIp(c.ip)}/\${c.prefix}\`).join('\\n');
+            }
+
+            self.postMessage({ type: 'details', data: resultStr });
+            return;
+        }
+
+        // ==========================================
+        // СТАНДАРТНАЯ ЗАГРУЗКА СПИСКА КАТЕГОРИЙ
+        // ==========================================
+        let meta = { timestamp: Date.now() };
+        if (!buffer) {
+            const url = isGeoSite ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
+            if (!force && cachedMeta) {
                 try {
-                    let headRes;
-                    if (url.includes('jsdelivr.net')) headRes = await fetch(url, { method: 'HEAD' });
-                    else headRes = await fetchWithFallback(url, 'HEAD');
-                    
-                    meta.etag = headRes.headers.get('etag');
-                    meta.lastModified = headRes.headers.get('last-modified');
-                    meta.size = headRes.headers.get('content-length');
-
-                    const matchEtag = meta.etag && meta.etag === cachedMeta.etag;
-                    const matchLastMod = meta.lastModified && meta.lastModified === cachedMeta.lastModified;
-                    const matchSize = meta.size && meta.size === cachedMeta.size;
-
-                    if (matchEtag || matchLastMod || matchSize) {
-                        self.postMessage({ type: 'cache_hit', targetType: type });
-                        return;
+                    const res = await fetch(url, { method: 'HEAD' });
+                    if (res.ok) {
+                        const etag = res.headers.get('etag');
+                        const size = res.headers.get('content-length');
+                        if ((etag && etag === cachedMeta.etag) || (size && size === cachedMeta.size)) {
+                            self.postMessage({ type: 'cache_hit', targetType: type });
+                            return;
+                        }
+                        meta.etag = etag; meta.size = size;
                     }
-                } catch(err) { /* Игнорируем ошибки HEAD */ }
+                } catch(err) {}
             }
-
             buffer = await getBuffer();
-
-            if (hasCacheApi && cache) {
-                const cachedRes = await cache.match(url);
-                if (cachedRes) {
-                     meta.etag = cachedRes.headers.get('etag');
-                     meta.lastModified = cachedRes.headers.get('last-modified');
-                     meta.size = cachedRes.headers.get('content-length');
-                }
-            }
         }
 
         const root = new protobuf.Root();
         protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
         const ListType = root.lookupType(isGeoSite ? "router.GeoSiteList" : "router.GeoIPList");
-        
         const message = ListType.decode(new Uint8Array(buffer));
         const object = ListType.toObject(message, { defaults: true });
 
@@ -167,8 +168,6 @@ self.onmessage = async (e) => {
     }
 };
 `;
-
-export const createProtoWorker = () => {
-    const blob = new Blob([workerCode], { type: "application/javascript" });
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
     return new Worker(URL.createObjectURL(blob));
 };
