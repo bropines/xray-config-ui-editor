@@ -50,12 +50,14 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
         const exact = currentSelector.includes(tag);
         const prefixMatch = !exact && currentSelector.some((s: string) => tag.startsWith(s));
         const pendingMatch = inputValue && tag.startsWith(inputValue) && !exact && !prefixMatch;
+
         return { exact, prefixMatch, pendingMatch };
     };
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             const val = e.currentTarget.value.trim();
+
             if (val && !currentSelector.includes(val)) {
                 update('selector', [...currentSelector, val]);
                 setInputValue("");
@@ -76,25 +78,49 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                 </div>
             )}
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label className="label-xs">Balancer Tag</label>
                     <input 
                         className={`input-base font-bold font-mono ${tagError ? 'border-rose-500 bg-rose-500/10' : ''}`} 
-                        value={balancer.tag} 
+                        value={balancer.tag || ""} 
                         onChange={e => update('tag', e.target.value)} 
                     />
                     {tagError && <span className="text-[10px] text-rose-500">{tagError.message}</span>}
                 </div>
+                
                 <div>
                     <label className="label-xs">Strategy</label>
-                    <select className="input-base font-mono" 
+                    <select 
+                        className="input-base font-mono" 
                         value={balancer.strategy?.type || "random"} 
                         onChange={e => update('strategy', { ...balancer.strategy, type: e.target.value })}>
                         <option value="random">Random</option>
                         <option value="roundRobin">Round Robin</option>
                         <option value="leastPing">Least Ping</option>
                         <option value="leastLoad">Least Load</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label className="label-xs">Fallback Tag (Optional)</label>
+                    <select 
+                        className="input-base font-mono" 
+                        value={balancer.fallbackTag || ""} 
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (val === "") {
+                                const newB = { ...balancer };
+                                delete newB.fallbackTag;
+                                onChange(newB);
+                            } else {
+                                update('fallbackTag', val);
+                            }
+                        }}>
+                        <option value="">None</option>
+                        {outboundTags.map((tag: string) => (
+                            <option key={tag} value={tag}>{tag}</option>
+                        ))}
                     </select>
                 </div>
             </div>
