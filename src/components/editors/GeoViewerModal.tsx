@@ -4,7 +4,6 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { createProtoWorker } from '../../utils/proto-worker';
 import { toast } from 'sonner';
-// Добавляем импорт Monaco Editor
 import Editor from '@monaco-editor/react';
 
 interface GeoItem { code: string; count: number; }
@@ -15,14 +14,7 @@ const CUSTOM_PRESETS = [
     { label: '🇷🇺 Runet GeoIP', format: 'geoip', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat' },
 ];
 
-// ============================================================================
-// Глобальный кэш бинарников в памяти
-// ============================================================================
 const binaryCache = new Map<string, ArrayBuffer>();
-
-// ============================================================================
-// IndexedDB Кеширование
-// ============================================================================
 const DB_NAME = 'GeoCacheDB';
 const STORE_NAME = 'geo_data';
 
@@ -67,9 +59,6 @@ const saveCachedData = async (key: string, data: any, meta: any, rawBuffer?: Arr
     } catch (err) { console.warn("Geo cache write failed", err); }
 };
 
-// ============================================================================
-// Боковая панель (Теперь с MONACO EDITOR)
-// ============================================================================
 const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClose }: { tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null, onClose: () => void }) => {
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
@@ -201,7 +190,7 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
                         value={text}
                         options={{
                             readOnly: true,
-                            minimap: { enabled: false }, // Отключаем миникарту для экономии памяти на гигантских базах
+                            minimap: { enabled: false },
                             wordWrap: 'off',
                             scrollBeyondLastLine: false,
                             smoothScrolling: true,
@@ -217,9 +206,6 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
     );
 };
 
-// ============================================================================
-// Основной Вьювер
-// ============================================================================
 export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'geosite' | 'geoip' | 'custom'>(() => (localStorage.getItem('geo_tab') as any) || 'geosite');
@@ -236,6 +222,12 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    
+    // СТЕЙТЫ ДЛЯ ГЛУБОКОГО ПОИСКА
+    const [isDeepSearch, setIsDeepSearch] = useState(false);
+    const [deepSearchLoading, setDeepSearchLoading] = useState(false);
+    const [deepSearchResults, setDeepSearchResults] = useState<GeoItem[] | null>(null);
+
     const [viewTag, setViewTag] = useState<{ tag: string, code: string, url?: string, format?: string } | null>(null);
 
     const customWorkerRef = useRef<Worker | null>(null);
@@ -318,6 +310,70 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
             worker.terminate();
         };
     }, []);
+
+    // ЭФФЕКТ ДЛЯ ГЛУБОКОГО ПОИСКА
+    useEffect(() => {
+        if (!isDeepSearch || debouncedSearch.length < 2) {
+            setDeepSearchResults(null);
+            setDeepSearchLoading(false);
+            return;
+        }
+
+        let isCancelled = false;
+        setDeepSearchLoading(true);
+
+        const currentUrl = activeTab === 'geosite' 
+            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
+            : activeTab === 'geoip' 
+                ? "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat" 
+                : customUrl;
+        
+        const format = activeTab === 'custom' ? customFormat : activeTab;
+
+        if (format === 'text') {
+            setDeepSearchResults(customData.filter(d => d.code.toLowerCase().includes(debouncedSearch.toLowerCase())));
+            setDeepSearchLoading(false);
+            return;
+        }
+
+        const loadDeepSearch = async () => {
+            let buffer = customFileBuffer || binaryCache.get(currentUrl);
+            
+            if (!buffer) {
+                const cached = await loadCachedData(currentUrl + "_raw");
+                if (cached && cached.buffer) {
+                    buffer = cached.buffer;
+                    binaryCache.set(currentUrl, buffer);
+                }
+            }
+
+            if (isCancelled) return;
+
+            const worker = createProtoWorker();
+            worker.onmessage = (e) => {
+                if (isCancelled) return;
+                if (e.data.type === 'deep_search_result') {
+                    setDeepSearchResults(e.data.data);
+                } else if (e.data.error) {
+                    toast.error("Deep search error", { description: e.data.error });
+                }
+                setDeepSearchLoading(false);
+                worker.terminate();
+            };
+
+            worker.postMessage({
+                type: 'deep_search',
+                dataType: format,
+                query: debouncedSearch,
+                customUrl: currentUrl,
+                fileBuffer: buffer
+            });
+        };
+
+        loadDeepSearch();
+
+        return () => { isCancelled = true; };
+    }, [debouncedSearch, isDeepSearch, activeTab, customUrl, customFormat, customFileBuffer, customData]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -429,15 +485,19 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     };
 
     const displayData = useMemo(() => {
+        if (isDeepSearch && deepSearchResults !== null) {
+            return deepSearchResults;
+        }
+
         let currentData: GeoItem[] = [];
         if (activeTab === 'geosite') currentData = geoSites;
         if (activeTab === 'geoip') currentData = geoIps;
         if (activeTab === 'custom') currentData = customData;
 
-        if (!debouncedSearch) return currentData;
+        if (!debouncedSearch || isDeepSearch) return currentData;
         const lowerSearch = debouncedSearch.toLowerCase();
         return currentData.filter(item => item.code.toLowerCase().includes(lowerSearch));
-    }, [activeTab, geoSites, geoIps, customData, debouncedSearch]);
+    }, [activeTab, geoSites, geoIps, customData, debouncedSearch, isDeepSearch, deepSearchResults]);
 
     const handleCopyAll = async () => {
         if (displayData.length === 0) return toast.warning("Nothing to copy");
@@ -456,7 +516,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleTabChange = (tab: 'geosite' | 'geoip' | 'custom') => {
-        setActiveTab(tab); setSearch(""); setDebouncedSearch("");
+        setActiveTab(tab); setSearch(""); setDebouncedSearch(""); setIsDeepSearch(false);
         setViewTag(null);
     };
 
@@ -512,9 +572,26 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 )}
 
                 <div className="flex flex-col md:flex-row gap-3 items-center bg-slate-900 p-3 rounded-xl border border-slate-800 shrink-0">
-                    <div className="flex-1 relative w-full">
-                        <Icon name="MagnifyingGlass" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-indigo-500 outline-none transition-colors" placeholder={`Search in ${activeTab}...`} value={search} onChange={e => setSearch(e.target.value)} />
+                    <div className="flex-1 relative w-full flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <Icon name="MagnifyingGlass" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input 
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-9 py-2 text-sm text-white focus:border-indigo-500 outline-none transition-colors" 
+                                placeholder={isDeepSearch ? "Search INSIDE domains/IPs..." : `Search in ${activeTab} categories...`} 
+                                value={search} 
+                                onChange={e => setSearch(e.target.value)} 
+                            />
+                            {deepSearchLoading && <Icon name="Spinner" className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" />}
+                        </div>
+                        {activeTab !== 'custom' || customFormat !== 'text' ? (
+                            <button 
+                                onClick={() => setIsDeepSearch(!isDeepSearch)}
+                                className={`px-3 py-2 text-xs font-bold rounded-lg border transition-colors flex items-center gap-2 shrink-0 ${isDeepSearch ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                                title="Search inside domains/IPs instead of category names"
+                            >
+                                Deep Search
+                            </button>
+                        ) : null}
                     </div>
                     <div className="flex items-center gap-3 w-full md:w-auto justify-between">
                         <div className="text-xs text-slate-400 font-mono bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
@@ -534,7 +611,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                         ) : displayData.length === 0 ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
                                 <Icon name="Database" className="text-6xl mb-4 opacity-20" />
-                                <p>{activeTab === 'custom' && customData.length === 0 ? "Select a preset, URL, or upload file." : "No items found."}</p>
+                                <p>{isDeepSearch ? "No matching domains/IPs found in any category." : "No items found."}</p>
                             </div>
                         ) : (
                             <div className={`grid gap-2 content-start transition-all duration-300 ${viewTag ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
