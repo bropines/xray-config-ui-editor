@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { createProtoWorker } from '../../utils/proto-worker';
 import { useConfigStore } from '../../store/configStore';
 import { Icon } from '../ui/Icon';
 import { getCriticalRuleErrors } from '../../utils/validator';
+import { getDefaultGeoList } from '../../utils/geo-data';
 
 import { RuleList } from './routing/RuleList';
 import { RuleEditor } from './routing/RuleEditor';
@@ -94,23 +94,26 @@ export const RoutingModal = ({ onClose }: any) => {
         };
     }, [isResizing, resize, stopResizing]);
 
-    // ── Geo data ──────────────────────────────────────────────────────────────
-    const [geoSites,   setGeoSites]   = useState([]);
+// ── Geo data ──────────────────────────────────────────────────────────────
+    const[geoSites,   setGeoSites]   = useState([]);
     const [geoIps,     setGeoIps]     = useState([]);
     const [loadingGeo, setLoadingGeo] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
         setLoadingGeo(true);
-        const worker = createProtoWorker();
-        worker.onmessage = (e) => {
-            if (e.data.type === 'geosite') setGeoSites(e.data.data);
-            if (e.data.type === 'geoip')   setGeoIps(e.data.data);
-            setLoadingGeo(false);
-        };
-        worker.postMessage({ type: 'geosite' });
-        worker.postMessage({ type: 'geoip' });
-        return () => worker.terminate();
-    }, []);
+        Promise.all([
+            getDefaultGeoList('geosite'),
+            getDefaultGeoList('geoip')
+        ]).then(([sites, ips]) => {
+            if (isMounted) {
+                setGeoSites(sites);
+                setGeoIps(ips);
+                setLoadingGeo(false);
+            }
+        });
+        return () => { isMounted = false; };
+    },[]);
 
     // ── Rule handlers ─────────────────────────────────────────────────────────
     const handleAddRule = () => {

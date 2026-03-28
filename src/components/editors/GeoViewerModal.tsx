@@ -5,62 +5,20 @@ import { Icon } from '../ui/Icon';
 import { createProtoWorker } from '../../utils/proto-worker';
 import { toast } from 'sonner';
 import Editor from '@monaco-editor/react';
+import { binaryCache, loadCachedData, saveCachedData, getDefaultGeoList } from '../../utils/geo-data';
 
 interface GeoItem { code: string; count: number; }
 
-const CUSTOM_PRESETS = [
+const CUSTOM_PRESETS =[
+    { label: '🌍 V2Fly GeoSite', format: 'geosite', url: 'https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat' },
+    { label: '🌍 V2Fly GeoIP', format: 'geoip', url: 'https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat' },
     { label: '🇷🇺 Zapret (.dat)', format: 'geosite', url: 'https://github.com/kutovoys/ru_gov_zapret/releases/latest/download/zapret.dat' },
     { label: '🇷🇺 Runet GeoSite', format: 'geosite', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geosite.dat' },
     { label: '🇷🇺 Runet GeoIP', format: 'geoip', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat' },
 ];
 
-const binaryCache = new Map<string, ArrayBuffer>();
-const DB_NAME = 'GeoCacheDB';
-const STORE_NAME = 'geo_data';
-
-const initDB = (): Promise<IDBDatabase> => {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = () => {
-            if (!request.result.objectStoreNames.contains(STORE_NAME)) {
-                request.result.createObjectStore(STORE_NAME);
-            }
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-};
-
-const loadCachedData = async (key: string): Promise<any> => {
-    try {
-        const db = await initDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readonly');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.get(key);
-            req.onsuccess = () => resolve(req.result || null);
-            req.onerror = () => reject(req.error);
-        });
-    } catch { return null; }
-};
-
-const saveCachedData = async (key: string, data: any, meta: any, rawBuffer?: ArrayBuffer) => {
-    try {
-        const db = await initDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            const payload: any = { meta: { ...meta, timestamp: Date.now() }, data };
-            if (rawBuffer) payload.buffer = rawBuffer;
-            const req = store.put(payload, key);
-            req.onsuccess = () => resolve(true);
-            req.onerror = () => reject(req.error);
-        });
-    } catch (err) { console.warn("Geo cache write failed", err); }
-};
-
 const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClose }: { tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null, onClose: () => void }) => {
-    const [text, setText] = useState("");
+    const[text, setText] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -91,7 +49,7 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
                         } else {
                             const myProxy = `https://crs.bropines.workers.dev/${currentUrl}`;
                             const targets = currentUrl.includes('github') || currentUrl.includes('jsdelivr') 
-                                ? [myProxy, currentUrl, `https://mirror.ghproxy.com/${currentUrl}`] 
+                                ?[myProxy, currentUrl, `https://mirror.ghproxy.com/${currentUrl}`] 
                                 : [currentUrl, myProxy];
                             
                             let res;
@@ -215,17 +173,16 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     const [customFileBuffer, setCustomFileBuffer] = useState<ArrayBuffer | null>(null);
     const [customData, setCustomData] = useState<GeoItem[]>([]);
     
-    const [geoSites, setGeoSites] = useState<GeoItem[]>([]);
-    const [geoIps, setGeoIps] = useState<GeoItem[]>([]);
+    const[geoSites, setGeoSites] = useState<GeoItem[]>([]);
+    const[geoIps, setGeoIps] = useState<GeoItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [customLoading, setCustomLoading] = useState(false);
     
-    const [search, setSearch] = useState("");
+    const[search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     
-    // СТЕЙТЫ ДЛЯ ГЛУБОКОГО ПОИСКА
     const [isDeepSearch, setIsDeepSearch] = useState(false);
-    const [deepSearchLoading, setDeepSearchLoading] = useState(false);
+    const[deepSearchLoading, setDeepSearchLoading] = useState(false);
     const [deepSearchResults, setDeepSearchResults] = useState<GeoItem[] | null>(null);
 
     const [viewTag, setViewTag] = useState<{ tag: string, code: string, url?: string, format?: string } | null>(null);
@@ -257,61 +214,20 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
 
     useEffect(() => {
         let isMounted = true;
-        const worker = createProtoWorker();
-        const geositeUrl = "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat";
-        const geoipUrl = "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
-        
-        const CACHE_TTL = 24 * 60 * 60 * 1000;
-
-        const loadCachesAndStart = async () => {
-            setLoading(true);
-            const now = Date.now();
-
-            const cacheSite = await loadCachedData(geositeUrl);
-            const cacheIp = await loadCachedData(geoipUrl);
-
-            if (cacheSite?.data && isMounted) setGeoSites(cacheSite.data);
-            if (cacheIp?.data && isMounted) setGeoIps(cacheIp.data);
-
-            const siteNeedsUpdate = !cacheSite || (now - (cacheSite.meta?.timestamp || 0) > CACHE_TTL);
-            const ipNeedsUpdate = !cacheIp || (now - (cacheIp.meta?.timestamp || 0) > CACHE_TTL);
-
-            if (!siteNeedsUpdate && !ipNeedsUpdate) {
-                if (isMounted) setLoading(false);
-                return;
-            }
-
-            worker.onmessage = (e) => {
-                if (!isMounted) return;
-                const { type, targetType, data, meta } = e.data;
-                
-                if (type === 'cache_hit') { 
-                    if (targetType === 'geosite' && cacheSite?.data) setGeoSites(cacheSite.data);
-                    if (targetType === 'geoip' && cacheIp?.data) setGeoIps(cacheIp.data);
-                } 
-                else if (type === 'success') {
-                    const url = targetType === 'geosite' ? geositeUrl : geoipUrl;
-                    saveCachedData(url, data, meta);
-                    if (targetType === 'geosite') setGeoSites(data);
-                    if (targetType === 'geoip') setGeoIps(data);
-                }
-                
+        setLoading(true);
+        Promise.all([
+            getDefaultGeoList('geosite'),
+            getDefaultGeoList('geoip')
+        ]).then(([sites, ips]) => {
+            if (isMounted) {
+                setGeoSites(sites);
+                setGeoIps(ips);
                 setLoading(false);
-            };
-            
-            if (siteNeedsUpdate) worker.postMessage({ type: 'geosite', cachedMeta: cacheSite?.meta });
-            if (ipNeedsUpdate) worker.postMessage({ type: 'geoip', cachedMeta: cacheIp?.meta });
-        };
+            }
+        });
+        return () => { isMounted = false; };
+    },[]);
 
-        loadCachesAndStart();
-        
-        return () => {
-            isMounted = false;
-            worker.terminate();
-        };
-    }, []);
-
-    // ЭФФЕКТ ДЛЯ ГЛУБОКОГО ПОИСКА
     useEffect(() => {
         if (!isDeepSearch || debouncedSearch.length < 2) {
             setDeepSearchResults(null);
@@ -373,7 +289,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         loadDeepSearch();
 
         return () => { isCancelled = true; };
-    }, [debouncedSearch, isDeepSearch, activeTab, customUrl, customFormat, customFileBuffer, customData]);
+    },[debouncedSearch, isDeepSearch, activeTab, customUrl, customFormat, customFileBuffer, customData]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -429,11 +345,11 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
 
         try {
             const myProxy = `https://crs.bropines.workers.dev/${customUrl}`;
-            let targets = [];
+            let targets =[];
             if (customUrl.includes('raw.githubusercontent.com')) {
                 targets = [customUrl, myProxy, `https://mirror.ghproxy.com/${customUrl}`];
             } else if (customUrl.includes('github.com')) {
-                targets = [myProxy, `https://mirror.ghproxy.com/${customUrl}`, `https://ghproxy.net/${customUrl}`, customUrl];
+                targets =[myProxy, `https://mirror.ghproxy.com/${customUrl}`, `https://ghproxy.net/${customUrl}`, customUrl];
             } else {
                 targets = [customUrl, myProxy];
             }
@@ -489,7 +405,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
             return deepSearchResults;
         }
 
-        let currentData: GeoItem[] = [];
+        let currentData: GeoItem[] =[];
         if (activeTab === 'geosite') currentData = geoSites;
         if (activeTab === 'geoip') currentData = geoIps;
         if (activeTab === 'custom') currentData = customData;
@@ -497,7 +413,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         if (!debouncedSearch || isDeepSearch) return currentData;
         const lowerSearch = debouncedSearch.toLowerCase();
         return currentData.filter(item => item.code.toLowerCase().includes(lowerSearch));
-    }, [activeTab, geoSites, geoIps, customData, debouncedSearch, isDeepSearch, deepSearchResults]);
+    },[activeTab, geoSites, geoIps, customData, debouncedSearch, isDeepSearch, deepSearchResults]);
 
     const handleCopyAll = async () => {
         if (displayData.length === 0) return toast.warning("Nothing to copy");
