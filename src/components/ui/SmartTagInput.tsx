@@ -21,35 +21,36 @@ interface SmartTagInputProps {
 
 export const SmartTagInput = ({
     label,
-    value = [],
+    value =[],
     onChange,
     suggestions,
     prefix,
     placeholder,
     isLoading,
     invalidTags = [],
-    warnTags = [],
+    warnTags =[],
     onTagClick,
 }: SmartTagInputProps) => {
     const [input, setInput] = useState("");
     const [showSuggest, setShowSuggest] = useState(false);
+    const[focusedIndex, setFocusedIndex] = useState(-1); // <-- Состояние для навигации стрелками
+    
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const suggestionsRef = useRef<HTMLDivElement>(null);
 
+    // Увеличили с 10 до 30, чтобы было удобнее листать
     const filteredSuggestions = input
         ? suggestions
             .filter(s => s.code.toLowerCase().includes(input.toLowerCase().replace(prefix, "")))
-            .slice(0, 10)
-        : [];
+            .slice(0, 30)
+        :[];
 
-    // Универсальный супер-парсер: ест пробелы, запятые, табы, переносы строк и сноски [1]
     const processAndAddTags = (rawInput: string) => {
-        // Разбиваем по любому сочетанию запятых, пробелов и переносов строк
         const rawTags = rawInput.split(/[\n,\s]+/);
         let newTags = [...value];
         let added = false;
 
         rawTags.forEach(rawTag => {
-            // Вырезаем сноски вроде [1], [23] и чистим края
             const cleanTag = rawTag.replace(/\[\d+\]/g, '').trim();
             if (cleanTag && !newTags.includes(cleanTag)) {
                 newTags.push(cleanTag);
@@ -62,20 +63,61 @@ export const SmartTagInput = ({
         }
         setInput("");
         setShowSuggest(false);
+        setFocusedIndex(-1);
     };
 
     const removeTag = (t: string) => onChange(value.filter(v => v !== t));
 
+    // <-- Обработка клавиатуры (Стрелки и Enter)
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.keyCode === 13) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (showSuggest && filteredSuggestions.length > 0) {
+                setFocusedIndex(prev => Math.min(prev + 1, filteredSuggestions.length - 1));
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (showSuggest && filteredSuggestions.length > 0) {
+                setFocusedIndex(prev => Math.max(prev - 1, -1));
+            }
+        } else if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
             e.stopPropagation();
-            processAndAddTags(input);
-        }
-        if (e.key === 'Backspace' && !input && value.length > 0) {
+            
+            // Если выбран элемент из выпадающего списка
+            if (showSuggest && focusedIndex >= 0 && focusedIndex < filteredSuggestions.length) {
+                processAndAddTags(`${prefix}${filteredSuggestions[focusedIndex].code}`);
+            } else {
+                // Если просто нажали Enter для ручного ввода
+                processAndAddTags(input);
+            }
+        } else if (e.key === 'Escape') {
+            setShowSuggest(false);
+            setFocusedIndex(-1);
+        } else if (e.key === 'Backspace' && !input && value.length > 0) {
             removeTag(value[value.length - 1]);
         }
     };
+
+    // <-- Автоскролл списка к выбранному элементу
+    useEffect(() => {
+        if (showSuggest && focusedIndex >= 0 && suggestionsRef.current) {
+            const container = suggestionsRef.current;
+            const activeElement = container.children[focusedIndex] as HTMLElement;
+            if (activeElement) {
+                const containerTop = container.scrollTop;
+                const containerBottom = containerTop + container.clientHeight;
+                const elemTop = activeElement.offsetTop;
+                const elemBottom = elemTop + activeElement.clientHeight;
+
+                if (elemTop < containerTop) {
+                    container.scrollTop = elemTop;
+                } else if (elemBottom > containerBottom) {
+                    container.scrollTop = elemBottom - container.clientHeight;
+                }
+            }
+        }
+    }, [focusedIndex, showSuggest]);
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
         e.preventDefault();
@@ -85,12 +127,14 @@ export const SmartTagInput = ({
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
                 setShowSuggest(false);
+                setFocusedIndex(-1);
+            }
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
-    }, []);
+    },[]);
 
     const hasInvalid = invalidTags.length > 0;
     const hasWarn = warnTags.length > 0;
@@ -170,7 +214,11 @@ export const SmartTagInput = ({
                     <input
                         className="bg-transparent outline-none text-sm text-white w-full h-full font-mono placeholder:text-slate-600"
                         value={input}
-                        onChange={e => { setInput(e.target.value); setShowSuggest(true); }}
+                        onChange={e => { 
+                            setInput(e.target.value); 
+                            setShowSuggest(true);
+                            setFocusedIndex(-1); // Сброс фокуса при вводе
+                        }}
                         onKeyDown={handleKeyDown}
                         onPaste={handlePaste}
                         onFocus={() => setShowSuggest(true)}
@@ -179,20 +227,35 @@ export const SmartTagInput = ({
                         inputMode="text"
                         autoComplete="off"
                     />
+                    
                     {showSuggest && input && filteredSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto custom-scroll">
-                            {filteredSuggestions.map(s => (
-                                <button
-                                    key={s.code}
-                                    className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-600 hover:text-white text-slate-300 flex justify-between group"
-                                    onClick={() => processAndAddTags(`${prefix}${s.code}`)}
-                                >
-                                    <span className="font-bold">
-                                        {prefix}<span className="text-white group-hover:text-white">{s.code}</span>
-                                    </span>
-                                    <span className="opacity-50">{s.count} recs</span>
-                                </button>
-                            ))}
+                        <div 
+                            ref={suggestionsRef}
+                            className="absolute top-full left-0 mt-2 w-full min-w-[250px] bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-56 overflow-y-auto custom-scroll"
+                        >
+                            {filteredSuggestions.map((s, index) => {
+                                const isFocused = focusedIndex === index;
+                                return (
+                                    <button
+                                        key={s.code}
+                                        onMouseEnter={() => setFocusedIndex(index)}
+                                        className={`w-full text-left px-3 py-2 text-xs flex justify-between items-center group transition-colors ${
+                                            isFocused 
+                                                ? 'bg-indigo-600 text-white' 
+                                                : 'hover:bg-indigo-600 hover:text-white text-slate-300'
+                                        }`}
+                                        onClick={() => processAndAddTags(`${prefix}${s.code}`)}
+                                    >
+                                        <span className="font-bold font-mono">
+                                            <span className={isFocused ? 'text-indigo-200' : 'text-slate-500 group-hover:text-indigo-200'}>{prefix}</span>
+                                            <span className={isFocused ? 'text-white' : 'text-slate-200 group-hover:text-white'}>{s.code}</span>
+                                        </span>
+                                        <span className={`text-[10px] ${isFocused ? 'text-indigo-200' : 'text-slate-500 group-hover:text-indigo-200'}`}>
+                                            {s.count} recs
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

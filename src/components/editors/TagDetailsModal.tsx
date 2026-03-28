@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { createProtoWorker } from '../../utils/proto-worker';
 import { toast } from 'sonner';
+import { binaryCache, loadCachedData, saveCachedData } from '../../utils/geo-data';
 
 export const TagDetailsModal = ({ 
     tag, 
@@ -20,29 +21,90 @@ export const TagDetailsModal = ({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isCancelled = false;
+        setLoading(true);
+        
         const isGeosite = tag.startsWith('geosite:');
         const targetCode = tag.replace('geosite:', '').replace('geoip:', '');
         
-        const worker = createProtoWorker();
-        worker.onmessage = (e) => {
-            if (e.data.error) {
-                toast.error("Failed to load details");
-                setText("Error loading data.\n" + e.data.error);
-            } else if (e.data.type === 'details') {
-                setText(e.data.data || "No records found.");
-            }
-            setLoading(false);
-        };
-        
-        // Воркер сам применит прокси-каскад, если это GitHub ссылка
-        worker.postMessage({ 
-            type: 'get_details', 
-            dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'),
-            targetCode,
-            customUrl
-        });
+        const defaultUrl = isGeosite 
+            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
+            : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
+        const currentUrl = customUrl || defaultUrl;
 
-        return () => worker.terminate();
+        let activeWorker: Worker | null = null;
+
+        const loadData = async () => {
+            let buffer: ArrayBuffer | null = null;
+            if (binaryCache.has(currentUrl)) {
+                buffer = binaryCache.get(currentUrl)!;
+            } else {
+                try {
+                    const cached = await loadCachedData(currentUrl + "_raw");
+                    if (cached && cached.buffer) {
+                        buffer = cached.buffer;
+                        binaryCache.set(currentUrl, buffer);
+                    } else {
+                        const myProxy = `https://crs.bropines.workers.dev/${currentUrl}`;
+                        const targets = currentUrl.includes('github') || currentUrl.includes('jsdelivr') 
+                            ?[myProxy, currentUrl, `https://mirror.ghproxy.com/${currentUrl}`] 
+                            : [currentUrl, myProxy];
+                        
+                        let res;
+                        for (const target of targets) {
+                            try {
+                                res = await fetch(target);
+                                if (res.ok) break;
+                            } catch (e) {}
+                        }
+
+                        if (res && res.ok) {
+                            buffer = await res.arrayBuffer();
+                            binaryCache.set(currentUrl, buffer);
+                            await saveCachedData(currentUrl + "_raw", null, {}, buffer);
+                        } else {
+                            throw new Error("Fetch failed");
+                        }
+                    }
+                } catch (err) {
+                    if (!isCancelled) {
+                        toast.error("Failed to download database for extraction");
+                        setText("Network error.");
+                        setLoading(false);
+                    }
+                    return;
+                }
+            }
+
+            if (isCancelled) return;
+
+            activeWorker = createProtoWorker();
+            activeWorker.onmessage = (e) => {
+                if (isCancelled) return;
+                if (e.data.error) {
+                    toast.error("Failed to load details");
+                    setText("Error loading data.\n" + e.data.error);
+                } else if (e.data.type === 'details') {
+                    setText(e.data.data || "No records found.");
+                }
+                setLoading(false);
+            };
+            
+            activeWorker.postMessage({ 
+                type: 'get_details', 
+                dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'),
+                targetCode,
+                customUrl: undefined,
+                fileBuffer: buffer
+            });
+        };
+
+        loadData();
+
+        return () => {
+            isCancelled = true;
+            if (activeWorker) activeWorker.terminate();
+        };
     }, [tag, customUrl, customFormat]);
 
     const handleCopy = async () => {

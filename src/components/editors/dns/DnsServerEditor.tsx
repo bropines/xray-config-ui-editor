@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { SmartTagInput } from '../../ui/SmartTagInput';
-import { createProtoWorker } from '../../../utils/proto-worker';
+import { getDefaultGeoList } from '../../../utils/geo-data';
 
 export const DnsServerEditor = ({ server, onChange, onCancel }) => {
     const isString = typeof server === 'string';
-    // Если сервер - строка, превращаем во временный объект для редактирования, но сохраняем как строку если не меняли доп. поля
-    const [local, setLocal] = useState(isString ? { address: server } : { ...server });
+    const[local, setLocal] = useState(isString ? { address: server } : { ...server });
 
-    // Geo Data (для SmartTagInput в доменах)
-    const [geoSites, setGeoSites] = useState([]);
+    const[geoSites, setGeoSites] = useState([]);
     const [geoIps, setGeoIps] = useState([]);
     const [loadingGeo, setLoadingGeo] = useState(false);
 
     useEffect(() => {
-        if (!isString) { // Грузим гео-данные только если это Advanced режим
+        if (!isString) { 
+            let isMounted = true;
             setLoadingGeo(true);
-            const worker = createProtoWorker();
-            // ... (стандартная загрузка как в RoutingModal) ...
-            worker.onmessage = (e) => {
-                if (e.data.type === 'geosite') setGeoSites(e.data.data);
-                if (e.data.type === 'geoip') setGeoIps(e.data.data);
-                setLoadingGeo(false); 
-            };
-            worker.postMessage({ type: 'geosite' });
-            worker.postMessage({ type: 'geoip' });
-            return () => worker.terminate();
+            Promise.all([
+                getDefaultGeoList('geosite'),
+                getDefaultGeoList('geoip')
+            ]).then(([sites, ips]) => {
+                if (isMounted) {
+                    setGeoSites(sites);
+                    setGeoIps(ips);
+                    setLoadingGeo(false);
+                }
+            });
+            return () => { isMounted = false; };
         }
     }, [isString]);
 
