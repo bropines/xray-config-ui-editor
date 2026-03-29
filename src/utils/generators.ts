@@ -35,12 +35,12 @@ export const generateWarpAccount = async () => {
     try {
         const keyPair = nacl.box.keyPair();
         const publicKey = btoa(String.fromCharCode(...keyPair.publicKey));
+        // Приватный ключ возвращаем в формате base64
         const privateKey = btoa(String.fromCharCode(...keyPair.secretKey));
         
-        // Оригинальный URL Cloudflare
-        const targetUrl = encodeURIComponent("https://api.cloudflareclient.com/v0a884/reg");
-        // Пропускаем через бесплатный CORS-прокси
-        const proxyUrl = `https://corsproxy.io/?${targetUrl}`;
+        // Используем твой собственный рабочий CORS прокси
+        const targetUrl = "https://api.cloudflareclient.com/v0a884/reg";
+        const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
 
         const response = await fetch(proxyUrl, {
             method: "POST",
