@@ -24,8 +24,12 @@ export const TagDetailsModal = ({
         let isCancelled = false;
         setLoading(true);
         
-        const isGeosite = tag.startsWith('geosite:');
-        const targetCode = tag.replace('geosite:', '').replace('geoip:', '');
+        const isGeosite = tag.toLowerCase().startsWith('geosite:');
+        
+        // ВАЖНО: Внутри .dat файлов (geosite/geoip) названия категорий всегда в UPPERCASE 
+        // (например STEAM, GOOGLE, CN). Но в UI они часто в нижнем регистре.
+        // Поэтому очищаем префикс и принудительно делаем UPPERCASE для поиска по БД:
+        const targetCode = tag.replace(/^(geosite:|geoip:)/i, '').toUpperCase();
         
         const defaultUrl = isGeosite 
             ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
