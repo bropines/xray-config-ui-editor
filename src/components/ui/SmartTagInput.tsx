@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "./Icon";
+import { toast } from "sonner"; // <-- Добавили импорт тостов
 
 interface Suggestion {
     code: string;
@@ -10,7 +11,7 @@ interface SmartTagInputProps {
     label: string;
     value: string[];
     onChange: (val: string[]) => void;
-    suggestions?: Suggestion[]; // Сделали опциональным
+    suggestions?: Suggestion[];
     prefix: string;
     placeholder?: string;
     isLoading?: boolean;
@@ -23,22 +24,21 @@ export const SmartTagInput = ({
     label,
     value =[],
     onChange,
-    suggestions =[], // Дефолтное значение
+    suggestions = [],
     prefix,
     placeholder,
     isLoading,
-    invalidTags = [],
-    warnTags =[],
+    invalidTags =[],
+    warnTags = [],
     onTagClick,
 }: SmartTagInputProps) => {
-    const [input, setInput] = useState("");
-    const[showSuggest, setShowSuggest] = useState(false);
+    const[input, setInput] = useState("");
+    const [showSuggest, setShowSuggest] = useState(false);
     const [focusedIndex, setFocusedIndex] = useState(-1);
     
     const wrapperRef = useRef<HTMLDivElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
 
-    // Безопасная фильтрация: проверяем, что suggestions — это реально массив
     const filteredSuggestions = input && Array.isArray(suggestions)
         ? suggestions
             .filter(s => s?.code?.toLowerCase().includes(input.toLowerCase().replace(prefix, "")))
@@ -177,10 +177,19 @@ export const SmartTagInput = ({
                     return (
                         <span
                             key={i}
-                            title={isInvalid ? "Error — will crash Xray" : isWarn ? "Style lint — works but convention is lowercase" : "Click to view contents"}
+                            title={isInvalid ? "Error — will crash Xray" : isWarn ? "Style lint — works but convention is lowercase" : "Click to copy, Ctrl+Click to view details"}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (onTagClick) onTagClick(prefix + tag);
+                                // Если зажат Ctrl (или Cmd на Mac) — открываем модалку деталей
+                                if (e.ctrlKey || e.metaKey) {
+                                    // ВАЖНО: Убрали сломанный `prefix + tag`
+                                    if (onTagClick) onTagClick(tag);
+                                } else {
+                                    // Обычный клик — копируем в буфер
+                                    navigator.clipboard.writeText(tag)
+                                        .then(() => toast.success(`Copied: ${tag}`))
+                                        .catch(() => toast.error("Copy failed"));
+                                }
                             }}
                             className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-colors cursor-pointer hover:ring-1 hover:ring-indigo-500 ${isInvalid
                                     ? 'bg-rose-900/40 border-rose-500/70 text-rose-200'
