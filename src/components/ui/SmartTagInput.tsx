@@ -10,7 +10,7 @@ interface SmartTagInputProps {
     label: string;
     value: string[];
     onChange: (val: string[]) => void;
-    suggestions: Suggestion[];
+    suggestions?: Suggestion[]; // Сделали опциональным
     prefix: string;
     placeholder?: string;
     isLoading?: boolean;
@@ -23,7 +23,7 @@ export const SmartTagInput = ({
     label,
     value =[],
     onChange,
-    suggestions,
+    suggestions =[], // Дефолтное значение
     prefix,
     placeholder,
     isLoading,
@@ -32,16 +32,16 @@ export const SmartTagInput = ({
     onTagClick,
 }: SmartTagInputProps) => {
     const [input, setInput] = useState("");
-    const [showSuggest, setShowSuggest] = useState(false);
-    const[focusedIndex, setFocusedIndex] = useState(-1); // <-- Состояние для навигации стрелками
+    const[showSuggest, setShowSuggest] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState(-1);
     
     const wrapperRef = useRef<HTMLDivElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
 
-    // Увеличили с 10 до 30, чтобы было удобнее листать
-    const filteredSuggestions = input
+    // Безопасная фильтрация: проверяем, что suggestions — это реально массив
+    const filteredSuggestions = input && Array.isArray(suggestions)
         ? suggestions
-            .filter(s => s.code.toLowerCase().includes(input.toLowerCase().replace(prefix, "")))
+            .filter(s => s?.code?.toLowerCase().includes(input.toLowerCase().replace(prefix, "")))
             .slice(0, 30)
         :[];
 
@@ -68,7 +68,6 @@ export const SmartTagInput = ({
 
     const removeTag = (t: string) => onChange(value.filter(v => v !== t));
 
-    // <-- Обработка клавиатуры (Стрелки и Enter)
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -84,11 +83,9 @@ export const SmartTagInput = ({
             e.preventDefault();
             e.stopPropagation();
             
-            // Если выбран элемент из выпадающего списка
             if (showSuggest && focusedIndex >= 0 && focusedIndex < filteredSuggestions.length) {
                 processAndAddTags(`${prefix}${filteredSuggestions[focusedIndex].code}`);
             } else {
-                // Если просто нажали Enter для ручного ввода
                 processAndAddTags(input);
             }
         } else if (e.key === 'Escape') {
@@ -99,7 +96,6 @@ export const SmartTagInput = ({
         }
     };
 
-    // <-- Автоскролл списка к выбранному элементу
     useEffect(() => {
         if (showSuggest && focusedIndex >= 0 && suggestionsRef.current) {
             const container = suggestionsRef.current;
@@ -217,7 +213,7 @@ export const SmartTagInput = ({
                         onChange={e => { 
                             setInput(e.target.value); 
                             setShowSuggest(true);
-                            setFocusedIndex(-1); // Сброс фокуса при вводе
+                            setFocusedIndex(-1);
                         }}
                         onKeyDown={handleKeyDown}
                         onPaste={handlePaste}
