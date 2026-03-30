@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>Xray Configurator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    <head>
+        <meta charset="UTF-8">
+        <!-- Иконка для современных браузеров -->
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+        <title>Xray Configurator</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -19,13 +21,13 @@
             }
         }
     </script>
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=block">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=block">
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
 
-    <!-- ВАЖНО: type="text/tailwindcss" -->
-    <style type="text/tailwindcss">
+        <!-- ВАЖНО: type="text/tailwindcss" -->
+        <style type="text/tailwindcss">
         body { 
     font-family: 'Inter', sans-serif; 
     @apply bg-slate-950 text-slate-200;
@@ -71,11 +73,11 @@
             background: #475569; 
         }
     </style>
-</head>
+    </head>
 
-<body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.tsx"></script>
-</body>
+    <body>
+        <div id="app"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 
 </html>
