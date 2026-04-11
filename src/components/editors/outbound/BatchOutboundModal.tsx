@@ -44,53 +44,57 @@ export const BatchOutboundModal = ({ onClose }: { onClose: () => void }) => {
         }
     }, [mode, config]);
 
-    const handleFetchSub = async () => {
-        if (!subUrl.trim()) return toast.error("Please enter a subscription URL");
-        setIsFetching(true);
-        try {
-            const targetUrl = subUrl.trim();
-            const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
-            
-            const headers: Record<string, string> = {
-                "x-custom-user-agent": customUA || "v2rayNG/1.8.5",
-                "x-custom-client-id": customClientId // Передаем наш сгенерированный или сохраненный ID
-            };
+const handleFetchSub = async () => {
+    if (!subUrl.trim()) return toast.error("Please enter a subscription URL");
+    setIsFetching(true);
+    try {
+        const targetUrl = subUrl.trim();
+        const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
+        
+        const headers: Record<string, string> = {
+            "x-custom-user-agent": customUA || "v2rayNG/1.8.5",
+            "x-hwid": customClientId // Передаем HWID согласно докам Remnawave
+        };
 
-            let res = await fetch(proxyUrl, { headers });
+        let res = await fetch(proxyUrl, { headers });
 
-            if (!res.ok) throw new Error(`Server returned ${res.status}`);
-            
-            const rawText = await res.text();
-            let decoded = rawText.trim();
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
-            if (!decoded.includes('://')) {
-                try {
-                    let b64 = decoded.replace(/\s/g, '');
-                    while (b64.length % 4 !== 0) b64 += '=';
-                    decoded = atob(b64);
-                    try { decoded = decodeURIComponent(escape(decoded)); } catch (e) {}
-                } catch (e) {
-                    decoded = rawText.trim();
-                }
-            }
-
-            // Логика проверки ответа от Remnawave
-            if (decoded.includes('App%20not%20supported') || decoded.includes('0.0.0.0:1')) {
-                toast.error("Panel rejected this device (HWID)", { 
-                    description: "Limit reached or invalid ID. Check 'Active Devices' in panel." 
-                });
-            } else if (decoded.includes('://')) {
-                setText(prev => prev ? prev + '\n\n' + decoded : decoded);
-                toast.success("Subscription fetched successfully");
-            } else {
-                toast.error("No valid links found in response");
-            }
-        } catch (err: any) {
-            toast.error("Fetch failed", { description: err.message });
-        } finally {
+        // Проверяем заголовки Remnawave на превышение лимита HWID
+        if (res.headers.get('x-hwid-max-devices-reached') === 'true' || res.headers.get('x-hwid-limit') === 'true') {
+            toast.error("Panel rejected this device (HWID)", { 
+                description: "Device limit reached. Check 'Active Devices' in the panel." 
+            });
             setIsFetching(false);
+            return;
         }
-    };
+
+        const rawText = await res.text();
+        let decoded = rawText.trim();
+
+        if (!decoded.includes('://')) {
+            try {
+                let b64 = decoded.replace(/\s/g, '');
+                while (b64.length % 4 !== 0) b64 += '=';
+                decoded = atob(b64);
+                try { decoded = decodeURIComponent(escape(decoded)); } catch (e) {}
+            } catch (e) {
+                decoded = rawText.trim();
+            }
+        }
+
+        if (decoded.includes('://')) {
+            setText(prev => prev ? prev + '\n\n' + decoded : decoded);
+            toast.success("Subscription fetched successfully");
+        } else {
+            toast.error("No valid links found in response");
+        }
+    } catch (err: any) {
+        toast.error("Fetch failed", { description: err.message });
+    } finally {
+        setIsFetching(false);
+    }
+};
 
     const regenerateHwid = () => {
         if (confirm("Regenerate HWID? The panel will see this as a NEW device.")) {
