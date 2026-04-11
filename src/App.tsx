@@ -12,7 +12,7 @@ import { TopologyModal } from "./components/topology/TopologyModal";
 import { RemnawaveModal } from "./components/editors/RemnawaveModal";
 import { SectionJsonModal } from "./components/editors/SectionJsonModal";
 import { BatchOutboundModal } from "./components/editors/outbound/BatchOutboundModal";
-import { GeoViewerModal } from "./components/editors/GeoViewerModal"; // <--- НОВЫЙ ИМПОРТ
+import { GeoViewerModal } from "./components/editors/GeoViewerModal";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
 import { getPresets } from "./utils/presets";
@@ -119,7 +119,7 @@ export const App = () => {
     });
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
     const [batchModalOpen, setBatchModalOpen] = useState(false);
-    const [geoViewerOpen, setGeoViewerOpen] = useState(false); // <--- СОСТОЯНИЕ ДЛЯ GEO VIEWER
+    const [geoViewerOpen, setGeoViewerOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
     const [rawMode, setRawMode] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -354,7 +354,6 @@ export const App = () => {
                                     <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'topology', data: null, index: null })} icon="GitMerge">
                                         Topology
                                     </Button>
-                                    {/* ДОБАВЛЕНА КНОПКА GEO VIEWER */}
                                     <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setGeoViewerOpen(true)} icon="GlobeHemisphereWest">
                                         Geo Viewer
                                     </Button>
@@ -376,9 +375,9 @@ export const App = () => {
                                 <JsonField label="Full Configuration (Auto-saved)" value={config} onChange={(newConfig: any) => { if (newConfig) setConfig(newConfig); }} className="flex-1 relative min-h-0" />
                             </div>
                         ) : (
-                            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto custom-scroll">
-                                <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 xl:flex-1 xl:min-h-0" style={{ minHeight: 0, flex: '1 1 0' }}>
-                                    <Card title={`Inbounds (${config.inbounds?.length || 0})`} icon="ArrowCircleDown" color="bg-emerald-600" className="h-[480px] xl:h-full" actions={
+                            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto custom-scroll pb-6">
+                                <div className="flex flex-col xl:grid xl:grid-cols-3 gap-3 xl:flex-1 xl:min-h-0">
+                                    <Card title={`Inbounds (${config.inbounds?.length || 0})`} icon="ArrowCircleDown" color="bg-emerald-600" className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink" actions={
                                             <div className="flex gap-1">
                                                 <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("inbounds", "Inbounds")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'inbound', data: null, index: null })} icon="Plus" />
@@ -398,13 +397,13 @@ export const App = () => {
                                         ))}
                                     </Card>
 
-                                    <Card title="Routing" icon="ArrowsSplit" color="bg-purple-600" className="h-[480px] xl:h-full" actions={
+                                    <Card title="Routing" icon="ArrowsSplit" color="bg-purple-600" className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink" actions={
                                             <div className="flex gap-1">
                                                 <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("routing", "Routing")} icon="Code" title="View JSON" />
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'routing', data: null, index: null })} icon="PencilSimple">Edit</Button>
                                             </div>
                                         }>
-                                        <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20 flex justify-between px-4">
+                                        <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20 flex justify-between px-4 shrink-0">
                                             <span className="opacity-70">Strategy:</span>
                                             <span className="font-bold text-white">{config.routing?.domainStrategy || "AsIs"}</span>
                                         </div>
@@ -454,7 +453,7 @@ export const App = () => {
                                         </div>
                                     </Card>
 
-                                    <Card title={`Outbounds (${config.outbounds?.length || 0})`} icon="ArrowCircleUp" color="bg-blue-600" className="h-[480px] xl:h-full" actions={
+                                    <Card title={`Outbounds (${config.outbounds?.length || 0})`} icon="ArrowCircleUp" color="bg-blue-600" className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink" actions={
                                             <div className="flex gap-2 items-center">
                                                 <div className="relative hidden md:block">
                                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
@@ -465,7 +464,7 @@ export const App = () => {
                                                 <Button variant="ghost" onClick={() => setModal({ type: 'outbound', data: null, index: null })} icon="Plus" title="Add New Outbound" />
                                             </div>
                                         }>
-                                        <div className="md:hidden mb-3 relative">
+                                        <div className="md:hidden mb-3 relative shrink-0">
                                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
                                             <input className="input-base pl-8 text-xs py-2 bg-slate-950/50" placeholder="Search outbounds..." value={obSearch} onChange={e => setObSearch(e.target.value)} />
                                         </div>
@@ -502,7 +501,7 @@ export const App = () => {
                                     </Card>
                                 </div>
 
-                                <Card title="DNS" icon="Globe" color="bg-indigo-600" className="shrink-0 mb-1" actions={
+                                <Card title="DNS" icon="Globe" color="bg-indigo-600" className="shrink-0 w-full" actions={
                                         <div className="flex gap-1">
                                             <Button variant="ghost" className="p-1.5" onClick={() => openSectionJson("dns", "DNS Config")} icon="Code" title="View JSON" />
                                             <Button variant="ghost" onClick={() => { initDns(); setModal({ type: 'dns', data: null, index: null }); }} icon="PencilSimple">Edit</Button>
@@ -550,7 +549,7 @@ export const App = () => {
             {modal.type === 'topology' && <TopologyModal onClose={() => setModal({ type: null, data: null, index: null })} />}
 
             {batchModalOpen && <BatchOutboundModal onClose={() => setBatchModalOpen(false)} />}
-            {geoViewerOpen && <GeoViewerModal onClose={() => setGeoViewerOpen(false)} />} {/* <--- НОВАЯ МОДАЛКА ЗДЕСЬ */}
+            {geoViewerOpen && <GeoViewerModal onClose={() => setGeoViewerOpen(false)} />}
             
             {sectionModal.open && (
                 <SectionJsonModal
