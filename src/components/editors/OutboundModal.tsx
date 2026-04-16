@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { TransportSettings } from './shared/TransportSettings';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
-import { generateLink } from '../../utils/link-generator';
+import { generateXrayLink } from '../../utils/link-generator';
 import { validateOutbound, validateWireguard, checkOutboundDuplication, type ValidationError } from '../../utils/validator';
 import { OutboundImport } from './outbound/OutboundImport';
 import { OutboundGeneral } from './outbound/OutboundGeneral';
@@ -81,12 +81,12 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     };
 
     const handleCopyLink = () => {
-        const link = generateLink(local);
+        const link = generateXrayLink(local);
         if (!link) {
             toast.error("Error generating link", { description: "Protocol might not be supported." });
             return;
         }
-        navigator.clipboard.writeText(link).then(() => toast.success("Copied!"));
+        navigator.clipboard.writeText(link).then(() => toast.success("Copied to clipboard!"));
     };
 
     // Хелпер: достаём сообщение ошибки по имени поля
@@ -99,15 +99,19 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             .map(e => [e.field, e.message])
     );
 
+    const modalButtons = (
+        <div className="flex gap-2">
+            <Button variant="success" className="text-xs py-1 px-3" onClick={handleCopyLink} icon="Copy">Copy Link</Button>
+            <Button variant="secondary" className="text-xs py-1 px-3" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"}>
+                {rawMode ? "UI Mode" : "JSON / Import"}
+            </Button>
+        </div>
+    );
+
     if (rawMode) return (
         <Modal 
             title="Outbound JSON" onClose={onClose} onSave={handleSave}
-            extraButtons={
-                <div className="flex gap-2">
-                    <Button variant="secondary" className="text-xs py-1" onClick={handleCopyLink} icon="Copy">Copy Link</Button>
-                    <Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">Form Mode</Button>
-                </div>
-            }
+            extraButtons={modalButtons}
         >
             <div className="h-[600px] flex flex-col gap-4">
                 <OutboundImport onImport={handleImport} />
@@ -119,12 +123,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     return (
         <Modal 
             title="Outbound Editor" onClose={onClose} onSave={handleSave}
-            extraButtons={
-                <div className="flex gap-2">
-                    <Button variant="secondary" className="text-xs py-1" onClick={handleCopyLink} icon="Copy">Copy Link</Button>
-                    <Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(true)} icon="Code">JSON / Import</Button>
-                </div>
-            }
+            extraButtons={modalButtons}
         >
             <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
                 {/* Блок ошибок */}

@@ -14,7 +14,11 @@ import { InboundClients } from './inbound/InboundClients';
 import { InboundSniffing } from './inbound/InboundSniffing';
 import { InboundTun } from './inbound/InboundTun';
 
+import { generateXrayLink } from '../../utils/link-generator';
+import { useConfigStore } from '../../store/configStore';
+
 export const InboundModal = ({ data, onSave, onClose }: any) => {
+    const { remnawave } = useConfigStore();
     const [local, setLocal] = useState(data || {
         tag: `in-${Math.floor(Math.random() * 1000)}`,
         port: 10808,
@@ -58,9 +62,16 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
         } else if (proto === 'trojan') {
             newObj.settings = { clients: [{ password: "password", level: 0 }] };
             newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
-        } else if (proto === 'shadowsocks') {
-            newObj.settings = { method: "aes-256-gcm", password: "password", network: "tcp,udp" };
+        } else if (proto === 'shadowsocks' || proto === 'shadowsocks-2022') {
+            newObj.settings = { 
+                method: proto === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm", 
+                password: "password", 
+                network: "tcp,udp" 
+            };
             newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
+        } else if (proto === 'hysteria2') {
+            newObj.settings = { up_mbps: 100, down_mbps: 100, users: [{ password: "password" }] };
+            newObj.streamSettings = { network: "udp", security: "tls", tlsSettings: { certificates: [] } };
         } else if (proto === 'socks') {
             newObj.settings = { auth: "noauth", udp: true };
             newObj.streamSettings = { network: "tcp", security: "none", tcpSettings: {} };
@@ -91,12 +102,33 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
 
     const getError = (field: string) => errors.find(e => e.field === field)?.message;
 
+    const copyLink = () => {
+        const link = generateXrayLink(local);
+        if (link) {
+            navigator.clipboard.writeText(link);
+            toast.success("Link copied to clipboard!");
+        } else {
+            toast.error("Could not generate link for this protocol");
+        }
+    };
+
+    const modalButtons = (
+        <div className="flex gap-2">
+            {!remnawave.connected && (
+                <Button variant="success" className="text-xs py-1 px-3" onClick={copyLink} icon="Copy">Copy Link</Button>
+            )}
+            <Button variant="secondary" className="text-xs py-1 px-3" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"}>
+                {rawMode ? "UI Mode" : "JSON"}
+            </Button>
+        </div>
+    );
+
     if (rawMode) return (
         <Modal
             title="Inbound JSON"
             onClose={onClose}
             onSave={handleSave}
-            extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">UI Mode</Button>}
+            extraButtons={modalButtons}
         >
             <div className="h-[600px]">
                 <JsonField label="Full JSON" value={local} onChange={setLocal} schemaMode="inbound" className="h-full" />
@@ -109,7 +141,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             title="Inbound Editor"
             onClose={onClose}
             onSave={handleSave}
-            extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(true)} icon="Code">JSON</Button>}
+            extraButtons={modalButtons}
         >
             <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
                 {/* Блок ошибок */}

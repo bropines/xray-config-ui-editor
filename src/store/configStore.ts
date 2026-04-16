@@ -191,8 +191,11 @@ interface RemnawaveState {
 interface ConfigState {
     config: XrayConfig | null;
     setConfig: (config: XrayConfig | null) => void;
-    
+    coreVersion: string;
+    setCoreVersion: (version: string) => void;
+
     // Remnawave Actions
+
     remnawave: RemnawaveState;
     connectRemnawaveToken: (url: string, token: string) => void; 
     fetchRemnawaveProfiles: () => Promise<RemnawaveProfile[]>;
@@ -218,6 +221,8 @@ export const useConfigStore = create(
     persist<ConfigState>(
         (set, get) => ({
             config: null,
+            coreVersion: 'v1.8.10',
+            setCoreVersion: (version: string) => set({ coreVersion: version }),
 
             // --- Remnawave Connection ---
             remnawave: {
@@ -392,6 +397,7 @@ export const useConfigStore = create(
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({ 
                 config: state.config,
+                coreVersion: state.coreVersion,
                 remnawave: { 
                     url: state.remnawave.url, 
                     token: state.remnawave.token, 

@@ -87,10 +87,11 @@ export const validateOutbound = (data: any): ValidationError[] => {
         errors.push({ field: "tag", message: "Tag is required" });
     }
     
-    // 2. Проверка валидности протокола Xray
+    // 2. Проверка валидности протокола Xray (Актуализировано для 2024-2025)
     const VALID_PROTOCOLS = [
         "vless", "vmess", "trojan", "shadowsocks", "socks", "http",
-        "freedom", "blackhole", "dns", "wireguard", "loopback", "dokodemo-door", "tun"
+        "freedom", "blackhole", "dns", "wireguard", "loopback", 
+        "dokodemo-door", "tun", "hysteria2", "shadowsocks-2022"
     ];
 
     if (!data.protocol || !VALID_PROTOCOLS.includes(data.protocol)) {
@@ -127,15 +128,56 @@ export const validateOutbound = (data: any): ValidationError[] => {
         }
     }
 
-    // 4. Проверка REALITY
+    // 4. Проверка REALITY и Vision
     const stream = data.streamSettings || {};
-    if (stream.security === 'reality') {
-        const r = stream.realitySettings || {};
-        if (!r.publicKey) {
+    const reality = stream.security === 'reality' ? (stream.realitySettings || {}) : null;
+    const tls = stream.security === 'tls' ? (stream.tlsSettings || {}) : null;
+
+    if (reality) {
+        if (!reality.publicKey) {
             errors.push({ field: "reality", message: "Reality Public Key is required" });
         }
-        if (r.shortId && r.shortId.length % 2 !== 0) {
+        if (reality.shortId && reality.shortId.length % 2 !== 0) {
             errors.push({ field: "reality", message: "ShortID must be hex string with even length" });
+        }
+    }
+
+    // Проверка XTLS Vision
+    const flow = (data.settings?.vnext?.[0]?.users?.[0]?.flow) || (data.settings?.flow);
+    if (flow === 'xtls-rprx-vision') {
+        if (stream.security !== 'tls' && stream.security !== 'reality') {
+            errors.push({ field: "flow", message: "Vision flow requires TLS or REALITY security" });
+        }
+    }
+
+    // --- XHTTP VALIDATION (BEYOND REALITY) ---
+    if (stream.network === 'xhttp') {
+        const x = stream.xhttpSettings || {};
+        const mode = x.mode || "auto";
+        const extra = x.extra || {};
+
+        // Hard Errors (Crash prevention)
+        if (extra.downloadSettings) {
+            const dl = extra.downloadSettings;
+            if (dl.address && !isValidAddress(dl.address)) {
+                errors.push({ field: "xhttp_dl", message: "Download address must be a valid IP or Domain" });
+            }
+            if (dl.port && !isValidPort(dl.port)) {
+                errors.push({ field: "xhttp_dl", message: "Download port is invalid" });
+            }
+        }
+
+        // Semantic Warnings (Logic & Performance)
+        if (mode === 'stream-up' && stream.security === 'none') {
+            errors.push({ field: "xhttp", message: "WARNING: stream-up mode is intended for TLS/REALITY. Plain HTTP may be unstable." });
+        }
+
+        if (mode === 'packet-up' && extra.scMaxBufferedPosts > 100) {
+            errors.push({ field: "xhttp", message: "WARNING: scMaxBufferedPosts > 100 may consume too much memory on server." });
+        }
+
+        if (extra.xmux?.maxConcurrency === "1") {
+            errors.push({ field: "xmux", message: "INFO: maxConcurrency=1 is good for speedtests, but bad for web browsing." });
         }
     }
 

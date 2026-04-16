@@ -13,6 +13,9 @@ import { RemnawaveModal } from "./components/editors/RemnawaveModal";
 import { SectionJsonModal } from "./components/editors/SectionJsonModal";
 import { BatchOutboundModal } from "./components/editors/outbound/BatchOutboundModal";
 import { GeoViewerModal } from "./components/editors/GeoViewerModal";
+import { DiagnosticsPanel } from "./components/ui/DiagnosticsPanel";
+import { runFullDiagnostics } from "./utils/diagnostics";
+import type { Diagnostic } from "./utils/diagnostics";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
 import { getPresets } from "./utils/presets";
@@ -120,6 +123,7 @@ export const App = () => {
     const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
     const [batchModalOpen, setBatchModalOpen] = useState(false);
     const [geoViewerOpen, setGeoViewerOpen] = useState(false);
+    const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
     const [rawMode, setRawMode] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -190,17 +194,9 @@ export const App = () => {
 
     const presets = getPresets();
 
-    const getFullConfigValidation = () => {
-        if (!config) return [];
-        const errs: string[] = [];
-        config.routing?.balancers?.forEach((b: any) => {
-            if (!b.selector || b.selector.length === 0) errs.push(`Balancer [${b.tag}] is empty!`);
-        });
-        const tags = config.inbounds?.map((i: any) => i.tag);
-        if (new Set(tags).size !== tags?.length) errs.push("Duplicate Inbound tags found!");
-        return errs;
-    };
-    const configErrors = getFullConfigValidation();
+    const diagnostics = runFullDiagnostics(config);
+    const criticalCount = diagnostics.filter(d => d.severity === 'critical').length;
+    const warningCount = diagnostics.filter(d => d.severity === 'warning').length;
 
     const filteredOutbounds = (config?.outbounds || [])
         .map((ob: any, i: number) => ({ ...ob, i }))
@@ -246,10 +242,19 @@ export const App = () => {
                         )}
                     </div>
 
-                    {configErrors.length > 0 && (
-                        <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-3 py-1 rounded-full border border-rose-400/20 animate-pulse cursor-help ml-2" title={configErrors.join('\n')}>
-                            <Icon name="Warning" />
-                            <span className="text-[10px] font-bold uppercase hidden md:inline">Invalid Config</span>
+                    {(criticalCount > 0 || warningCount > 0) && (
+                        <div 
+                            onClick={() => setDiagnosticsOpen(true)}
+                            className={`flex items-center gap-2 px-3 py-1 rounded-full border cursor-pointer transition-all hover:scale-105 active:scale-95 ml-2 ${
+                                criticalCount > 0 
+                                ? 'text-rose-400 bg-rose-400/10 border-rose-400/20 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.2)]' 
+                                : 'text-amber-400 bg-amber-400/10 border-amber-400/20'
+                            }`}
+                        >
+                            <Icon name={criticalCount > 0 ? "XCircle" : "Warning"} weight="bold" />
+                            <span className="text-[10px] font-black uppercase hidden md:inline">
+                                {criticalCount > 0 ? `${criticalCount} Critical Issues` : `${warningCount} Warnings`}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -294,6 +299,12 @@ export const App = () => {
                     <button onClick={() => setAboutOpen(true)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-300 transition-all border border-transparent hover:border-slate-700" title="About / Repository">
                         <Icon name="Info" className="text-lg" />
                     </button>
+
+                    <a href="https://xtls.github.io/" target="_blank" rel="noopener noreferrer" 
+                       className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all font-bold text-[10px] uppercase tracking-wider">
+                        <Icon name="BookOpen" weight="bold" />
+                        Docs
+                    </a>
                 </div>
             </nav>
 
@@ -562,6 +573,7 @@ export const App = () => {
             )}
             {remnawaveModalOpen && <RemnawaveModal onClose={() => setRemnawaveModalOpen(false)} />}
             {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
-        </div>
-    );
-};
+            {diagnosticsOpen && <DiagnosticsPanel diagnostics={diagnostics} onClose={() => setDiagnosticsOpen(false)} />}
+            </div>
+            );
+            };

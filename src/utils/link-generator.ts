@@ -1,113 +1,109 @@
-export const generateLink = (outbound: any): string | null => {
-    if (!outbound || !outbound.protocol) return null;
+export const generateXrayLink = (item: any) => {
+    if (!item) return "";
 
-    try {
-        const proto = outbound.protocol;
-        const settings = outbound.settings || {};
-        const stream = outbound.streamSettings || {};
-        const tag = outbound.tag || "Proxy";
+    const { protocol, settings, streamSettings, tag } = item;
+    const stream = streamSettings || {};
+    const security = stream.security || "none";
+    const network = stream.network || "tcp";
 
-        let address = "";
-        let port = 0;
-        let id = "";
-        let flow = "";
-        let method = "";
-        
-        if (settings.vnext && settings.vnext.length > 0) {
-            address = settings.vnext[0].address;
-            port = settings.vnext[0].port;
-            id = settings.vnext[0].users?.[0]?.id || "";
-            flow = settings.vnext[0].users?.[0]?.flow || "";
-        } else if (settings.servers && settings.servers.length > 0) {
-            address = settings.servers[0].address;
-            port = settings.servers[0].port;
-            id = settings.servers[0].password || settings.servers[0].id || "";
-            method = settings.servers[0].method || "aes-256-gcm";
-        } else {
-            address = settings.address || "";
-            port = settings.port || 0;
-            id = settings.password || settings.id || settings.secretKey || "";
-            method = settings.method || "aes-256-gcm";
-        }
+    // Пытаемся определить адрес и порт (разница между Inbound и Outbound)
+    let address = "YOUR_SERVER_IP"; 
+    let port = item.port || 0;
 
-        if (!address || !port) return null;
-
-        const network = stream.network || "tcp";
-        const security = stream.security || "none";
-        const sni = stream.tlsSettings?.serverName || stream.realitySettings?.serverName || "";
-        const pbk = stream.realitySettings?.publicKey || "";
-        const sid = stream.realitySettings?.shortId || "";
-        const fp = stream.tlsSettings?.fingerprint || stream.realitySettings?.fingerprint || "";
-        const alpn = (stream.tlsSettings?.alpn || stream.realitySettings?.alpn || []).join(",");
-        
-        const netSettings = stream[`${network}Settings`] || {};
-        const path = netSettings.path || "";
-        const host = netSettings.host?.join ? netSettings.host.join(",") : (netSettings.host || "");
-        const type = netSettings.header?.type || "none";
-
-        const params = new URLSearchParams();
-        if (security !== "none") params.set("security", security);
-        if (sni) params.set("sni", sni);
-        if (pbk) params.set("pbk", pbk);
-        if (sid) params.set("sid", sid);
-        if (fp) params.set("fp", fp);
-        if (alpn) params.set("alpn", alpn);
-
-        params.set("type", network);
-        
-        if (network === "tcp" && type !== "none") params.set("headerType", type);
-        if (network === "kcp") params.set("headerType", netSettings.header?.type || "none");
-        if (network === "ws") {
-            if (path) params.set("path", path);
-            if (host) params.set("host", host);
-        }
-        if (network === "grpc") {
-            if (netSettings.serviceName) params.set("serviceName", netSettings.serviceName);
-            if (netSettings.multiMode) params.set("mode", "multi");
-        }
-        if (network === "xhttp") {
-            if (netSettings.path) params.set("path", netSettings.path);
-            if (netSettings.host) params.set("host", netSettings.host);
-        }
-
-        if (proto === "vless") {
-            if (flow) params.set("flow", flow);
-            return `vless://${id}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag)}`;
-        }
-
-        if (proto === "vmess") {
-            const vmessObj = {
-                v: "2",
-                ps: tag,
-                add: address,
-                port: port,
-                id: id,
-                aid: 0,
-                scy: "auto",
-                net: network,
-                type: network === "tcp" ? type : (network === "kcp" ? netSettings.header?.type : "none"),
-                host: host,
-                path: path,
-                tls: security === "tls" ? "tls" : "",
-                sni: sni,
-                alpn: alpn,
-                fp: fp
-            };
-            return `vmess://${btoa(JSON.stringify(vmessObj))}`;
-        }
-
-        if (proto === "trojan") {
-            return `trojan://${id}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag)}`;
-        }
-
-        if (proto === "shadowsocks") {
-            const userInfo = btoa(`${method}:${id}`);
-            return `ss://${userInfo}@${address}:${port}#${encodeURIComponent(tag)}`;
-        }
-
-        return null;
-    } catch (e) {
-        console.error("Link generation failed", e);
-        return null;
+    // Если это Аутбаунд, достаем реальный адрес
+    if (settings?.vnext?.[0]) {
+        address = settings.vnext[0].address;
+        port = settings.vnext[0].port;
+    } else if (settings?.servers?.[0]) {
+        address = settings.servers[0].address;
+        port = settings.servers[0].port;
+    } else if (settings?.address) {
+        address = settings.address;
+        port = settings.port || port;
     }
+
+    const params = new URLSearchParams();
+    if (security !== "none") params.set("security", security);
+    if (network !== "tcp") params.set("type", network);
+
+    // TLS / Reality settings
+    const tls = security === 'tls' ? stream.tlsSettings : (security === 'reality' ? stream.realitySettings : null);
+    if (tls) {
+        if (tls.serverName) params.set("sni", tls.serverName);
+        if (security === 'reality') {
+            if (tls.publicKey) params.set("pbk", tls.publicKey);
+            if (tls.shortId) params.set("sid", tls.shortId);
+            if (tls.spiderX) params.set("spx", tls.spiderX);
+        }
+        if (tls.fingerprint) params.set("fp", tls.fingerprint);
+    }
+
+    // Transport specifics
+    if (network === 'ws') {
+        const ws = stream.wsSettings || {};
+        if (ws.path) params.set("path", ws.path);
+        if (ws.headers?.Host) params.set("host", ws.headers.Host);
+    } else if (network === 'grpc') {
+        const grpc = stream.grpcSettings || {};
+        if (grpc.serviceName) params.set("serviceName", grpc.serviceName);
+    } else if (network === 'xhttp') {
+        const x = stream.xhttpSettings || {};
+        if (x.path) params.set("path", x.path);
+        if (x.host) params.set("host", x.host);
+        if (x.mode) params.set("mode", x.mode);
+    }
+
+    params.set("sni", params.get("sni") || params.get("host") || "");
+
+    // Достаем ID / Пароль (разница структур)
+    const getCredentials = () => {
+        // Inbound style
+        if (settings?.clients?.[0]) return settings.clients[0].id || settings.clients[0].password;
+        if (settings?.users?.[0]) return settings.users[0].password || settings.users[0].id;
+        // Outbound style
+        if (settings?.vnext?.[0]?.users?.[0]) return settings.vnext[0].users[0].id;
+        if (settings?.servers?.[0]?.users?.[0]) return settings.servers[0].users[0].password;
+        // Shadowsocks / Hysteria style
+        return settings?.password || settings?.secret || "password";
+    };
+
+    const creds = getCredentials();
+
+    // 1. VLESS
+    if (protocol === 'vless') {
+        const flow = settings?.clients?.[0]?.flow || settings?.vnext?.[0]?.users?.[0]?.flow;
+        if (flow) params.set("flow", flow);
+        return `vless://${creds}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag || 'VLESS')}`;
+    }
+
+    // 2. VMess
+    if (protocol === 'vmess') {
+        const vmessConfig = {
+            v: "2", ps: tag || "VMess", add: address, port: port, id: creds,
+            aid: "0", scy: "auto", net: network, type: "none",
+            host: params.get("host") || "", path: params.get("path") || "",
+            tls: security === "none" ? "" : security, sni: params.get("sni") || "",
+            fp: params.get("fp") || ""
+        };
+        return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
+    }
+
+    // 3. Trojan
+    if (protocol === 'trojan') {
+        return `trojan://${creds}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag || 'Trojan')}`;
+    }
+
+    // 4. Shadowsocks
+    if (protocol === 'shadowsocks' || protocol === 'shadowsocks-2022') {
+        const method = settings?.method || (settings?.servers?.[0]?.method) || "aes-256-gcm";
+        const userInfo = btoa(`${method}:${creds}`).replace(/=/g, "");
+        return `ss://${userInfo}@${address}:${port}#${encodeURIComponent(tag || 'SS')}`;
+    }
+
+    // 5. Hysteria 2
+    if (protocol === 'hysteria2') {
+        return `hysteria2://${creds}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag || 'Hysteria2')}`;
+    }
+
+    return "";
 };
