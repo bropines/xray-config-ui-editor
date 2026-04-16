@@ -101,6 +101,26 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                     
                     {activeTab === 'general' && (
                         <>
+                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                                    <Icon name="Cpu" /> Core Compatibility
+                                </h4>
+                                <div>
+                                    <label className="label-xs">Target Xray-core Version</label>
+                                    <select className="input-base"
+                                        value={useConfigStore.getState().coreVersion}
+                                        onChange={e => useConfigStore.getState().setCoreVersion(e.target.value)}
+                                    >
+                                        <option value="v1.8.10">Latest (v1.8.10+)</option>
+                                        <option value="v1.8.0">Stable (v1.8.0)</option>
+                                        <option value="v1.5.0">Legacy (v1.5.0)</option>
+                                    </select>
+                                    <p className="text-[10px] text-slate-500 mt-2 italic">
+                                        Adjusts UI fields and validation based on core features (e.g., XHTTP requires v1.8.10+).
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="border-t border-slate-800 my-6"></div>
                             <LogEditor 
                                 log={config?.log} 
                                 onChange={(v: any) => updateSection('log', v)} 

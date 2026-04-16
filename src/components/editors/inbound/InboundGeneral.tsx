@@ -16,10 +16,11 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
                     <option value="vmess">VMess</option>
                     <option value="trojan">Trojan</option>
                     <option value="shadowsocks">Shadowsocks</option>
+                    <option value="hysteria2">Hysteria 2</option>
+                    <option value="shadowsocks-2022">SS 2022</option>
                     <option value="socks">Socks</option>
                     <option value="http">HTTP</option>
                     <option value="dokodemo-door">Dokodemo</option>
-                    {/* Добавлено */}
                     <option value="tun">TUN (Transparent)</option> 
                 </select>
             </div>

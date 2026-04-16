@@ -4,7 +4,7 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
 import { parseXrayLink } from '../../../utils/link-parser';
-import { generateLink } from '../../../utils/link-generator';
+import { generateXrayLink } from '../../../utils/link-generator';
 import { toast } from 'sonner';
 
 // Ключ для хранения HWID
@@ -37,7 +37,7 @@ export const BatchOutboundModal = ({ onClose }: { onClose: () => void }) => {
         if (mode === 'export') {
             const links: string[] = [];
             config?.outbounds?.forEach((ob: any) => {
-                const link = generateLink(ob);
+                const link = generateXrayLink(ob);
                 if (link) links.push(link);
             });
             setText(links.join('\n'));

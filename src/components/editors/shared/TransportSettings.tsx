@@ -5,6 +5,7 @@ import { Help } from '../../ui/Help';
 import { generateX25519Keys } from '../../../utils/crypto';
 import { SockoptEditor } from './SockoptEditor';
 import { TagSelector } from '../../ui/TagSelector';
+import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 
 interface TransportProps {
     streamSettings: any;
@@ -131,19 +132,16 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             )}
 
             {net === 'xhttp' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="col-span-full flex items-center gap-2">
-                        <span className="text-xs font-bold text-blue-400">XHTTP Configuration</span>
-                        <span className="text-[10px] text-slate-500 bg-slate-800 px-1 rounded">New!</span>
+                <div className="border-t border-slate-800 pt-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">XHTTP Configuration</span>
+                        <span className="text-[10px] text-white bg-blue-600 px-1.5 py-0.5 rounded font-bold animate-pulse">BEYOND REALITY</span>
                     </div>
-                    <div>
-                        <label className="label-xs flex items-center">Mode <Help>Auto is recommended.</Help></label>
-                        <select className="input-base" value={streamSettings.xhttpSettings?.mode || "auto"} onChange={e => update(['xhttpSettings', 'mode'], e.target.value)}>
-                            <option value="auto">Auto</option><option value="stream">Stream</option><option value="packet">Packet</option>
-                        </select>
-                    </div>
-                    <div><label className="label-xs">Path</label><input className="input-base font-mono" placeholder="/" value={streamSettings.xhttpSettings?.path || ""} onChange={e => update(['xhttpSettings', 'path'], e.target.value)} /></div>
-                    <div className="md:col-span-2"><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="example.com" value={streamSettings.xhttpSettings?.host || ""} onChange={e => update(['xhttpSettings', 'host'], e.target.value)} /></div>
+                    <XhttpSettingsEditor 
+                        xhttpSettings={streamSettings.xhttpSettings} 
+                        onChange={v => update(['xhttpSettings'], v)}
+                        isClient={isClient}
+                    />
                 </div>
             )}
 
