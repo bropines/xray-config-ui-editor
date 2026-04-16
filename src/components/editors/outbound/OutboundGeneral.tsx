@@ -16,7 +16,7 @@ export const OutboundGeneral = ({ outbound, onChange, errors = {} }: any) => {
             <div>
                 <label className="label-xs flex items-center">
                     Protocol
-                    <Help>Outbound protocol. Freedom: direct connection; Blackhole: drops all traffic; VLESS/VMess/Trojan/Shadowsocks: proxy protocols.</Help>
+                    <Help position="bottom">Outbound protocol. Freedom: direct connection; Blackhole: drops all traffic; VLESS/VMess/Trojan/Shadowsocks: proxy protocols.</Help>
                 </label>
                 <select 
                     className="input-base" 
