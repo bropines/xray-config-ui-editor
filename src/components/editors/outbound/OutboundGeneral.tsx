@@ -1,4 +1,5 @@
 import React from 'react';
+import { Help } from '../../ui/Help';
 
 export const OutboundGeneral = ({ outbound, onChange, errors = {} }: any) => {
     return (
@@ -13,7 +14,10 @@ export const OutboundGeneral = ({ outbound, onChange, errors = {} }: any) => {
                 {errors.tag && <span className="text-[10px] text-rose-500 mt-1 block">{errors.tag}</span>}
             </div>
             <div>
-                <label className="label-xs">Protocol</label>
+                <label className="label-xs flex items-center">
+                    Protocol
+                    <Help>Outbound protocol. Freedom: direct connection; Blackhole: drops all traffic; VLESS/VMess/Trojan/Shadowsocks: proxy protocols.</Help>
+                </label>
                 <select 
                     className="input-base" 
                     value={outbound.protocol} 

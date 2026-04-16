@@ -1,4 +1,5 @@
 import React from 'react';
+import { Help } from '../../ui/Help';
 
 export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {} }: any) => {
     const isTun = inbound.protocol === 'tun';
@@ -6,7 +7,10 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
     return (
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="col-span-1">
-                <label className="label-xs">Protocol</label>
+                <label className="label-xs flex items-center">
+                    Protocol
+                    <Help>Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.</Help>
+                </label>
                 <select 
                     className="input-base font-bold text-indigo-400"
                     value={inbound.protocol} 
@@ -42,7 +46,10 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
             {/* Для TUN Listen IP тоже не нужен, но можно оставить для единообразия, Xray его проигнорирует */}
             {!isTun && (
                 <div className="col-span-1">
-                    <label className="label-xs">Listen IP</label>
+                    <label className="label-xs flex items-center">
+                        Listen IP
+                        <Help>IP address for the inbound to listen on. Default is 0.0.0.0 (all interfaces).</Help>
+                    </label>
                     <input 
                         className="input-base font-mono"
                         placeholder="0.0.0.0" 
@@ -53,7 +60,10 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
             )}
 
             <div className="col-span-1">
-                <label className="label-xs">Tag</label>
+                <label className="label-xs flex items-center">
+                    Tag
+                    <Help>A unique name for this inbound to refer to it in routing rules.</Help>
+                </label>
                 <input 
                     className={`input-base ${errors.tag ? 'border-rose-500 bg-rose-500/10 focus:border-rose-500' : ''}`}
                     value={inbound.tag} 

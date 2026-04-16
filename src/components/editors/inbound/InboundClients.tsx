@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
+import { Help } from '../../ui/Help';
 import { generateUUID, generateShortId } from '../../../utils/generators';
 
 import { useConfigStore } from '../../../store/configStore';
@@ -35,7 +36,10 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="label-xs">Method</label>
+                        <label className="label-xs flex items-center">
+                            Method
+                            <Help>Encryption algorithm for Shadowsocks. aes-256-gcm is recommended for security, or 2022-blake3-* for SS-2022.</Help>
+                        </label>
                         <select className="input-base"
                             value={inbound.settings?.method || (is2022 ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
                             onChange={e => onChange(['settings', 'method'], e.target.value)}
@@ -88,13 +92,19 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                            <label className="label-xs">Up (Mbps)</label>
+                            <label className="label-xs flex items-center">
+                                Up (Mbps)
+                                <Help>Maximum upload speed in Mbps for Hysteria 2 protocol.</Help>
+                            </label>
                             <input type="number" className="input-base font-mono" 
                                 value={inbound.settings?.up_mbps || ""} 
                                 onChange={e => onChange(['settings', 'up_mbps'], parseInt(e.target.value))} />
                         </div>
                         <div>
-                            <label className="label-xs">Down (Mbps)</label>
+                            <label className="label-xs flex items-center">
+                                Down (Mbps)
+                                <Help>Maximum download speed in Mbps for Hysteria 2 protocol.</Help>
+                            </label>
                             <input type="number" className="input-base font-mono" 
                                 value={inbound.settings?.down_mbps || ""} 
                                 onChange={e => onChange(['settings', 'down_mbps'], parseInt(e.target.value))} />
@@ -103,7 +113,10 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
                                 checked={inbound.settings?.ignore_client_bandwidth === true}
                                 onChange={e => onChange(['settings', 'ignore_client_bandwidth'], e.target.checked)} />
-                            <span className="text-xs text-slate-400 font-bold uppercase">Ignore Client Bandwidth</span>
+                            <span className="text-xs text-slate-400 font-bold uppercase flex items-center">
+                                Ignore Client Bandwidth
+                                <Help>If enabled, the server will ignore the bandwidth limits requested by the client.</Help>
+                            </span>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Help } from '../../ui/Help';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const proto = outbound.protocol;
@@ -73,7 +74,10 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="md:col-span-2">
-                    <label className="label-xs">Address</label>
+                    <label className="label-xs flex items-center">
+                        Address
+                        <Help>Remote server IP address or domain name.</Help>
+                    </label>
                     <input
                         className={`input-base font-mono ${errors.address ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         value={currentAddress}
@@ -83,7 +87,10 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     {errors.address && <span className="text-[10px] text-rose-500">{errors.address}</span>}
                 </div>
                 <div>
-                    <label className="label-xs">Port</label>
+                    <label className="label-xs flex items-center">
+                        Port
+                        <Help>Remote server port for incoming connections.</Help>
+                    </label>
                     <input
                         type="number"
                         className={`input-base font-mono ${errors.port ? 'border-rose-500 bg-rose-500/10' : ''}`}
@@ -96,7 +103,10 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className={`${proto !== 'vless' ? 'md:col-span-2' : ''}`}>
-                    <label className="label-xs">{keyLabel}</label>
+                    <label className="label-xs flex items-center">
+                        {keyLabel}
+                        <Help>Authentication key (UUID or Password) for the remote server.</Help>
+                    </label>
                     <input
                         className="input-base font-mono text-xs"
                         value={currentKey}

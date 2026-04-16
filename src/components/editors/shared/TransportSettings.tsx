@@ -225,7 +225,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {sec === 'reality' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-purple-400">REALITY Keys</span>
+                        <span className="text-xs font-bold text-purple-400 flex items-center">
+                            REALITY Keys
+                            <Help>Reality: A TLS extension for mimicking popular websites to bypass firewalls.</Help>
+                        </span>
                         <Button variant="secondary" className="px-2 py-1 text-[10px]" onClick={handleGenKeys}>Gen Keys Pair</Button>
                     </div>
                     
@@ -296,7 +299,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                         {isClient && (
                             <div>
-                                <label className="label-xs">uTLS Fingerprint</label>
+                                <label className="label-xs flex items-center">
+                                    uTLS Fingerprint
+                                    <Help>TLS fingerprint to mimic specific browsers (Chrome, Firefox, etc.) to avoid detection.</Help>
+                                </label>
                                 <select className="input-base" 
                                     value={streamSettings.realitySettings?.fingerprint || ""} 
                                     onChange={e => update(['realitySettings', 'fingerprint'], e.target.value)}>
@@ -331,7 +337,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                         <div className="md:col-span-2">
                             <TagSelector 
-                                label="ALPN" 
+                                label={<span className="flex items-center">ALPN <Help>Application-Layer Protocol Negotiation (e.g. h2, http/1.1).</Help></span>} 
                                 availableTags={['h2', 'http/1.1', 'h3']} 
                                 selected={streamSettings.tlsSettings?.alpn || []} 
                                 onChange={v => update(['tlsSettings', 'alpn'], v)} 
@@ -373,7 +379,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                         {isClient && (
                             <div className="md:col-span-2">
-                                <label className="label-xs">uTLS Fingerprint</label>
+                                <label className="label-xs flex items-center">
+                                    uTLS Fingerprint
+                                    <Help>TLS client fingerprint to mimic a browser.</Help>
+                                </label>
                                 <select className="input-base" 
                                     value={streamSettings.tlsSettings?.fingerprint || ""} 
                                     onChange={e => update(['tlsSettings', 'fingerprint'], e.target.value)}>
