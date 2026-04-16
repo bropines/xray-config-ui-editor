@@ -16,7 +16,13 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
 
     useEffect(() => {
         if (!isInternalUpdate.current) {
-            setText(JSON.stringify(value, null, 2));
+            // Клонируем и удаляем технический индекс 'i', если он есть
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                const { i, ...cleanValue } = value as any;
+                setText(JSON.stringify(cleanValue, null, 2));
+            } else {
+                setText(JSON.stringify(value, null, 2));
+            }
         }
         isInternalUpdate.current = false;
     }, [value]);

@@ -140,32 +140,11 @@ export const getCriticalRuleErrors = (rule: any): ValidationError[] => {
 };
 
 export const validateRule = (rule: any): ValidationError[] => {
-    const errors = getCriticalRuleErrors(rule);
-    // Дополнительные строгие проверки
-    if (rule.domain) {
-        rule.domain.forEach((d: string, i: number) => {
-            if (d.includes(' ') || d.includes('\t')) {
-                errors.push({ field: `domain_${i}`, message: `Domain "${d}" contains spaces.` });
-            }
-        });
-    }
-    return errors;
+    return getCriticalRuleErrors(rule);
 };
 
 export const lintRule = (rule: any): ValidationError[] => {
-    const warnings: ValidationError[] = [];
-    // Проверка регистра
-    if (rule.domain) {
-        rule.domain.forEach((d: string, i: number) => {
-            if (/[A-Z]/.test(d)) warnings.push({ field: `domain_${i}`, message: `Domain "${d}" should be lowercase.` });
-        });
-    }
-    if (rule.ip) {
-        rule.ip.forEach((ip: string, i: number) => {
-            if (/[A-Z]/.test(ip)) warnings.push({ field: `ip_${i}`, message: `IP/CIDR "${ip}" should be lowercase.` });
-        });
-    }
-    return warnings;
+    return []; // Убираем лишние предупреждения для чистоты интерфейса
 };
 
 // 6. Дубликаты
