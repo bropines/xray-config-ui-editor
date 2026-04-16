@@ -8,7 +8,7 @@ interface Suggestion {
 }
 
 interface SmartTagInputProps {
-    label: string;
+    label: React.ReactNode;
     value: string[];
     onChange: (val: string[]) => void;
     suggestions?: Suggestion[];

@@ -7,7 +7,7 @@ interface TagSelectorProps {
     onChange: (val: string | string[]) => void;
     multi?: boolean; // Режим множественного выбора
     placeholder?: string;
-    label?: string;
+    label?: React.ReactNode;
 }
 
 export const TagSelector = ({ availableTags, selected, onChange, multi = false, placeholder = "Custom...", label }: TagSelectorProps) => {

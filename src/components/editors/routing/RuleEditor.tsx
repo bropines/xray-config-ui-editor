@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
+import { Help } from '../../ui/Help';
 import { SmartTagInput } from '../../ui/SmartTagInput';
 import { TagSelector } from '../../ui/TagSelector';
 import { JsonField } from '../../ui/JsonField';
@@ -180,7 +181,7 @@ export const RuleEditor = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-2">
                         <SmartTagInput
-                            label="Domains (GeoSite)"
+                            label={<span className="flex items-center">Domains (GeoSite) <Help>List of domains to match. Use geosite:google for predefined groups.</Help></span>}
                             prefix="geosite:"
                             placeholder="google, geosite:netflix..."
                             value={rule.domain || []}
@@ -194,7 +195,7 @@ export const RuleEditor = ({
                     </div>
                     <div className="col-span-2">
                         <SmartTagInput
-                            label="IPs (GeoIP & CIDR)"
+                            label={<span className="flex items-center">IPs (GeoIP & CIDR) <Help>List of IP addresses or CIDR ranges. Use geoip:cn for country-based matching.</Help></span>}
                             prefix="geoip:"
                             placeholder="8.8.8.8, geoip:cn..."
                             value={rule.ip || []}
@@ -214,7 +215,9 @@ export const RuleEditor = ({
                     </label>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
-                            <TagSelector label="Inbound Source" availableTags={inboundTags} selected={rule.inboundTag || []}
+                            <TagSelector 
+                                label={<span className="flex items-center">Inbound Source <Help>Filter traffic by the tag of the inbound connection.</Help></span>} 
+                                availableTags={inboundTags} selected={rule.inboundTag || []}
                                 onChange={v => update('inboundTag', v)} multi={true} />
                         </div>
                         <div>
@@ -238,7 +241,10 @@ export const RuleEditor = ({
                         
                         {/* Domain Strategy (Force IP) */}
                         <div>
-                            <label className="label-xs text-indigo-400">Domain Strategy (Force IP)</label>
+                            <label className="label-xs text-indigo-400 flex items-center">
+                                Domain Strategy (Force IP)
+                                <Help>Determines how Xray handles domains. UseIP will force Xray to resolve the domain to an IP before matching.</Help>
+                            </label>
                             <select 
                                 className="input-base text-xs font-mono"
                                 value={rule.domainStrategy || ""}
