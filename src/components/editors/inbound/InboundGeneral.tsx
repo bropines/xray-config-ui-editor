@@ -9,7 +9,7 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
             <div className="col-span-1">
                 <label className="label-xs flex items-center">
                     Protocol
-                    <Help>Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.</Help>
+                    <Help position="bottom">Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.</Help>
                 </label>
                 <select 
                     className="input-base font-bold text-indigo-400"
@@ -48,7 +48,7 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
                 <div className="col-span-1">
                     <label className="label-xs flex items-center">
                         Listen IP
-                        <Help>IP address for the inbound to listen on. Default is 0.0.0.0 (all interfaces).</Help>
+                        <Help position="bottom">IP address for the inbound to listen on. Default is 0.0.0.0 (all interfaces).</Help>
                     </label>
                     <input 
                         className="input-base font-mono"
@@ -62,7 +62,7 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
             <div className="col-span-1">
                 <label className="label-xs flex items-center">
                     Tag
-                    <Help>A unique name for this inbound to refer to it in routing rules.</Help>
+                    <Help position="bottom">A unique name for this inbound to refer to it in routing rules.</Help>
                 </label>
                 <input 
                     className={`input-base ${errors.tag ? 'border-rose-500 bg-rose-500/10 focus:border-rose-500' : ''}`}

@@ -46,7 +46,7 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                 <div>
                     <label className="label-xs flex items-center">
                         Mode 
-                        <Help>
+                        <Help position="bottom">
                             auto: TLS H2 -&gt; stream-up, Reality -&gt; stream-one, else packet-up.
                             packet-up: Highest compatibility (split uploads).
                             stream-up: Full duplex streaming (recommended for gRPC/CF).
@@ -71,7 +71,7 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                     />
                 </div>
                 <div className="md:col-span-2">
-                    <label className="label-xs flex items-center">Host <Help>Override Host header. Priority: host &gt; serverName &gt; address.</Help></label>
+                    <label className="label-xs flex items-center">Host <Help position="bottom">Override Host header. Priority: host &gt; serverName &gt; address.</Help></label>
                     <input className="input-base font-mono" 
                         placeholder="example.com" 
                         value={xhttpSettings.host || ""} 
