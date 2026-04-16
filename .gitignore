@@ -71,3 +71,6 @@ dist/
 bun.lock
 
 cobase*
+
+# Gemini CLI skills
+*.skill
