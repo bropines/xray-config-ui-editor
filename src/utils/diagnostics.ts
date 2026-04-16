@@ -26,7 +26,7 @@ export const runFullDiagnostics = (config: any): Diagnostic[] => {
     const allBalancerTags = new Set(balancers.map((b: any) => b.tag).filter(Boolean));
 
     // Теги, которые могут существовать во внешних системах (например, Remnawave)
-    const KNOWN_EXTERNAL_TAGS = new Set(['TORRENT', 'DIRECT', 'REJECT']);
+    const KNOWN_EXTERNAL_TAGS = new Set(['TORRENT', 'DIRECT', 'REJECT', 'BLOCK', 'DNS']);
     const allTargetTags = new Set([...allOutboundTags, ...allBalancerTags, ...KNOWN_EXTERNAL_TAGS]);
 
     // --- HELPER: Проверка зависимостей ---
@@ -127,23 +127,19 @@ export const runFullDiagnostics = (config: any): Diagnostic[] => {
     inbounds.forEach(checkInbound);
     outbounds.forEach(checkOutbound);
 
-    // Роутинг: проверка Orphaned Tags и Торрентов
+    // Роутинг: проверка Orphaned Tags
     rules.forEach((rule: any, i: number) => {
-        if (rule.outboundTag && !allOutboundTags.has(rule.outboundTag)) {
-            // Специальный случай для TORRENT
-            if (rule.outboundTag === 'TORRENT' || rule.protocol?.includes('bittorrent')) {
-                diagnostics.push({
-                    section: 'routing', itemIndex: i, field: 'outboundTag',
-                    severity: 'critical',
-                    message: `Routing rule for BitTorrent targets unknown outbound: "${rule.outboundTag}"`,
-                    suggestion: 'Create an outbound with this tag (e.g., protocol: "blackhole" to block torrents, or "freedom" to allow).'
-                });
-            } else {
-                diagnostics.push({
-                    section: 'routing', itemIndex: i, field: 'outboundTag',
-                    severity: 'critical', message: `Rule targets unknown outbound: "${rule.outboundTag}"`
-                });
-            }
+        if (rule.outboundTag && !allTargetTags.has(rule.outboundTag)) {
+            diagnostics.push({
+                section: 'routing', itemIndex: i, field: 'outboundTag',
+                severity: 'critical', message: `Rule targets unknown outbound: "${rule.outboundTag}"`
+            });
+        }
+        if (rule.balancerTag && !allTargetTags.has(rule.balancerTag)) {
+            diagnostics.push({
+                section: 'routing', itemIndex: i, field: 'balancerTag',
+                severity: 'critical', message: `Rule targets unknown balancer: "${rule.balancerTag}"`
+            });
         }
     });
 
