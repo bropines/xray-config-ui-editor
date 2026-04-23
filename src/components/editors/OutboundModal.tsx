@@ -124,8 +124,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             title="Outbound JSON" onClose={onClose} onSave={handleSave}
             extraButtons={modalButtons}
         >
-            <div className="h-[600px] flex flex-col gap-4">
-                <OutboundImport onImport={handleImport} />
+            <div className="h-[600px] flex flex-col">
                 <JsonField label="Full JSON" value={local} onChange={setLocal} schemaMode="outbound" className="flex-1" />
             </div>
         </Modal>
