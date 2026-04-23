@@ -512,13 +512,24 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                         </select>
                                         
                                         {n.packet !== undefined ? (
-                                            <input className="input-base text-[10px] font-mono flex-1 py-1 h-7" placeholder="Hex..." value={n.packet} onChange={e => {
-                                                const noise = [...streamSettings.finalmask[type][0].settings.noise];
-                                                noise[i] = { ...n, packet: e.target.value };
-                                                const newArray = [...streamSettings.finalmask[type]];
-                                                newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
-                                                update(['finalmask', type], newArray);
-                                            }} />
+                                            <div className="flex-1 relative group/input">
+                                                <input className="input-base text-[10px] font-mono w-full py-1 h-7 pr-6" placeholder="Hex (supports <b 0x...>)" value={n.packet} onChange={e => {
+                                                    let val = e.target.value;
+                                                    // Smart conversion for AmneziaWG hex format
+                                                    if (val.includes('0x')) {
+                                                        const match = val.match(/0x([0-9a-fA-F]+)/);
+                                                        if (match) val = match[1];
+                                                    }
+                                                    const noise = [...streamSettings.finalmask[type][0].settings.noise];
+                                                    noise[i] = { ...n, packet: val };
+                                                    const newArray = [...streamSettings.finalmask[type]];
+                                                    newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
+                                                    update(['finalmask', type], newArray);
+                                                }} />
+                                                <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/input:opacity-100 transition-opacity">
+                                                    <Help>Supports AmneziaWG format. Paste <b>&lt;b 0x...&gt;</b> directly!</Help>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <input className="input-base text-[10px] font-mono flex-1 py-1 h-7" placeholder="40-70" value={n.rand} onChange={e => {
                                                 const noise = [...streamSettings.finalmask[type][0].settings.noise];
