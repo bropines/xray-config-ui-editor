@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 export const OutboundImport = ({ onImport }: any) => {
     const [input, setInput] = useState("");
 
-    const handleImport = (onlyObfuscator = false) => {
+    const handleImport = (mode: 'direct' | 'chained' | 'only-obfuscator') => {
         const trimmed = input.trim();
         if (!trimmed) return;
 
@@ -25,10 +25,12 @@ export const OutboundImport = ({ onImport }: any) => {
 
         // Try WG config
         if (trimmed.includes('[Interface]')) {
-            const parsed = parseWireguardConfig(trimmed);
+            const parsed = parseWireguardConfig(trimmed, mode === 'chained' ? 'chained' : 'direct');
             if (parsed) {
-                if (parsed.multiple && onlyObfuscator) {
-                    const obfuscator = parsed.outbounds.find((o: any) => o.protocol === 'freedom');
+                if (mode === 'only-obfuscator') {
+                    // Если режим "только обфускатор", парсим в chained и берем только freedom
+                    const chained = parseWireguardConfig(trimmed, 'chained');
+                    const obfuscator = chained.outbounds?.find((o: any) => o.protocol === 'freedom');
                     if (obfuscator) {
                         onImport(obfuscator);
                         setInput("");
@@ -38,7 +40,7 @@ export const OutboundImport = ({ onImport }: any) => {
                 }
                 onImport(parsed);
                 setInput("");
-                toast.success("WireGuard / AmneziaWG config imported");
+                toast.success(mode === 'chained' ? "WG + Obfuscator (Legacy Chain) imported" : "Direct WireGuard (Modern) imported");
                 return;
             }
         }
@@ -54,9 +56,9 @@ export const OutboundImport = ({ onImport }: any) => {
                 <label className="label-xs flex items-center gap-2">
                     Import from Link or WG Config
                     <Help>
-                        Paste a vless/vmess/trojan/ss link or a full WireGuard/AmneziaWG .conf file. 
-                        If Amnezia parameters (Jc, Jmin, I1, etc.) are detected, the system will automatically 
-                        generate a chained Freedom-obfuscator with Finalmask noise.
+                        Paste a link or a .conf file. 
+                        <b>Direct</b>: Finalmask inside WG (Xray 1.26+).
+                        <b>Chained</b>: Separate Freedom obfuscator (Legacy/Stale cores).
                     </Help>
                 </label>
                 {isAWGDetected && (
@@ -72,23 +74,42 @@ export const OutboundImport = ({ onImport }: any) => {
                     value={input} 
                     onChange={e => setInput(e.target.value)} 
                 />
-                <div className="flex gap-2">
-                    <Button 
-                        variant={isAWGDetected ? "success" : "primary"} 
-                        className="flex-1 text-xs py-2 shadow-lg" 
-                        onClick={() => handleImport(false)} 
-                        icon={isAWGDetected ? "MagicWand" : "DownloadSimple"}
-                    >
-                        {isAWGDetected ? "Smart Convert AmneziaWG" : "Import & Parse"}
-                    </Button>
-                    {isAWGDetected && (
+                <div className="flex flex-wrap gap-2">
+                    {isAWGDetected ? (
+                        <>
+                            <Button 
+                                variant="success" 
+                                className="flex-1 text-xs py-2 shadow-lg min-w-[140px]" 
+                                onClick={() => handleImport('direct')} 
+                                icon="Lightning"
+                            >
+                                Modern (Direct)
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                className="flex-1 text-xs py-2 shadow-lg min-w-[140px]" 
+                                onClick={() => handleImport('chained')} 
+                                icon="Link"
+                            >
+                                Legacy (Chained)
+                            </Button>
+                            <Button 
+                                variant="secondary" 
+                                className="text-[10px] py-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400" 
+                                onClick={() => handleImport('only-obfuscator')} 
+                                icon="ShieldCheck"
+                            >
+                                Obfuscator Only
+                            </Button>
+                        </>
+                    ) : (
                         <Button 
-                            variant="secondary" 
-                            className="text-[10px] py-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400" 
-                            onClick={() => handleImport(true)} 
-                            icon="ShieldCheck"
+                            variant="primary" 
+                            className="w-full text-xs py-2 shadow-lg" 
+                            onClick={() => handleImport('direct')} 
+                            icon="DownloadSimple"
                         >
-                            Obfuscator Only
+                            Import & Parse
                         </Button>
                     )}
                 </div>
