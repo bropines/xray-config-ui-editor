@@ -1,5 +1,6 @@
 import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
+import { Help } from '../../ui/Help';
 import { useConfigStore } from '../../../store/configStore';
 
 export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
@@ -84,7 +85,12 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                     <>
                         <div className="md:col-span-2">
                             <TagSelector 
-                                label="Dialer Proxy (Outbound Tag)"
+                                label={
+                                    <span className="flex items-center gap-1">
+                                        Dialer Proxy (Outbound Tag)
+                                        <Help>Forwards this outbound's traffic through another outbound (tag). Used to "wrap" protocols like WireGuard into obfuscation layers like Freedom+Finalmask.</Help>
+                                    </span>
+                                }
                                 availableTags={outboundTags}
                                 selected={local.dialerProxy || ""}
                                 onChange={v => update('dialerProxy', v as string)}

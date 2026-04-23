@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
+import { Help } from '../../ui/Help';
 import { generateWarpAccount } from '../../../utils/generators';
 import { toast } from 'sonner';
 
@@ -77,16 +78,38 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
             {/* Advanced WG Settings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800/50">
                 <div>
-                    <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1">MTU</label>
-                    <input type="number" className="input-base text-xs py-1.5" placeholder="1280" value={settings.mtu || ""} onChange={e => update('mtu', parseInt(e.target.value))} />
+                    <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1 flex items-center gap-1">
+                        MTU
+                        <Help>Maximum Transmission Unit. Default is 1280 for WARP.</Help>
+                    </label>
+                    <input type="number" className="input-base text-xs py-1.5" placeholder="1280" value={settings.mtu || ""} onChange={e => update('mtu', parseInt(e.target.value) || 0)} />
                 </div>
                 <div>
-                    <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1">Reserved (CSV)</label>
-                    <input className="input-base text-xs py-1.5 font-mono" placeholder="0, 0, 0" value={(settings.reserved || []).join(', ')} onChange={e => update('reserved', e.target.value.split(',').map((s: string) => parseInt(s.trim())))} />
+                    <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1 flex items-center gap-1">
+                        Reserved (CSV)
+                        <Help>[n, n, n] — header byte substitution. Use [0,0,0] for standard WARP.</Help>
+                    </label>
+                    <input className="input-base text-xs py-1.5 font-mono" 
+                        placeholder="0, 0, 0" 
+                        value={(settings.reserved || []).map((v: any) => isNaN(v) ? 0 : v).join(', ')} 
+                        onChange={e => {
+                            const raw = e.target.value.replace(/[^0-9,]/g, ''); // Только цифры и запятые
+                            const vals = raw.split(',')
+                                .map(s => s.trim())
+                                .filter(s => s !== "")
+                                .map(s => parseInt(s))
+                                .filter(n => !isNaN(n))
+                                .slice(0, 3); // Только первые 3 байта
+                            update('reserved', vals);
+                        }} 
+                    />
                 </div>
                 <div className="flex items-center gap-2 pt-5">
                     <input type="checkbox" id="nokernel" className="w-4 h-4 rounded bg-slate-900 border-slate-700 accent-indigo-500" checked={settings.noKernelTun || false} onChange={e => update('noKernelTun', e.target.checked)} />
-                    <label htmlFor="nokernel" className="text-[10px] uppercase text-slate-400 font-bold cursor-pointer hover:text-white transition-colors">No Kernel TUN</label>
+                    <label htmlFor="nokernel" className="text-[10px] uppercase text-slate-400 font-bold cursor-pointer hover:text-white transition-colors flex items-center gap-1">
+                        No Kernel TUN
+                        <Help>Enabled: use gVisor (no root needed). Disabled: use system interface (faster).</Help>
+                    </label>
                 </div>
             </div>
 
