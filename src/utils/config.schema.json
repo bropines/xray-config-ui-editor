@@ -377,10 +377,25 @@
       "type": "object",
       "properties": {
         "network": {
-          "type": "string"
+          "enum": [
+            "tcp",
+            "udp",
+            "kcp",
+            "ws",
+            "http",
+            "quic",
+            "grpc",
+            "xhttp",
+            "raw",
+            "httpupgrade"
+          ]
         },
         "security": {
-          "type": "string"
+          "enum": [
+            "none",
+            "tls",
+            "reality"
+          ]
         },
         "tlsSettings": {
           "type": "object"
@@ -409,8 +424,78 @@
         "xhttpSettings": {
           "type": "object"
         },
-        "sockopt": {
+        "httpupgradeSettings": {
           "type": "object"
+        },
+        "sockopt": {
+          "$ref": "#/definitions/SockoptObject"
+        },
+        "finalmask": {
+          "$ref": "#/definitions/FinalmaskObject"
+        }
+      }
+    },
+    "SockoptObject": {
+      "type": "object",
+      "properties": {
+        "mark": { "type": "integer" },
+        "tcpFastOpen": { "type": "boolean" },
+        "tproxy": { "enum": ["off", "tproxy", "redirect"] },
+        "v6only": { "type": "boolean" },
+        "acceptProxyProtocol": { "type": "boolean" },
+        "interface": { "type": "string" },
+        "dialerProxy": { "type": "string" },
+        "domainStrategy": { "enum": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv4v6", "UseIPv6v4"] },
+        "tcpKeepAliveIdle": { "type": "integer" },
+        "tcpKeepAliveInterval": { "type": "integer" },
+        "tcpUserTimeout": { "type": "integer" },
+        "tcpMaxSeg": { "type": "integer" },
+        "tcpCongestion": { "type": "string" },
+        "tcpWindowClamp": { "type": "integer" },
+        "tcpMptcp": { "type": "boolean" },
+        "tcpNoDelay": { "type": "boolean" }
+      }
+    },
+    "FinalmaskObject": {
+      "type": "object",
+      "properties": {
+        "tcp": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FinalmaskNoiseItem"
+          }
+        },
+        "udp": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FinalmaskNoiseItem"
+          }
+        },
+        "quicParams": {
+          "type": "object"
+        }
+      }
+    },
+    "FinalmaskNoiseItem": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["noise"] },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "noise": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": { "enum": ["hex", "rand"] },
+                  "packet": { "type": "string" },
+                  "rand": { "type": "string" },
+                  "delay": { "type": "string" }
+                }
+              }
+            }
+          }
         }
       }
     },

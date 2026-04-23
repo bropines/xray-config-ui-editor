@@ -1,7 +1,11 @@
 import React from 'react';
+import { TagSelector } from '../../ui/TagSelector';
+import { useConfigStore } from '../../../store/configStore';
 
 export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
     const local = sockopt || {};
+    const config = useConfigStore(state => state.config);
+    const outboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean);
 
     const update = (field: string, val: any) => {
         // Чистим пустые/NaN значения чтобы не мусорить в JSON
@@ -78,12 +82,14 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                 {/* OUTBOUND ONLY */}
                 {isClient && (
                     <>
-                        <div>
-                            <label className="label-xs text-blue-300">Dialer Proxy (Tag)</label>
-                            <input className="input-base" 
-                                placeholder="outbound-tag"
-                                value={local.dialerProxy || ""} 
-                                onChange={e => update('dialerProxy', e.target.value)} 
+                        <div className="md:col-span-2">
+                            <TagSelector 
+                                label="Dialer Proxy (Outbound Tag)"
+                                availableTags={outboundTags}
+                                selected={local.dialerProxy || ""}
+                                onChange={v => update('dialerProxy', v as string)}
+                                multi={false}
+                                placeholder="Select outbound..."
                             />
                         </div>
                         <div>

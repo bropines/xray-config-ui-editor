@@ -14,7 +14,7 @@ import { OutboundWireguard } from './outbound/OutboundWireguard';
 import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
-    const { config } = useConfigStore();
+    const { config, addItem } = useConfigStore();
     const allOutboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter((t: any) => t);
 
     const [local, setLocal] = useState(data || { 
@@ -27,11 +27,22 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const [rawMode, setRawMode] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
 
-    const handleImport = (parsedConfig: any) => {
-        setLocal(parsedConfig);
+    const handleImport = (parsed: any) => {
+        if (parsed.multiple && Array.isArray(parsed.outbounds)) {
+            // Берем первый как основной для текущего редактирования
+            const [primary, ...others] = parsed.outbounds;
+            setLocal(primary);
+            // Остальные добавляем в стор напрямую
+            others.forEach(outbound => {
+                addItem('outbounds', outbound);
+            });
+            toast.success(`Imported ${parsed.outbounds.length} outbounds (chained)`);
+        } else {
+            setLocal(parsed);
+            toast.success("Configuration imported successfully");
+        }
         setRawMode(false);
         setErrors([]);
-        toast.success("Configuration imported successfully");
     };
 
     const handleUpdate = (path: string | string[], value: any) => {
@@ -161,15 +172,13 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
                 {/* Mux / Proxy chain */}
                 <OutboundProxyMux outbound={local} onChange={handleUpdate} allTags={allOutboundTags} />
 
-                {/* Transport / Stream Settings (не нужен для WireGuard) */}
-                {local.protocol !== 'wireguard' && (
-                    <TransportSettings
-                        streamSettings={local.streamSettings}
-                        onChange={(s: any) => handleUpdate('streamSettings', s)}
-                        isClient={true}
-                        errors={{ reality: getError('reality') }}
-                    />
-                )}
+                {/* Transport / Stream Settings */}
+                <TransportSettings
+                    streamSettings={local.streamSettings}
+                    onChange={(s: any) => handleUpdate('streamSettings', s)}
+                    isClient={true}
+                    errors={{ reality: getError('reality') }}
+                />
             </div>
         </Modal>
     );

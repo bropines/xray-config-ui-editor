@@ -3,9 +3,55 @@ import { Help } from '../../ui/Help';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const proto = outbound.protocol;
-    if (!['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(proto)) return null;
-
     const settings = outbound.settings || {};
+
+    if (proto === 'freedom') {
+        return (
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4 animate-in fade-in">
+                <h4 className="label-xs text-slate-400 border-b border-slate-800 pb-2 mb-3">Freedom Settings (Direct Connection)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="label-xs">Domain Strategy</label>
+                        <select className="input-base" 
+                            value={settings.domainStrategy || "AsIs"} 
+                            onChange={e => onChange('settings', { ...settings, domainStrategy: e.target.value })}>
+                            <option value="AsIs">AsIs</option>
+                            <option value="UseIP">UseIP</option>
+                            <option value="UseIPv4">UseIPv4</option>
+                            <option value="UseIPv6">UseIPv6</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="label-xs">Redirect (IP:Port)</label>
+                        <input className="input-base font-mono" 
+                            value={settings.redirect || ""} 
+                            onChange={e => onChange('settings', { ...settings, redirect: e.target.value })} 
+                            placeholder="127.0.0.1:80"
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (proto === 'blackhole') {
+        return (
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4 animate-in fade-in">
+                <h4 className="label-xs text-slate-400 border-b border-slate-800 pb-2 mb-3">Blackhole Settings (Drop Packets)</h4>
+                <div>
+                    <label className="label-xs">Response Type</label>
+                    <select className="input-base" 
+                        value={settings.response?.type || "none"} 
+                        onChange={e => onChange('settings', { ...settings, response: { type: e.target.value } })}>
+                        <option value="none">None (Drop)</option>
+                        <option value="http">HTTP 403 (Forbidden)</option>
+                    </select>
+                </div>
+            </div>
+        );
+    }
+
+    if (!['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http'].includes(proto)) return null;
 
     // Опеределяем структуру: vnext (vless/vmess), servers (ss/trojan/socks/http) или плоская
     const isVnext = Array.isArray(settings.vnext) && settings.vnext.length > 0;
