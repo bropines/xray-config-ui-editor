@@ -1,4 +1,4 @@
-export const parseWireguardConfig = (text: string): any => {
+export const parseWireguardConfig = (text: string, mode: 'direct' | 'chained' = 'direct'): any => {
     const lines = text.split('\n');
     const config: any = {
         Interface: {},
@@ -54,13 +54,10 @@ export const parseWireguardConfig = (text: string): any => {
     };
 
     // --- AmneziaWG / Finalmask Noise Generation ---
-    // If Jc, Jmin, Jmax or H/I parameters are present, we generate Finalmask noise
     const isAWG = config.Interface.Jc || config.Interface.Jmin || config.Interface.H1 || config.Interface.I1;
     
     if (isAWG) {
-        const noiseTag = outbound.tag + "-obfuscator";
         const noise: any[] = [];
-        
         const extractHex = (val: string) => {
             if (!val) return null;
             const match = val.match(/0x([0-9a-fA-F]+)/);
@@ -69,7 +66,6 @@ export const parseWireguardConfig = (text: string): any => {
 
         const i1Hex = extractHex(config.Interface.I1);
         if (i1Hex) noise.push({ type: "hex", packet: i1Hex, delay: "5-10" });
-
         const i2Hex = extractHex(config.Interface.I2);
         if (i2Hex) noise.push({ type: "hex", packet: i2Hex, delay: "5-10" });
 
@@ -80,31 +76,38 @@ export const parseWireguardConfig = (text: string): any => {
             noise.push({ rand: `${jmin}-${jmax}`, delay: "5-15" });
         }
 
-        // 1. Настраиваем основной WG на проксирование
-        outbound.streamSettings.sockopt = {
-            dialerProxy: noiseTag
-        };
+        // Smart Reserved
+        const isWARP = outbound.settings.peers.some((p: any) => 
+            p.endpoint?.includes('cloudflare') || p.endpoint?.includes('162.159.')
+        );
+        if (isWARP) {
+            outbound.settings.reserved = [0, 0, 0];
+        } else if (config.Interface.S1 || config.Interface.S2) {
+            outbound.settings.reserved = [parseInt(config.Interface.S1) || 0, parseInt(config.Interface.S2) || 0, 0];
+        }
 
-        // 2. Создаем отдельный аутбаунд-обфускатор
-        const obfuscator = {
-            tag: noiseTag,
-            protocol: "freedom",
-            settings: {},
-            streamSettings: {
-                network: "raw",
-                finalmask: {
-                    udp: [{
-                        type: "noise",
-                        settings: { noise }
-                    }]
+        if (mode === 'direct') {
+            // МЕТОД 1: Finalmask внутри WG (Xray 1.26+)
+            outbound.streamSettings.network = "raw"; 
+            outbound.streamSettings.finalmask = {
+                udp: [{ type: "noise", settings: { noise } }]
+            };
+        } else {
+            // МЕТОД 2: Цепочка через dialerProxy (Legacy / Старые ядра)
+            const noiseTag = outbound.tag + "-obfuscator";
+            outbound.streamSettings.sockopt = { dialerProxy: noiseTag };
+            
+            const obfuscator = {
+                tag: noiseTag,
+                protocol: "freedom",
+                settings: {},
+                streamSettings: {
+                    network: "raw",
+                    finalmask: { udp: [{ type: "noise", settings: { noise } }] }
                 }
-            }
-        };
-
-        return {
-            multiple: true,
-            outbounds: [outbound, obfuscator]
-        };
+            };
+            return { multiple: true, outbounds: [outbound, obfuscator] };
+        }
     }
 
     return outbound;

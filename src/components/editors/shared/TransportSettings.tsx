@@ -87,6 +87,17 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 </div>
             </div>
 
+            {/* --- SOCKOPT (Moved up for better intuition) --- */}
+            {showAdvanced && (
+                <SockoptEditor 
+                    sockopt={streamSettings.sockopt} 
+                    onChange={v => update(['sockopt'], v)} 
+                    isClient={isClient} 
+                />
+            )}
+
+            <div className="border-t border-slate-800/50 my-2" />
+
             {/* --- NETWORK SPECIFIC SETTINGS --- */}
 
             {/* RAW (for Finalmask) */}
