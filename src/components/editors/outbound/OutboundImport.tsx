@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 export const OutboundImport = ({ onImport }: any) => {
     const [input, setInput] = useState("");
 
-    const handleImport = () => {
+    const handleImport = (onlyObfuscator = false) => {
         const trimmed = input.trim();
         if (!trimmed) return;
 
@@ -27,6 +27,15 @@ export const OutboundImport = ({ onImport }: any) => {
         if (trimmed.includes('[Interface]')) {
             const parsed = parseWireguardConfig(trimmed);
             if (parsed) {
+                if (parsed.multiple && onlyObfuscator) {
+                    const obfuscator = parsed.outbounds.find((o: any) => o.protocol === 'freedom');
+                    if (obfuscator) {
+                        onImport(obfuscator);
+                        setInput("");
+                        toast.success("Only Obfuscator (Freedom) imported");
+                        return;
+                    }
+                }
                 onImport(parsed);
                 setInput("");
                 toast.success("WireGuard / AmneziaWG config imported");
@@ -63,14 +72,26 @@ export const OutboundImport = ({ onImport }: any) => {
                     value={input} 
                     onChange={e => setInput(e.target.value)} 
                 />
-                <Button 
-                    variant={isAWGDetected ? "success" : "primary"} 
-                    className="text-xs py-2 shadow-lg" 
-                    onClick={handleImport} 
-                    icon={isAWGDetected ? "MagicWand" : "DownloadSimple"}
-                >
-                    {isAWGDetected ? "Smart Convert AmneziaWG" : "Import & Parse"}
-                </Button>
+                <div className="flex gap-2">
+                    <Button 
+                        variant={isAWGDetected ? "success" : "primary"} 
+                        className="flex-1 text-xs py-2 shadow-lg" 
+                        onClick={() => handleImport(false)} 
+                        icon={isAWGDetected ? "MagicWand" : "DownloadSimple"}
+                    >
+                        {isAWGDetected ? "Smart Convert AmneziaWG" : "Import & Parse"}
+                    </Button>
+                    {isAWGDetected && (
+                        <Button 
+                            variant="secondary" 
+                            className="text-[10px] py-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400" 
+                            onClick={() => handleImport(true)} 
+                            icon="ShieldCheck"
+                        >
+                            Obfuscator Only
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     );
