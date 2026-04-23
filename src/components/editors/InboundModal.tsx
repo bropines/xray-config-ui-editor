@@ -179,9 +179,9 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                 )}
 
                 {/* Transport Settings не нужны для TUN */}
-                {local.protocol !== 'tun' && local.streamSettings && (
+                {local.protocol !== 'tun' && (
                     <TransportSettings
-                        streamSettings={local.streamSettings}
+                        streamSettings={local.streamSettings || {}}
                         onChange={(newSettings) => handleUpdate('streamSettings', newSettings)}
                         isClient={false}
                     />

@@ -1,3 +1,115 @@
+export const parseWireguardConfig = (text: string): any => {
+    const lines = text.split('\n');
+    const config: any = {
+        Interface: {},
+        Peers: [] as any[]
+    };
+    
+    let currentSection = "";
+    for (let line of lines) {
+        line = line.trim();
+        if (!line || line.startsWith('#')) continue;
+        
+        if (line.startsWith('[Interface]')) {
+            currentSection = "Interface";
+            continue;
+        } else if (line.startsWith('[Peer]')) {
+            config.Peers.push({});
+            currentSection = "Peer";
+            continue;
+        }
+
+        const parts = line.split('=');
+        if (parts.length < 2) continue;
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim();
+
+        if (currentSection === "Interface") {
+            config.Interface[key] = value;
+        } else if (currentSection === "Peer") {
+            config.Peers[config.Peers.length - 1][key] = value;
+        }
+    }
+
+    if (!config.Interface.PrivateKey) return null;
+
+    const outbound: any = {
+        tag: "wg-imported-" + Math.floor(Math.random() * 1000),
+        protocol: "wireguard",
+        settings: {
+            secretKey: config.Interface.PrivateKey,
+            address: config.Interface.Address ? config.Interface.Address.split(',').map((s: string) => s.trim()) : [],
+            mtu: config.Interface.MTU ? parseInt(config.Interface.MTU) : 1280,
+            peers: config.Peers.map((p: any) => ({
+                publicKey: p.PublicKey,
+                endpoint: p.Endpoint,
+                allowedIPs: p.AllowedIPs ? p.AllowedIPs.split(',').map((s: string) => s.trim()) : ["0.0.0.0/0", "::/0"],
+                keepAlive: p.PersistentKeepalive ? parseInt(p.PersistentKeepalive) : 0
+            }))
+        },
+        streamSettings: {
+            network: "udp",
+            security: "none"
+        }
+    };
+
+    // --- AmneziaWG / Finalmask Noise Generation ---
+    // If Jc, Jmin, Jmax or H/I parameters are present, we generate Finalmask noise
+    const isAWG = config.Interface.Jc || config.Interface.Jmin || config.Interface.H1 || config.Interface.I1;
+    
+    if (isAWG) {
+        const noiseTag = outbound.tag + "-obfuscator";
+        const noise: any[] = [];
+        
+        const extractHex = (val: string) => {
+            if (!val) return null;
+            const match = val.match(/0x([0-9a-fA-F]+)/);
+            return match ? match[1] : null;
+        };
+
+        const i1Hex = extractHex(config.Interface.I1);
+        if (i1Hex) noise.push({ type: "hex", packet: i1Hex, delay: "5-10" });
+
+        const i2Hex = extractHex(config.Interface.I2);
+        if (i2Hex) noise.push({ type: "hex", packet: i2Hex, delay: "5-10" });
+
+        const jc = parseInt(config.Interface.Jc) || 0;
+        const jmin = parseInt(config.Interface.Jmin) || 40;
+        const jmax = parseInt(config.Interface.Jmax) || 70;
+        for (let i = 0; i < jc; i++) {
+            noise.push({ rand: `${jmin}-${jmax}`, delay: "5-15" });
+        }
+
+        // 1. Настраиваем основной WG на проксирование
+        outbound.streamSettings.sockopt = {
+            dialerProxy: noiseTag
+        };
+
+        // 2. Создаем отдельный аутбаунд-обфускатор
+        const obfuscator = {
+            tag: noiseTag,
+            protocol: "freedom",
+            settings: {},
+            streamSettings: {
+                network: "raw",
+                finalmask: {
+                    udp: [{
+                        type: "noise",
+                        settings: { noise }
+                    }]
+                }
+            }
+        };
+
+        return {
+            multiple: true,
+            outbounds: [outbound, obfuscator]
+        };
+    }
+
+    return outbound;
+};
+
 export const parseXrayLink = (link: string): any => {
   try {
     const url = new URL(link);

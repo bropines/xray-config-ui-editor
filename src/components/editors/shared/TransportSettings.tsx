@@ -70,7 +70,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     </label>
                     <select className="input-base"
                         value={net} onChange={e => update(['network'], e.target.value)}>
-                        {["tcp", "ws", "xhttp", "grpc", "http", "quic", "kcp"].map(n => 
+                        {["tcp", "ws", "xhttp", "grpc", "http", "quic", "kcp", "raw", "httpupgrade"].map(n => 
                             <option key={n} value={n}>{n.toUpperCase()}</option>
                         )}
                     </select>
@@ -88,6 +88,27 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             </div>
 
             {/* --- NETWORK SPECIFIC SETTINGS --- */}
+
+            {/* RAW (for Finalmask) */}
+            {net === 'raw' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="col-span-full flex items-center gap-2">
+                        <span className="text-xs font-bold text-emerald-400">RAW Socket Settings</span>
+                        <Help>Used primarily with Finalmask for obfuscation.</Help>
+                    </div>
+                </div>
+            )}
+
+            {/* HTTP Upgrade */}
+            {net === 'httpupgrade' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="col-span-full flex items-center gap-2">
+                        <span className="text-xs font-bold text-blue-400">HTTP Upgrade Configuration</span>
+                    </div>
+                    <div><label className="label-xs">Path</label><input className="input-base font-mono" placeholder="/" value={streamSettings.httpupgradeSettings?.path || ""} onChange={e => update(['httpupgradeSettings', 'path'], e.target.value)} /></div>
+                    <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="example.com" value={streamSettings.httpupgradeSettings?.host || ""} onChange={e => update(['httpupgradeSettings', 'host'], e.target.value)} /></div>
+                </div>
+            )}
 
             {/* TCP (RAW) */}
             {net === 'tcp' && (
@@ -420,6 +441,123 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     </div>
                 </div>
             )}
+
+            {/* FINALMASK (UDP/TCP Noise & QUIC) */}
+            <div className="border-t border-slate-800 pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                        <Icon name="Shield" size={14} /> Finalmask Configuration
+                    </label>
+                    <button 
+                        onClick={() => {
+                            if (streamSettings.finalmask) {
+                                const newSettings = { ...streamSettings };
+                                delete newSettings.finalmask;
+                                onChange(newSettings);
+                            } else {
+                                update(['finalmask'], { udp: [], tcp: [], quicParams: {} });
+                            }
+                        }}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${streamSettings.finalmask ? 'bg-rose-500/10 border-rose-500/50 text-rose-500 hover:bg-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/20'}`}
+                    >
+                        {streamSettings.finalmask ? "REMOVE" : "ADD"}
+                    </button>
+                </div>
+                
+                {streamSettings.finalmask && (
+                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-6 animate-in fade-in zoom-in-95">
+                        {/* Noise Sections (UDP & TCP) */}
+                        {['udp', 'tcp'].map(type => (
+                            <div key={type} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-emerald-500 uppercase font-bold">{type.toUpperCase()} Noise Packets</span>
+                                    <Button variant="secondary" className="px-2 py-0.5 text-[10px]" onClick={() => {
+                                        const current = streamSettings.finalmask[type] || [];
+                                        if (current.length === 0) {
+                                            update(['finalmask', type], [{ type: 'noise', settings: { noise: [{ rand: "40-70", delay: "5-10" }] } }]);
+                                        } else {
+                                            const noise = current[0].settings.noise || [];
+                                            const newArray = [...current];
+                                            newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise: [...noise, { rand: "40-70", delay: "5-10" }] } };
+                                            update(['finalmask', type], newArray);
+                                        }
+                                    }}>+ Add {type.toUpperCase()} Noise</Button>
+                                </div>
+                                
+                                {(streamSettings.finalmask[type]?.[0]?.settings?.noise || []).map((n: any, i: number) => (
+                                    <div key={i} className="flex gap-2 items-center bg-slate-900/50 p-2 rounded border border-slate-800/50">
+                                        <select 
+                                            className="bg-slate-950 border-slate-700 text-[10px] rounded px-1 h-7"
+                                            value={n.packet !== undefined ? "hex" : "rand"}
+                                            onChange={e => {
+                                                const newN = { ...n };
+                                                if (e.target.value === 'hex') {
+                                                    delete newN.rand;
+                                                    newN.packet = "";
+                                                    newN.type = "hex";
+                                                } else {
+                                                    delete newN.packet;
+                                                    delete newN.type;
+                                                    newN.rand = "40-70";
+                                                }
+                                                const noise = [...streamSettings.finalmask[type][0].settings.noise];
+                                                noise[i] = newN;
+                                                const newArray = [...streamSettings.finalmask[type]];
+                                                newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
+                                                update(['finalmask', type], newArray);
+                                            }}
+                                        >
+                                            <option value="hex">HEX</option>
+                                            <option value="rand">RAND</option>
+                                        </select>
+                                        
+                                        {n.packet !== undefined ? (
+                                            <input className="input-base text-[10px] font-mono flex-1 py-1 h-7" placeholder="Hex..." value={n.packet} onChange={e => {
+                                                const noise = [...streamSettings.finalmask[type][0].settings.noise];
+                                                noise[i] = { ...n, packet: e.target.value };
+                                                const newArray = [...streamSettings.finalmask[type]];
+                                                newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
+                                                update(['finalmask', type], newArray);
+                                            }} />
+                                        ) : (
+                                            <input className="input-base text-[10px] font-mono flex-1 py-1 h-7" placeholder="40-70" value={n.rand} onChange={e => {
+                                                const noise = [...streamSettings.finalmask[type][0].settings.noise];
+                                                noise[i] = { ...n, rand: e.target.value };
+                                                const newArray = [...streamSettings.finalmask[type]];
+                                                newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
+                                                update(['finalmask', type], newArray);
+                                            }} />
+                                        )}
+                                        <input className="input-base text-[10px] font-mono w-16 py-1 h-7 text-center" placeholder="Delay" value={n.delay || ""} onChange={e => {
+                                            const noise = [...streamSettings.finalmask[type][0].settings.noise];
+                                            noise[i] = { ...n, delay: e.target.value };
+                                            const newArray = [...streamSettings.finalmask[type]];
+                                            newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
+                                            update(['finalmask', type], newArray);
+                                        }} />
+                                        <button onClick={() => {
+                                            const noise = [...streamSettings.finalmask[type][0].settings.noise];
+                                            noise.splice(i, 1);
+                                            const newArray = [...streamSettings.finalmask[type]];
+                                            newArray[0] = { ...newArray[0], settings: { ...newArray[0].settings, noise } };
+                                            update(['finalmask', type], newArray);
+                                        }} className="text-rose-500 hover:text-rose-400 p-1"><Icon name="Trash" size={14} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+
+                        {/* QUIC Params */}
+                        <div className="space-y-2 pt-2 border-t border-slate-800/50">
+                            <span className="text-[10px] text-blue-400 uppercase font-bold">QUIC Parameters</span>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input className="input-base text-[10px] font-mono py-1 h-7" placeholder="Max Idle Timeout" value={streamSettings.finalmask.quicParams?.max_idle_timeout || ""} onChange={e => update(['finalmask', 'quicParams', 'max_idle_timeout'], e.target.value)} />
+                                <input className="input-base text-[10px] font-mono py-1 h-7" placeholder="Handshake Timeout" value={streamSettings.finalmask.quicParams?.handshake_timeout || ""} onChange={e => update(['finalmask', 'quicParams', 'handshake_timeout'], e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* --- SOCKOPT (Advanced) --- */}
             {showAdvanced && (
