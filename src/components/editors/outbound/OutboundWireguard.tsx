@@ -74,6 +74,22 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                 </div>
             </div>
 
+            {/* Advanced WG Settings */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800/50">
+                <div>
+                    <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1">MTU</label>
+                    <input type="number" className="input-base text-xs py-1.5" placeholder="1280" value={settings.mtu || ""} onChange={e => update('mtu', parseInt(e.target.value))} />
+                </div>
+                <div>
+                    <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1">Reserved (CSV)</label>
+                    <input className="input-base text-xs py-1.5 font-mono" placeholder="0, 0, 0" value={(settings.reserved || []).join(', ')} onChange={e => update('reserved', e.target.value.split(',').map((s: string) => parseInt(s.trim())))} />
+                </div>
+                <div className="flex items-center gap-2 pt-5">
+                    <input type="checkbox" id="nokernel" className="w-4 h-4 rounded bg-slate-900 border-slate-700 accent-indigo-500" checked={settings.noKernelTun || false} onChange={e => update('noKernelTun', e.target.checked)} />
+                    <label htmlFor="nokernel" className="text-[10px] uppercase text-slate-400 font-bold cursor-pointer hover:text-white transition-colors">No Kernel TUN</label>
+                </div>
+            </div>
+
             <div>
                 <div className="flex justify-between items-center mb-2">
                     <label className="block text-[10px] uppercase text-slate-500 font-bold mb-1">Peers</label>
