@@ -40,64 +40,7 @@ const Card = ({ title, icon, color, children, actions, className = "" }: any) =>
     </div>
 );
 
-// ---------------------------------------------------------------------------
-// About modal
-// ---------------------------------------------------------------------------
-const AboutModal = ({ onClose }: { onClose: () => void }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-5">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20">
-                    <Icon name="Planet" weight="fill" className="text-2xl" />
-                </div>
-                <div>
-                  <div className="font-black text-white text-lg tracking-tight uppercase">Xray Config UI</div>
-                    <div className="text-[11px] text-slate-500">Visual editor for Xray-core</div>
-                </div>
-            </div>
-
-            <div className="space-y-3 text-sm">
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-                    <Icon name="User" className="text-indigo-400 text-lg shrink-0" />
-                    <div>
-                        <div className="text-[10px] uppercase text-slate-500 font-bold mb-0.5">Developer</div>
-                        <a href="https://github.com/bropines" target="_blank" rel="noopener noreferrer" className="text-indigo-300 hover:text-indigo-200 font-bold transition-colors">
-                            @bropines
-                        </a>
-                    </div>
-                </div>
-
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-                    <Icon name="GithubLogo" className="text-slate-300 text-lg shrink-0" weight="fill" />
-                    <div>
-                        <div className="text-[10px] uppercase text-slate-500 font-bold mb-0.5">Repository</div>
-                        <a href="https://github.com/bropines/xray-config-ui-editor" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white font-mono text-xs transition-colors break-all">
-                            bropines/xray-config-ui-editor
-                        </a>
-                    </div>
-                </div>
-
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-                    <Icon name="Cloud" className="text-emerald-400 text-lg shrink-0" />
-                    <div>
-                        <div className="text-[10px] uppercase text-slate-500 font-bold mb-0.5">Powered by</div>
-                        <a href="https://github.com/remnawave" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
-                            Remnawave Panel
-                        </a>
-                        <span className="text-slate-600 mx-1.5">·</span>
-                        <a href="https://github.com/XTLS/Xray-core" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">
-                            Xray-core
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <button onClick={onClose} className="mt-5 w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-colors">
-                Close
-            </button>
-        </div>
-    </div>
-);
+import { AboutModal } from './components/ui/AboutModal';
 
 // ---------------------------------------------------------------------------
 // App
