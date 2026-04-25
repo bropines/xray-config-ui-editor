@@ -8,19 +8,22 @@ export interface ValidationError {
     message: string;
 }
 
-export const isValidAddress = (domain: string) => {
+export const isValidIP = (ip: string) => {
+    return isIP(ip); 
+};
+
+export const isValidDomain = (domain: string) => {
     if (!domain) return false;
     return isFQDN(domain, { require_tld: false, allow_underscores: true });
 };
 
-export const isValidDomain = isValidAddress;
-
-export const isValidIP = (ip: string) => {
-    return isIP(ip) !== 0; 
+export const isValidAddress = (addr: string) => {
+    return isValidIP(addr) || isValidDomain(addr);
 };
 
 export const isValidPort = (port: number | string) => {
     const p = typeof port === 'string' ? parseInt(port) : port;
+    if (p === 0) return false;
     return isPort(p.toString());
 };
 
