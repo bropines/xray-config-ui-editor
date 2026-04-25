@@ -1,26 +1,22 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Автоматический запуск при пуше в main
   push:
     branches: [ main ]
-
-  # ВОТ ЭТО позволяет запускать вручную через кнопку "Run workflow"
   workflow_dispatch:
 
-# Права, необходимые для деплоя на Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Одна сборка для обоих сценариев
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
-  build:
+  # ЭТАП 1: Тестирование
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,6 +33,22 @@ jobs:
       - name: Run Tests
         run: bun test
 
+  # ЭТАП 2: Сборка (только если тесты прошли)
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
       - name: Build
         run: bun run build
 
@@ -45,11 +57,12 @@ jobs:
         with:
           path: ./dist
 
+  # ЭТАП 3: Деплой
   deploy:
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
