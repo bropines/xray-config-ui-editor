@@ -1,37 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { useConfigStore } from '../../store/configStore';
+import { useReverseEditor } from '../../hooks/useReverseEditor';
 
-export const ReverseModal = ({ onClose }) => {
-    const { config, updateSection } = useConfigStore();
-    const reverse = config?.reverse || { bridges: [], portals: [] };
-    const [activeTab, setActiveTab] = useState<'bridges' | 'portals'>('bridges');
-
-    const updateList = (type: 'bridges' | 'portals', newList: any[]) => {
-        updateSection('reverse', { ...reverse, [type]: newList });
-    };
-
-    const addItem = (type: 'bridges' | 'portals') => {
-        updateList(type, [...(reverse[type] || []), { tag: "reverse-" + type, domain: "example.com" }]);
-    };
-
-    const removeItem = (type: 'bridges' | 'portals', idx: number) => {
-        const n = [...(reverse[type] || [])];
-        n.splice(idx, 1);
-        updateList(type, n);
-    };
-
-    const updateItem = (type: 'bridges' | 'portals', idx: number, field: string, val: string) => {
-        const n = [...(reverse[type] || [])];
-        n[idx] = { ...n[idx], [field]: val };
-        updateList(type, n);
-    };
+export const ReverseModal = ({ onClose }: any) => {
+    const {
+        reverse,
+        activeTab,
+        setActiveTab,
+        addItem,
+        removeItem,
+        updateItem
+    } = useReverseEditor();
 
     const renderList = (type: 'bridges' | 'portals') => (
         <div className="space-y-3">
-            {(reverse[type] || []).map((item, i) => (
+            {(reverse[type] || []).map((item: any, i: number) => (
                 <div key={i} className="bg-slate-900 border border-slate-800 p-4 rounded-xl grid grid-cols-2 gap-4 relative group">
                     <div>
                         <label className="label-xs">Tag</label>

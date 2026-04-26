@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useConfigStore, type XrayConfig } from "./store/configStore";
+import React from "react";
 import { Button } from "./components/ui/Button";
 import { Icon } from "./components/ui/Icon";
 import { InboundModal } from "./components/editors/InboundModal";
@@ -13,12 +12,12 @@ import { RemnawaveModal } from "./components/editors/RemnawaveModal";
 import { SectionJsonModal } from "./components/editors/SectionJsonModal";
 import { BatchOutboundModal } from "./components/editors/outbound/BatchOutboundModal";
 import { GeoViewerModal } from "./components/editors/GeoViewerModal";
-import { DiagnosticsPanel } from "./components/ui/DiagnosticsPanel";
-import { runFullDiagnostics } from "./utils/diagnostics";
-import type { Diagnostic } from "./utils/diagnostics";
+import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
 import { JsonField } from "./components/ui/JsonField";
 import { Toaster } from 'sonner';
 import { getPresets } from "./utils/presets";
+import { useAppLogic } from "./hooks/useAppLogic";
+import { AboutModal } from './components/AboutModal';
 
 // ---------------------------------------------------------------------------
 // Карточка колонки
@@ -40,122 +39,39 @@ const Card = ({ title, icon, color, children, actions, className = "" }: any) =>
     </div>
 );
 
-import { AboutModal } from './components/ui/AboutModal';
-
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
 export const App = () => {
     const {
-        config,
-        setConfig,
-        deleteItem,
-        updateItem,
-        addItem,
-        updateSection,
-        remnawave,
-        saveToRemnawave,
-        disconnectRemnawave,
-        initDns
-    } = useConfigStore();
-
-    const [modal, setModal] = useState<{ type: string | null, data: any, index: number | null }>({ type: null, data: null, index: null });
-    const [sectionModal, setSectionModal] = useState<{ open: boolean, title: string, section: string, data: any, schemaMode: any }>({
-        open: false, title: "", section: "", data: null, schemaMode: "full"
-    });
-    const [remnawaveModalOpen, setRemnawaveModalOpen] = useState(false);
-    const [batchModalOpen, setBatchModalOpen] = useState(false);
-    const [geoViewerOpen, setGeoViewerOpen] = useState(false);
-    const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-    const [aboutOpen, setAboutOpen] = useState(false);
-    const [rawMode, setRawMode] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [obSearch, setObSearch] = useState("");
-    const [pushStage, setPushStage] = useState<'idle' | 'confirm'>('idle');
-
-    useEffect(() => {
-        if (pushStage === 'confirm') {
-            const timer = setTimeout(() => setPushStage('idle'), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [pushStage]);
-
-    const handleRealPush = () => { saveToRemnawave(); setPushStage('idle'); };
-
-    const loadFile = (file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>) => {
-            try {
-                const result = e.target?.result;
-                if (typeof result === 'string') {
-                    setConfig(JSON.parse(result) as XrayConfig);
-                    setRawMode(false);
-                }
-            } catch { alert("Invalid JSON file"); }
-        };
-        reader.readAsText(file);
-    };
-
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files?.[0]) loadFile(e.target.files[0]); };
-    const downloadConfig = () => {
-        const a = document.createElement('a');
-        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
-        a.download = "config.json";
-        a.click();
-    };
-
-    const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        if (e.relatedTarget === null || !e.currentTarget.contains(e.relatedTarget as Node)) setIsDragging(false);
-    };
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault(); setIsDragging(false);
-        if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
-    };
-
-    const handleSaveModal = (data: any) => {
-        const { type, index } = modal;
-        if (type === 'inbound') index !== null ? updateItem('inbounds', index, data) : addItem('inbounds', data);
-        if (type === 'outbound') index !== null ? updateItem('outbounds', index, data) : addItem('outbounds', data);
-        setModal({ type: null, data: null, index: null });
-    };
-
-    const handleSaveSection = (newData: any) => {
-        updateSection(sectionModal.section as any, newData);
-        setSectionModal({ ...sectionModal, open: false });
-    };
-
-    const openSectionJson = (section: string, title: string) => {
-        const modeMap: Record<string, string> = { inbounds: 'inbounds', outbounds: 'outbounds', routing: 'routing', dns: 'dns' };
-        setSectionModal({
-            open: true, title: title + " (JSON)", section,
-            data: config ? config[section as keyof typeof config] : (section === 'inbounds' || section === 'outbounds' ? [] : {}),
-            schemaMode: modeMap[section] || 'full'
-        });
-    };
+        config, setConfig, deleteItem, remnawave, disconnectRemnawave, initDns,
+        modal, setModal,
+        sectionModal, setSectionModal,
+        remnawaveModalOpen, setRemnawaveModalOpen,
+        batchModalOpen, setBatchModalOpen,
+        geoViewerOpen, setGeoViewerOpen,
+        diagnosticsOpen, setDiagnosticsOpen,
+        aboutOpen, setAboutOpen,
+        rawMode, setRawMode,
+        isDragging,
+        obSearch, setObSearch,
+        pushStage, setPushStage,
+        handleRealPush,
+        handleFileUpload,
+        downloadConfig,
+        handleDragOver,
+        handleDragLeave,
+        handleDrop,
+        handleSaveModal,
+        handleSaveSection,
+        openSectionJson,
+        diagnostics,
+        criticalCount,
+        warningCount,
+        filteredOutbounds
+    } = useAppLogic();
 
     const presets = getPresets();
-
-    const diagnostics = runFullDiagnostics(config);
-    const criticalCount = diagnostics.filter(d => d.severity === 'critical').length;
-    const warningCount = diagnostics.filter(d => d.severity === 'warning').length;
-
-    const filteredOutbounds = (config?.outbounds || [])
-        .map((ob: any, i: number) => ({ ...ob, i }))
-        .filter((ob: any) => {
-            const q = obSearch.toLowerCase();
-            if (!q) return true;
-            const s = ob.settings || {};
-            const vnext = s.vnext?.[0] || {};
-            const server = s.servers?.[0] || s;
-            return (
-                String(ob.tag || "").toLowerCase().includes(q) ||
-                String(ob.protocol || "").toLowerCase().includes(q) ||
-                String(vnext.address || server.address || "").toLowerCase().includes(q) ||
-                String(vnext.users?.[0]?.id || server.password || server.id || "").toLowerCase().includes(q)
-            );
-        });
 
     return (
         <div className="h-dvh flex flex-col bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 overflow-hidden relative" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
@@ -504,7 +420,7 @@ export const App = () => {
 
             {batchModalOpen && <BatchOutboundModal onClose={() => setBatchModalOpen(false)} />}
             {geoViewerOpen && <GeoViewerModal onClose={() => setGeoViewerOpen(false)} />}
-            
+
             {sectionModal.open && (
                 <SectionJsonModal
                     title={sectionModal.title}
@@ -517,6 +433,6 @@ export const App = () => {
             {remnawaveModalOpen && <RemnawaveModal onClose={() => setRemnawaveModalOpen(false)} />}
             {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
             {diagnosticsOpen && <DiagnosticsPanel diagnostics={diagnostics} onClose={() => setDiagnosticsOpen(false)} />}
-            </div>
-            );
-            };
+        </div>
+    );
+};

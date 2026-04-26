@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Icon } from './Icon';
-import { Button } from './Button';
+import { Icon } from './ui/Icon';
+import { Button } from './ui/Button';
 
 interface Commit {
     sha: string;

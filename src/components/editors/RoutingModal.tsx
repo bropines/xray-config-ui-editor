@@ -1,157 +1,54 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useConfigStore } from '../../store/configStore';
 import { Icon } from '../ui/Icon';
-import { getCriticalRuleErrors } from '../../utils/validator';
-import { getDefaultGeoList } from '../../utils/geo-data';
 
 import { RuleList } from './routing/RuleList';
 import { RuleEditor } from './routing/RuleEditor';
 import { BalancerList } from './routing/BalancerList';
 import { BalancerEditor } from './routing/BalancerEditor';
 
+import { useRoutingEditor } from '../../hooks/useRoutingEditor';
+import { useGeoData } from '../../hooks/useGeoData';
+import { useSidebarResizer } from '../../hooks/useSidebarResizer';
+
 export const RoutingModal = ({ onClose }: any) => {
-    const { config, updateSection, reorderRules } = useConfigStore();
-    const rules     = config?.routing?.rules    || [];
-    const balancers = config?.routing?.balancers || [];
-    const outboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean);
-    const inboundTags  = (config?.inbounds  || []).map((i: any) => i.tag).filter(Boolean);
-    const balancerTags = balancers.map((b: any) => b.tag).filter(Boolean);
+    const { config, updateSection } = useConfigStore();
+    
+    const {
+        rules,
+        balancers,
+        outboundTags,
+        inboundTags,
+        balancerTags,
+        activeTab,
+        setActiveTab,
+        activeRuleIdx,
+        activeBalancerIdx,
+        setActiveBalancerIdx,
+        rawMode,
+        setRawMode,
+        mobileEditMode,
+        setMobileEditMode,
+        searchQuery,
+        setSearchQuery,
+        brokenRules,
+        hasCriticalErrors,
+        handleClose,
+        filteredRules,
+        handleSelectRule,
+        handleAddRule,
+        handleDeleteRule,
+        handleUpdateRule,
+        handleAddBalancer,
+        handleUpdateBalancer,
+        handleDeleteBalancer
+    } = useRoutingEditor(onClose);
 
-    // ── UI state ──────────────────────────────────────────────────────────────
-    const [activeTab,         setActiveTab]         = useState<'rules' | 'balancers'>('rules');
-    const [activeRuleIdx,     setActiveRuleIdx]     = useState<number | null>(null);
-    const [activeBalancerIdx, setActiveBalancerIdx] = useState<number | null>(null);
-    const [rawMode,           setRawMode]           = useState(false);
-    const [mobileEditMode,    setMobileEditMode]    = useState(false);
-    const [searchQuery,       setSearchQuery]       = useState("");
+    const { geoSites, geoIps, loadingGeo } = useGeoData();
+    const { sidebarWidth, startResizing } = useSidebarResizer();
 
-    // ── Все сломанные правила (блокируют Close) ───────────────────────────────
-    const brokenRules = rules
-        .map((r: any, i: number) => ({
-            idx:    i,
-            label:  r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`,
-            errors: getCriticalRuleErrors(r)
-        }))
-        .filter(r => r.errors.length > 0);
-
-    const hasCriticalErrors = brokenRules.length > 0;
-
-    // ── handleClose: блокируем если есть ошибки ───────────────────────────────
-    const handleClose = () => {
-        if (hasCriticalErrors) {
-            // Переходим к первому сломанному правилу
-            const first = brokenRules[0];
-            if (first) {
-                setActiveTab('rules');
-                setActiveRuleIdx(first.idx);
-                setMobileEditMode(true);
-                setRawMode(false);
-            }
-            return; // не закрываем
-        }
-        onClose();
-    };
-
-    // ── Search ────────────────────────────────────────────────────────────────
-    const filteredRules = rules
-        .map((r: any, originalIndex: number) => ({ ...r, originalIndex }))
-        .filter((rule: any) => {
-            const q = searchQuery.toLowerCase();
-            if (!q) return true;
-            return (
-                rule.ruleTag?.toLowerCase().includes(q)     ||
-                rule.outboundTag?.toLowerCase().includes(q) ||
-                rule.balancerTag?.toLowerCase().includes(q) ||
-                rule.domain?.some((d: string) => d.toLowerCase().includes(q)) ||
-                rule.ip?.some((ip: string)   => ip.toLowerCase().includes(q)) ||
-                rule.inboundTag?.some((t: string) => t.toLowerCase().includes(q)) ||
-                rule.protocol?.some((p: string)   => p.toLowerCase().includes(q))
-            );
-        });
-
-    // ── Resizer ───────────────────────────────────────────────────────────────
-    const [sidebarWidth, setSidebarWidth] = useState(380);
-    const [isResizing,   setIsResizing]   = useState(false);
-    const startResizing = useCallback(() => setIsResizing(true), []);
-    const stopResizing  = useCallback(() => setIsResizing(false), []);
-    const resize = useCallback((e: MouseEvent) => {
-        if (isResizing) setSidebarWidth(prev => Math.min(800, Math.max(250, prev + e.movementX)));
-    }, [isResizing]);
-
-    useEffect(() => {
-        if (isResizing) {
-            window.addEventListener("mousemove", resize);
-            window.addEventListener("mouseup", stopResizing);
-            document.body.style.cursor = "col-resize";
-        } else {
-            document.body.style.cursor = "default";
-        }
-        return () => {
-            window.removeEventListener("mousemove", resize);
-            window.removeEventListener("mouseup", stopResizing);
-        };
-    }, [isResizing, resize, stopResizing]);
-
-// ── Geo data ──────────────────────────────────────────────────────────────
-    const[geoSites,   setGeoSites]   = useState([]);
-    const [geoIps,     setGeoIps]     = useState([]);
-    const [loadingGeo, setLoadingGeo] = useState(false);
-
-    useEffect(() => {
-        let isMounted = true;
-        setLoadingGeo(true);
-        Promise.all([
-            getDefaultGeoList('geosite'),
-            getDefaultGeoList('geoip')
-        ]).then(([sites, ips]) => {
-            if (isMounted) {
-                setGeoSites(sites);
-                setGeoIps(ips);
-                setLoadingGeo(false);
-            }
-        });
-        return () => { isMounted = false; };
-    },[]);
-
-    // ── Rule handlers ─────────────────────────────────────────────────────────
-    const handleAddRule = () => {
-        // Новое правило сразу валидное: есть destination + матчер network:tcp,udp
-        const newRule = {
-            type:       "field",
-            outboundTag: outboundTags[0] || "direct",
-            network:    "tcp,udp"
-        };
-        reorderRules([newRule, ...rules]);
-        setActiveRuleIdx(0);
-        setRawMode(false);
-        setMobileEditMode(true);
-    };
-
-    const handleSelectRule = (originalIdx: number) => {
-        setActiveRuleIdx(originalIdx);
-        setRawMode(false);
-        setMobileEditMode(true);
-    };
-
-    const handleDeleteRule = (originalIdx: number) => {
-        const n = [...rules];
-        n.splice(originalIdx, 1);
-        reorderRules(n);
-        if (activeRuleIdx === originalIdx) { setActiveRuleIdx(null); setMobileEditMode(false); }
-    };
-
-    const handleUpdateRule = (updatedRule: any) => {
-        if (activeRuleIdx === null) return;
-        const cleanRule = { ...updatedRule };
-        delete cleanRule.originalIndex;
-        const n = [...rules];
-        n[activeRuleIdx] = cleanRule;
-        reorderRules(n);
-    };
-
-    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <Modal
             title="Routing Manager"
@@ -170,7 +67,6 @@ export const RoutingModal = ({ onClose }: any) => {
                 </div>
             }
         >
-            {/* ── Верхняя панель ────────────────────────────────────────────── */}
             <div className="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 {mobileEditMode && (
                     <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">Back</Button>
@@ -180,7 +76,7 @@ export const RoutingModal = ({ onClose }: any) => {
                     <select
                         className="input-base py-1.5 text-xs"
                         value={config?.routing?.domainStrategy || "AsIs"}
-                        onChange={e => updateSection('routing', { ...config.routing, domainStrategy: e.target.value })}
+                        onChange={e => updateSection('routing', { ...config?.routing, domainStrategy: e.target.value })}
                     >
                         {["AsIs", "IPIfNonMatch", "IPOnDemand"].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -198,7 +94,6 @@ export const RoutingModal = ({ onClose }: any) => {
                 )}
             </div>
 
-            {/* ── Баннер критических ошибок (блокирует Close) ──────────────── */}
             {hasCriticalErrors && (
                 <div className="mb-4 p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl animate-in fade-in">
                     <div className="flex items-start gap-2.5">
@@ -217,9 +112,7 @@ export const RoutingModal = ({ onClose }: any) => {
                                             className="text-[11px] text-left w-full text-rose-300 hover:text-white bg-rose-900/30 hover:bg-rose-800/50 border border-rose-700/40 rounded-lg px-3 py-1.5 transition-colors flex items-start gap-2"
                                             onClick={() => {
                                                 setActiveTab('rules');
-                                                setActiveRuleIdx(r.idx);
-                                                setMobileEditMode(true);
-                                                setRawMode(false);
+                                                handleSelectRule(r.idx);
                                             }}
                                         >
                                             <Icon name="ArrowRight" className="shrink-0 mt-0.5" />
@@ -238,7 +131,6 @@ export const RoutingModal = ({ onClose }: any) => {
                 </div>
             )}
 
-            {/* ── Основной блок ─────────────────────────────────────────────── */}
             <div
                 className="flex flex-col md:flex-row h-[520px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
                 style={{ '--sidebar-width': `${sidebarWidth}px` } as any}
@@ -267,7 +159,7 @@ export const RoutingModal = ({ onClose }: any) => {
                                 onSelect={(idx: number) => handleSelectRule(filteredRules[idx].originalIndex)}
                                 onDelete={(idx: number) => handleDeleteRule(filteredRules[idx].originalIndex)}
                                 onReorder={searchQuery ? undefined : (newRules: any) => {
-                                    reorderRules(newRules.map(({ originalIndex: _, ...rest }: any) => rest));
+                                    useConfigStore.getState().reorderRules(newRules.map(({ originalIndex: _, ...rest }: any) => rest));
                                 }}
                             />
                         </div>
@@ -291,20 +183,13 @@ export const RoutingModal = ({ onClose }: any) => {
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50 items-center">
                                 <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
-                                <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={() => {
-                                    const nb = { tag: "bal-" + (balancers.length + 1), selector: [], strategy: { type: "random" } };
-                                    updateSection('routing', { ...config.routing, balancers: [...balancers, nb] });
-                                }} />
+                                <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddBalancer} />
                             </div>
                             <BalancerList
                                 balancers={balancers}
                                 activeIndex={activeBalancerIdx}
                                 onSelect={(idx: number) => { setActiveBalancerIdx(idx); setMobileEditMode(true); }}
-                                onDelete={(idx: number) => {
-                                    const n = [...balancers];
-                                    n.splice(idx, 1);
-                                    updateSection('routing', { ...config.routing, balancers: n });
-                                }}
+                                onDelete={handleDeleteBalancer}
                             />
                         </div>
 
@@ -313,11 +198,7 @@ export const RoutingModal = ({ onClose }: any) => {
                         <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
                             <BalancerEditor
                                 balancer={balancers[activeBalancerIdx!]}
-                                onChange={(val: any) => {
-                                    const n = [...balancers];
-                                    n[activeBalancerIdx!] = val;
-                                    updateSection('routing', { ...config.routing, balancers: n });
-                                }}
+                                onChange={handleUpdateBalancer}
                                 outboundTags={outboundTags}
                                 rawMode={rawMode}
                             />
