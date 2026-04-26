@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from './Button';
-import { Icon } from './Icon';
+import { Button } from './ui/Button';
+import { Icon } from './ui/Icon';
 
 interface DropZoneProps {
     onFileLoaded: (config: any) => void;

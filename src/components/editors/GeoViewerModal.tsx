@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { createProtoWorker } from '../../utils/proto-worker';
 import { toast } from 'sonner';
 import Editor from '@monaco-editor/react';
-import { binaryCache, loadCachedData, saveCachedData, getDefaultGeoList } from '../../utils/geo-data';
+import { useGeoViewer } from '../../hooks/useGeoViewer';
+import { useTagDetails } from '../../hooks/useTagDetails';
 
-interface GeoItem { code: string; count: number; }
-
-const CUSTOM_PRESETS =[
+const CUSTOM_PRESETS = [
     { label: '🌍 V2Fly GeoSite', format: 'geosite', url: 'https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat' },
     { label: '🌍 V2Fly GeoIP', format: 'geoip', url: 'https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat' },
     { label: '🇷🇺 Zapret (.dat)', format: 'geosite', url: 'https://github.com/kutovoys/ru_gov_zapret/releases/latest/download/zapret.dat' },
@@ -18,109 +16,7 @@ const CUSTOM_PRESETS =[
 ];
 
 const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClose }: { tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null, onClose: () => void }) => {
-    const[text, setText] = useState("");
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let isCancelled = false;
-        setLoading(true);
-        const isGeosite = tag.startsWith('geosite:');
-        const targetCode = tag.replace('geosite:', '').replace('geoip:', '');
-        
-        const defaultUrl = isGeosite 
-            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
-            : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
-        
-        const currentUrl = customUrl || defaultUrl;
-        let activeWorker: Worker | null = null;
-
-        const loadData = async () => {
-            let buffer = customFileBuffer;
-
-            if (!buffer) {
-                if (binaryCache.has(currentUrl)) {
-                    buffer = binaryCache.get(currentUrl)!;
-                } else {
-                    try {
-                        const cached = await loadCachedData(currentUrl + "_raw");
-                        if (cached && cached.buffer) {
-                            buffer = cached.buffer;
-                            binaryCache.set(currentUrl, buffer);
-                        } else {
-                            const myProxy = `https://crs.bropines.workers.dev/${currentUrl}`;
-                            const targets = currentUrl.includes('github') || currentUrl.includes('jsdelivr') 
-                                ?[myProxy, currentUrl, `https://mirror.ghproxy.com/${currentUrl}`] 
-                                : [currentUrl, myProxy];
-                            
-                            let res;
-                            for (const target of targets) {
-                                try {
-                                    res = await fetch(target);
-                                    if (res.ok) break;
-                                } catch (e) {}
-                            }
-
-                            if (res && res.ok) {
-                                buffer = await res.arrayBuffer();
-                                binaryCache.set(currentUrl, buffer);
-                                await saveCachedData(currentUrl + "_raw", null, {}, buffer);
-                            } else {
-                                throw new Error("Fetch failed");
-                            }
-                        }
-                    } catch (err) {
-                        if (!isCancelled) {
-                            toast.error("Failed to download database for extraction");
-                            setText("Network error.");
-                            setLoading(false);
-                        }
-                        return;
-                    }
-                }
-            }
-
-            if (isCancelled) return;
-
-            activeWorker = createProtoWorker();
-            activeWorker.onmessage = (e) => {
-                if (isCancelled) return;
-                if (e.data.error) {
-                    toast.error("Failed to load details");
-                    setText("Error loading data.\n" + e.data.error);
-                } else if (e.data.type === 'details') {
-                    setText(e.data.data || "No records found.");
-                }
-                setLoading(false);
-            };
-           
-            activeWorker.postMessage({ 
-                type: 'get_details', 
-                dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), 
-                targetCode, 
-                customUrl: undefined,
-                fileBuffer: buffer 
-            });
-        };
-
-        loadData();
-
-        return () => {
-            isCancelled = true;
-            if (activeWorker) activeWorker.terminate();
-        };
-    }, [tag, customUrl, customFormat, customFileBuffer]);
-
-    const handleCopy = async () => {
-        try {
-            if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
-            else {
-                const ta = document.createElement("textarea");
-                ta.value = text; ta.style.position = "fixed"; ta.style.left = "-999999px";
-                document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
-            }
-            toast.success("Copied to clipboard!");
-        } catch { toast.error("Copy failed"); }
-    };
+    const { text, loading, handleCopy } = useTagDetails(tag, customUrl, customFormat, customFileBuffer);
 
     return (
         <div className="w-full md:w-[350px] lg:w-[450px] shrink-0 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-in slide-in-from-right-8 fade-in duration-200 shadow-2xl">
@@ -165,255 +61,28 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
 };
 
 export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [activeTab, setActiveTab] = useState<'geosite' | 'geoip' | 'custom'>(() => (localStorage.getItem('geo_tab') as any) || 'geosite');
-    const [customUrl, setCustomUrl] = useState(() => localStorage.getItem('geo_url') || "");
-    const [customFormat, setCustomFormat] = useState<'text' | 'geosite' | 'geoip'>(() => (localStorage.getItem('geo_format') as any) || 'geoip');
-    
-    const [customFileBuffer, setCustomFileBuffer] = useState<ArrayBuffer | null>(null);
-    const [customData, setCustomData] = useState<GeoItem[]>([]);
-    
-    const[geoSites, setGeoSites] = useState<GeoItem[]>([]);
-    const[geoIps, setGeoIps] = useState<GeoItem[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [customLoading, setCustomLoading] = useState(false);
-    
-    const[search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    
-    const [isDeepSearch, setIsDeepSearch] = useState(false);
-    const[deepSearchLoading, setDeepSearchLoading] = useState(false);
-    const [deepSearchResults, setDeepSearchResults] = useState<GeoItem[] | null>(null);
-
-    const [viewTag, setViewTag] = useState<{ tag: string, code: string, url?: string, format?: string } | null>(null);
-
-    const customWorkerRef = useRef<Worker | null>(null);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearch(search), 300);
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    useEffect(() => {
-        localStorage.setItem('geo_tab', activeTab);
-        localStorage.setItem('geo_url', customUrl);
-        localStorage.setItem('geo_format', customFormat);
-    }, [activeTab, customUrl, customFormat]);
-
-    useEffect(() => {
-        if (activeTab === 'custom' && customUrl && customUrl.startsWith('http')) {
-            loadCachedData(customUrl).then(cache => {
-                if (cache?.data) {
-                    setCustomData(cache.data);
-                } else if (!customFileBuffer) { 
-                    setCustomData([]);
-                }
-            });
-        }
-    }, [customUrl, activeTab, customFileBuffer]);
-
-    useEffect(() => {
-        let isMounted = true;
-        setLoading(true);
-        Promise.all([
-            getDefaultGeoList('geosite'),
-            getDefaultGeoList('geoip')
-        ]).then(([sites, ips]) => {
-            if (isMounted) {
-                setGeoSites(sites);
-                setGeoIps(ips);
-                setLoading(false);
-            }
-        });
-        return () => { isMounted = false; };
-    },[]);
-
-    useEffect(() => {
-        if (!isDeepSearch || debouncedSearch.length < 2) {
-            setDeepSearchResults(null);
-            setDeepSearchLoading(false);
-            return;
-        }
-
-        let isCancelled = false;
-        setDeepSearchLoading(true);
-
-        const currentUrl = activeTab === 'geosite' 
-            ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" 
-            : activeTab === 'geoip' 
-                ? "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat" 
-                : customUrl;
-        
-        const format = activeTab === 'custom' ? customFormat : activeTab;
-
-        if (format === 'text') {
-            setDeepSearchResults(customData.filter(d => d.code.toLowerCase().includes(debouncedSearch.toLowerCase())));
-            setDeepSearchLoading(false);
-            return;
-        }
-
-        const loadDeepSearch = async () => {
-            let buffer = customFileBuffer || binaryCache.get(currentUrl);
-            
-            if (!buffer) {
-                const cached = await loadCachedData(currentUrl + "_raw");
-                if (cached && cached.buffer) {
-                    buffer = cached.buffer;
-                    binaryCache.set(currentUrl, buffer);
-                }
-            }
-
-            if (isCancelled) return;
-
-            const worker = createProtoWorker();
-            worker.onmessage = (e) => {
-                if (isCancelled) return;
-                if (e.data.type === 'deep_search_result') {
-                    setDeepSearchResults(e.data.data);
-                } else if (e.data.error) {
-                    toast.error("Deep search error", { description: e.data.error });
-                }
-                setDeepSearchLoading(false);
-                worker.terminate();
-            };
-
-            worker.postMessage({
-                type: 'deep_search',
-                dataType: format,
-                query: debouncedSearch,
-                customUrl: currentUrl,
-                fileBuffer: buffer
-            });
-        };
-
-        loadDeepSearch();
-
-        return () => { isCancelled = true; };
-    },[debouncedSearch, isDeepSearch, activeTab, customUrl, customFormat, customFileBuffer, customData]);
-
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setCustomLoading(true);
-        setCustomUrl(file.name); 
-        setCustomFileBuffer(null);
-
-        try {
-            if (customFormat === 'text') {
-                const text = await file.text();
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('//'));
-                const formattedData = lines.map(line => ({ code: line, count: 1 }));
-                setCustomData(formattedData);
-                setViewTag(null);
-                toast.success(`Loaded ${formattedData.length} items from local file`);
-                setCustomLoading(false);
-            } else {
-                const buffer = await file.arrayBuffer();
-                setCustomFileBuffer(buffer);
-
-                if (customWorkerRef.current) customWorkerRef.current.terminate();
-                customWorkerRef.current = createProtoWorker();
-                
-                customWorkerRef.current.onmessage = (evt) => {
-                    if (evt.data.error) toast.error("Failed to parse DAT", { description: evt.data.error });
-                    else if (evt.data.type === 'success') {
-                        setCustomData(evt.data.data);
-                        setViewTag(null);
-                        toast.success(`Loaded ${evt.data.data.length} categories from local file`);
-                    }
-                    setCustomLoading(false);
-                };
-
-                customWorkerRef.current.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
-            }
-        } catch (err: any) {
-            toast.error("File read error", { description: err.message });
-            setCustomLoading(false);
-        }
-        e.target.value = '';
-    };
-
-    const fetchCustomList = async () => {
-        if (!customUrl || customUrl.includes('.')) { 
-            if (customFileBuffer) return toast.info("Local file already loaded");
-        }
-        if (!customUrl.startsWith('http')) return toast.error("Please enter a valid URL");
-        
-        setCustomLoading(true);
-        setCustomFileBuffer(null);
-
-        try {
-            const myProxy = `https://crs.bropines.workers.dev/${customUrl}`;
-            let targets =[];
-            if (customUrl.includes('raw.githubusercontent.com')) {
-                targets = [customUrl, myProxy, `https://mirror.ghproxy.com/${customUrl}`];
-            } else if (customUrl.includes('github.com')) {
-                targets =[myProxy, `https://mirror.ghproxy.com/${customUrl}`, `https://ghproxy.net/${customUrl}`, customUrl];
-            } else {
-                targets = [customUrl, myProxy];
-            }
-            
-            let res;
-            for (const target of targets) { 
-                try { 
-                    res = await fetch(target);
-                    if (res.ok) break;
-                } catch (e) {} 
-            }
-            if (!res || !res.ok) throw new Error("Failed to fetch list from URL");
-
-            if (customFormat === 'text') {
-                const text = await res.text();
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('//'));
-                const formattedData = lines.map(line => ({ code: line, count: 1 }));
-                
-                await saveCachedData(customUrl, formattedData, { size: text.length });
-                setCustomData(formattedData);
-                setViewTag(null);
-                toast.success(`Loaded ${formattedData.length} items`);
-                setCustomLoading(false);
-            } else {
-                const buffer = await res.arrayBuffer();
-                binaryCache.set(customUrl, buffer);
-                await saveCachedData(customUrl + "_raw", null, { timestamp: Date.now() }, buffer);
-
-                if (customWorkerRef.current) customWorkerRef.current.terminate();
-                customWorkerRef.current = createProtoWorker();
-
-                customWorkerRef.current.onmessage = async (e) => {
-                    if (e.data.error) toast.error("Failed to parse DAT", { description: e.data.error });
-                    else if (e.data.type === 'success') {
-                        await saveCachedData(customUrl, e.data.data, e.data.meta || { timestamp: Date.now() });
-                        setCustomData(e.data.data);
-                        setViewTag(null);
-                        toast.success(`Loaded ${e.data.data.length} categories`);
-                    }
-                    setCustomLoading(false);
-                };
-
-                customWorkerRef.current.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
-            }
-        } catch (err: any) {
-            toast.error("Failed to fetch list", { description: err.message });
-            setCustomLoading(false);
-        }
-    };
-
-    const displayData = useMemo(() => {
-        if (isDeepSearch && deepSearchResults !== null) {
-            return deepSearchResults;
-        }
-
-        let currentData: GeoItem[] =[];
-        if (activeTab === 'geosite') currentData = geoSites;
-        if (activeTab === 'geoip') currentData = geoIps;
-        if (activeTab === 'custom') currentData = customData;
-
-        if (!debouncedSearch || isDeepSearch) return currentData;
-        const lowerSearch = debouncedSearch.toLowerCase();
-        return currentData.filter(item => item.code.toLowerCase().includes(lowerSearch));
-    },[activeTab, geoSites, geoIps, customData, debouncedSearch, isDeepSearch, deepSearchResults]);
+    const {
+        activeTab,
+        handleTabChange,
+        customUrl,
+        setCustomUrl,
+        customFormat,
+        setCustomFormat,
+        customFileBuffer,
+        loading,
+        customLoading,
+        search,
+        setSearch,
+        isDeepSearch,
+        setIsDeepSearch,
+        deepSearchLoading,
+        displayData,
+        viewTag,
+        setViewTag,
+        fileInputRef,
+        handleFileUpload,
+        fetchCustomList
+    } = useGeoViewer();
 
     const handleCopyAll = async () => {
         if (displayData.length === 0) return toast.warning("Nothing to copy");
@@ -429,11 +98,6 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
             }
             toast.success(`Copied ${displayData.length} items`);
         } catch { toast.error("Failed to copy data"); }
-    };
-
-    const handleTabChange = (tab: 'geosite' | 'geoip' | 'custom') => {
-        setActiveTab(tab); setSearch(""); setDebouncedSearch(""); setIsDeepSearch(false);
-        setViewTag(null);
     };
 
     return (
@@ -454,14 +118,14 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
                             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mr-1">Quick Presets:</span>
                             {CUSTOM_PRESETS.map((p, i) => (
-                                <button key={i} onClick={() => { setCustomUrl(p.url); setCustomFormat(p.format as any); setCustomFileBuffer(null); }} className="px-2.5 py-1 text-[10px] font-bold bg-slate-950 border border-slate-700 text-slate-300 rounded hover:border-indigo-500 hover:bg-indigo-600/10 hover:text-indigo-300 transition-colors">
+                                <button key={i} onClick={() => { setCustomUrl(p.url); setCustomFormat(p.format as any); }} className="px-2.5 py-1 text-[10px] font-bold bg-slate-950 border border-slate-700 text-slate-300 rounded hover:border-indigo-500 hover:bg-indigo-600/10 hover:text-indigo-300 transition-colors">
                                     {p.label}
                                 </button>
                             ))}
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-2">
-                            <select className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-emerald-500 outline-none w-full md:w-auto" value={customFormat} onChange={(e: any) => { setCustomFormat(e.target.value); setViewTag(null); }}>
+                            <select className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-emerald-500 outline-none w-full md:w-auto" value={customFormat} onChange={(e: any) => setCustomFormat(e.target.value)}>
                                 <option value="geoip">GeoIP (.dat)</option>
                                 <option value="geosite">GeoSite (.dat)</option>
                                 <option value="text">Raw Text (.txt)</option>
@@ -470,7 +134,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                             <div className="flex-1 flex gap-2">
                                 <div className="flex-1 relative">
                                     <Icon name="Link" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                    <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono" placeholder="Paste URL or select local file..." value={customUrl} onChange={e => { setCustomUrl(e.target.value); setCustomFileBuffer(null); }} onKeyDown={e => e.key === 'Enter' && fetchCustomList()} />
+                                    <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono" placeholder="Paste URL or select local file..." value={customUrl} onChange={e => setCustomUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchCustomList()} />
                                 </div>
                                 
                                 <input type="file" ref={fileInputRef} className="hidden" accept=".dat,.txt" onChange={handleFileUpload} />

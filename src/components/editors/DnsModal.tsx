@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { useConfigStore } from '../../store/configStore';
 import { JsonField } from '../ui/JsonField';
-import { Icon } from '../ui/Icon';
 
 // Sub-components
 import { DnsGeneral } from './dns/DnsGeneral';
@@ -12,64 +10,33 @@ import { DnsServerEditor } from './dns/DnsServerEditor';
 import { DnsHosts } from './dns/DnsHosts';
 import { DnsFakedns } from './dns/DnsFakedns';
 
-export const DnsModal = ({ onClose }) => {
-    const { config, updateSection } = useConfigStore();
+import { useDnsEditor } from '../../hooks/useDnsEditor';
 
-    const dns = config?.dns || {};
-    const fakedns = config?.fakedns || [];
-
-    const [activeTab, setActiveTab] = useState<'general' | 'servers' | 'hosts' | 'fakedns'>('servers');
-    const [editingServerIdx, setEditingServerIdx] = useState<number | null>(null);
-    const [rawMode, setRawMode] = useState(false);
-
-    // NEW: Мобильный режим для серверов
-    const [mobileEditMode, setMobileEditMode] = useState(false);
-
-    // Helpers
-    const handleUpdateDns = (newDns) => {
-        updateSection('dns', newDns);
-    };
-
-    // Server Actions
-    const handleAddServer = (initialVal) => {
-        const newServers = [...(dns.servers || []), initialVal];
-        handleUpdateDns({ ...dns, servers: newServers });
-        if (typeof initialVal !== 'string') {
-            setEditingServerIdx(newServers.length - 1);
-            setMobileEditMode(true);
-        }
-    };
-
-    const handleSelectServer = (idx) => {
-        setEditingServerIdx(idx);
-        setMobileEditMode(true);
-    };
-
-    const handleDeleteServer = (idx) => {
-        const newServers = [...(dns.servers || [])];
-        newServers.splice(idx, 1);
-        handleUpdateDns({ ...dns, servers: newServers });
-        if (editingServerIdx === idx) {
-            setEditingServerIdx(null);
-            setMobileEditMode(false);
-        }
-    };
-
-    const handleUpdateServer = (val) => {
-        if (editingServerIdx === null) return;
-        const newServers = [...(dns.servers || [])];
-        newServers[editingServerIdx] = val;
-        handleUpdateDns({ ...dns, servers: newServers });
-    };
+export const DnsModal = ({ onClose }: any) => {
+    const {
+        dns,
+        fakedns,
+        activeTab,
+        setActiveTab,
+        editingServerIdx,
+        setEditingServerIdx,
+        rawMode,
+        setRawMode,
+        mobileEditMode,
+        setMobileEditMode,
+        handleUpdateDns,
+        handleAddServer,
+        handleSelectServer,
+        handleDeleteServer,
+        handleUpdateServer,
+        handleCompositeUpdate,
+        updateHosts,
+        updateFakedns
+    } = useDnsEditor();
 
     // --- JSON MODE VIEW ---
     if (rawMode) {
         const compositeConfig = { dns: dns, fakedns: fakedns };
-        const handleCompositeUpdate = (newVal: any) => {
-            if (!newVal) return;
-            if (newVal.dns) updateSection('dns', newVal.dns);
-            if (newVal.fakedns) updateSection('fakedns', newVal.fakedns);
-        };
 
         return (
             <Modal
@@ -87,8 +54,9 @@ export const DnsModal = ({ onClose }) => {
                         value={compositeConfig}
                         onChange={handleCompositeUpdate}
                         className="flex-1"
-                        schemaMode="full" // <--- Добавляем этот проп
-                    />                </div>
+                        schemaMode="full"
+                    />
+                </div>
             </Modal>
         );
     }
@@ -127,14 +95,14 @@ export const DnsModal = ({ onClose }) => {
                 {/* --- HOSTS TAB --- */}
                 {activeTab === 'hosts' && (
                     <div className="w-full max-w-2xl mx-auto overflow-y-auto custom-scroll">
-                        <DnsHosts hosts={dns.hosts} onChange={h => handleUpdateDns({ ...dns, hosts: h })} />
+                        <DnsHosts hosts={dns.hosts} onChange={updateHosts} />
                     </div>
                 )}
 
                 {/* --- FAKEDNS TAB --- */}
                 {activeTab === 'fakedns' && (
                     <div className="w-full max-w-2xl mx-auto overflow-y-auto custom-scroll">
-                        <DnsFakedns fakedns={fakedns} onChange={(val) => updateSection('fakedns', val)} />
+                        <DnsFakedns fakedns={fakedns} onChange={updateFakedns} />
                     </div>
                 )}
 

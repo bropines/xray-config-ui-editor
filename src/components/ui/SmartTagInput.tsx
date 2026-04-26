@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Icon } from "./Icon";
-import { toast } from "sonner"; // <-- Добавили импорт тостов
+import { toast } from "sonner";
+import { useSmartTagInput } from "../../hooks/useSmartTagInput";
 
 interface Suggestion {
     code: string;
@@ -18,55 +19,35 @@ interface SmartTagInputProps {
     invalidTags?: string[];
     warnTags?: string[];
     onTagClick?: (tag: string) => void;
+    errorTooltip?: string;
+    warnTooltip?: string;
+    cleanRegex?: RegExp;
 }
 
 export const SmartTagInput = ({
     label,
-    value =[],
+    value = [],
     onChange,
     suggestions = [],
     prefix,
     placeholder,
     isLoading,
-    invalidTags =[],
+    invalidTags = [],
     warnTags = [],
     onTagClick,
+    errorTooltip = "Invalid tag",
+    warnTooltip = "Style lint warning",
+    cleanRegex = /\[\d+\]/g
 }: SmartTagInputProps) => {
-    const[input, setInput] = useState("");
-    const [showSuggest, setShowSuggest] = useState(false);
-    const [focusedIndex, setFocusedIndex] = useState(-1);
-    
-    const wrapperRef = useRef<HTMLDivElement>(null);
-    const suggestionsRef = useRef<HTMLDivElement>(null);
-
-    const filteredSuggestions = input && Array.isArray(suggestions)
-        ? suggestions
-            .filter(s => s?.code?.toLowerCase().includes(input.toLowerCase().replace(prefix, "")))
-            .slice(0, 30)
-        :[];
-
-    const processAndAddTags = (rawInput: string) => {
-        const rawTags = rawInput.split(/[\n,\s]+/);
-        let newTags = [...value];
-        let added = false;
-
-        rawTags.forEach(rawTag => {
-            const cleanTag = rawTag.replace(/\[\d+\]/g, '').trim();
-            if (cleanTag && !newTags.includes(cleanTag)) {
-                newTags.push(cleanTag);
-                added = true;
-            }
-        });
-
-        if (added) {
-            onChange(newTags);
-        }
-        setInput("");
-        setShowSuggest(false);
-        setFocusedIndex(-1);
-    };
-
-    const removeTag = (t: string) => onChange(value.filter(v => v !== t));
+    const {
+        input, setInput,
+        showSuggest, setShowSuggest,
+        focusedIndex, setFocusedIndex,
+        wrapperRef, suggestionsRef,
+        filteredSuggestions,
+        processAndAddTags,
+        removeTag
+    } = useSmartTagInput(value, onChange, suggestions, prefix, cleanRegex);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'ArrowDown') {
@@ -106,11 +87,8 @@ export const SmartTagInput = ({
                 const elemTop = activeElement.offsetTop;
                 const elemBottom = elemTop + activeElement.clientHeight;
 
-                if (elemTop < containerTop) {
-                    container.scrollTop = elemTop;
-                } else if (elemBottom > containerBottom) {
-                    container.scrollTop = elemBottom - container.clientHeight;
-                }
+                if (elemTop < containerTop) container.scrollTop = elemTop;
+                else if (elemBottom > containerBottom) container.scrollTop = elemBottom - container.clientHeight;
             }
         }
     }, [focusedIndex, showSuggest]);
@@ -130,7 +108,7 @@ export const SmartTagInput = ({
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
-    },[]);
+    }, []);
 
     const hasInvalid = invalidTags.length > 0;
     const hasWarn = warnTags.length > 0;
@@ -177,15 +155,12 @@ export const SmartTagInput = ({
                     return (
                         <span
                             key={i}
-                            title={isInvalid ? "Error — will crash Xray" : isWarn ? "Style lint — works but convention is lowercase" : "Click to copy, Ctrl+Click to view details"}
+                            title={isInvalid ? errorTooltip : isWarn ? warnTooltip : "Click to copy, Ctrl+Click to view details"}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                // Если зажат Ctrl (или Cmd на Mac) — открываем модалку деталей
                                 if (e.ctrlKey || e.metaKey) {
-                                    // ВАЖНО: Убрали сломанный `prefix + tag`
                                     if (onTagClick) onTagClick(tag);
                                 } else {
-                                    // Обычный клик — копируем в буфер
                                     navigator.clipboard.writeText(tag)
                                         .then(() => toast.success(`Copied: ${tag}`))
                                         .catch(() => toast.error("Copy failed"));

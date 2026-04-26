@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from './Icon';
+import { Icon } from './ui/Icon';
 import type { Diagnostic, DiagnosticSeverity } from '../../utils/diagnostics';
 
 interface Props {

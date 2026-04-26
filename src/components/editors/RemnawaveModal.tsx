@@ -1,79 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { useConfigStore } from '../../store/configStore';
-import { RemnawaveClient, type RemnawaveProfile } from '../../utils/remnawave-client';
-import { toast } from 'sonner';
+import { useRemnawaveEditor } from '../../hooks/useRemnawaveEditor';
 
 export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
-    const { 
-        remnawave, 
-        connectRemnawaveToken, 
-        fetchRemnawaveProfiles, 
-        loadRemnawaveProfile,
-        disconnectRemnawave 
-    } = useConfigStore();
-    
-    const [step, setStep] = useState<'login' | 'select'>('login');
-    const [loading, setLoading] = useState(false);
-
-    // Form State
-    const [url, setUrl] = useState(remnawave.url || "");
-    const [apiToken, setApiToken] = useState(remnawave.token || "");
-    
-    // Profiles
-    const [profiles, setProfiles] = useState<RemnawaveProfile[]>([]);
-
-    useEffect(() => {
-        if (remnawave.connected) {
-            setStep('select');
-            handleRefreshProfiles();
-        }
-    }, []);
-
-    const handleRefreshProfiles = async () => {
-        setLoading(true);
-        try {
-            const list = await fetchRemnawaveProfiles();
-            setProfiles(list);
-        } catch (e: any) {
-            setStep('login');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleConnect = async () => {
-        if (!url || !apiToken) {
-            toast.error("Please fill URL and API Token");
-            return;
-        }
-        setLoading(true);
-        try {
-            const client = new RemnawaveClient(url);
-            client.setToken(apiToken);
-            
-            const loadedProfiles = await client.getConfigProfiles();
-            
-            // Если профили загрузились — токен валидный
-            connectRemnawaveToken(url, apiToken);
-            setProfiles(loadedProfiles);
-            setStep('select');
-        } catch (e: any) {
-            console.error(e);
-            toast.error("Connection failed", { description: "Invalid token or panel URL" });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSelectProfile = async (uuid: string) => {
-        setLoading(true);
-        await loadRemnawaveProfile(uuid);
-        setLoading(false);
-        onClose();
-    };
+    const {
+        remnawave,
+        step,
+        setStep,
+        loading,
+        url,
+        setUrl,
+        apiToken,
+        setApiToken,
+        profiles,
+        handleRefreshProfiles,
+        handleConnect,
+        handleSelectProfile,
+        disconnectRemnawave
+    } = useRemnawaveEditor(onClose);
 
     return (
         <Modal 

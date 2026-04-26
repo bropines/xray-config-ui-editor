@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
-import { useConfigStore } from '../../store/configStore';
 import { JsonField } from '../ui/JsonField';
 
 // Возвращаем твои родные компоненты!
@@ -12,53 +11,27 @@ import { PolicyEditor } from './settings/PolicyEditor';
 import { ObservatoryEditor } from './settings/ObservatoryEditor';
 import { BurstObservatoryEditor } from './settings/BurstObservatoryEditor';
 
+import { useSettingsEditor } from '../../hooks/useSettingsEditor';
+
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
-    const { config, updateSection, toggleSection } = useConfigStore();
-    const [activeTab, setActiveTab] = useState<'general' | 'policy' | 'observatory'>('general');
-    
-    // Тот самый флаг для переключения в JSON режим
-    const [rawMode, setRawMode] = useState(false);
-
-    const outboundTags = (config?.outbounds || []).map(o => o.tag).filter(t => t);
-
-    // Функция экспорта (собираем все настройки ядра)
-    const downloadCoreJson = () => {
-        const coreSettings = {
-            log: config?.log,
-            api: config?.api,
-            policy: config?.policy,
-            observatory: config?.observatory,
-            burstObservatory: config?.burstObservatory,
-            stats: config?.stats
-        };
-        const blob = new Blob([JSON.stringify(coreSettings, null, 2)], { type: "application/json" });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "core-settings.json";
-        a.click();
-    };
+    const {
+        config,
+        coreVersion,
+        setCoreVersion,
+        activeTab,
+        setActiveTab,
+        rawMode,
+        setRawMode,
+        outboundTags,
+        coreSettings,
+        handleRawUpdate,
+        downloadCoreJson,
+        updateSection,
+        toggleSection
+    } = useSettingsEditor();
 
     // --- РЕЖИМ JSON (Отображается вместо форм) ---
     if (rawMode) {
-        const coreSettings = {
-            log: config?.log,
-            api: config?.api,
-            policy: config?.policy,
-            observatory: config?.observatory,
-            burstObservatory: config?.burstObservatory,
-            stats: config?.stats
-        };
-        
-        const handleRawUpdate = (newVal: any) => {
-            if (!newVal) return;
-            if (newVal.log !== undefined) updateSection('log', newVal.log);
-            if (newVal.api !== undefined) updateSection('api', newVal.api);
-            if (newVal.policy !== undefined) updateSection('policy', newVal.policy);
-            if (newVal.observatory !== undefined) updateSection('observatory', newVal.observatory);
-            if (newVal.burstObservatory !== undefined) updateSection('burstObservatory', newVal.burstObservatory);
-            if (newVal.stats !== undefined) updateSection('stats', newVal.stats);
-        };
-
         return (
             <Modal title="Core Settings (JSON)" onClose={onClose} onSave={onClose}
                 extraButtons={
@@ -108,8 +81,8 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                                 <div>
                                     <label className="label-xs">Target Xray-core Version</label>
                                     <select className="input-base"
-                                        value={useConfigStore.getState().coreVersion}
-                                        onChange={e => useConfigStore.getState().setCoreVersion(e.target.value)}
+                                        value={coreVersion}
+                                        onChange={e => setCoreVersion(e.target.value)}
                                     >
                                         <option value="v1.8.10">Latest (v1.8.10+)</option>
                                         <option value="v1.8.0">Stable (v1.8.0)</option>
