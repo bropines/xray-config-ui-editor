@@ -132,7 +132,7 @@ export const RoutingModal = ({ onClose }: any) => {
             )}
 
             <div
-                className="flex flex-col md:flex-row h-[520px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
+                className="flex flex-col md:flex-row h-[60vh] adaptive-height border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
                 style={{ '--sidebar-width': `${sidebarWidth}px` } as any}
             >
                 {activeTab === 'rules' ? (

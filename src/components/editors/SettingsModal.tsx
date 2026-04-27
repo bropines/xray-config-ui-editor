@@ -40,9 +40,10 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                         <Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">Form Mode</Button>
                     </div>
                 }
+                className="h-full overflow-hidden"
             >
-                <div className="h-[500px] flex flex-col">
-                    <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded text-[10px] text-slate-400 mb-2">
+                <div className="flex-1 min-h-0 h-full flex flex-col">
+                    <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded text-[10px] text-slate-400 mb-2 shrink-0">
                         Here you can edit all core modules at once natively.
                     </div>
                     <JsonField label="Core Settings (Combined)" value={coreSettings} onChange={handleRawUpdate} schemaMode="full" className="flex-1" />
@@ -69,7 +70,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
             }
         >
-            <div className="h-[500px] overflow-y-auto custom-scroll p-1">
+            <div className="h-full md:max-h-[60vh] adaptive-height overflow-y-auto custom-scroll p-1">
                 <div className="max-w-2xl mx-auto space-y-8">
                     
                     {activeTab === 'general' && (

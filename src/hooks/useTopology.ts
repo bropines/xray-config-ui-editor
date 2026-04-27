@@ -1,16 +1,39 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNodesState, useEdgesState } from '@xyflow/react';
 import { useConfigStore } from '../store/configStore';
 import { getLayoutedElements } from '../utils/graph-layout';
 
 export const useTopology = () => {
     const { config } = useConfigStore();
+    const [hideUnused, setHideUnused] = useState(true);
+    const [direction, setDirection] = useState<'TB' | 'LR'>('LR');
 
     const { initialNodes, initialEdges } = useMemo(() => {
         if (!config) return { initialNodes: [], initialEdges: [] };
 
         const nodes: any[] = [];
         const edges: any[] = [];
+
+        // 0. ПРЕДВАРИТЕЛЬНЫЙ АНАЛИЗ ИСПОЛЬЗОВАНИЯ
+        const usedOutboundTags = new Set<string>();
+        
+        // Первый аутбаунд всегда используется
+        if (config.outbounds?.[0]?.tag) usedOutboundTags.add(config.outbounds[0].tag);
+
+        config.routing?.rules?.forEach(rule => {
+            if (rule.outboundTag) usedOutboundTags.add(rule.outboundTag);
+            if (rule.balancerTag) {
+                config.routing?.balancers?.forEach(bal => {
+                    if (bal.tag === rule.balancerTag) {
+                        bal.selector?.forEach(sel => {
+                            config.outbounds?.forEach(out => {
+                                if (out.tag && out.tag.startsWith(sel)) usedOutboundTags.add(out.tag);
+                            });
+                        });
+                    }
+                });
+            }
+        });
 
         // 1. INBOUNDS
         config.inbounds?.forEach((inbound, i) => {
@@ -25,6 +48,9 @@ export const useTopology = () => {
         // 2. OUTBOUNDS
         const outboundMap = new Map();
         config.outbounds?.forEach((outbound, i) => {
+            const isUsed = usedOutboundTags.has(outbound.tag || "");
+            if (hideUnused && !isUsed) return;
+
             const id = `out-${outbound.tag || i}`;
             outboundMap.set(outbound.tag, id);
             nodes.push({
@@ -50,7 +76,10 @@ export const useTopology = () => {
             bal.selector?.forEach(sel => {
                 config.outbounds?.forEach(out => {
                     if (out.tag && out.tag.startsWith(sel)) {
-                        edges.push({ id: `e-${id}-${out.tag}`, source: id, target: outboundMap.get(out.tag), animated: true, style: { stroke: '#a855f7' } });
+                        const targetId = outboundMap.get(out.tag);
+                        if (targetId) {
+                            edges.push({ id: `e-${id}-${out.tag}`, source: id, target: targetId, animated: true, style: { stroke: '#a855f7' } });
+                        }
                     }
                 });
             });
@@ -119,20 +148,32 @@ export const useTopology = () => {
             });
 
             const firstOutId = `out-${config.outbounds[0].tag}`;
-            edges.push({ id: `e-def-out`, source: defaultId, target: firstOutId, animated: true });
+            const targetId = outboundMap.get(config.outbounds[0].tag);
+            if (targetId) {
+                edges.push({ id: `e-def-out`, source: defaultId, target: targetId, animated: true });
+            }
         }
 
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction);
         return { initialNodes: layoutedNodes, initialEdges: layoutedEdges };
-    }, [config]);
+    }, [config, hideUnused, direction]);
 
-    const [nodes, , onNodesChange] = useNodesState(initialNodes);
-    const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+    useMemo(() => {
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+    }, [initialNodes, initialEdges, setNodes, setEdges]);
 
     return {
         nodes,
         edges,
         onNodesChange,
-        onEdgesChange
+        onEdgesChange,
+        hideUnused,
+        setHideUnused,
+        direction,
+        setDirection
     };
 };

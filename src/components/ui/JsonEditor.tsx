@@ -11,7 +11,9 @@ interface JsonEditorProps {
 }
 
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
+    const [isFocused, setIsFocused] = React.useState(false);
     const editorRef = useRef<any>(null);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     const handleEditorWillMount = (monaco: any) => {
         const MASTER_SCHEMA_URI = "inmemory://xray/master-config.schema.json";
@@ -115,7 +117,8 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
     return (
         <div className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            onClick={() => setIsFocused(true)}>
             <Editor
                 height="100%"
                 path={getFilePath()}
@@ -126,32 +129,59 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                 beforeMount={handleEditorWillMount}
                 onMount={handleEditorDidMount}
                 options={{
-                    readOnly,
+                    readOnly: readOnly || (!isMobile && !isFocused),
                     minimap: { enabled: false },
-                    fontSize: 13,
+                    fontSize: isMobile ? 12 : 13,
                     fontFamily: "'JetBrains Mono', monospace",
                     scrollBeyondLastLine: false,
-                    automaticLayout: true,
+                    automaticLayout: !isMobile,
                     tabSize: 2,
-                    formatOnPaste: true,
-                    formatOnType: true,
-                    lineHeight: 20,
+                    formatOnPaste: !isMobile,
+                    formatOnType: !isMobile,
+                    lineHeight: isMobile ? 18 : 20,
                     fixedOverflowWidgets: true,
-                    suggest: {
+                    quickSuggestions: !isMobile,
+                    suggest: isMobile ? {
+                        showWords: false,
+                        showValues: false,
+                        showProperties: false,
+                    } : {
                         preview: true,
                         showWords: false,
                         showValues: true,
                         showProperties: true,
                     },
-                    hover: { enabled: true, delay: 300 }
+                    hover: { enabled: !isMobile, delay: 300 },
+                    links: !isMobile,
+                    contextmenu: !isMobile,
+                    renderLineHighlight: isMobile ? 'none' : 'all',
+                    scrollbar: {
+                        verticalScrollbarSize: isMobile ? 6 : 10,
+                        horizontalScrollbarSize: isMobile ? 6 : 10,
+                        alwaysConsumeMouseWheel: false,
+                    },
+                    glyphMargin: !isMobile,
+                    folding: !isMobile,
+                    // Desktop Optimizations
+                    smoothScrolling: true,
+                    cursorSmoothCaretAnimation: "on",
+                    cursorBlinking: "smooth",
+                    mouseWheelScrollSensitivity: 1,
+                    fastScrollSensitivity: 5,
+                    multiCursorModifier: 'alt',
+                    wordWrap: isMobile ? 'on' : 'off'
                 }}
             />
             <style>{`
                 .monaco-editor-container .monaco-editor .view-line {
-                    line-height: 20px !important;
+                    line-height: ${isMobile ? '18px' : '20px'} !important;
                 }
                 .monaco-editor .decorationsOverviewRuler {
                     display: none !important;
+                }
+                /* Плавный переход для самого контейнера */
+                .monaco-editor {
+                    transition: opacity 0.2s ease-in-out;
                 }
             `}</style>
         </div>

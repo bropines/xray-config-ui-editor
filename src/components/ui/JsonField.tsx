@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
+import { MobileJsonEditor } from "./MobileJsonEditor";
 
 interface JsonFieldProps {
     label?: string;
@@ -13,6 +14,13 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
     const isInternalUpdate = useRef(false);
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (!isInternalUpdate.current) {
@@ -54,7 +62,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
     };
 
     return (
-        <div className={`flex flex-col gap-2 h-full ${className}`}>
+        <div className={`flex flex-col gap-2 h-full w-full min-w-0 ${className}`}>
             {label && (
                 <div className="flex justify-between items-end">
                     <label className="text-xs uppercase font-bold text-slate-500">
@@ -65,13 +73,21 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             )}
             
             {/* Контейнер редактора с абсолютным позиционированием внутри flex-элемента */}
-            <div className={`flex-1 min-h-[300px] relative rounded-lg overflow-hidden border transition-all bg-[#1e1e1e] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
+            <div className={`flex-1 min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#1e1e1e] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
                 <div className="absolute inset-0">
-                    <JsonEditor 
-                        value={text} 
-                        onChange={handleEditorChange} 
-                        schemaMode={schemaMode} 
-                    />
+                    {isMobile ? (
+                        <MobileJsonEditor 
+                            value={text} 
+                            onChange={handleEditorChange}
+                            schemaMode={schemaMode}
+                        />
+                    ) : (
+                        <JsonEditor 
+                            value={text} 
+                            onChange={handleEditorChange} 
+                            schemaMode={schemaMode} 
+                        />
+                    )}
                 </div>
             </div>
         </div>
