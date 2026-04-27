@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { JsonField } from './JsonField';
-import { Icon } from './Icon';
+import { ValidationSummary } from './ValidationSummary';
 
 interface EditorLayoutProps {
     title: string;
@@ -37,9 +37,10 @@ export const EditorLayout = ({
             {extraButtons}
             <Button 
                 variant="secondary" 
-                className="text-xs py-1 px-3" 
+                size="sm" 
                 onClick={() => setRawMode(!rawMode)} 
                 icon={rawMode ? "Layout" : "Code"}
+                iconWeight="bold"
             >
                 {rawMode ? "UI Mode" : "JSON Mode"}
             </Button>
@@ -48,36 +49,26 @@ export const EditorLayout = ({
 
     return (
         <Modal 
-            title={rawMode ? `${title} (JSON)` : title} 
+            title={rawMode ? `${title} (Source)` : title} 
             onClose={onClose} 
             onSave={onSave}
             extraButtons={modalButtons}
             className="h-full overflow-hidden"
         >
-            {errors.length > 0 && (
-                <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-xl text-rose-200 text-xs animate-in fade-in slide-in-from-top-2 shrink-0">
-                    <div className="flex items-center gap-2 mb-1 font-bold">
-                        <Icon name="WarningCircle" className="text-rose-500" />
-                        Validation Errors
-                    </div>
-                    <ul className="list-disc pl-5 space-y-0.5 opacity-80">
-                        {errors.map((err, i) => <li key={i}>{err.message}</li>)}
-                    </ul>
-                </div>
-            )}
+            <ValidationSummary errors={errors} />
 
             {rawMode ? (
-                <div className="flex-1 min-h-0 h-full flex flex-col">
+                <div className="flex-1 min-h-0 h-full flex flex-col animate-in fade-in duration-300">
                     <JsonField 
                         label="Source Configuration" 
                         value={local} 
                         onChange={setLocal} 
                         schemaMode={schemaMode} 
-                        className="flex-1" 
+                        className="flex-1 relative min-h-0" 
                     />
                 </div>
             ) : (
-                <div className="flex flex-col h-full md:max-h-[60vh] adaptive-height overflow-y-auto custom-scroll p-1 pb-10">
+                <div className="flex flex-col h-full md:max-h-[60vh] adaptive-height overflow-y-auto custom-scroll p-1 pb-12">
                     {children}
                 </div>
             )}

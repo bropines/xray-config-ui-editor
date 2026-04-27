@@ -1,9 +1,10 @@
 import React from 'react';
 import { Icon } from '../ui/Icon';
-import { Button } from '../ui/Button';
+import { Button, ButtonGroup, cn } from '../ui/Button';
 import { EditorLayout } from '../ui/EditorLayout';
 import { Card } from '../ui/Card';
 import { FormField } from '../ui/FormField';
+import { Select } from '../ui/Select';
 
 import { LogEditor } from './settings/LogEditor';
 import { ApiStatsEditor } from './settings/ApiStatsEditor';
@@ -31,23 +32,46 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
     } = useSettingsEditor();
 
     const tabs = (
-        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
-            <button onClick={() => setActiveTab('general')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Log & API</button>
-            <button onClick={() => setActiveTab('policy')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'policy' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Policy</button>
-            <button onClick={() => setActiveTab('observatory')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'observatory' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Observatory</button>
-        </div>
+        <ButtonGroup className="bg-slate-950/80 border-slate-800">
+            <Button 
+                variant={activeTab === 'general' ? 'primary' : 'ghost'} 
+                size="xs" 
+                onClick={() => setActiveTab('general')}
+                className={cn("px-4 uppercase tracking-tighter", activeTab !== 'general' && "text-slate-500")}
+            >
+                Log & API
+            </Button>
+            <Button 
+                variant={activeTab === 'policy' ? 'primary' : 'ghost'} 
+                size="xs" 
+                onClick={() => setActiveTab('policy')}
+                className={cn("px-4 uppercase tracking-tighter", activeTab !== 'policy' && "text-slate-500")}
+            >
+                Policy
+            </Button>
+            <Button 
+                variant={activeTab === 'observatory' ? 'primary' : 'ghost'} 
+                size="xs" 
+                onClick={() => setActiveTab('observatory')}
+                className={cn("px-4 uppercase tracking-tighter", activeTab !== 'observatory' && "text-slate-500")}
+            >
+                Observatory
+            </Button>
+        </ButtonGroup>
     );
 
     const extraButtons = (
-        <>
+        <div className="flex items-center gap-4">
             {!rawMode && tabs}
-            <Button variant="success" className="text-xs py-1" onClick={downloadCoreJson} icon="DownloadSimple">Export</Button>
-        </>
+            <Button variant="success" size="sm" onClick={downloadCoreJson} icon="DownloadSimple" iconWeight="bold">
+                Export
+            </Button>
+        </div>
     );
 
     return (
         <EditorLayout
-            title="General Settings"
+            title="Core Settings"
             local={coreSettings}
             setLocal={handleRawUpdate}
             rawMode={rawMode}
@@ -58,19 +82,20 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             schemaMode="full"
             extraButtons={extraButtons}
         >
-            <div className="max-w-3xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-8 py-2">
                 {activeTab === 'general' && (
-                    <>
-                        <Card title="Core Compatibility" icon="Cpu">
-                            <FormField label="Target Xray-core Version" help="Adjusts UI fields and validation based on core features (e.g., XHTTP requires v1.8.10+).">
-                                <select className="input-base"
+                    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <Card title="Core Compatibility" icon="Cpu" iconColor="bg-slate-700">
+                            <FormField label="Target Xray-core Version" help="Adjusts UI fields and validation based on core features.">
+                                <Select 
                                     value={coreVersion}
                                     onChange={e => setCoreVersion(e.target.value)}
+                                    className="font-black text-indigo-400"
                                 >
                                     <option value="v1.8.10">Latest (v1.8.10+)</option>
                                     <option value="v1.8.0">Stable (v1.8.0)</option>
                                     <option value="v1.5.0">Legacy (v1.5.0)</option>
-                                </select>
+                                </Select>
                             </FormField>
                         </Card>
                         
@@ -87,22 +112,31 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                             onToggleApi={(d: any) => toggleSection('api', d)}
                             onToggleStats={(d: any) => toggleSection('stats', d)}
                         />
-                    </>
+                    </div>
                 )}
 
                 {activeTab === 'policy' && (
-                    <PolicyEditor 
-                        policy={config?.policy} 
-                        onChange={(v: any) => updateSection('policy', v)}
-                        onToggle={(d: any) => toggleSection('policy', d)}
-                    />
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <PolicyEditor 
+                            policy={config?.policy} 
+                            onChange={(v: any) => updateSection('policy', v)}
+                            onToggle={(d: any) => toggleSection('policy', d)}
+                        />
+                    </div>
                 )}
 
                 {activeTab === 'observatory' && (
-                    <div className="space-y-6">
-                        <div className="p-3 bg-indigo-900/10 border border-indigo-500/20 rounded-xl text-[11px] text-indigo-300 flex items-start gap-2">
-                            <Icon name="Info" className="shrink-0 mt-0.5" />
-                            <span>Use <b>Observatory</b> for standard periodic checks, or <b>Burst Observatory</b> for randomized stealth checks. Choose one based on your balancers setup.</span>
+                    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl flex items-start gap-4">
+                            <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400">
+                                <Icon name="Info" weight="fill" className="text-xl" />
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-xs font-black text-indigo-300 uppercase tracking-wider">Observatory Guide</h4>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">
+                                    Use <b>Observatory</b> for standard periodic health checks, or <b>Burst Observatory</b> for randomized stealth checks. Choose the one that fits your traffic pattern.
+                                </p>
+                            </div>
                         </div>
                         
                         <ObservatoryEditor 

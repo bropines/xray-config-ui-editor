@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { SmartTagInput } from '../../ui/SmartTagInput';
 import { getDefaultGeoList } from '../../../utils/geo-data';
+import { FormField } from '../../ui/FormField';
+import { Input } from '../../ui/Input';
+import { Switch } from '../../ui/Switch';
+import { Card } from '../../ui/Card';
+import { Icon } from '../../ui/Icon';
 
-export const DnsServerEditor = ({ server, onChange, onCancel }) => {
+export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     const isString = typeof server === 'string';
-    const[local, setLocal] = useState(isString ? { address: server } : { ...server });
+    const [local, setLocal] = useState(isString ? { address: server } : { ...server });
 
-    const[geoSites, setGeoSites] = useState([]);
+    const [geoSites, setGeoSites] = useState([]);
     const [geoIps, setGeoIps] = useState([]);
     const [loadingGeo, setLoadingGeo] = useState(false);
 
@@ -30,87 +35,78 @@ export const DnsServerEditor = ({ server, onChange, onCancel }) => {
     }, [isString]);
 
     const update = (field: string, val: any) => {
-        setLocal(prev => ({ ...prev, [field]: val }));
-    };
-
-    const handleSave = () => {
-        // Если это advanced объект, но в нем только адрес и порт (стандартный), можно попытаться упростить до строки?
-        // Нет, Xray различает: строка = UDP/53 (обычно), объект = гибкость.
-        // Просто сохраняем как есть.
-        onChange(local);
+        setLocal((prev: any) => ({ ...prev, [field]: val }));
     };
 
     const convertToAdvanced = () => {
-        // Конвертируем строку в объект и перерендерим
         onChange({ address: server, domains: [], expectIPs: [] });
     };
 
     if (isString) {
         return (
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
-                <h3 className="text-sm font-bold text-white">Simple DNS Server</h3>
-                <div>
-                    <label className="label-xs">Address</label>
-                    <input className="input-base font-mono" 
-                        value={server} 
-                        onChange={e => onChange(e.target.value)} 
-                        placeholder="8.8.8.8 or https://..."
-                    />
+            <Card title="Simple DNS Server" icon="Globe" iconColor="bg-slate-700" className="animate-in fade-in duration-300">
+                <div className="space-y-6">
+                    <FormField label="Server Address" help="IP or URL of the DNS server.">
+                        <Input 
+                            className="font-mono" 
+                            value={server} 
+                            onChange={e => onChange(e.target.value)} 
+                            placeholder="e.g. 8.8.8.8"
+                        />
+                    </FormField>
+                    <div className="bg-indigo-500/5 p-5 rounded-2xl border border-indigo-500/20 text-center space-y-4 shadow-inner">
+                        <p className="text-xs text-slate-400 leading-relaxed font-medium">Need domain-specific routing or forced IP expectations?</p>
+                        <Button variant="outline" color="info" size="sm" className="w-full" onClick={convertToAdvanced}>
+                            Switch to Advanced Mode
+                        </Button>
+                    </div>
+                    <div className="flex justify-end pt-2">
+                        <Button variant="ghost" size="sm" onClick={onCancel} icon="Check">Done</Button>
+                    </div>
                 </div>
-                <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50 text-center">
-                    <p className="text-xs text-slate-400 mb-3">Need domains filtering or specific IPs?</p>
-                    <Button variant="secondary" className="text-xs w-full" onClick={convertToAdvanced}>Convert to Advanced Object</Button>
-                </div>
-                <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="ghost" onClick={onCancel}>Done</Button>
-                </div>
-            </div>
+            </Card>
         );
     }
 
     return (
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-4 h-full flex flex-col">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 className="text-sm font-bold text-indigo-400">Advanced Server Config</h3>
-                <Button variant="ghost" onClick={() => onChange(local)}>Save & Close</Button>
+        <div className="h-full flex flex-col space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="flex justify-between items-center px-1 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400">
+                        <Icon name="GearSix" weight="fill" className="text-xl" />
+                    </div>
+                    <h3 className="text-lg font-black text-white uppercase tracking-tighter">Advanced DNS</h3>
+                </div>
+                <Button variant="success" size="sm" onClick={() => onChange(local)} icon="FloppyDisk">Save</Button>
             </div>
 
-            <div className="overflow-y-auto custom-scroll flex-1 space-y-4 pr-2">
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-2">
-                        <label className="label-xs">Address</label>
-                        <input className="input-base font-mono" 
-                            value={local.address || ""} 
-                            onChange={e => update('address', e.target.value)} 
-                        />
+            <div className="overflow-y-auto custom-scroll flex-1 space-y-8 pr-2 pb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                        <FormField label="Server Address">
+                            <Input className="font-mono" value={local.address || ""} onChange={e => update('address', e.target.value)} />
+                        </FormField>
                     </div>
-                    <div>
-                        <label className="label-xs">Port</label>
-                        <input type="number" className="input-base font-mono" 
-                            value={local.port || ""} 
-                            onChange={e => update('port', parseInt(e.target.value) || undefined)} 
-                            placeholder="53"
-                        />
-                    </div>
+                    <FormField label="Port">
+                        <Input type="number" className="font-mono" value={local.port || ""} onChange={e => update('port', parseInt(e.target.value) || undefined)} placeholder="53" />
+                    </FormField>
                 </div>
 
-                <div>
+                <div className="space-y-6">
                     <SmartTagInput 
-                        label="Domains (Routing)" 
+                        label="Domain Filtering (geosite)" 
                         prefix="geosite:" 
-                        placeholder="geosite:cn, google.com..." 
+                        placeholder="e.g. geosite:google, youtube.com" 
                         value={local.domains || []} 
                         onChange={v => update('domains', v)}
                         suggestions={geoSites}
                         isLoading={loadingGeo}
                     />
-                </div>
 
-                <div>
                     <SmartTagInput 
-                        label="Expect IPs (Optional)" 
+                        label="Expected IPs (geoip)" 
                         prefix="geoip:" 
-                        placeholder="geoip:cn..." 
+                        placeholder="e.g. geoip:cn" 
                         value={local.expectIPs || []} 
                         onChange={v => update('expectIPs', v)}
                         suggestions={geoIps}
@@ -118,19 +114,14 @@ export const DnsServerEditor = ({ server, onChange, onCancel }) => {
                     />
                 </div>
 
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
-                            checked={local.skipFallback || false}
-                            onChange={e => update('skipFallback', e.target.checked)} />
-                        <span className="text-xs text-slate-300">Skip Fallback (Critical)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
-                            checked={local.queryStrategy === 'UseIPv4'}
-                            onChange={e => update('queryStrategy', e.target.checked ? 'UseIPv4' : undefined)} />
-                        <span className="text-xs text-slate-300">Force IPv4 (A Record)</span>
-                    </label>
+                <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-800/80 space-y-4 shadow-inner">
+                    <FormField label="Skip Fallback" help="If enabled, this server will never be skipped even if it fails." horizontal>
+                        <Switch checked={local.skipFallback || false} onChange={val => update('skipFallback', val)} />
+                    </FormField>
+                    <div className="h-px bg-slate-800/50" />
+                    <FormField label="IPv4 Only" help="Force query for A records only." horizontal>
+                        <Switch checked={local.queryStrategy === 'UseIPv4'} onChange={val => update('queryStrategy', val ? 'UseIPv4' : undefined)} />
+                    </FormField>
                 </div>
             </div>
         </div>

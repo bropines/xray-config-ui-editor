@@ -1,16 +1,19 @@
 import React from 'react';
 import { Card } from '../../ui/Card';
 import { FormField } from '../../ui/FormField';
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
+import { Icon } from '../../ui/Icon';
 
 export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors = {} }: any) => {
     return (
-        <Card title="Outbound Protocol" icon="PaperPlaneTilt">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label="Protocol" help="Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria2, etc.">
-                    <select 
-                        className="input-base font-bold text-indigo-400"
+        <Card title="Outbound Protocol" icon="PaperPlaneTilt" iconColor="bg-blue-600">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="Protocol" help="Standard Xray outbound protocols.">
+                    <Select 
                         value={outbound.protocol} 
                         onChange={e => onProtocolChange(e.target.value)}
+                        className="font-black text-indigo-400"
                     >
                         <option value="vless">VLESS</option>
                         <option value="vmess">VMess</option>
@@ -24,15 +27,19 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
                         <option value="freedom">Freedom (Direct)</option>
                         <option value="blackhole">Blackhole (Block)</option>
                         <option value="dns">DNS</option>
-                    </select>
+                    </Select>
                 </FormField>
 
-                <FormField label="Tag" help="Unique name for this outbound (used in routing rules)." error={errors.tag}>
-                    <input 
-                        className="input-base" 
-                        value={outbound.tag || ""} 
-                        onChange={e => onChange('tag', e.target.value)} 
-                    />
+                <FormField label="Unique Tag" help="Name used in routing rules." error={errors.tag}>
+                    <div className="relative group/input">
+                        <Input 
+                            placeholder="e.g. proxy-out"
+                            value={outbound.tag || ""} 
+                            onChange={e => onChange('tag', e.target.value)}
+                            className="font-bold"
+                        />
+                        <Icon name="Tag" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within/input:text-indigo-500 transition-colors" />
+                    </div>
                 </FormField>
             </div>
         </Card>

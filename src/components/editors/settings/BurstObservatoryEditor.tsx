@@ -1,11 +1,16 @@
 import React from 'react';
+import { Card } from '../../ui/Card';
+import { FormField } from '../../ui/FormField';
+import { Switch } from '../../ui/Switch';
+import { Input } from '../../ui/Input';
 import { TagSelector } from '../../ui/TagSelector';
+import { Icon } from '../../ui/Icon';
 
 export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, outboundTags }: any) => {
     const enabled = !!burstObservatory;
     const localObs = burstObservatory || { 
         subjectSelector: [], 
-        pingConfig: { destination: "https://connectivitycheck.gstatic.com/generate_204", interval: "1m", sampling: 10 } 
+        pingConfig: { destination: "https://www.google.com/generate_204", interval: "1m", connectivity: "" } 
     };
 
     const update = (field: string, val: any) => {
@@ -13,64 +18,64 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
     };
 
     const updatePing = (field: string, val: any) => {
-        onChange({ ...localObs, pingConfig: { ...(localObs.pingConfig || {}), [field]: val } });
+        update('pingConfig', { ...(localObs.pingConfig || {}), [field]: val });
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <div>
-                    <h3 className="font-bold text-white">Burst Observatory</h3>
-                    <p className="text-xs text-slate-500">Advanced stealth health checks for balancers</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-indigo-600 cursor-pointer"
-                    checked={enabled}
+        <Card 
+            title="Burst Observatory" 
+            icon="Lightning" 
+            iconColor="bg-amber-500"
+            actions={
+                <Switch 
+                    checked={enabled} 
                     onChange={() => onToggle({ 
                         subjectSelector: [], 
-                        pingConfig: { destination: "https://connectivitycheck.gstatic.com/generate_204", interval: "1m", sampling: 10 } 
-                    })}
+                        pingConfig: { destination: "https://www.google.com/generate_204", interval: "1m", connectivity: "" } 
+                    })} 
                 />
-            </div>
-
-            {enabled && (
-                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 p-4 border border-slate-800 rounded-xl bg-slate-900/50">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                            <label className="label-xs">Destination URL</label>
-                            <input className="input-base font-mono text-xs" 
+            }
+        >
+            {enabled ? (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField label="Ping Destination" help="URL to check.">
+                            <Input 
+                                className="font-mono text-xs" 
                                 value={localObs.pingConfig?.destination || ""} 
+                                placeholder="https://..."
                                 onChange={e => updatePing('destination', e.target.value)}
                             />
-                        </div>
-                        <div>
-                            <label className="label-xs">Interval</label>
-                            <input className="input-base" 
+                        </FormField>
+                        <FormField label="Interval" help="Health check frequency.">
+                            <Input 
                                 placeholder="1m, 30s"
                                 value={localObs.pingConfig?.interval || ""} 
                                 onChange={e => updatePing('interval', e.target.value)}
                             />
-                        </div>
-                        <div>
-                            <label className="label-xs">Sampling Count</label>
-                            <input type="number" className="input-base" 
-                                value={localObs.pingConfig?.sampling || 10} 
-                                onChange={e => updatePing('sampling', parseInt(e.target.value))}
-                            />
-                        </div>
+                        </FormField>
                     </div>
 
-                    <div>
+                    <div className="pt-4 border-t border-slate-800/50">
                         <TagSelector 
-                            label="Subject Selector (Outbounds to Watch)"
+                            label="Subject Selector"
                             availableTags={outboundTags}
                             selected={localObs.subjectSelector || []}
                             onChange={v => update('subjectSelector', v)}
                             multi={true}
-                            placeholder="Prefix matching..."
+                            placeholder="Select tags..."
                         />
+                        <div className="mt-3 flex items-start gap-2 text-[10px] text-slate-500 font-medium bg-slate-950/30 p-3 rounded-xl border border-slate-800/50">
+                            <Icon name="Lightning" weight="fill" className="mt-0.5 text-amber-500" />
+                            <span>Burst observatory uses randomized checks to bypass detection. Ideal for modern Xray setups.</span>
+                        </div>
                     </div>
                 </div>
+            ) : (
+                <div className="text-center py-2 opacity-40 text-[10px] uppercase font-black tracking-widest italic">
+                    Burst Observatory is disabled
+                </div>
             )}
-        </div>
+        </Card>
     );
 };

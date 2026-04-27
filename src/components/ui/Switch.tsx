@@ -1,26 +1,28 @@
 import React from 'react';
+import { cn } from './Button';
 
 interface SwitchProps {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    label?: string;
-    disabled?: boolean;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  className?: string;
 }
 
-export const Switch = ({ checked, onChange, label, disabled = false }: SwitchProps) => {
-    return (
-        <label className={`flex items-center gap-3 cursor-pointer group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-            <div className="relative">
-                <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={checked}
-                    onChange={(e) => !disabled && onChange(e.target.checked)}
-                />
-                <div className={`w-10 h-5 rounded-full transition-colors duration-200 ${checked ? 'bg-indigo-600' : 'bg-slate-700'}`}></div>
-                <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`}></div>
-            </div>
-            {label && <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-200 transition-colors">{label}</span>}
-        </label>
-    );
+export const Switch = ({ checked, onChange, className = "" }: SwitchProps) => {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+        checked ? "bg-indigo-600 shadow-[0_0_12px_rgba(79,70,229,0.4)]" : "bg-slate-700",
+        className
+      )}
+    >
+      <span
+        className={cn(
+          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out",
+          checked ? "translate-x-5" : "translate-x-0"
+        )}
+      />
+    </button>
+  );
 };
