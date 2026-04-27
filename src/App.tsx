@@ -43,6 +43,7 @@ const Card = ({ title, icon, color, children, actions, className = "" }: any) =>
 // App
 // ---------------------------------------------------------------------------
 export const App = () => {
+    const [modulesVisible, setModulesVisible] = React.useState(false);
     const {
         config, setConfig, deleteItem, remnawave, disconnectRemnawave, initDns,
         modal, setModal,
@@ -206,36 +207,44 @@ export const App = () => {
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0 flex flex-col gap-3">
-                        <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg gap-4">
+                        <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl shadow-lg gap-4">
                             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
-                                <h2 className="font-bold text-slate-300 flex items-center gap-2 text-base">
-                                    <Icon name="SlidersHorizontal" /> Core Modules
-                                </h2>
+                                <div className="flex items-center justify-between w-full md:w-auto">
+                                    <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm md:text-base">
+                                        <Icon name="SlidersHorizontal" /> Core Modules
+                                    </h2>
+                                    <button 
+                                        onClick={() => setModulesVisible(!modulesVisible)}
+                                        className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        <Icon name={modulesVisible ? "CaretUp" : "CaretDown"} weight="bold" />
+                                    </button>
+                                </div>
 
                                 <div className="hidden md:block w-px h-6 bg-slate-800" />
 
-                                <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">
+                                <div className={`${modulesVisible ? 'flex' : 'hidden md:flex'} flex-wrap gap-2 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}>
+                                    <Button className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2" variant="secondary" onClick={() => setModal({ type: 'settings', data: null, index: null })} icon="Gear">
                                         Core Settings
                                     </Button>
-                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'reverse', data: null, index: null })} icon="ArrowsLeftRight">
+                                    <Button className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2" variant="secondary" onClick={() => setModal({ type: 'reverse', data: null, index: null })} icon="ArrowsLeftRight">
                                         Reverse Proxy
                                     </Button>
-                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setModal({ type: 'topology', data: null, index: null })} icon="GitMerge">
+                                    <Button className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2" variant="secondary" onClick={() => setModal({ type: 'topology', data: null, index: null })} icon="GitMerge">
                                         Topology
                                     </Button>
-                                    <Button className="flex-1 md:flex-none text-xs" variant="secondary" onClick={() => setGeoViewerOpen(true)} icon="GlobeHemisphereWest">
+                                    <Button className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2" variant="secondary" onClick={() => setGeoViewerOpen(true)} icon="GlobeHemisphereWest">
                                         Geo Viewer
                                     </Button>
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-2 w-full md:w-auto pt-4 md:pt-0 border-t border-slate-800 md:border-transparent">
-                                <Button variant="secondary" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"} className={`flex-1 md:flex-none text-xs ${rawMode ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : ""}`}>
+                            <div className={`${modulesVisible ? 'flex' : 'hidden md:flex'} flex-wrap gap-2 w-full md:w-auto pt-3 md:pt-0 border-t border-slate-800 md:border-transparent animate-in fade-in slide-in-from-top-1 duration-200`}>
+                                <Button variant="secondary" onClick={() => setRawMode(!rawMode)} icon={rawMode ? "Layout" : "Code"} className={`flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 ${rawMode ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : ""}`}>
                                     {rawMode ? "UI Mode" : "JSON Mode"}
                                 </Button>
-                                <Button variant="danger" className="text-xs px-3" onClick={() => { if (confirm('Clear config?')) setConfig(null as any); }} icon="XCircle" title="Close Config">
-                                    <span className="hidden md:inline">Clear</span>
+                                <Button variant="danger" className="text-[10px] md:text-xs px-3 py-1.5 md:py-2 flex-1 md:flex-none" onClick={() => { if (confirm('Clear config?')) setConfig(null as any); }} icon="XCircle" title="Close Config">
+                                    <span className="md:inline">Clear</span>
                                 </Button>
                             </div>
                         </div>

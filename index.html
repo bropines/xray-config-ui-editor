@@ -28,15 +28,23 @@
 
         <!-- ВАЖНО: type="text/tailwindcss" -->
         <style type="text/tailwindcss">
-        body { 
-    font-family: 'Inter', sans-serif; 
-    @apply bg-slate-950 text-slate-200;
-    min-height: 100dvh;
-}
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
 
-#app {
-    height: 100dvh;
-}
+        body { 
+            font-family: 'Inter', sans-serif; 
+            @apply bg-slate-950 text-slate-200;
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+
+        #app {
+            height: 100dvh;
+        }
         
         /* Определяем компоненты для переиспользования */
         @layer components {
@@ -57,20 +65,54 @@
             }
         }
 
-        /* Скроллбар */
+        /* Скроллбар - Оптимизация для десктопа */
+        .custom-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #0f172a;
+        }
+
         .custom-scroll::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
         }
         .custom-scroll::-webkit-scrollbar-track {
-            background: #0f172a; 
+            background: rgba(15, 23, 42, 0.5); 
         }
         .custom-scroll::-webkit-scrollbar-thumb {
             background: #334155; 
-            border-radius: 3px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
         }
         .custom-scroll::-webkit-scrollbar-thumb:hover {
             background: #475569; 
+            border: 1px solid transparent;
+            background-clip: content-box;
+        }
+
+        /* Оптимизация анимаций */
+        .animate-in {
+            will-change: transform, opacity;
+        }
+
+        /* Адаптивная высота для модалок */
+        .adaptive-height {
+            height: 100% !important;
+            max-height: none !important;
+            flex: 1 !important;
+        }
+
+        @media (min-width: 768px) {
+            .adaptive-height {
+                height: 60vh !important;
+                max-height: 60vh !important;
+                flex: none !important;
+            }
+            .is-modal-fullscreen .adaptive-height {
+                height: 100% !important;
+                max-height: none !important;
+                flex: 1 !important;
+            }
         }
     </style>
     </head>

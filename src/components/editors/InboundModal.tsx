@@ -56,10 +56,9 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             onClose={onClose}
             onSave={handleSave}
             extraButtons={modalButtons}
+            className="h-full overflow-hidden"
         >
-            <div className="h-[600px]">
-                <JsonField label="Full JSON" value={local} onChange={setLocal} schemaMode="inbound" className="h-full" />
-            </div>
+            <JsonField label="Full JSON" value={local} onChange={setLocal} schemaMode="inbound" className="flex-1" />
         </Modal>
     );
 
@@ -70,7 +69,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             onSave={handleSave}
             extraButtons={modalButtons}
         >
-            <div className="flex flex-col h-[600px] overflow-y-auto custom-scroll p-1 pb-10">
+            <div className="flex flex-col h-full md:max-h-[60vh] adaptive-height overflow-y-auto custom-scroll p-1 pb-10">
                 {/* Блок ошибок */}
                 {errors.length > 0 && (
                     <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-lg text-rose-200 text-xs animate-in fade-in slide-in-from-top-2">
