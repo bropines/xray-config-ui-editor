@@ -48,7 +48,7 @@ export const getPresets = () => {
                         listen: "127.0.0.1",
                         protocol: "http",
                         sniffing: { enabled: true, destOverride: ["http", "tls"] },
-                        settings: { auth: "noauth", udp: true }
+                        settings: { allowTransparent: false }
                     }
                 ],
                 outbounds: [

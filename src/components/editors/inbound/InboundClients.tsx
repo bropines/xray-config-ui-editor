@@ -150,25 +150,112 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
 
     // 2. Socks / HTTP
     if (proto === 'socks' || proto === 'http') {
+        const accounts = inbound.settings?.accounts || [];
+        const addAccount = () => onChange(['settings', 'accounts'], [...accounts, { user: 'admin', pass: generateShortId() }]);
+        const removeAccount = (i: number) => {
+            const next = [...accounts];
+            next.splice(i, 1);
+            onChange(['settings', 'accounts'], next);
+        };
+        const updateAccount = (i: number, field: string, val: string) => {
+            const next = [...accounts];
+            next[i] = { ...next[i], [field]: val };
+            onChange(['settings', 'accounts'], next);
+        };
+
         return (
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-                    <Icon name="UserCircle" /> Authentication
-                </h4>
-                <div>
-                    <label className="label-xs">Auth Type</label>
-                    <select className="input-base"
-                        value={inbound.settings?.auth || "noauth"}
-                        onChange={e => onChange(['settings', 'auth'], e.target.value)}
-                    >
-                        <option value="noauth">No Auth</option>
-                        <option value="password">Password</option>
-                    </select>
+            <div className="space-y-4 mt-4">
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                        <Icon name="Gear" /> {proto.toUpperCase()} Settings
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {proto === 'socks' && (
+                            <div>
+                                <label className="label-xs">Auth Type</label>
+                                <select className="input-base"
+                                    value={inbound.settings?.auth || "noauth"}
+                                    onChange={e => onChange(['settings', 'auth'], e.target.value)}
+                                >
+                                    <option value="noauth">No Auth</option>
+                                    <option value="password">Password</option>
+                                </select>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-6">
+                            {proto === 'socks' && (
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
+                                        id="socks-udp"
+                                        checked={inbound.settings?.udp === true}
+                                        onChange={e => onChange(['settings', 'udp'], e.target.checked)} />
+                                    <label htmlFor="socks-udp" className="text-xs text-slate-400 font-bold uppercase flex items-center cursor-pointer">
+                                        UDP Support
+                                        <Help>Enable UDP associate for SOCKS5.</Help>
+                                    </label>
+                                </div>
+                            )}
+                            {proto === 'http' && (
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
+                                        id="http-transparent"
+                                        checked={inbound.settings?.allowTransparent === true}
+                                        onChange={e => onChange(['settings', 'allowTransparent'], e.target.checked)} />
+                                    <label htmlFor="http-transparent" className="text-xs text-slate-400 font-bold uppercase flex items-center cursor-pointer">
+                                        Allow Transparent
+                                        <Help>Allow transparent proxying for HTTP.</Help>
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                {inbound.settings?.auth === 'password' && (
-                    <div className="mt-3 p-3 bg-indigo-900/20 border border-indigo-500/30 rounded text-indigo-300 text-xs flex gap-2">
-                        <Icon name="Info" className="mt-0.5" />
-                        To manage accounts for Socks/HTTP, please switch to JSON mode.
+
+                {(proto === 'http' || (proto === 'socks' && inbound.settings?.auth === 'password')) && (
+                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                        <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                                <Icon name="Users" /> {proto.toUpperCase()} Accounts
+                            </h4>
+                            <Button variant="ghost" className="px-2 py-1 text-xs" onClick={addAccount} icon="Plus">Add Account</Button>
+                        </div>
+                        <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scroll pr-1">
+                            {accounts.map((acc: any, i: number) => (
+                                <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group flex flex-col md:flex-row items-end gap-3 hover:border-slate-600 transition-colors">
+                                    <div className="flex-1 w-full">
+                                        <label className="label-xs">Username</label>
+                                        <input className="input-base py-1.5 text-xs"
+                                            value={acc.user || ""}
+                                            onChange={e => updateAccount(i, 'user', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex-1 w-full">
+                                        <label className="label-xs">Password</label>
+                                        <div className="flex gap-2">
+                                            <input className="input-base py-1.5 text-xs font-mono"
+                                                value={acc.pass || ""}
+                                                onChange={e => updateAccount(i, 'pass', e.target.value)}
+                                            />
+                                            <button onClick={() => updateAccount(i, 'pass', generateShortId())}
+                                                title="Generate Password"
+                                                className="bg-slate-800 p-2 rounded text-slate-400 hover:text-white transition-colors">
+                                                <Icon name="DiceFive" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => removeAccount(i)} 
+                                        className="bg-slate-800/50 p-2 rounded text-slate-600 hover:text-rose-500 transition-colors shrink-0"
+                                        title="Remove Account">
+                                        <Icon name="Trash" />
+                                    </button>
+                                </div>
+                            ))}
+                            {accounts.length === 0 && (
+                                <div className="text-center text-slate-600 text-xs py-6 italic border border-dashed border-slate-800 rounded-lg">
+                                    No accounts defined. {proto === 'http' ? 'Auth is disabled.' : 'Add one to enable password auth.'}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
