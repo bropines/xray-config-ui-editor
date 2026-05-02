@@ -20,22 +20,43 @@ interface JsonEditorProps {
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-    // Определяем подсхему в зависимости от режима
+    // Определяем подсхему в зависимости от режима, сохраняя контекст определений
     const schemaForMode = useMemo(() => {
+        // Если это полный конфиг, возвращаем всю схему
         if (schemaMode === 'full') return xraySchema;
         
-        const definitions: any = xraySchema.definitions;
+        // Для отдельных частей конфига создаем виртуальную схему, 
+        // которая ссылается на определения в основной схеме.
+        // Это необходимо, чтобы Ajv мог разрешить ссылки типа #/definitions/StreamSettingsObject
+        let refPath = "";
         switch (schemaMode) {
-            case 'inbound': return definitions.InboundObject;
-            case 'outbound': return definitions.OutboundObject;
-            case 'inbounds': return { type: "array", items: definitions.InboundObject };
-            case 'outbounds': return { type: "array", items: definitions.OutboundObject };
-            case 'rule': return definitions.RoutingRule;
-            case 'routing': return definitions.RoutingObject;
-            case 'dns': return definitions.DnsObject;
-            case 'balancer': return definitions.BalancerObject;
+            case 'inbound': refPath = "InboundObject"; break;
+            case 'outbound': refPath = "OutboundObject"; break;
+            case 'rule': refPath = "RoutingRule"; break;
+            case 'routing': refPath = "RoutingObject"; break;
+            case 'dns': refPath = "DnsObject"; break;
+            case 'balancer': refPath = "BalancerObject"; break;
+            case 'inbounds': 
+                return { 
+                    ...xraySchema, 
+                    $ref: undefined, 
+                    type: "array", 
+                    items: { $ref: "#/definitions/InboundObject" } 
+                };
+            case 'outbounds': 
+                return { 
+                    ...xraySchema, 
+                    $ref: undefined, 
+                    type: "array", 
+                    items: { $ref: "#/definitions/OutboundObject" } 
+                };
             default: return xraySchema;
         }
+
+        return {
+            ...xraySchema,
+            $ref: `#/definitions/${refPath}`
+        };
     }, [schemaMode]);
 
     // Кастомный линтер на основе нашей JSON-схемы
