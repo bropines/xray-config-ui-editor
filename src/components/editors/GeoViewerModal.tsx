@@ -3,8 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { toast } from 'sonner';
-import CodeMirror from '@uiw/react-codemirror';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { JsonEditor } from '../ui/JsonEditor';
 import { useGeoViewer } from '../../hooks/useGeoViewer';
 import { useTagDetails } from '../../hooks/useTagDetails';
 
@@ -38,31 +37,13 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
                         <span className="text-[10px] font-bold uppercase tracking-wider">Extracting...</span>
                     </div>
                 ) : (
-                    <CodeMirror
+                    <JsonEditor
                         value={text}
-                        height="100%"
-                        theme={oneDark}
+                        onChange={() => {}}
                         readOnly={true}
-                        basicSetup={{
-                            lineNumbers: true,
-                            foldGutter: true,
-                            dropCursor: true,
-                            allowMultipleSelections: false,
-                            indentOnInput: true,
-                            syntaxHighlighting: true,
-                            bracketMatching: true,
-                            closeBrackets: true,
-                            autocompletion: false,
-                            highlightActiveLine: false,
-                        }}
-                        className="h-full text-[11px] font-mono"
                     />
                 )}
             </div>
-            <style>{`
-                .cm-editor { height: 100% !important; }
-                .cm-scroller { font-family: 'JetBrains Mono', monospace !important; }
-            `}</style>
         </div>
     );
 };
