@@ -23,8 +23,25 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
     }, []);
 
     useEffect(() => {
+        // 1. Проверяем, не совпадает ли входящее значение с тем, что уже в редакторе (после парсинга)
+        // Это критично для сохранения форматирования, отступов и комментариев пользователя.
+        try {
+            if (text.trim() !== "") {
+                const cleanJson = stripComments(text);
+                const currentParsed = JSON.parse(cleanJson);
+                // Если объекты идентичны по содержанию, не перезаписываем текст в редакторе
+                if (JSON.stringify(currentParsed) === JSON.stringify(value)) {
+                    isInternalUpdate.current = false;
+                    return;
+                }
+            }
+        } catch (e) {
+            // Если в редакторе сейчас невалидный JSON (в процессе набора), 
+            // мы не должны его затирать, пока isInternalUpdate = true
+        }
+
         if (!isInternalUpdate.current) {
-            // Клонируем и удаляем технический индекс 'i', если он есть
+            // Клонируем и удаляем технический индекс 'i', если он есть (часто используется в списках)
             if (value && typeof value === 'object' && !Array.isArray(value)) {
                 const { i, ...cleanValue } = value as any;
                 setText(JSON.stringify(cleanValue, null, 2));
@@ -35,9 +52,12 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         isInternalUpdate.current = false;
     }, [value]);
 
-    // Функция для удаления комментариев перед парсингом (чтобы JSON.parse не падал)
+    // Улучшенная функция для удаления комментариев перед парсингом.
+    // Она корректно игнорирует // внутри строк (например, в URL или ключах).
     const stripComments = (jsonString: string) => {
-        return jsonString.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
+        return jsonString.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
+            return group1 ? group1 : "";
+        });
     };
 
     const handleEditorChange = (newVal: string | undefined) => {

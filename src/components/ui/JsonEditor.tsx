@@ -6,12 +6,10 @@ interface JsonEditorProps {
     value: string;
     onChange: (value: string | undefined) => void;
     readOnly?: boolean;
-    // Добавили множественные числа
     schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing';
 }
 
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
-    const [isFocused, setIsFocused] = React.useState(false);
     const editorRef = useRef<any>(null);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -23,20 +21,15 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             allowComments: true,
             enableSchemaRequest: false,
             schemas: [
-                // 1. МАСТЕР-СХЕМА
                 {
                     uri: MASTER_SCHEMA_URI,
                     schema: xraySchema,
                 },
-
-                // 2. Полный конфиг
                 {
                     uri: "inmemory://xray/config.json",
                     fileMatch: ["/config.json"],
                     schema: { $ref: MASTER_SCHEMA_URI }
                 },
-
-                // --- ОДИНОЧНЫЕ ОБЪЕКТЫ (для редакторов) ---
                 {
                     uri: "inmemory://xray/inbound.json",
                     fileMatch: ["/inbound.json"],
@@ -47,8 +40,6 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     fileMatch: ["/outbound.json"],
                     schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/OutboundObject` }
                 },
-
-                // --- МАССИВЫ (для списков) ---
                 {
                     uri: "inmemory://xray/inbounds.json",
                     fileMatch: ["/inbounds.json"],
@@ -65,8 +56,6 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                         items: { $ref: `${MASTER_SCHEMA_URI}#/definitions/OutboundObject` }
                     }
                 },
-
-                // --- ОСТАЛЬНОЕ ---
                 {
                     uri: "inmemory://xray/rule.json",
                     fileMatch: ["/rule.json"],
@@ -93,20 +82,21 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
     const handleEditorDidMount = (editor: any) => {
         editorRef.current = editor;
+        setTimeout(() => editor.layout(), 100);
+        
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(() => {
                 editor.layout();
-                setTimeout(() => editor.layout(), 100);
             });
         }
     };
 
     const getFilePath = () => {
         switch (schemaMode) {
-            case 'inbound': return '/inbound.json';   // <-- Одиночный
-            case 'inbounds': return '/inbounds.json'; // <-- Массив
-            case 'outbound': return '/outbound.json'; // <-- Одиночный
-            case 'outbounds': return '/outbounds.json';// <-- Массив
+            case 'inbound': return '/inbound.json';
+            case 'inbounds': return '/inbounds.json';
+            case 'outbound': return '/outbound.json';
+            case 'outbounds': return '/outbounds.json';
             case 'rule': return '/rule.json';
             case 'routing': return '/routing.json';
             case 'dns': return '/dns.json';
@@ -117,8 +107,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
     return (
         <div className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            onClick={() => setIsFocused(true)}>
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             <Editor
                 height="100%"
                 path={getFilePath()}
@@ -129,59 +118,43 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                 beforeMount={handleEditorWillMount}
                 onMount={handleEditorDidMount}
                 options={{
-                    readOnly: readOnly || (!isMobile && !isFocused),
+                    readOnly: readOnly,
                     minimap: { enabled: false },
                     fontSize: isMobile ? 12 : 13,
                     fontFamily: "'JetBrains Mono', monospace",
                     scrollBeyondLastLine: false,
-                    automaticLayout: !isMobile,
+                    automaticLayout: true,
                     tabSize: 2,
-                    formatOnPaste: !isMobile,
-                    formatOnType: !isMobile,
+                    formatOnPaste: true,
+                    formatOnType: true,
                     lineHeight: isMobile ? 18 : 20,
                     fixedOverflowWidgets: true,
-                    quickSuggestions: !isMobile,
-                    suggest: isMobile ? {
-                        showWords: false,
-                        showValues: false,
-                        showProperties: false,
-                    } : {
-                        preview: true,
+                    quickSuggestions: true,
+                    suggest: {
+                        preview: false,
                         showWords: false,
                         showValues: true,
                         showProperties: true,
                     },
-                    hover: { enabled: !isMobile, delay: 300 },
-                    links: !isMobile,
-                    contextmenu: !isMobile,
-                    renderLineHighlight: isMobile ? 'none' : 'all',
+                    hover: { enabled: true, delay: 300 },
+                    links: true,
+                    contextmenu: true,
+                    renderLineHighlight: 'all',
                     scrollbar: {
                         verticalScrollbarSize: isMobile ? 6 : 10,
                         horizontalScrollbarSize: isMobile ? 6 : 10,
-                        alwaysConsumeMouseWheel: false,
                     },
                     glyphMargin: !isMobile,
                     folding: !isMobile,
-                    // Desktop Optimizations
                     smoothScrolling: true,
                     cursorSmoothCaretAnimation: "on",
                     cursorBlinking: "smooth",
-                    mouseWheelScrollSensitivity: 1,
-                    fastScrollSensitivity: 5,
-                    multiCursorModifier: 'alt',
                     wordWrap: isMobile ? 'on' : 'off'
                 }}
             />
             <style>{`
-                .monaco-editor-container .monaco-editor .view-line {
-                    line-height: ${isMobile ? '18px' : '20px'} !important;
-                }
                 .monaco-editor .decorationsOverviewRuler {
                     display: none !important;
-                }
-                /* Плавный переход для самого контейнера */
-                .monaco-editor {
-                    transition: opacity 0.2s ease-in-out;
                 }
             `}</style>
         </div>
