@@ -11,9 +11,7 @@ interface JsonFieldProps {
 }
 
 export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full' }: JsonFieldProps) => {
-    const [text, setText] = useState("");
     const [error, setError] = useState(false);
-    const isInternalUpdate = useRef(false);
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
     useEffect(() => {
@@ -22,35 +20,14 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    useEffect(() => {
-        // 1. Проверяем, не совпадает ли входящее значение с тем, что уже в редакторе (после парсинга)
-        // Это критично для сохранения форматирования, отступов и комментариев пользователя.
-        try {
-            if (text.trim() !== "") {
-                const cleanJson = stripComments(text);
-                const currentParsed = JSON.parse(cleanJson);
-                // Если объекты идентичны по содержанию, не перезаписываем текст в редакторе
-                if (JSON.stringify(currentParsed) === JSON.stringify(value)) {
-                    isInternalUpdate.current = false;
-                    return;
-                }
-            }
-        } catch (e) {
-            // Если в редакторе сейчас невалидный JSON (в процессе набора), 
-            // мы не должны его затирать, пока isInternalUpdate = true
+    // Подготавливаем начальное текстовое значение один раз при смене value извне
+    const getInitialText = () => {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            const { i, ...cleanValue } = value as any;
+            return JSON.stringify(cleanValue, null, 2);
         }
-
-        if (!isInternalUpdate.current) {
-            // Клонируем и удаляем технический индекс 'i', если он есть (часто используется в списках)
-            if (value && typeof value === 'object' && !Array.isArray(value)) {
-                const { i, ...cleanValue } = value as any;
-                setText(JSON.stringify(cleanValue, null, 2));
-            } else {
-                setText(JSON.stringify(value, null, 2));
-            }
-        }
-        isInternalUpdate.current = false;
-    }, [value]);
+        return JSON.stringify(value, null, 2);
+    };
 
     // Улучшенная функция для удаления комментариев перед парсингом.
     // Она корректно игнорирует // внутри строк (например, в URL или ключах).
@@ -62,17 +39,13 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
 
     const handleEditorChange = (newVal: string | undefined) => {
         const v = newVal || "";
-        setText(v);
         try {
             if (v.trim() === "") {
                 onChange(undefined);
                 setError(false);
             } else {
-                // Сначала чистим комменты, потом парсим
                 const cleanJson = stripComments(v);
                 const parsed = JSON.parse(cleanJson);
-                
-                isInternalUpdate.current = true;
                 onChange(parsed);
                 setError(false);
             }
@@ -80,6 +53,10 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             setError(true);
         }
     };
+
+    // Генерируем ключ для сброса редактора при смене контекста (например, разные инбаунды)
+    // Мы используем stringify начального значения, чтобы при открытии новой модалки defaultValue обновился.
+    const initialText = getInitialText();
 
     return (
         <div className={`flex flex-col gap-2 h-full w-full min-w-0 ${className}`}>
@@ -92,18 +69,19 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                 </div>
             )}
             
-            {/* Контейнер редактора с абсолютным позиционированием внутри flex-элемента */}
             <div className={`flex-1 min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#1e1e1e] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
                 <div className="absolute inset-0">
                     {isMobile ? (
                         <MobileJsonEditor 
-                            value={text} 
+                            key={`${schemaMode}-mobile`}
+                            value={initialText} 
                             onChange={handleEditorChange}
                             schemaMode={schemaMode}
                         />
                     ) : (
                         <JsonEditor 
-                            value={text} 
+                            key={`${schemaMode}-${initialText.length}`} // Сбрасываем инстанс при смене типа схемы или длины текста
+                            value={initialText} 
                             onChange={handleEditorChange} 
                             schemaMode={schemaMode} 
                         />

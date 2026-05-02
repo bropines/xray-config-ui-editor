@@ -11,7 +11,22 @@ interface JsonEditorProps {
 
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
     const editorRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    // Используем ResizeObserver для корректного пересчета размеров
+    useEffect(() => {
+        if (!containerRef.current) return;
+        
+        const observer = new ResizeObserver(() => {
+            if (editorRef.current) {
+                editorRef.current.layout();
+            }
+        });
+
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     const handleEditorWillMount = (monaco: any) => {
         const MASTER_SCHEMA_URI = "inmemory://xray/master-config.schema.json";
@@ -82,13 +97,16 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
     const handleEditorDidMount = (editor: any) => {
         editorRef.current = editor;
-        setTimeout(() => editor.layout(), 100);
         
+        // Фокусируемся на шрифтах - Monaco критически зависит от правильной ширины символа
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(() => {
                 editor.layout();
             });
         }
+        
+        // Устанавливаем курсор в начало при первом рендере
+        editor.focus();
     };
 
     const getFilePath = () => {
@@ -106,14 +124,17 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
     };
 
     return (
-        <div className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div 
+            ref={containerRef}
+            className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container"
+        >
             <Editor
                 height="100%"
                 path={getFilePath()}
                 defaultLanguage="json"
                 theme="vs-dark"
-                value={value}
+                // КЛЮЧЕВОЕ: Используем defaultValue вместо value для предотвращения прыжков курсора
+                defaultValue={value}
                 onChange={onChange}
                 beforeMount={handleEditorWillMount}
                 onMount={handleEditorDidMount}
@@ -122,8 +143,9 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     minimap: { enabled: false },
                     fontSize: isMobile ? 12 : 13,
                     fontFamily: "'JetBrains Mono', monospace",
+                    fontLigatures: false, // Выключаем лигатуры, они ломают расчеты ширины в Monaco
                     scrollBeyondLastLine: false,
-                    automaticLayout: true,
+                    automaticLayout: false, // Отключаем встроенный, так как мы используем ResizeObserver выше
                     tabSize: 2,
                     formatOnPaste: true,
                     formatOnType: true,
@@ -149,10 +171,16 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     smoothScrolling: true,
                     cursorSmoothCaretAnimation: "on",
                     cursorBlinking: "smooth",
-                    wordWrap: isMobile ? 'on' : 'off'
+                    wordWrap: isMobile ? 'on' : 'off',
+                    letterSpacing: 0, // Важно: любой letter-spacing ломает выделение
                 }}
             />
             <style>{`
+                /* Сброс всех внешних стилей, которые могут протечь внутрь Monaco */
+                .monaco-editor, .monaco-editor .view-lines, .monaco-editor .view-line {
+                    letter-spacing: 0px !important;
+                    font-feature-settings: "liga" 0, "calt" 0 !important;
+                }
                 .monaco-editor .decorationsOverviewRuler {
                     display: none !important;
                 }
