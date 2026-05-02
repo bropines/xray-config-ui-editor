@@ -90,7 +90,9 @@ export const createDefaultOutbound = (protocol: string = 'vless'): Outbound => {
                     servers: ['trojan', 'socks', 'http', 'shadowsocks', 'shadowsocks-2022'].includes(protocol) ? [{
                         address: "example.com",
                         port: 443,
-                        users: [{ password: "password" }]
+                        method: protocol.startsWith('shadowsocks') ? (protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm") : undefined,
+                        password: "password",
+                        email: "generated@xray"
                     }] : undefined
                 };
             }

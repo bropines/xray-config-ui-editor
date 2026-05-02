@@ -22,3 +22,4 @@ This guide describes the project-specific conventions and technical stack for th
 1. **Never mutate state directly**: Always use `produce` from `immer` within store actions.
 2. **Type Safety**: Ensure all new config parts match the TypeScript interfaces in `configStore.ts`.
 3. **No Backend**: Remember, this is a **static** web app; all logic must be browser-compatible.
+4. **NO BINARIES**: Never commit images, screenshots, or any binary files. Use `.gitignore` and keep UI documentation external.

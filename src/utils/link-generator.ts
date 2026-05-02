@@ -63,6 +63,7 @@ export const generateXrayLink = (item: any) => {
         // Outbound style
         if (settings?.vnext?.[0]?.users?.[0]) return settings.vnext[0].users[0].id;
         if (settings?.servers?.[0]?.users?.[0]) return settings.servers[0].users[0].password;
+        if (settings?.servers?.[0]?.password) return settings.servers[0].password;
         // Shadowsocks / Hysteria style
         return settings?.password || settings?.secret || "password";
     };

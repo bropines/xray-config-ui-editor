@@ -10,8 +10,8 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
     const { remnawave } = useConfigStore();
     const proto = inbound.protocol;
 
-    // Remnawave integration: Hide users if connected
-    if (remnawave.connected && ['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'hysteria2'].includes(proto)) {
+    // Remnawave integration: Hide users if connected (only for multi-user protocols)
+    if (remnawave.connected && ['vless', 'vmess', 'trojan', 'hysteria2'].includes(proto)) {
         return (
             <div className="bg-indigo-900/10 border border-indigo-500/20 p-4 rounded-xl mt-4 flex items-start gap-3">
                 <Icon name="Cloud" className="text-indigo-400 text-lg shrink-0 mt-0.5" />
@@ -33,6 +33,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
                     <Icon name="Key" /> {is2022 ? 'SS-2022' : 'Shadowsocks'} Credentials
+                    {remnawave.connected && <span className="text-[10px] text-indigo-400 ml-auto flex items-center gap-1 font-normal"><Icon name="Cloud" /> Remnawave Active</span>}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -44,8 +45,14 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             value={inbound.settings?.method || (is2022 ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
                             onChange={e => onChange(['settings', 'method'], e.target.value)}
                         >
-                            {!is2022 && <option value="aes-256-gcm">aes-256-gcm</option>}
-                            {!is2022 && <option value="chacha20-ietf-poly1305">chacha20-ietf-poly1305</option>}
+                            {!is2022 && (
+                                <>
+                                    <option value="aes-256-gcm">aes-256-gcm</option>
+                                    <option value="aes-128-gcm">aes-128-gcm</option>
+                                    <option value="chacha20-ietf-poly1305">chacha20-ietf-poly1305</option>
+                                    <option value="xchacha20-ietf-poly1305">xchacha20-ietf-poly1305</option>
+                                </>
+                            )}
                             <option value="2022-blake3-aes-128-gcm">2022-blake3-aes-128-gcm</option>
                             <option value="2022-blake3-aes-256-gcm">2022-blake3-aes-256-gcm</option>
                             <option value="2022-blake3-chacha20-poly1305">2022-blake3-chacha20-poly1305</option>

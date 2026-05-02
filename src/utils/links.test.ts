@@ -40,6 +40,18 @@ describe("Link Parser & Generator", () => {
             expect(parsed.settings.servers[0].method).toBe("aes-256-gcm");
             expect(parsed.settings.servers[0].password).toBe("pass");
         });
+
+        test("should parse legacy SS link (full base64)", () => {
+            // aes-256-gcm:pass@89.46.38.91:443
+            const ssLink = "ss://YWVzLTI1Ni1nY206cGFzc0A4OS40Ni4zOC45MTo0NDM#SS-Legacy";
+            const parsed = parseXrayLink(ssLink);
+            expect(parsed.protocol).toBe("shadowsocks");
+            expect(parsed.tag).toBe("SS-Legacy");
+            expect(parsed.settings.servers[0].address).toBe("89.46.38.91");
+            expect(parsed.settings.servers[0].port).toBe(443);
+            expect(parsed.settings.servers[0].method).toBe("aes-256-gcm");
+            expect(parsed.settings.servers[0].password).toBe("pass");
+        });
     });
 
     describe("WireGuard / AmneziaWG parser", () => {

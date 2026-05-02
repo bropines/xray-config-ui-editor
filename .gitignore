@@ -74,3 +74,16 @@ cobase*
 
 # Gemini CLI skills
 *.skill
+
+# --- НИКОГДА НЕ КОММИТИТЬ БИНАРИ И СКРИНШОТЫ ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.pdf
+*.zip
+*.tar.gz
+/DebugScreens/
+/screenshots/

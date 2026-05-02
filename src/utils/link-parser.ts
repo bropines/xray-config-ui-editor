@@ -166,45 +166,71 @@ export const parseXrayLink = (link: string): any => {
 
     // --- SHADOWSOCKS ---
     else if (protocol === 'shadowsocks') { 
-      const linkBody = link.split('://')[1]; 
-      const mainPart = linkBody.split('#')[0];
-      
-      const lastAtIndex = mainPart.lastIndexOf('@');
       let method = "";
       let password = "";
       let serverAddr = "";
       let serverPort = 443;
 
-      if (lastAtIndex !== -1) {
-        const userInfoRaw = mainPart.substring(0, lastAtIndex);
-        const hostPortPart = mainPart.substring(lastAtIndex + 1);
-        let decodedUserInfo = "";
-        try {
-            const normalizedB64 = userInfoRaw.replace(/-/g, '+').replace(/_/g, '/');
-            decodedUserInfo = atob(normalizedB64);
-        } catch (e) {
-            decodedUserInfo = userInfoRaw;
+      // 1. Try to parse as ss://BASE64(method:password@host:port)
+      const linkBody = link.split('://')[1].split('#')[0];
+      
+      try {
+        // If it's a legacy all-in-one base64 link
+        if (!linkBody.includes('@')) {
+            const decoded = atob(linkBody.replace(/-/g, '+').replace(/_/g, '/'));
+            if (decoded.includes('@')) {
+                const [userInfo, hostPort] = decoded.split('@');
+                const [m, p] = userInfo.split(':');
+                method = m;
+                password = p;
+                if (hostPort.includes(':')) {
+                    const [h, port] = hostPort.split(':');
+                    serverAddr = h;
+                    serverPort = parseInt(port);
+                } else {
+                    serverAddr = hostPort;
+                }
+            }
         }
+      } catch (e) {
+        // Not a full base64 link
+      }
 
-        if (decodedUserInfo.includes(':')) {
-            const parts = decodedUserInfo.split(':');
-            method = parts[0];
-            password = parts.slice(1).join(':');
-        }
+      // 2. Try SIP002 format: ss://BASE64(method:password)@host:port
+      if (!serverAddr) {
+        const lastAtIndex = linkBody.lastIndexOf('@');
+        if (lastAtIndex !== -1) {
+          const userInfoRaw = linkBody.substring(0, lastAtIndex);
+          const hostPortPart = linkBody.substring(lastAtIndex + 1);
+          let decodedUserInfo = "";
+          try {
+              decodedUserInfo = atob(userInfoRaw.replace(/-/g, '+').replace(/_/g, '/'));
+          } catch (e) {
+              decodedUserInfo = userInfoRaw;
+          }
 
-        if (hostPortPart.includes(':')) {
-            const hp = hostPortPart.split(':');
-            serverAddr = hp[0];
-            serverPort = parseInt(hp[1]);
-        } else {
-            serverAddr = hostPortPart;
+          if (decodedUserInfo.includes(':')) {
+              const parts = decodedUserInfo.split(':');
+              method = parts[0];
+              password = parts.slice(1).join(':');
+          }
+
+          // Handle host:port?query
+          const [hostPort, queryStr] = hostPortPart.split('?');
+          if (hostPort.includes(':')) {
+              const hp = hostPort.split(':');
+              serverAddr = hp[0];
+              serverPort = parseInt(hp[1]);
+          } else {
+              serverAddr = hostPort;
+          }
         }
       }
 
       baseOutbound.settings = {
         servers: [{
-          address: serverAddr,
-          port: serverPort,
+          address: serverAddr || url.hostname,
+          port: serverPort || parseInt(url.port) || 443,
           method: method || "aes-256-gcm",
           password: password,
           uot: true
