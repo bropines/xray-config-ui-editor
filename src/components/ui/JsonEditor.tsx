@@ -1,189 +1,114 @@
-import React, { useRef, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import React, { useMemo } from "react";
+import CodeMirror from '@uiw/react-codemirror';
+import { json, jsonParseLinter } from '@codemirror/lang-json';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { linter, lintGutter } from '@codemirror/lint';
+import { autocompletion } from '@codemirror/autocomplete';
 import xraySchema from "../../utils/config.schema.json";
+
+// Ajv для валидации JSON схемы в CodeMirror
+import Ajv from "ajv";
+const ajv = new Ajv({ allErrors: true, strict: false });
 
 interface JsonEditorProps {
     value: string;
-    onChange: (value: string | undefined) => void;
+    onChange: (value: string) => void;
     readOnly?: boolean;
     schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing';
 }
 
 export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
-    const editorRef = useRef<any>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-    // Используем ResizeObserver для корректного пересчета размеров
-    useEffect(() => {
-        if (!containerRef.current) return;
+    // Определяем подсхему в зависимости от режима
+    const schemaForMode = useMemo(() => {
+        if (schemaMode === 'full') return xraySchema;
         
-        const observer = new ResizeObserver(() => {
-            if (editorRef.current) {
-                editorRef.current.layout();
-            }
-        });
-
-        observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, []);
-
-    const handleEditorWillMount = (monaco: any) => {
-        const MASTER_SCHEMA_URI = "inmemory://xray/master-config.schema.json";
-
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-            validate: true,
-            allowComments: true,
-            enableSchemaRequest: false,
-            schemas: [
-                {
-                    uri: MASTER_SCHEMA_URI,
-                    schema: xraySchema,
-                },
-                {
-                    uri: "inmemory://xray/config.json",
-                    fileMatch: ["/config.json"],
-                    schema: { $ref: MASTER_SCHEMA_URI }
-                },
-                {
-                    uri: "inmemory://xray/inbound.json",
-                    fileMatch: ["/inbound.json"],
-                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/InboundObject` }
-                },
-                {
-                    uri: "inmemory://xray/outbound.json",
-                    fileMatch: ["/outbound.json"],
-                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/OutboundObject` }
-                },
-                {
-                    uri: "inmemory://xray/inbounds.json",
-                    fileMatch: ["/inbounds.json"],
-                    schema: {
-                        type: "array",
-                        items: { $ref: `${MASTER_SCHEMA_URI}#/definitions/InboundObject` }
-                    }
-                },
-                {
-                    uri: "inmemory://xray/outbounds.json",
-                    fileMatch: ["/outbounds.json"],
-                    schema: {
-                        type: "array",
-                        items: { $ref: `${MASTER_SCHEMA_URI}#/definitions/OutboundObject` }
-                    }
-                },
-                {
-                    uri: "inmemory://xray/rule.json",
-                    fileMatch: ["/rule.json"],
-                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/RoutingRule` }
-                },
-                {
-                    uri: "inmemory://xray/routing.json",
-                    fileMatch: ["/routing.json"],
-                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/RoutingObject` }
-                },
-                {
-                    uri: "inmemory://xray/dns.json",
-                    fileMatch: ["/dns.json"],
-                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/DnsObject` }
-                },
-                {
-                    uri: "inmemory://xray/balancer.json",
-                    fileMatch: ["/balancer.json"],
-                    schema: { $ref: `${MASTER_SCHEMA_URI}#/definitions/BalancerObject` }
-                }
-            ],
-        });
-    };
-
-    const handleEditorDidMount = (editor: any) => {
-        editorRef.current = editor;
-        
-        // Фокусируемся на шрифтах - Monaco критически зависит от правильной ширины символа
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(() => {
-                editor.layout();
-            });
-        }
-        
-        // Устанавливаем курсор в начало при первом рендере
-        editor.focus();
-    };
-
-    const getFilePath = () => {
+        const definitions: any = xraySchema.definitions;
         switch (schemaMode) {
-            case 'inbound': return '/inbound.json';
-            case 'inbounds': return '/inbounds.json';
-            case 'outbound': return '/outbound.json';
-            case 'outbounds': return '/outbounds.json';
-            case 'rule': return '/rule.json';
-            case 'routing': return '/routing.json';
-            case 'dns': return '/dns.json';
-            case 'balancer': return '/balancer.json';
-            default: return '/config.json';
+            case 'inbound': return definitions.InboundObject;
+            case 'outbound': return definitions.OutboundObject;
+            case 'inbounds': return { type: "array", items: definitions.InboundObject };
+            case 'outbounds': return { type: "array", items: definitions.OutboundObject };
+            case 'rule': return definitions.RoutingRule;
+            case 'routing': return definitions.RoutingObject;
+            case 'dns': return definitions.DnsObject;
+            case 'balancer': return definitions.BalancerObject;
+            default: return xraySchema;
         }
-    };
+    }, [schemaMode]);
+
+    // Кастомный линтер на основе нашей JSON-схемы
+    const schemaLinter = useMemo(() => {
+        const validate = ajv.compile(schemaForMode);
+        
+        return linter((view) => {
+            const diagnostics: any[] = [];
+            const doc = view.state.doc.toString();
+            if (!doc.trim()) return [];
+
+            try {
+                // Убираем комментарии перед валидацией (Xray их поддерживает, JSON.parse - нет)
+                const cleanJson = doc.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => group1 || "");
+                const parsed = JSON.parse(cleanJson);
+                const valid = validate(parsed);
+
+                if (!valid && validate.errors) {
+                    validate.errors.forEach(err => {
+                        diagnostics.push({
+                            from: 0,
+                            to: view.state.doc.length,
+                            severity: "error",
+                            message: `Schema: ${err.instancePath} ${err.message}`,
+                        });
+                    });
+                }
+            } catch (e: any) {
+                // Ошибки синтаксиса обработает стандартный jsonParseLinter
+            }
+            return diagnostics;
+        });
+    }, [schemaForMode]);
 
     return (
-        <div 
-            ref={containerRef}
-            className="h-full w-full border border-slate-700 rounded-lg overflow-hidden bg-[#1e1e1e] monaco-editor-container"
-        >
-            <Editor
+        <div className="h-full w-full bg-[#282c34] overflow-hidden flex flex-col font-mono text-[13px]">
+            <CodeMirror
+                value={value}
                 height="100%"
-                path={getFilePath()}
-                defaultLanguage="json"
-                theme="vs-dark"
-                // КЛЮЧЕВОЕ: Используем defaultValue вместо value для предотвращения прыжков курсора
-                defaultValue={value}
+                theme={oneDark}
+                extensions={[
+                    json(),
+                    lintGutter(),
+                    jsonParseLinter(),
+                    schemaLinter,
+                    autocompletion()
+                ]}
                 onChange={onChange}
-                beforeMount={handleEditorWillMount}
-                onMount={handleEditorDidMount}
-                options={{
-                    readOnly: readOnly,
-                    minimap: { enabled: false },
-                    fontSize: isMobile ? 12 : 13,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontLigatures: false, // Выключаем лигатуры, они ломают расчеты ширины в Monaco
-                    scrollBeyondLastLine: false,
-                    automaticLayout: false, // Отключаем встроенный, так как мы используем ResizeObserver выше
-                    tabSize: 2,
-                    formatOnPaste: true,
-                    formatOnType: true,
-                    lineHeight: isMobile ? 18 : 20,
-                    fixedOverflowWidgets: true,
-                    quickSuggestions: true,
-                    suggest: {
-                        preview: false,
-                        showWords: false,
-                        showValues: true,
-                        showProperties: true,
-                    },
-                    hover: { enabled: true, delay: 300 },
-                    links: true,
-                    contextmenu: true,
-                    renderLineHighlight: 'all',
-                    scrollbar: {
-                        verticalScrollbarSize: isMobile ? 6 : 10,
-                        horizontalScrollbarSize: isMobile ? 6 : 10,
-                    },
-                    glyphMargin: !isMobile,
-                    folding: !isMobile,
-                    smoothScrolling: true,
-                    cursorSmoothCaretAnimation: "on",
-                    cursorBlinking: "smooth",
-                    wordWrap: isMobile ? 'on' : 'off',
-                    letterSpacing: 0, // Важно: любой letter-spacing ломает выделение
+                readOnly={readOnly}
+                basicSetup={{
+                    lineNumbers: true,
+                    foldGutter: true,
+                    dropCursor: true,
+                    allowMultipleSelections: true,
+                    indentOnInput: true,
+                    syntaxHighlighting: true,
+                    bracketMatching: true,
+                    closeBrackets: true,
+                    autocompletion: true,
+                    highlightActiveLine: true,
+                    highlightSelectionMatches: true,
                 }}
+                className="flex-1 min-h-0"
             />
             <style>{`
-                /* Сброс всех внешних стилей, которые могут протечь внутрь Monaco */
-                .monaco-editor, .monaco-editor .view-lines, .monaco-editor .view-line {
-                    letter-spacing: 0px !important;
-                    font-feature-settings: "liga" 0, "calt" 0 !important;
+                .cm-editor { height: 100% !important; }
+                .cm-scroller { 
+                    font-family: 'JetBrains Mono', monospace !important;
                 }
-                .monaco-editor .decorationsOverviewRuler {
-                    display: none !important;
-                }
+                .cm-content { padding-bottom: 100px !important; }
+                .cm-gutterElement { font-size: 11px; opacity: 0.5; }
+                /* Стили для тултипов ошибок */
+                .cm-tooltip-lint { background: #1e293b !important; border: 1px solid #475569 !important; color: #f1f5f9 !important; }
             `}</style>
         </div>
     );

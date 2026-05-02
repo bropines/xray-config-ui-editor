@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { JsonEditor } from "./JsonEditor";
-import { MobileJsonEditor } from "./MobileJsonEditor";
 
 interface JsonFieldProps {
     label?: string;
@@ -11,34 +10,39 @@ interface JsonFieldProps {
 }
 
 export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full' }: JsonFieldProps) => {
+    const [text, setText] = useState("");
     const [error, setError] = useState(false);
-    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
+    // Синхронизация внешнего value -> внутренний текст
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Подготавливаем начальное текстовое значение один раз при смене value извне
-    const getInitialText = () => {
+        // Убираем технический индекс 'i' перед отображением в JSON
+        let displayValue = value;
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             const { i, ...cleanValue } = value as any;
-            return JSON.stringify(cleanValue, null, 2);
+            displayValue = cleanValue;
         }
-        return JSON.stringify(value, null, 2);
-    };
+        
+        const newText = JSON.stringify(displayValue, null, 2);
+        
+        // Сравниваем распарсенные значения, чтобы не затирать текст пользователя, если данные те же
+        try {
+            const cleanJson = stripComments(text);
+            if (text.trim() !== "" && JSON.stringify(JSON.parse(cleanJson)) === JSON.stringify(displayValue)) {
+                return;
+            }
+        } catch (e) {}
 
-    // Улучшенная функция для удаления комментариев перед парсингом.
-    // Она корректно игнорирует // внутри строк (например, в URL или ключах).
+        setText(newText);
+    }, [value]);
+
     const stripComments = (jsonString: string) => {
         return jsonString.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
             return group1 ? group1 : "";
         });
     };
 
-    const handleEditorChange = (newVal: string | undefined) => {
-        const v = newVal || "";
+    const handleEditorChange = (v: string) => {
+        setText(v);
         try {
             if (v.trim() === "") {
                 onChange(undefined);
@@ -54,10 +58,6 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         }
     };
 
-    // Генерируем ключ для сброса редактора при смене контекста (например, разные инбаунды)
-    // Мы используем stringify начального значения, чтобы при открытии новой модалки defaultValue обновился.
-    const initialText = getInitialText();
-
     return (
         <div className={`flex flex-col gap-2 h-full w-full min-w-0 ${className}`}>
             {label && (
@@ -69,23 +69,13 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                 </div>
             )}
             
-            <div className={`flex-1 min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#1e1e1e] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
+            <div className={`flex-1 min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#282c34] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
                 <div className="absolute inset-0">
-                    {isMobile ? (
-                        <MobileJsonEditor 
-                            key={`${schemaMode}-mobile`}
-                            value={initialText} 
-                            onChange={handleEditorChange}
-                            schemaMode={schemaMode}
-                        />
-                    ) : (
-                        <JsonEditor 
-                            key={`${schemaMode}-${initialText.length}`} // Сбрасываем инстанс при смене типа схемы или длины текста
-                            value={initialText} 
-                            onChange={handleEditorChange} 
-                            schemaMode={schemaMode} 
-                        />
-                    )}
+                    <JsonEditor 
+                        value={text} 
+                        onChange={handleEditorChange} 
+                        schemaMode={schemaMode} 
+                    />
                 </div>
             </div>
         </div>
