@@ -45,11 +45,22 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         setText(v);
         try {
             if (v.trim() === "") {
-                // Ignore empty input to prevent undefined crashes in parent
                 setError(false);
             } else {
                 const cleanJson = stripComments(v);
                 const parsed = JSON.parse(cleanJson);
+                
+                // Recursively remove 'i' property used for UI state
+                const removeUiProps = (obj: any) => {
+                    if (Array.isArray(obj)) {
+                        obj.forEach(removeUiProps);
+                    } else if (obj && typeof obj === 'object') {
+                        delete obj.i;
+                        Object.values(obj).forEach(removeUiProps);
+                    }
+                };
+                removeUiProps(parsed);
+                
                 onChange(parsed);
                 setError(false);
             }
