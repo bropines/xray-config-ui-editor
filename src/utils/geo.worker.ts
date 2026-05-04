@@ -17,7 +17,6 @@ message GeoSite { string countryCode = 1; repeated Domain domain = 2; }
 message GeoSiteList { repeated GeoSite entry = 1; }
 `;
 
-// Global cache inside worker to avoid re-decoding
 let cachedData: any = null;
 let cachedBuffer: ArrayBuffer | null = null;
 let cachedType: string | null = null;
@@ -34,7 +33,6 @@ const formatIp = (bytes: Uint8Array) => {
 };
 
 const getDecodedData = (buffer: ArrayBuffer, type: string) => {
-    // If we already have this buffer decoded, return the cache
     if (cachedBuffer === buffer && cachedType === type && cachedData) {
         return cachedData;
     }
@@ -46,7 +44,6 @@ const getDecodedData = (buffer: ArrayBuffer, type: string) => {
     const message = ListType.decode(new Uint8Array(buffer));
     const object = ListType.toObject(message, { defaults: true }) as any;
 
-    // Update cache
     cachedData = object;
     cachedBuffer = buffer;
     cachedType = type;
@@ -56,10 +53,12 @@ const getDecodedData = (buffer: ArrayBuffer, type: string) => {
 
 self.onmessage = async (e: MessageEvent) => {
     const msg = e.data;
+    console.log("Worker received message:", msg);
     const { type, dataType, targetCode, customUrl, fileBuffer, query } = msg;
     const isGeoSite = type === 'geosite' || dataType === 'geosite';
 
     try {
+        console.log("Worker processing type:", type);
         let buffer = fileBuffer;
 
         const getBuffer = async () => {
@@ -138,16 +137,20 @@ self.onmessage = async (e: MessageEvent) => {
         }
 
         if (buffer) {
+            console.log("Decoding buffer...");
             const object = getDecodedData(buffer, isGeoSite ? 'geosite' : 'geoip');
+            console.log("Decoding successful, mapping results...");
             const result = object.entry.map((en: any) => ({
                 code: en.countryCode || en.country_code,
                 count: (en.domain || en.cidr || []).length
             }));
 
             self.postMessage({ type: 'success', targetType: type, data: result });
+            console.log("Success message sent");
         }
 
     } catch (err: any) {
+        console.error("Worker error:", err);
         self.postMessage({ type: 'error', targetType: type, error: err.message });
     }
 };
