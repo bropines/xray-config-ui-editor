@@ -12,7 +12,7 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 - ☁️ **Remnawave Integration**: Direct sync via API (Credentials or API Token). Load and save profiles to your cloud panel instantly.
 - 🕸 **Visual Topology**: Interactive traffic flow graph powered by React Flow.
 - 🛡 **Reality Tooling**: Built-in X25519 key generator for Reality security.
-- 📝 **Dual Mode Editing**: Switch between a user-friendly GUI and a raw JSON editor (Monaco Editor) with one click.
+- 📝 **Dual Mode Editing**: Switch between a user-friendly GUI and a raw JSON editor ([CodeMirror 6](https://code.haverbeke.berlin/codemirror/dev/)) with one click.
 - 📂 **Local Management**: Drag & Drop your `config.json` to edit locally or use built-in presets.
 - 🧩 **Smart Routing**: Advanced routing manager with Drag-and-Drop rule reordering.
 - 😇 **Lots of tooltips**: Since developers (me) sometimes have silly little sun icons, we decided to label some of the features and explain what they are in tooltips or in captions below.
@@ -132,6 +132,7 @@ bun run build
 - **Remnawave**: Awesome proxy management panel.
 - **Phosphor Icons**: Beautiful iconography.
 - **xyflow**: For the powerful topology visualization.
+- **CodeMirror** Lightweight in-browser code editor
 
 ---
 
