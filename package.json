@@ -38,7 +38,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@phosphor-icons/react": "^2.1.10",
     "@types/dagre": "^0.7.53",
-    "@xyflow/react": "^12.10.0",
+    "@xyflow/react": "^12.10.2",
     "ajv": "^8.20.0",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
