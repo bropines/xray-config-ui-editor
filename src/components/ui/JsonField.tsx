@@ -40,34 +40,44 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             return group1 ? group1 : "";
         });
     };
+const handleEditorChange = (v: string) => {
+    setText(v);
+    try {
+        if (v.trim() === "") {
+            // If user clears the field, provide an empty config base instead of undefined
+            onChange({ inbounds: [], outbounds: [] });
+            setError(false);
+        } else {
+            const cleanJson = stripComments(v);
+            const parsed = JSON.parse(cleanJson);
 
-    const handleEditorChange = (v: string) => {
-        setText(v);
-        try {
-            if (v.trim() === "") {
-                setError(false);
-            } else {
-                const cleanJson = stripComments(v);
-                const parsed = JSON.parse(cleanJson);
-                
-                // Recursively remove 'i' property used for UI state
-                const removeUiProps = (obj: any) => {
-                    if (Array.isArray(obj)) {
-                        obj.forEach(removeUiProps);
-                    } else if (obj && typeof obj === 'object') {
-                        delete obj.i;
-                        Object.values(obj).forEach(removeUiProps);
+            // Recursively remove 'i' property and ignore nulls
+            const sanitize = (obj: any): any => {
+                if (Array.isArray(obj)) return obj.map(sanitize).filter(i => i !== null);
+                if (obj && typeof obj === 'object') {
+                    const newObj: any = {};
+                    for (const key in obj) {
+                        if (key === 'i') continue;
+                        const val = sanitize(obj[key]);
+                        if (val !== null && val !== undefined) newObj[key] = val;
                     }
-                };
-                removeUiProps(parsed);
-                
-                onChange(parsed);
+                    return newObj;
+                }
+                return obj;
+            };
+
+            const sanitized = sanitize(parsed);
+
+            // Reject if resulting object is invalid (e.g. empty or not matching Xray structure)
+            if (sanitized && typeof sanitized === 'object') {
+                onChange(sanitized);
                 setError(false);
             }
-        } catch (err) {
-            setError(true);
         }
-    };
+    } catch (err) {
+        setError(true);
+    }
+};
 
     return (
         <div className={`flex flex-col gap-2 h-full w-full min-w-0 ${className}`}>
