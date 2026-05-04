@@ -145,7 +145,7 @@ export const RuleEditor = ({
                 </div>
                 <div className="flex gap-2">
                     <select
-                        className={`flex-1 input-base font-bold ${missingTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
+                        className={`flex-1 select-base font-bold ${missingTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         value={currentTarget}
                         onChange={e => {
                             const val = e.target.value;
@@ -213,7 +213,7 @@ export const RuleEditor = ({
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">
                         Advanced Matchers
                     </label>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-6">
                         <div>
                             <TagSelector 
                                 label={<span className="flex items-center">Inbound Source <Help>Filter traffic by the tag of the inbound connection.</Help></span>} 
@@ -246,7 +246,7 @@ export const RuleEditor = ({
                                 <Help>Determines how Xray handles domains. UseIP will force Xray to resolve the domain to an IP before matching.</Help>
                             </label>
                             <select 
-                                className="input-base text-xs font-mono"
+                                className="select-base text-xs font-mono"
                                 value={rule.domainStrategy || ""}
                                 onChange={e => update('domainStrategy', e.target.value || undefined)}
                             >
@@ -258,17 +258,93 @@ export const RuleEditor = ({
                             </select>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-2 border-t border-slate-800/50">
                             <div>
                                 <label className="label-xs">Target Port</label>
                                 <input className="input-base text-xs font-mono" placeholder="e.g. 443, 1000-2000"
                                     value={rule.port || ""} onChange={e => update('port', e.target.value)} />
                             </div>
                             <div>
+                                <label className="label-xs">Source Port</label>
+                                <input className="input-base text-xs font-mono" placeholder="e.g. 1000-2000"
+                                    value={rule.sourcePort || ""} onChange={e => update('sourcePort', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="label-xs">Local Port</label>
+                                <input className="input-base text-xs font-mono" placeholder="e.g. 53"
+                                    value={rule.localPort || ""} onChange={e => update('localPort', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="label-xs flex items-center">vlessRoute <Help>e.g. 1 or 14514</Help></label>
+                                <input className="input-base text-xs font-mono" placeholder="e.g. 1"
+                                    value={rule.vlessRoute || ""} onChange={e => update('vlessRoute', e.target.value)} />
+                            </div>
+                            <div>
                                 <label className="label-xs">Source IP (CIDR)</label>
-                                <input className="input-base text-xs font-mono" placeholder="e.g. 10.0.0.1/32"
-                                    value={(rule.source || []).join(',')}
-                                    onChange={e => update('source', e.target.value ? e.target.value.split(',') : undefined)} />
+                                <input className="input-base text-xs font-mono" placeholder="10.0.0.1"
+                                    value={(rule.sourceIP || rule.source || []).join(',')}
+                                    onChange={e => update('sourceIP', e.target.value ? e.target.value.split(',') : undefined)} />
+                            </div>
+                            <div>
+                                <label className="label-xs">Local IP</label>
+                                <input className="input-base text-xs font-mono" placeholder="192.168.0.1"
+                                    value={(rule.localIP || []).join(',')}
+                                    onChange={e => update('localIP', e.target.value ? e.target.value.split(',') : undefined)} />
+                            </div>
+                            <div>
+                                <label className="label-xs">User (Email / Regexp)</label>
+                                <input className="input-base text-xs font-mono" placeholder="user@xray.com"
+                                    value={(rule.user || []).join(',')}
+                                    onChange={e => update('user', e.target.value ? e.target.value.split(',') : undefined)} />
+                            </div>
+                            <div>
+                                <label className="label-xs flex items-center">Process <Help>e.g. curl, xray/</Help></label>
+                                <input className="input-base text-xs font-mono" placeholder="curl, self/"
+                                    value={(rule.process || []).join(',')}
+                                    onChange={e => update('process', e.target.value ? e.target.value.split(',') : undefined)} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* HTTP Attrs & Webhook */}
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 space-y-4">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">
+                        Advanced Features
+                    </label>
+                    <div className="grid grid-cols-2 gap-6">
+                        <div>
+                            <label className="label-xs flex items-center">
+                                HTTP Attributes (JSON) <Help>{`e.g. {":method": "GET", ":path": "/test"}`}</Help>
+                            </label>
+                            <textarea 
+                                className="input-base font-mono text-xs h-24 resize-none" 
+                                placeholder='{":method": "GET"}'
+                                value={rule.attrs ? JSON.stringify(rule.attrs, null, 2) : ""}
+                                onChange={e => {
+                                    try {
+                                        const parsed = e.target.value ? JSON.parse(e.target.value) : undefined;
+                                        update('attrs', parsed);
+                                    } catch(err) { /* ignore while typing */ }
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <label className="label-xs flex items-center">
+                                Webhook <Help>Send HTTP POST notification on match.</Help>
+                            </label>
+                            <div className="space-y-2 p-2 bg-slate-950 rounded border border-slate-800">
+                                <input className="input-base text-xs font-mono" placeholder="URL (e.g. https://api...)"
+                                    value={rule.webhook?.url || ""}
+                                    onChange={e => update('webhook', { ...rule.webhook, url: e.target.value })} />
+                                <div className="flex gap-2">
+                                    <div className="w-1/2">
+                                        <label className="label-xs">Deduplication (s)</label>
+                                        <input className="input-base text-xs font-mono" type="number" placeholder="10"
+                                            value={rule.webhook?.deduplication || ""}
+                                            onChange={e => update('webhook', { ...rule.webhook, deduplication: Number(e.target.value) })} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

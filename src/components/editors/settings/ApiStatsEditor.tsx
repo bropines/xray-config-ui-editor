@@ -1,4 +1,6 @@
 import React from 'react';
+import { Switch } from '../../ui/Switch';
+import { Card } from '../../ui/Card';
 
 export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleStats }) => {
     const apiEnabled = !!api;
@@ -20,32 +22,34 @@ export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleS
     return (
         <div className="space-y-6">
             {/* STATS TOGGLE */}
-            <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <div>
-                    <h3 className="font-bold text-white">Statistics</h3>
-                    <p className="text-xs text-slate-500">Enable internal traffic counters (Required for panels)</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-indigo-600 cursor-pointer"
-                    checked={statsEnabled}
-                    onChange={() => onToggleStats({})}
-                />
-            </div>
+            <Card 
+                title="Statistics" 
+                icon="ChartBar"
+                headerExtra={
+                    <Switch 
+                        checked={statsEnabled}
+                        onChange={() => onToggleStats({})}
+                    />
+                }
+            >
+                <p className="text-xs text-slate-500 mb-2">Enable internal traffic counters (Required for panels)</p>
+            </Card>
 
             {/* API TOGGLE */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <div>
-                        <h3 className="font-bold text-white">gRPC API</h3>
-                        <p className="text-xs text-slate-500">Control Xray via gRPC (Required for panels)</p>
-                    </div>
-                    <input type="checkbox" className="w-5 h-5 accent-indigo-600 cursor-pointer"
+            <Card 
+                title="gRPC API" 
+                icon="Plugs"
+                headerExtra={
+                    <Switch 
                         checked={apiEnabled}
                         onChange={() => onToggleApi({ tag: "api", services: ["HandlerService", "LoggerService", "StatsService"] })}
                     />
-                </div>
+                }
+            >
+                <p className="text-xs text-slate-500 mb-2">Control Xray via gRPC (Required for panels)</p>
 
                 {apiEnabled && (
-                    <div className="p-4 border border-slate-800 rounded-xl bg-slate-900/50 animate-in fade-in slide-in-from-top-2">
+                    <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-slate-800/50">
                         <div className="mb-4">
                             <label className="label-xs">API Outbound Tag</label>
                             <input className="input-base w-1/2" 
@@ -75,7 +79,7 @@ export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleS
                         </div>
                     </div>
                 )}
-            </div>
+            </Card>
         </div>
     );
 };

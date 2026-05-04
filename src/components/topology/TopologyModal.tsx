@@ -5,6 +5,7 @@ import { Modal } from '../ui/Modal';
 import { GraphNode } from './GraphNode';
 import { useTopology } from '../../hooks/useTopology';
 import { Icon } from '../ui/Icon';
+import { Switch } from '../ui/Switch';
 
 const nodeTypes = { custom: GraphNode };
 
@@ -28,15 +29,11 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
             className="h-full overflow-hidden"
             extraButtons={
                 <div className="flex items-center gap-3 bg-slate-950 p-1 px-2 rounded-lg border border-slate-800">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                            type="checkbox" 
-                            className="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 checked:bg-indigo-600 transition-all"
-                            checked={hideUnused}
-                            onChange={(e) => setHideUnused(e.target.checked)}
-                        />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase group-hover:text-slate-200 transition-colors">Hide Unused</span>
-                    </label>
+                    <Switch 
+                        checked={hideUnused}
+                        onChange={setHideUnused}
+                        label={<span className="text-[10px] font-bold text-slate-400 uppercase group-hover:text-slate-200 transition-colors">Hide Unused</span>}
+                    />
                     
                     <div className="w-px h-4 bg-slate-800 mx-1"></div>
                     

@@ -20,14 +20,18 @@ interface JsonEditorProps {
     onChange: (value: string) => void;
     readOnly?: boolean;
     schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing';
+    mode?: 'json' | 'plaintext';
 }
 
-export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full' }: JsonEditorProps) => {
+export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full', mode = 'json' }: JsonEditorProps) => {
     const editorParent = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
 
+    const isJson = mode === 'json';
+
     // Подготовка схемы
     const schemaForMode = useMemo(() => {
+        if (!isJson) return null;
         if (schemaMode === 'full') return xraySchema;
         let refPath = "";
         switch (schemaMode) {
@@ -42,10 +46,11 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             default: return xraySchema;
         }
         return { ...xraySchema, $ref: `#/definitions/${refPath}` };
-    }, [schemaMode]);
+    }, [schemaMode, isJson]);
 
     // Единый линтер (синтаксис + схема)
     const customLinter = useMemo(() => {
+        if (!isJson || !schemaForMode) return null;
         const validate = ajv.compile(schemaForMode);
         return linter((view) => {
             const diagnostics: any[] = [];
@@ -75,10 +80,11 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             }
             return diagnostics;
         });
-    }, [schemaForMode]);
+    }, [schemaForMode, isJson]);
 
     // --- УЛУЧШЕННАЯ АВТОПОДСТАНОВКА (COMPLETION) ---
     const customCompletion = useMemo(() => {
+        if (!isJson) return null;
         return jsonLanguage.data.of({
             autocomplete: (context: any) => {
                 const word = context.matchBefore(/[\w"]*/);
@@ -126,101 +132,108 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                 };
             }
         });
-    }, [schemaForMode]);
+    }, [schemaForMode, isJson]);
 
     useEffect(() => {
         if (!editorParent.current) return;
 
-        const state = EditorState.create({
-            doc: value,
-            extensions: [
-                lineNumbers(),
-                highlightActiveLineGutter(),
-                highlightSpecialChars(),
-                history(),
-                foldGutter(),
-                drawSelection(),
-                dropCursor(),
-                EditorState.allowMultipleSelections.of(true),
-                indentOnInput(),
-                syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-                bracketMatching(),
-                closeBrackets(),
+        const extensions = [
+            lineNumbers(),
+            highlightActiveLineGutter(),
+            highlightSpecialChars(),
+            history(),
+            foldGutter(),
+            drawSelection(),
+            dropCursor(),
+            EditorState.allowMultipleSelections.of(true),
+            indentOnInput(),
+            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+            bracketMatching(),
+            closeBrackets(),
+            rectangularSelection(),
+            crosshairCursor(),
+            highlightActiveLine(),
+            highlightSelectionMatches(),
+            keymap.of([
+                ...closeBracketsKeymap,
+                ...defaultKeymap,
+                ...searchKeymap,
+                ...historyKeymap,
+                ...foldKeymap,
+                ...completionKeymap,
+                ...lintKeymap
+            ]),
+            oneDark,
+            EditorView.updateListener.of((update) => {
+                if (update.docChanged) {
+                    onChange(update.state.doc.toString());
+                }
+            }),
+            EditorView.editable.of(!readOnly),
+            EditorState.readOnly.of(readOnly),
+            EditorView.theme({
+                "&": { height: "100%", backgroundColor: "#1e1e1e" },
+                "&.cm-focused": { outline: "none" },
+                ".cm-scroller": {
+                    overflow: "auto !important",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "#334155 #0f172a"
+                },
+                ".cm-scroller::-webkit-scrollbar": {
+                    width: "10px",
+                    height: "10px"
+                },
+                ".cm-scroller::-webkit-scrollbar-track": {
+                    background: "#0f172a"
+                },
+                ".cm-scroller::-webkit-scrollbar-thumb": {
+                    background: "#334155",
+                    borderRadius: "10px",
+                    border: "3px solid #0f172a"
+                },
+                ".cm-scroller::-webkit-scrollbar-thumb:hover": {
+                    background: "#475569"
+                },
+                ".cm-gutters": {
+                    backgroundColor: "#1e1e1e",
+                    color: "#6b7280",
+                    border: "none"
+                },
+                ".cm-activeLineGutter": {
+                    backgroundColor: "#2d3748",
+                    color: "#e2e8f0"
+                },
+                ".cm-tooltip": {
+                    backgroundColor: "#1e293b",
+                    border: "1px solid #334155",
+                    borderRadius: "6px",
+                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)"
+                },
+                ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
+                    backgroundColor: "#312e81",
+                    color: "white"
+                }
+            })
+        ];
+
+        if (isJson) {
+            extensions.push(
+                json(),
                 autocompletion({
                     defaultKeymap: true,
                     aboveCursor: true,
                     activateOnTyping: true,
                     icons: true
                 }),
-                customCompletion,
-                rectangularSelection(),
-                crosshairCursor(),
-                highlightActiveLine(),
-                highlightSelectionMatches(),
-                keymap.of([
-                    ...closeBracketsKeymap,
-                    ...defaultKeymap,
-                    ...searchKeymap,
-                    ...historyKeymap,
-                    ...foldKeymap,
-                    ...completionKeymap,
-                    ...lintKeymap
-                ]),
-                json(), 
-                oneDark,
+                customCompletion!,
                 lintGutter(),
-                customLinter,
-                EditorView.updateListener.of((update) => {
-                    if (update.docChanged) {
-                        onChange(update.state.doc.toString());
-                    }
-                }),
-                EditorView.editable.of(!readOnly),
-                EditorState.readOnly.of(readOnly),
-                // --- УЛУЧШЕННАЯ СТИЛИЗАЦИЯ СКРОЛЛА И ИНТЕРФЕЙСА ---
-                EditorView.theme({
-                    "&": { height: "100%", backgroundColor: "#1e1e1e" },
-                    ".cm-scroller": {
-                        overflow: "auto",
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "#334155 #0f172a"
-                    },
-                    ".cm-scroller::-webkit-scrollbar": {
-                        width: "10px",
-                        height: "10px"
-                    },
-                    ".cm-scroller::-webkit-scrollbar-track": {
-                        background: "#0f172a"
-                    },
-                    ".cm-scroller::-webkit-scrollbar-thumb": {
-                        background: "#334155",
-                        borderRadius: "10px",
-                        border: "3px solid #0f172a"
-                    },
-                    ".cm-scroller::-webkit-scrollbar-thumb:hover": {
-                        background: "#475569"
-                    },
-                    ".cm-gutters": {
-                        backgroundColor: "#1e1e1e",
-                        color: "#6b7280",
-                        border: "none"
-                    },
-                    ".cm-activeLineGutter": {
-                        backgroundColor: "#2d3748",
-                        color: "#e2e8f0"
-                    },
-                    ".cm-tooltip": {
-                        backgroundColor: "#1e293b",
-                        border: "1px solid #334155",
-                        borderRadius: "6px",
-                        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)"
-                    },
-                    ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-                        backgroundColor: "#312e81",
-                        color: "white"
-                    }
-                })
-            ]
+                customLinter!
+            );
+        }
+
+        const state = EditorState.create({
+            doc: value,
+            extensions
         });
 
         const view = new EditorView({

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Switch } from '../../ui/Switch';
 
 export const DnsGeneral = ({ dns, onChange }) => {
     const update = (field: string, val: any) => {
@@ -42,29 +43,28 @@ export const DnsGeneral = ({ dns, onChange }) => {
             </div>
 
             {/* Toggles */}
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-4">
                 <h4 className="label-xs border-b border-slate-700/50 pb-2 mb-2">Behavior Flags</h4>
                 
-                <label className="flex items-center justify-between cursor-pointer group">
-                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">Disable Cache</span>
-                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-950 border-slate-700 accent-indigo-600"
+                <div className="space-y-3">
+                    <Switch 
                         checked={dns.disableCache || false}
-                        onChange={e => update('disableCache', e.target.checked)} />
-                </label>
+                        onChange={checked => update('disableCache', checked)} 
+                        label="Disable Cache"
+                    />
 
-                <label className="flex items-center justify-between cursor-pointer group">
-                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">Disable Fallback</span>
-                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-950 border-slate-700 accent-indigo-600"
+                    <Switch 
                         checked={dns.disableFallback || false}
-                        onChange={e => update('disableFallback', e.target.checked)} />
-                </label>
+                        onChange={checked => update('disableFallback', checked)} 
+                        label="Disable Fallback"
+                    />
 
-                <label className="flex items-center justify-between cursor-pointer group">
-                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">Disable Fallback If Match</span>
-                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-950 border-slate-700 accent-indigo-600"
+                    <Switch 
                         checked={dns.disableFallbackIfMatch || false}
-                        onChange={e => update('disableFallbackIfMatch', e.target.checked)} />
-                </label>
+                        onChange={checked => update('disableFallbackIfMatch', checked)} 
+                        label="Disable Fallback If Match"
+                    />
+                </div>
             </div>
         </div>
     );

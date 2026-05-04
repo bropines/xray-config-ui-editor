@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
+import { Switch } from '../../ui/Switch';
 import { Help } from '../../ui/Help';
 import { SockoptEditor } from './SockoptEditor';
 
@@ -111,19 +112,17 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700" 
-                                    checked={extra.noGRPCHeader === true} 
-                                    onChange={e => update(['extra', 'noGRPCHeader'], e.target.checked)} />
-                                <span className="text-[10px] text-slate-300 font-bold uppercase">No gRPC Header</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700" 
-                                    checked={extra.noSSEHeader === true} 
-                                    onChange={e => update(['extra', 'noSSEHeader'], e.target.checked)} />
-                                <span className="text-[10px] text-slate-300 font-bold uppercase">No SSE Header</span>
-                            </label>
+                        <div className="grid grid-cols-2 gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <Switch
+                                checked={extra.noGRPCHeader === true}
+                                onChange={checked => update(['extra', 'noGRPCHeader'], checked)}
+                                label="No gRPC Header"
+                            />
+                            <Switch
+                                checked={extra.noSSEHeader === true}
+                                onChange={checked => update(['extra', 'noSSEHeader'], checked)}
+                                label="No SSE Header"
+                            />
                         </div>
 
                         {/* Packet-up specific */}

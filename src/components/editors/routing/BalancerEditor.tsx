@@ -206,6 +206,38 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                     </div>
                 </div>
             )}
+
+            {balancer.strategy?.type === 'leastLoad' && (
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 space-y-4">
+                    <h4 className="text-xs font-bold text-slate-400">LeastLoad Settings</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="label-xs">Expected Nodes</label>
+                            <input className="input-base font-mono" type="number" placeholder="2" 
+                                value={balancer.strategy?.settings?.expected || ""} 
+                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, expected: Number(e.target.value) } })} />
+                        </div>
+                        <div>
+                            <label className="label-xs">Max RTT</label>
+                            <input className="input-base font-mono" placeholder="1s" 
+                                value={balancer.strategy?.settings?.maxRTT || ""} 
+                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, maxRTT: e.target.value } })} />
+                        </div>
+                        <div>
+                            <label className="label-xs">Tolerance</label>
+                            <input className="input-base font-mono" type="number" step="0.01" placeholder="0.01" 
+                                value={balancer.strategy?.settings?.tolerance || ""} 
+                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, tolerance: Number(e.target.value) } })} />
+                        </div>
+                        <div>
+                            <label className="label-xs">Baselines (CSV)</label>
+                            <input className="input-base font-mono" placeholder="1s, 2s" 
+                                value={(balancer.strategy?.settings?.baselines || []).join(', ')} 
+                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, baselines: e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s) } })} />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

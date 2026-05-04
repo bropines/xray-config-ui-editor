@@ -10,7 +10,7 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <FormField label="Protocol" help="Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.">
                     <select 
-                        className="input-base font-bold text-indigo-400"
+                        className="select-base font-bold text-indigo-400"
                         value={inbound.protocol} 
                         onChange={e => onProtocolChange(e.target.value)}
                     >

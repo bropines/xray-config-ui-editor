@@ -21,9 +21,9 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
                         <option value="wireguard">WireGuard</option>
                         <option value="hysteria2">Hysteria 2</option>
                         <option value="tuic">TUIC</option>
-                        <option value="freedom">Freedom (Direct)</option>
-                        <option value="blackhole">Blackhole (Block)</option>
-                        <option value="dns">DNS</option>
+                        <option value="freedom">Freedom (Direct) - No Proxy</option>
+                        <option value="blackhole">Blackhole (Block) - Silent Sink</option>
+                        <option value="dns">DNS (Server) - Internal Proxy</option>
                     </select>
                 </FormField>
 

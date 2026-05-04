@@ -1,5 +1,7 @@
 import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
+import { Switch } from '../../ui/Switch';
+import { Card } from '../../ui/Card';
 
 export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, outboundTags }: any) => {
     const enabled = !!burstObservatory;
@@ -17,23 +19,23 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <div>
-                    <h3 className="font-bold text-white">Burst Observatory</h3>
-                    <p className="text-xs text-slate-500">Advanced stealth health checks for balancers</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-indigo-600 cursor-pointer"
+        <Card 
+            title="Burst Observatory" 
+            icon="Lightning"
+            headerExtra={
+                <Switch 
                     checked={enabled}
                     onChange={() => onToggle({ 
                         subjectSelector: [], 
                         pingConfig: { destination: "https://connectivitycheck.gstatic.com/generate_204", interval: "1m", sampling: 10 } 
                     })}
                 />
-            </div>
+            }
+        >
+            <p className="text-xs text-slate-500 -mt-2">Advanced stealth health checks for balancers</p>
 
             {enabled && (
-                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 p-4 border border-slate-800 rounded-xl bg-slate-900/50">
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                             <label className="label-xs">Destination URL</label>
@@ -42,20 +44,47 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                                 onChange={e => updatePing('destination', e.target.value)}
                             />
                         </div>
+                        <div className="col-span-2">
+                            <label className="label-xs">Connectivity Check URL (Optional)</label>
+                            <input className="input-base font-mono text-xs" 
+                                placeholder="e.g. https://connectivitycheck.gstatic.com/generate_204"
+                                value={localObs.pingConfig?.connectivity || ""} 
+                                onChange={e => updatePing('connectivity', e.target.value)}
+                            />
+                        </div>
                         <div>
                             <label className="label-xs">Interval</label>
-                            <input className="input-base" 
+                            <input className="input-base font-mono" 
                                 placeholder="1m, 30s"
                                 value={localObs.pingConfig?.interval || ""} 
                                 onChange={e => updatePing('interval', e.target.value)}
                             />
                         </div>
                         <div>
+                            <label className="label-xs">Timeout</label>
+                            <input className="input-base font-mono" 
+                                placeholder="5s"
+                                value={localObs.pingConfig?.timeout || ""} 
+                                onChange={e => updatePing('timeout', e.target.value)}
+                            />
+                        </div>
+                        <div>
                             <label className="label-xs">Sampling Count</label>
-                            <input type="number" className="input-base" 
+                            <input type="number" className="input-base font-mono" 
                                 value={localObs.pingConfig?.sampling || 10} 
                                 onChange={e => updatePing('sampling', parseInt(e.target.value))}
                             />
+                        </div>
+                        <div>
+                            <label className="label-xs">HTTP Method</label>
+                            <select className="input-base font-mono" 
+                                value={localObs.pingConfig?.httpMethod || "HEAD"} 
+                                onChange={e => updatePing('httpMethod', e.target.value)}
+                            >
+                                <option value="HEAD">HEAD</option>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                            </select>
                         </div>
                     </div>
 
@@ -71,6 +100,6 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                     </div>
                 </div>
             )}
-        </div>
+        </Card>
     );
 };

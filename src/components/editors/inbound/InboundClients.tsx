@@ -2,12 +2,14 @@ import React from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Help } from '../../ui/Help';
+import { Switch } from '../../ui/Switch';
 import { generateUUID, generateShortId } from '../../../utils/generators';
 
 import { useConfigStore } from '../../../store/configStore';
 
 export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
     const { remnawave } = useConfigStore();
+    const [ssPassLen, setSsPassLen] = React.useState(32);
     const proto = inbound.protocol;
 
     // Remnawave integration: Hide users if connected (only for multi-user protocols)
@@ -41,7 +43,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             Method
                             <Help>Encryption algorithm for Shadowsocks. aes-256-gcm is recommended for security, or 2022-blake3-* for SS-2022.</Help>
                         </label>
-                        <select className="input-base"
+                        <select className="select-base"
                             value={inbound.settings?.method || (is2022 ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
                             onChange={e => onChange(['settings', 'method'], e.target.value)}
                         >
@@ -59,13 +61,24 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="label-xs">Password / Pre-shared Key</label>
+                        <label className="label-xs flex items-center justify-between">
+                            <span>Password / Pre-shared Key</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-slate-500 font-bold uppercase">Length:</span>
+                                <input 
+                                    type="number" 
+                                    className="w-10 bg-transparent border-none text-[10px] text-indigo-400 font-bold p-0 focus:ring-0" 
+                                    value={ssPassLen}
+                                    onChange={e => setSsPassLen(parseInt(e.target.value) || 0)}
+                                />
+                            </div>
+                        </label>
                         <div className="flex gap-2">
                             <input className={`input-base font-mono ${errors.password ? 'border-rose-500 bg-rose-500/10' : ''}`}
                                 value={inbound.settings?.password || ""}
                                 onChange={e => onChange(['settings', 'password'], e.target.value)}
                             />
-                            <button onClick={() => onChange(['settings', 'password'], generateShortId() + generateShortId())}
+                            <button onClick={() => onChange(['settings', 'password'], generateShortId(ssPassLen))}
                                 className="bg-slate-800 p-2 rounded text-slate-400 hover:text-white transition-colors">
                                 <Icon name="DiceFive" />
                             </button>
@@ -117,13 +130,12 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                                 onChange={e => onChange(['settings', 'down_mbps'], parseInt(e.target.value))} />
                         </div>
                         <div className="flex items-center gap-2 pt-6">
-                            <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
+                            <Switch 
                                 checked={inbound.settings?.ignore_client_bandwidth === true}
-                                onChange={e => onChange(['settings', 'ignore_client_bandwidth'], e.target.checked)} />
-                            <span className="text-xs text-slate-400 font-bold uppercase flex items-center">
-                                Ignore Client Bandwidth
-                                <Help>If enabled, the server will ignore the bandwidth limits requested by the client.</Help>
-                            </span>
+                                onChange={checked => onChange(['settings', 'ignore_client_bandwidth'], checked)}
+                                label="Ignore Client Bandwidth"
+                            />
+                            <Help>If enabled, the server will ignore the bandwidth limits requested by the client.</Help>
                         </div>
                     </div>
                 </div>
@@ -180,7 +192,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                         {proto === 'socks' && (
                             <div>
                                 <label className="label-xs">Auth Type</label>
-                                <select className="input-base"
+                                <select className="select-base"
                                     value={inbound.settings?.auth || "noauth"}
                                     onChange={e => onChange(['settings', 'auth'], e.target.value)}
                                 >
@@ -192,26 +204,24 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                         <div className="flex items-center gap-6">
                             {proto === 'socks' && (
                                 <div className="flex items-center gap-2">
-                                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
+                                    <Switch 
                                         id="socks-udp"
                                         checked={inbound.settings?.udp === true}
-                                        onChange={e => onChange(['settings', 'udp'], e.target.checked)} />
-                                    <label htmlFor="socks-udp" className="text-xs text-slate-400 font-bold uppercase flex items-center cursor-pointer">
-                                        UDP Support
-                                        <Help>Enable UDP associate for SOCKS5.</Help>
-                                    </label>
+                                        onChange={checked => onChange(['settings', 'udp'], checked)}
+                                        label="UDP Support"
+                                    />
+                                    <Help>Enable UDP associate for SOCKS5.</Help>
                                 </div>
                             )}
                             {proto === 'http' && (
                                 <div className="flex items-center gap-2">
-                                    <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
+                                    <Switch 
                                         id="http-transparent"
                                         checked={inbound.settings?.allowTransparent === true}
-                                        onChange={e => onChange(['settings', 'allowTransparent'], e.target.checked)} />
-                                    <label htmlFor="http-transparent" className="text-xs text-slate-400 font-bold uppercase flex items-center cursor-pointer">
-                                        Allow Transparent
-                                        <Help>Allow transparent proxying for HTTP.</Help>
-                                    </label>
+                                        onChange={checked => onChange(['settings', 'allowTransparent'], checked)}
+                                        label="Allow Transparent"
+                                    />
+                                    <Help>Allow transparent proxying for HTTP.</Help>
                                 </div>
                             )}
                         </div>
@@ -340,7 +350,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             {proto === 'vless' && (
                                 <div className="md:col-span-2">
                                     <label className="label-xs">Flow</label>
-                                    <select className="input-base py-1.5 text-xs"
+                                    <select className="select-base py-1.5 text-xs"
                                         value={c.flow || ""}
                                         onChange={e => updateClient(i, 'flow', e.target.value)}>
                                         <option value="">None</option>

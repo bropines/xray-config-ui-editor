@@ -41,6 +41,7 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
                         value={text}
                         onChange={() => {}}
                         readOnly={true}
+                        mode="plaintext"
                     />
                 )}
             </div>

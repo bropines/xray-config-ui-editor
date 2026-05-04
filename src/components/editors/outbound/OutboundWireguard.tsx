@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Help } from '../../ui/Help';
-import { generateWarpAccount } from '../../../utils/generators';
 import { toast } from 'sonner';
+import { Switch } from '../../ui/Switch';
+import { generateWarpAccount } from '../../../utils/generators';
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {
     if (outbound.protocol !== 'wireguard') return null;
@@ -105,11 +106,12 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     />
                 </div>
                 <div className="flex items-center gap-2 pt-5">
-                    <input type="checkbox" id="nokernel" className="w-4 h-4 rounded bg-slate-900 border-slate-700 accent-indigo-500" checked={settings.noKernelTun || false} onChange={e => update('noKernelTun', e.target.checked)} />
-                    <label htmlFor="nokernel" className="text-[10px] uppercase text-slate-400 font-bold cursor-pointer hover:text-white transition-colors flex items-center gap-1">
-                        No Kernel TUN
-                        <Help>Enabled: use gVisor (no root needed). Disabled: use system interface (faster).</Help>
-                    </label>
+                    <Switch
+                        checked={settings.noKernelTun || false}
+                        onChange={checked => update('noKernelTun', checked)}
+                        label="No Kernel TUN"
+                    />
+                    <Help>Enabled: use gVisor (no root needed). Disabled: use system interface (faster).</Help>
                 </div>
             </div>
 

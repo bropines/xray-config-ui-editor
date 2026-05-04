@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { SmartTagInput } from '../../ui/SmartTagInput';
+import { Switch } from '../../ui/Switch';
 import { getDefaultGeoList } from '../../../utils/geo-data';
 
 export const DnsServerEditor = ({ server, onChange, onCancel }) => {
@@ -118,19 +119,17 @@ export const DnsServerEditor = ({ server, onChange, onCancel }) => {
                     />
                 </div>
 
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
-                            checked={local.skipFallback || false}
-                            onChange={e => update('skipFallback', e.target.checked)} />
-                        <span className="text-xs text-slate-300">Skip Fallback (Critical)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-700"
-                            checked={local.queryStrategy === 'UseIPv4'}
-                            onChange={e => update('queryStrategy', e.target.checked ? 'UseIPv4' : undefined)} />
-                        <span className="text-xs text-slate-300">Force IPv4 (A Record)</span>
-                    </label>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-3">
+                    <Switch 
+                        checked={local.skipFallback || false}
+                        onChange={checked => update('skipFallback', checked)}
+                        label="Skip Fallback (Critical)"
+                    />
+                    <Switch 
+                        checked={local.queryStrategy === 'UseIPv4'}
+                        onChange={checked => update('queryStrategy', checked ? 'UseIPv4' : undefined)}
+                        label="Force IPv4 (A Record)"
+                    />
                 </div>
             </div>
         </div>

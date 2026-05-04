@@ -1,5 +1,6 @@
 import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
+import { Switch } from '../../ui/Switch';
 
 export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
     const availableProxies = allTags.filter(t => t !== outbound.tag);
@@ -42,9 +43,9 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                 <div className="flex justify-between items-center mb-3">
                     <h4 className="label-xs text-slate-400">Mux (Multiplexing)</h4>
-                    <input type="checkbox" className="w-4 h-4 accent-indigo-600 cursor-pointer"
+                    <Switch
                         checked={outbound.mux?.enabled || false}
-                        onChange={e => updateMux(e.target.checked)}
+                        onChange={checked => updateMux(checked)}
                     />
                 </div>
                 

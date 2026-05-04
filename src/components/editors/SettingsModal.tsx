@@ -63,7 +63,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                     <>
                         <Card title="Core Compatibility" icon="Cpu">
                             <FormField label="Target Xray-core Version" help="Adjusts UI fields and validation based on core features (e.g., XHTTP requires v1.8.10+).">
-                                <select className="input-base"
+                                <select className="select-base font-bold text-indigo-400"
                                     value={coreVersion}
                                     onChange={e => setCoreVersion(e.target.value)}
                                 >

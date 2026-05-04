@@ -2,11 +2,11 @@ import React from 'react';
 import { Button } from './Button';
 import { Icon } from './Icon';
 
-export const Modal = ({ title, onClose, onSave, children, extraButtons = null, className = "" }) => {
+export const Modal = ({ title, onClose, onSave, children, extraButtons = null, className = "", isSecondary = false }) => {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 ${isFullScreen ? 'p-0 is-modal-fullscreen' : 'p-2 md:p-4'}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center ${isSecondary ? 'bg-black/40' : 'bg-black/80 backdrop-blur-sm'} animate-in fade-in duration-200 ${isFullScreen ? 'p-0 is-modal-fullscreen' : 'p-2 md:p-4'}`}>
       <div className={`bg-slate-900 border border-slate-700 w-full flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 
         ${isFullScreen ? 'h-full md:rounded-none' : 'h-full md:h-auto md:max-h-[90vh] md:rounded-2xl'} 
         ${isFullScreen ? 'max-w-full' : (className.includes('max-w-') ? '' : 'max-w-[95vw] xl:max-w-[75vw] 2xl:max-w-[1400px]')} ${className}`}>

@@ -1,5 +1,7 @@
 import React from 'react';
-import { TagSelector } from '../../ui/TagSelector'; // Используем уже существующий
+import { TagSelector } from '../../ui/TagSelector';
+import { Switch } from '../../ui/Switch';
+import { Card } from '../../ui/Card';
 
 export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTags }) => {
     const enabled = !!observatory;
@@ -14,13 +16,11 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <div>
-                    <h3 className="font-bold text-white">Observatory</h3>
-                    <p className="text-xs text-slate-500">Health checks for Load Balancers</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-indigo-600 cursor-pointer"
+        <Card 
+            title="Observatory" 
+            icon="Eye"
+            headerExtra={
+                <Switch 
                     checked={enabled}
                     onChange={() => onToggle({ 
                         subjectSelector: [], 
@@ -28,10 +28,12 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
                         probeInterval: "1m" 
                     })}
                 />
-            </div>
+            }
+        >
+            <p className="text-xs text-slate-500 -mt-2">Health checks for Load Balancers</p>
 
             {enabled && (
-                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 p-4 border border-slate-800 rounded-xl bg-slate-900/50">
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="label-xs">Probe URL</label>
@@ -66,6 +68,6 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
                     </div>
                 </div>
             )}
-        </div>
+        </Card>
     );
 };

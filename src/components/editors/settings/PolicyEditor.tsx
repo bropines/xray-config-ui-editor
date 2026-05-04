@@ -1,4 +1,6 @@
 import React from 'react';
+import { Switch } from '../../ui/Switch';
+import { Card } from '../../ui/Card';
 
 export const PolicyEditor = ({ policy, onChange, onToggle }) => {
     const enabled = !!policy;
@@ -22,41 +24,41 @@ export const PolicyEditor = ({ policy, onChange, onToggle }) => {
     const l0 = localPolicy.levels?.["0"] || {};
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <div>
-                    <h3 className="font-bold text-white">Local Policy</h3>
-                    <p className="text-xs text-slate-500">Timeouts & System Stats</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-indigo-600 cursor-pointer"
+        <Card 
+            title="Local Policy" 
+            icon="ShieldCheck"
+            headerExtra={
+                <Switch 
                     checked={enabled}
                     onChange={() => onToggle({
                         system: { statsInboundUplink: true, statsInboundDownlink: true },
                         levels: { "0": { handshake: 4, connIdle: 300 } }
                     })}
                 />
-            </div>
+            }
+        >
+            <p className="text-xs text-slate-500 mb-2">Timeouts & System Stats</p>
 
             {enabled && (
-                <div className="animate-in fade-in slide-in-from-top-2 space-y-6">
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2 border-t border-slate-800/50">
                     {/* System Stats */}
-                    <div className="p-4 border border-slate-800 rounded-xl bg-slate-900/50">
+                    <div className="p-4 border border-slate-800 rounded-xl bg-slate-950/50">
                         <label className="label-xs mb-3">System Traffic Counters</label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {['statsInboundUplink', 'statsInboundDownlink', 'statsOutboundUplink', 'statsOutboundDownlink'].map(k => (
-                                <label key={k} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white">
-                                    <input type="checkbox" className="accent-emerald-500"
+                                <div key={k} className="flex items-center h-8">
+                                    <Switch 
                                         checked={localPolicy.system?.[k] || false}
-                                        onChange={e => updateSystem(k, e.target.checked)}
+                                        onChange={checked => updateSystem(k, checked)}
+                                        label={k}
                                     />
-                                    {k}
-                                </label>
+                                </div>
                             ))}
                         </div>
                     </div>
 
                     {/* Level 0 Timeouts */}
-                    <div className="p-4 border border-slate-800 rounded-xl bg-slate-900/50">
+                    <div className="p-4 border border-slate-800 rounded-xl bg-slate-950/50">
                         <label className="label-xs mb-3">Level 0 (Default User) Timeouts (sec)</label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div>
@@ -83,6 +85,6 @@ export const PolicyEditor = ({ policy, onChange, onToggle }) => {
                     </div>
                 </div>
             )}
-        </div>
+        </Card>
     );
 };
