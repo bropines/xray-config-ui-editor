@@ -13,8 +13,10 @@ import { ObservatoryEditor } from './settings/ObservatoryEditor';
 import { BurstObservatoryEditor } from './settings/BurstObservatoryEditor';
 
 import { useSettingsEditor } from '../../hooks/useSettingsEditor';
+import { useConfigStore } from '../../store/configStore';
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
+    const { warpWorkerUrl, setWarpWorkerUrl } = useConfigStore();
     const {
         coreVersion,
         setCoreVersion,
@@ -62,7 +64,8 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             <div className="max-w-3xl mx-auto space-y-6">
                 {activeTab === 'general' && (
                     <>
-                        <Card title="Core Compatibility" icon="Cpu">
+                        <Card title="Core Compatibility & Generators" icon="Cpu">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Select 
                                     label="Target Xray-core Version"
                                     hint="Adjusts UI fields and validation based on core features."
@@ -74,6 +77,15 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                                         { value: "v1.5.0", label: "Legacy (v1.5.0)" },
                                     ]}
                                 />
+                                <FormField label="WARP Worker URL" help="Optional: Your private Cloudflare Worker URL for CORS-safe registration.">
+                                    <input 
+                                        className="input-base"
+                                        placeholder="https://your-worker.workers.dev"
+                                        value={warpWorkerUrl}
+                                        onChange={e => setWarpWorkerUrl(e.target.value)}
+                                    />
+                                </FormField>
+                            </div>
                         </Card>
                         
                         <LogEditor 

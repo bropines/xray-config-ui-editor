@@ -160,6 +160,7 @@ interface ConfigDashboardProps {
   onOpenOutboundJson: () => void;
   onAddOutbound: () => void;
   onBatchImport: () => void;
+  onOpenWarpModal: () => void;
   onEditDns: () => void;
   onOpenDnsJson: () => void;
   filteredOutbounds: any[];
@@ -190,6 +191,7 @@ export const ConfigDashboard = ({
   onOpenOutboundJson,
   onAddOutbound,
   onBatchImport,
+  onOpenWarpModal,
   onEditDns,
   onOpenDnsJson,
   filteredOutbounds,
@@ -510,6 +512,14 @@ export const ConfigDashboard = ({
                   </div>
 
                   <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onOpenWarpModal}
+                      icon="Lightning"
+                      title="Generate WARP Outbound"
+                      className="h-9 w-9 p-0 text-amber-500 hover:text-amber-400"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"

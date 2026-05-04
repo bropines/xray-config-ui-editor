@@ -13,7 +13,7 @@ import {
 export const App = () => {
     const [modulesVisible, setModulesVisible] = React.useState(false);
     const {
-        config, setConfig, deleteItem, remnawave, disconnectRemnawave, initDns,
+        config, setConfig, deleteItem, addItem, remnawave, disconnectRemnawave, initDns,
         modal, setModal,
         sectionModal, setSectionModal,
         remnawaveModalOpen, setRemnawaveModalOpen,
@@ -21,6 +21,7 @@ export const App = () => {
         geoViewerOpen, setGeoViewerOpen,
         diagnosticsOpen, setDiagnosticsOpen,
         aboutOpen, setAboutOpen,
+        warpModalOpen, setWarpModalOpen,
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,
@@ -105,6 +106,7 @@ export const App = () => {
                         onAddOutbound={() => setModal({ type: 'outbound', data: null, index: null })}
                         onOpenOutboundJson={() => openSectionJson('outbounds', 'Outbounds')}
                         onBatchImport={() => setBatchModalOpen(true)}
+                        onOpenWarpModal={() => setWarpModalOpen(true)}
                         onEditDns={() => { initDns(); setModal({ type: 'dns', data: null, index: null }); }}
                         onOpenDnsJson={() => openSectionJson('dns', 'DNS Config')}
                         onOpenSettings={() => setModal({ type: 'settings', data: null, index: null })}
@@ -130,6 +132,9 @@ export const App = () => {
                 onCloseGeoViewer={() => setGeoViewerOpen(false)}
                 diagnosticsOpen={diagnosticsOpen}
                 onCloseDiagnostics={() => setDiagnosticsOpen(false)}
+                warpModalOpen={warpModalOpen}
+                onCloseWarpModal={() => setWarpModalOpen(false)}
+                onGenerateWarp={(ob: any) => addItem('outbounds', ob)}
                 diagnostics={diagnostics}
                 aboutOpen={aboutOpen}
                 onCloseAbout={() => setAboutOpen(false)}

@@ -27,6 +27,7 @@ export const useAppLogic = () => {
     const [geoViewerOpen, setGeoViewerOpen] = useState(false);
     const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
+    const [warpModalOpen, setWarpModalOpen] = useState(false);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -131,7 +132,7 @@ export const useAppLogic = () => {
     }, [config?.outbounds, obSearch]);
 
     return {
-        config, setConfig, deleteItem, remnawave, disconnectRemnawave, initDns,
+        config, setConfig, deleteItem, addItem, remnawave, disconnectRemnawave, initDns,
         modal, setModal,
         sectionModal, setSectionModal,
         remnawaveModalOpen, setRemnawaveModalOpen,
@@ -139,6 +140,7 @@ export const useAppLogic = () => {
         geoViewerOpen, setGeoViewerOpen,
         diagnosticsOpen, setDiagnosticsOpen,
         aboutOpen, setAboutOpen,
+        warpModalOpen, setWarpModalOpen,
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,

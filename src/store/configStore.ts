@@ -43,6 +43,10 @@ interface ConfigState {
     setConfig: (config: XrayConfig | null) => void;
     coreVersion: string;
     setCoreVersion: (version: string) => void;
+    
+    // UI & Generator Settings
+    warpWorkerUrl: string;
+    setWarpWorkerUrl: (url: string) => void;
 
     // Remnawave Actions
 
@@ -74,6 +78,9 @@ export const useConfigStore = create(
             config: null,
             coreVersion: 'v1.8.10',
             setCoreVersion: (version: string) => set({ coreVersion: version }),
+            
+            warpWorkerUrl: '',
+            setWarpWorkerUrl: (url: string) => set({ warpWorkerUrl: url }),
 
             // --- Remnawave Connection ---
             remnawave: {
@@ -258,6 +265,7 @@ export const useConfigStore = create(
             partialize: (state) => ({ 
                 config: state.config,
                 coreVersion: state.coreVersion,
+                warpWorkerUrl: state.warpWorkerUrl,
                 remnawave: { 
                     url: state.remnawave.url, 
                     token: state.remnawave.token, 

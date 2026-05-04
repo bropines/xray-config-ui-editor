@@ -73,6 +73,10 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                             <Icon name="BookOpen" className="text-2xl text-slate-400 group-hover:text-white transition-colors" />
                             <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">Xray Docs</span>
                         </a>
+                        <a href="https://warp-generator.github.io/" target="_blank" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-amber-500/50 transition-all hover:bg-amber-500/5 group">
+                            <Icon name="Lightning" className="text-lg text-amber-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-amber-200">WARP Engine by warp-generator.github.io</span>
+                        </a>
                     </div>
 
                     {/* Changelog Section */}

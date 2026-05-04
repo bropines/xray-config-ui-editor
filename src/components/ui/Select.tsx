@@ -90,8 +90,8 @@ export function Select<T extends string = string>({
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-[100] w-full mt-1.5 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top ring-1 ring-white/5">
-                        <div className="max-h-[250px] overflow-y-auto custom-scroll p-1.5 space-y-0.5">
+                    <div className="absolute left-0 right-0 z-[500] mt-1.5 bg-[#0f172a] border border-slate-700 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden origin-top ring-1 ring-white/10 opacity-100">
+                        <div className="max-h-[250px] overflow-y-auto custom-scroll p-1.5 space-y-0.5 bg-[#0f172a] opacity-100">
                             {options.length === 0 ? (
                                 <div className="p-3 text-xs text-slate-600 text-center italic">No options</div>
                             ) : (

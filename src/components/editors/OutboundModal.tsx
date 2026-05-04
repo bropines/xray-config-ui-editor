@@ -71,46 +71,58 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             schemaMode="outbound"
             extraButtons={extraButtons}
         >
-            {/* Импорт из ссылки */}
-            <OutboundImport onImport={handleImport} />
+            <div className="space-y-6 pb-10">
+                {/* Импорт из ссылки */}
+                <div className="relative z-50">
+                    <OutboundImport onImport={handleImport} />
+                </div>
 
-            {/* Тег + протокол */}
-            <OutboundGeneral 
-                outbound={local} 
-                onChange={updateField} 
-                onProtocolChange={handleProtocolChange}
-                errors={{ tag: getError('tag') }} 
-            />
-            
-            {/* Редактор, зависящий от протокола */}
-            {local.protocol === 'wireguard' ? (
-                <OutboundWireguard
-                    outbound={local}
-                    onChange={updateField}
-                    errors={{
-                        secretKey: getError('secretKey'),
-                        peers:     getError('peers'),
-                        ...wgPeerErrors,
-                    }}
-                />
-            ) : (
-                <OutboundServer
-                    outbound={local}
-                    onChange={updateField}
-                    errors={{ address: getError('address'), port: getError('port') }}
-                />
-            )}
-            
-            {/* Mux / Proxy chain */}
-            <OutboundProxyMux outbound={local} onChange={updateField} allTags={allOutboundTags} />
+                {/* Тег + протокол */}
+                <div className="relative z-40">
+                    <OutboundGeneral 
+                        outbound={local} 
+                        onChange={updateField} 
+                        onProtocolChange={handleProtocolChange}
+                        errors={{ tag: getError('tag') }} 
+                    />
+                </div>
+                
+                {/* Редактор, зависящий от протокола */}
+                <div className="relative z-30">
+                    {local.protocol === 'wireguard' ? (
+                        <OutboundWireguard
+                            outbound={local}
+                            onChange={updateField}
+                            errors={{
+                                secretKey: getError('secretKey'),
+                                peers:     getError('peers'),
+                                ...wgPeerErrors,
+                            }}
+                        />
+                    ) : (
+                        <OutboundServer
+                            outbound={local}
+                            onChange={updateField}
+                            errors={{ address: getError('address'), port: getError('port') }}
+                        />
+                    )}
+                </div>
+                
+                {/* Mux / Proxy chain */}
+                <div className="relative z-20">
+                    <OutboundProxyMux outbound={local} onChange={updateField} allTags={allOutboundTags} />
+                </div>
 
-            {/* Transport / Stream Settings */}
-            <TransportSettings
-                streamSettings={local.streamSettings}
-                onChange={(s: any) => updateField('streamSettings', s)}
-                isClient={true}
-                errors={{ reality: getError('reality') }}
-            />
+                {/* Transport / Stream Settings */}
+                <div className="relative z-10">
+                    <TransportSettings
+                        streamSettings={local.streamSettings}
+                        onChange={(s: any) => updateField('streamSettings', s)}
+                        isClient={true}
+                        errors={{ reality: getError('reality') }}
+                    />
+                </div>
+            </div>
         </EditorLayout>
     );
 };

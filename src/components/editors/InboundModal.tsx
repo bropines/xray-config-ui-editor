@@ -33,7 +33,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             schemaMode="inbound"
         >
             <div className="space-y-8 pb-8">
-                <section className="animate-in fade-in slide-in-from-top-4 duration-500">
+                <section className="relative z-40 animate-in fade-in slide-in-from-top-4 duration-500">
                     <InboundGeneral 
                         inbound={local} 
                         onChange={updateField} 
@@ -42,7 +42,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                     />
                 </section>
 
-                <section>
+                <section className="relative z-30">
                     {local.protocol === 'tun' ? (
                         <InboundTun inbound={local} onChange={updateField} />
                     ) : (
@@ -55,7 +55,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                 </section>
 
                 {/* Transport / Stream Settings */}
-                <section>
+                <section className="relative z-20">
                     <TransportSettings
                         streamSettings={local.streamSettings}
                         onChange={(s: any) => updateField('streamSettings', s)}
@@ -63,7 +63,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                     />
                 </section>
 
-                <section className="border-t border-slate-800/50 pt-6">
+                <section className="relative z-10 border-t border-slate-800/50 pt-6">
                     <InboundSniffing
                         sniffing={local.sniffing}
                         onChange={updateField}

@@ -12,6 +12,7 @@ import { BatchOutboundModal } from '../editors/outbound/BatchOutboundModal';
 import { GeoViewerModal } from '../editors/GeoViewerModal';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { AboutModal } from '../AboutModal';
+import { WarpGeneratorModal } from '../editors/WarpGeneratorModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -50,6 +51,10 @@ interface ModalManagerProps {
     onCloseDiagnostics: () => void;
     diagnostics: Diagnostic[];
 
+    warpModalOpen: boolean;
+    onCloseWarpModal: () => void;
+    onGenerateWarp: (outbound: any) => void;
+
     aboutOpen: boolean;
     onCloseAbout: () => void;
 }
@@ -74,6 +79,9 @@ export const ModalManager = ({
     diagnosticsOpen,
     onCloseDiagnostics,
     diagnostics,
+    warpModalOpen,
+    onCloseWarpModal,
+    onGenerateWarp,
     aboutOpen,
     onCloseAbout,
 }: ModalManagerProps) => (
@@ -92,6 +100,7 @@ export const ModalManager = ({
 
         {batchModalOpen && <BatchOutboundModal onClose={onCloseBatch} />}
         {geoViewerOpen && <GeoViewerModal onClose={onCloseGeoViewer} />}
+        {warpModalOpen && <WarpGeneratorModal onClose={onCloseWarpModal} onGenerate={onGenerateWarp} />}
 
         {sectionModal.open && (
             <SectionJsonModal
