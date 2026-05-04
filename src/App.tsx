@@ -38,6 +38,7 @@ export const App = () => {
         criticalCount,
         warningCount,
         filteredOutbounds,
+        moveItem,
     } = useAppLogic();
 
     const closeModal = () => setModal({ type: null, data: null, index: null });
@@ -100,6 +101,7 @@ export const App = () => {
                         onOpenRoutingJson={() => openSectionJson('routing', 'Routing')}
                         onEditOutbound={(data, index) => setModal({ type: 'outbound', data, index })}
                         onDeleteOutbound={(i) => deleteItem('outbounds', i)}
+                        onMoveOutbound={(from, to) => moveItem('outbounds', from, to)}
                         onAddOutbound={() => setModal({ type: 'outbound', data: null, index: null })}
                         onOpenOutboundJson={() => openSectionJson('outbounds', 'Outbounds')}
                         onBatchImport={() => setBatchModalOpen(true)}

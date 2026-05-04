@@ -1,6 +1,7 @@
 import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
 import { Switch } from '../../ui/Switch';
+import { Select } from '../../ui/Select';
 
 export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
     const availableProxies = allTags.filter(t => t !== outbound.tag);
@@ -68,17 +69,16 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
                             </div>
                         </div>
                         
-                        <div>
-                            <label className="label-xs">UDP 443 Strategy (QUIC)</label>
-                            <select className="input-base"
-                                value={outbound.mux.xudpProxyUDP443 || "reject"}
-                                onChange={e => updateMuxField('xudpProxyUDP443', e.target.value)}
-                            >
-                                <option value="reject">Reject (Recommended)</option>
-                                <option value="allow">Allow</option>
-                                <option value="skip">Skip</option>
-                            </select>
-                        </div>
+                        <Select 
+                            label="UDP 443 Strategy (QUIC)"
+                            value={outbound.mux.xudpProxyUDP443 || "reject"}
+                            onChange={val => updateMuxField('xudpProxyUDP443', val)}
+                            options={[
+                                { value: "reject", label: "Reject", description: "Recommended" },
+                                { value: "allow", label: "Allow" },
+                                { value: "skip", label: "Skip" },
+                            ]}
+                        />
                     </div>
                 )}
                 {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">Enable to reduce handshake latency.</p>}

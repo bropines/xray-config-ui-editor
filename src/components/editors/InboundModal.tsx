@@ -32,34 +32,44 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             onClose={onClose}
             schemaMode="inbound"
         >
-            <InboundGeneral 
-                inbound={local} 
-                onChange={updateField} 
-                onProtocolChange={handleProtocolChange}
-                errors={{ tag: getError('tag'), port: getError('port') }} 
-            />
+            <div className="space-y-8 pb-8">
+                <section className="animate-in fade-in slide-in-from-top-4 duration-500">
+                    <InboundGeneral 
+                        inbound={local} 
+                        onChange={updateField} 
+                        onProtocolChange={handleProtocolChange}
+                        errors={{ tag: getError('tag'), port: getError('port') }} 
+                    />
+                </section>
 
-            {local.protocol === 'tun' ? (
-                <InboundTun inbound={local} onChange={updateField} />
-            ) : (
-                <InboundClients 
-                    inbound={local} 
-                    onChange={updateField} 
-                    errors={{ clients: getError('clients') }} 
-                />
-            )}
+                <section>
+                    {local.protocol === 'tun' ? (
+                        <InboundTun inbound={local} onChange={updateField} />
+                    ) : (
+                        <InboundClients 
+                            inbound={local} 
+                            onChange={updateField} 
+                            errors={{ clients: getError('clients') }} 
+                        />
+                    )}
+                </section>
 
-            {/* Transport / Stream Settings */}
-            <TransportSettings
-                streamSettings={local.streamSettings}
-                onChange={(s: any) => updateField('streamSettings', s)}
-                isClient={false}
-            />
+                {/* Transport / Stream Settings */}
+                <section>
+                    <TransportSettings
+                        streamSettings={local.streamSettings}
+                        onChange={(s: any) => updateField('streamSettings', s)}
+                        isClient={false}
+                    />
+                </section>
 
-            <InboundSniffing
-                sniffing={local.sniffing}
-                onChange={updateField}
-            />
+                <section className="border-t border-slate-800/50 pt-6">
+                    <InboundSniffing
+                        sniffing={local.sniffing}
+                        onChange={updateField}
+                    />
+                </section>
+            </div>
         </EditorLayout>
     );
 };

@@ -111,17 +111,21 @@ export const useGeoViewer = () => {
 
             if (isCancelled) return;
 
-            const worker = createProtoWorker();
-            worker.onmessage = (e) => {
+            const worker = getSharedProtoWorker();
+            const handleMessage = (e: MessageEvent) => {
                 if (isCancelled) return;
                 if (e.data.type === 'deep_search_result') {
                     setDeepSearchResults(e.data.data);
+                    setDeepSearchLoading(false);
+                    worker.removeEventListener('message', handleMessage);
                 } else if (e.data.error) {
                     toast.error("Deep search error", { description: e.data.error });
+                    setDeepSearchLoading(false);
+                    worker.removeEventListener('message', handleMessage);
                 }
-                setDeepSearchLoading(false);
-                worker.terminate();
             };
+
+            worker.addEventListener('message', handleMessage);
 
             worker.postMessage({
                 type: 'deep_search',
@@ -158,10 +162,8 @@ export const useGeoViewer = () => {
                 const buffer = await file.arrayBuffer();
                 setCustomFileBuffer(buffer);
 
-                if (customWorkerRef.current) customWorkerRef.current.terminate();
-                customWorkerRef.current = createProtoWorker();
-                
-                customWorkerRef.current.onmessage = (evt) => {
+                const worker = getSharedProtoWorker();
+                const handleMessage = (evt: MessageEvent) => {
                     if (evt.data.error) toast.error("Failed to parse DAT", { description: evt.data.error });
                     else if (evt.data.type === 'success') {
                         setCustomData(evt.data.data);
@@ -169,9 +171,11 @@ export const useGeoViewer = () => {
                         toast.success(`Loaded ${evt.data.data.length} categories from local file`);
                     }
                     setCustomLoading(false);
+                    worker.removeEventListener('message', handleMessage);
                 };
 
-                customWorkerRef.current.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
+                worker.addEventListener('message', handleMessage);
+                worker.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
             }
         } catch (err: any) {
             toast.error("File read error", { description: err.message });
@@ -224,10 +228,8 @@ export const useGeoViewer = () => {
                 binaryCache.set(customUrl, buffer);
                 await saveCachedData(customUrl + "_raw", null, { timestamp: Date.now() }, buffer);
 
-                if (customWorkerRef.current) customWorkerRef.current.terminate();
-                customWorkerRef.current = createProtoWorker();
-
-                customWorkerRef.current.onmessage = async (e) => {
+                const worker = getSharedProtoWorker();
+                const handleMessage = async (e: MessageEvent) => {
                     if (e.data.error) toast.error("Failed to parse DAT", { description: e.data.error });
                     else if (e.data.type === 'success') {
                         await saveCachedData(customUrl, e.data.data, e.data.meta || { timestamp: Date.now() });
@@ -236,9 +238,11 @@ export const useGeoViewer = () => {
                         toast.success(`Loaded ${e.data.data.length} categories`);
                     }
                     setCustomLoading(false);
+                    worker.removeEventListener('message', handleMessage);
                 };
 
-                customWorkerRef.current.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
+                worker.addEventListener('message', handleMessage);
+                worker.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
             }
         } catch (err: any) {
             toast.error("Failed to fetch list", { description: err.message });

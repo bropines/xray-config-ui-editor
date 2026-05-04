@@ -7,6 +7,7 @@ export const useAppLogic = () => {
         config,
         setConfig,
         deleteItem,
+        moveItem,
         updateItem,
         addItem,
         updateSection,
@@ -154,6 +155,7 @@ export const useAppLogic = () => {
         diagnostics,
         criticalCount,
         warningCount,
-        filteredOutbounds
+        filteredOutbounds,
+        moveItem
     };
 };

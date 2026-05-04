@@ -67,6 +67,7 @@ export const DnsModal = ({ onClose }: any) => {
             title="DNS Configuration"
             onClose={onClose}
             onSave={() => onClose()}
+            className="md:max-w-[1000px]"
             extraButtons={
                 <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">

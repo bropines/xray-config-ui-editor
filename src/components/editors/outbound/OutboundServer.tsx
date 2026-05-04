@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../../ui/Card';
 import { FormField } from '../../ui/FormField';
 import { Switch } from '../../ui/Switch';
+import { Select } from '../../ui/Select';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const server = outbound.settings?.vnext?.[0] || outbound.settings?.servers?.[0] || {};
@@ -58,15 +59,16 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                         The <b>Blackhole</b> outbound drops all outgoing traffic. It is primarily used to block specific domains or IPs (e.g., for ad-blocking or preventing telemetry) by routing them here.
                     </p>
                 </div>
-                <FormField label="Response Type" help="Determines what the client receives when traffic is blocked.">
-                    <select className="select-base text-xs"
-                        value={outbound.settings?.response?.type || "none"}
-                        onChange={e => onChange('settings', { ...outbound.settings, response: { type: e.target.value } })}
-                    >
-                        <option value="none">None (Silent Drop)</option>
-                        <option value="http">HTTP (Return 403 Forbidden)</option>
-                    </select>
-                </FormField>
+                <Select 
+                    label="Response Type"
+                    hint="Determines what the client receives when traffic is blocked."
+                    value={outbound.settings?.response?.type || "none"}
+                    onChange={val => onChange('settings', { ...outbound.settings, response: { type: val } })}
+                    options={[
+                        { value: "none", label: "None", description: "Silent Drop" },
+                        { value: "http", label: "HTTP", description: "Return 403 Forbidden" },
+                    ]}
+                />
             </Card>
         );
     }
@@ -108,17 +110,18 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     </p>
                 </div>
                 <div className="mt-4">
-                    <FormField label="Domain Strategy" help="How to resolve domain names when connecting.">
-                        <select className="select-base text-xs"
+                        <Select 
+                            label="Domain Strategy"
+                            hint="How to resolve domain names when connecting."
                             value={outbound.settings?.domainStrategy || "AsIs"}
-                            onChange={e => onChange('settings', { ...outbound.settings, domainStrategy: e.target.value })}
-                        >
-                            <option value="AsIs">As Is (Use system DNS)</option>
-                            <option value="UseIP">Use IP (Resolve via Xray DNS)</option>
-                            <option value="UseIPv4">Use IPv4</option>
-                            <option value="UseIPv6">Use IPv6</option>
-                        </select>
-                    </FormField>
+                            onChange={val => onChange('settings', { ...outbound.settings, domainStrategy: val })}
+                            options={[
+                                { value: "AsIs", label: "As Is", description: "Use system DNS" },
+                                { value: "UseIP", label: "Use IP", description: "Resolve via Xray DNS" },
+                                { value: "UseIPv4", label: "Use IPv4" },
+                                { value: "UseIPv6", label: "Use IPv6" },
+                            ]}
+                        />
                 </div>
             </Card>
         );
@@ -158,25 +161,21 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 </FormField>
 
                 {isShadowsocks && (
-                    <FormField label="Method">
-                        <select 
-                            className="select-base text-xs"
-                            value={server.method || (outbound.protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
-                            onChange={e => updateMethod(e.target.value)}
-                        >
-                            {outbound.protocol === 'shadowsocks' && (
-                                <>
-                                    <option value="aes-256-gcm">aes-256-gcm</option>
-                                    <option value="aes-128-gcm">aes-128-gcm</option>
-                                    <option value="chacha20-ietf-poly1305">chacha20-ietf-poly1305</option>
-                                    <option value="xchacha20-ietf-poly1305">xchacha20-ietf-poly1305</option>
-                                </>
-                            )}
-                            <option value="2022-blake3-aes-128-gcm">2022-blake3-aes-128-gcm</option>
-                            <option value="2022-blake3-aes-256-gcm">2022-blake3-aes-256-gcm</option>
-                            <option value="2022-blake3-chacha20-poly1305">2022-blake3-chacha20-poly1305</option>
-                        </select>
-                    </FormField>
+                    <Select 
+                        label="Method"
+                        value={server.method || (outbound.protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
+                        onChange={val => updateMethod(val)}
+                        options={outbound.protocol === 'shadowsocks' ? [
+                            { value: "aes-256-gcm", label: "aes-256-gcm" },
+                            { value: "aes-128-gcm", label: "aes-128-gcm" },
+                            { value: "chacha20-ietf-poly1305", label: "chacha20-ietf-poly1305" },
+                            { value: "xchacha20-ietf-poly1305", label: "xchacha20-ietf-poly1305" },
+                        ] : [
+                            { value: "2022-blake3-aes-128-gcm", label: "2022-blake3-aes-128-gcm" },
+                            { value: "2022-blake3-aes-256-gcm", label: "2022-blake3-aes-256-gcm" },
+                            { value: "2022-blake3-chacha20-poly1305", label: "2022-blake3-chacha20-poly1305" },
+                        ]}
+                    />
                 )}
 
                 {isShadowsocks && (

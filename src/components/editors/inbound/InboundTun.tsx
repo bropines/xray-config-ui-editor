@@ -1,4 +1,5 @@
 import React from 'react';
+import { Select } from '../../ui/Select';
 
 export const InboundTun = ({ inbound, onChange }: any) => {
     const settings = inbound.settings || {};
@@ -27,19 +28,17 @@ export const InboundTun = ({ inbound, onChange }: any) => {
                 </div>
 
                 {/* Network Stack */}
-                <div>
-                    <label className="label-xs">Network Stack</label>
-                    <select 
-                        className="input-base"
+                    <Select 
+                        label="Network Stack"
                         value={settings.stack || "system"} 
-                        onChange={e => update('stack', e.target.value)}
-                    >
-                        <option value="system">System (Recommended)</option>
-                        <option value="gvisor">gVisor</option>
-                        <option value="mixed">Mixed</option>
-                        <option value="lwip">LwIP</option>
-                    </select>
-                </div>
+                        onChange={val => update('stack', val)}
+                        options={[
+                            { value: "system", label: "System", description: "Standard OS stack (Recommended)" },
+                            { value: "gvisor", label: "gVisor", description: "Google's userspace network stack" },
+                            { value: "mixed", label: "Mixed", description: "Hybrid system/gvisor" },
+                            { value: "lwip", label: "LwIP", description: "Lightweight IP stack" },
+                        ]}
+                    />
 
                 {/* Endpoint (Optional for gVisor/System) */}
                 <div className="md:col-span-2">

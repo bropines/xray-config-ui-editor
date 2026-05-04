@@ -9,6 +9,7 @@ import { TagSelector } from '../../ui/TagSelector';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 import { FinalmaskEditor } from './FinalmaskEditor';
 import { Switch } from '../../ui/Switch';
+import { Select } from '../../ui/Select';
 
 interface TransportProps {
     streamSettings: any;
@@ -49,37 +50,44 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
     };
 
     return (
-        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-4 mt-4 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                    <Icon name="Network" /> Stream Settings
+        <div className="bg-slate-900/40 p-5 rounded-2xl border border-slate-800/80 space-y-6 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2.5">
+                    <Icon name="GlobeHemisphereWest" size={18} /> Stream Settings
                 </h4>
             </div>
 
             {/* --- MAIN SELECTORS --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="label-xs flex items-center">
-                        Network
-                        <Help>Transport protocol used to deliver data.</Help>
-                    </label>
-                    <select className="input-base"
-                        value={net} onChange={e => update(['network'], e.target.value)}>
-                        {["tcp", "ws", "xhttp", "splithttp", "grpc", "http", "quic", "kcp", "raw", "httpupgrade"].map(n =>
-                            <option key={n} value={n}>{n.toUpperCase()}</option>
-                        )}
-                    </select>
-                </div>
-                <div>
-                    <label className="label-xs flex items-center">
-                        Security
-                        <Help>TLS/XTLS/Reality encryption layer.</Help>
-                    </label>
-                    <select className="input-base"
-                        value={sec} onChange={e => update(['security'], e.target.value)}>
-                        {["none", "tls", "reality"].map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
-                    </select>
-                </div>
+                    <Select 
+                        label="Network"
+                        hint="Transport protocol used to deliver data."
+                        value={net} 
+                        onChange={val => update(['network'], val)}
+                        options={[
+                            { value: "tcp", label: "TCP", description: "Standard reliable stream" },
+                            { value: "ws", label: "WebSocket", description: "Standard web transport" },
+                            { value: "xhttp", label: "XHTTP", description: "Next-gen HTTP transport" },
+                            { value: "splithttp", label: "SplitHTTP", description: "High-performance split stream" },
+                            { value: "grpc", label: "gRPC", description: "Modern RPC framework" },
+                            { value: "http", label: "HTTP", description: "Standard HTTP proxying" },
+                            { value: "quic", label: "QUIC", description: "UDP-based transport (HTTP/3)" },
+                            { value: "kcp", label: "mKCP", description: "Aggressive UDP transport" },
+                            { value: "raw", label: "RAW", description: "Raw socket access" },
+                            { value: "httpupgrade", label: "HTTP Upgrade", description: "Modern WebSocket alternative" },
+                        ]}
+                    />
+                    <Select 
+                        label="Security"
+                        hint="Encryption layer (TLS/Reality)."
+                        value={sec} 
+                        onChange={val => update(['security'], val)}
+                        options={[
+                            { value: "none", label: "NONE", description: "Plaintext (unsafe)" },
+                            { value: "tls", label: "TLS", description: "Standard SSL/TLS encryption" },
+                            { value: "reality", label: "REALITY", description: "Next-gen stealth encryption" },
+                        ]}
+                    />
             </div>
 
             <div className="border-t border-slate-800/50 my-2" />
@@ -88,7 +96,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {/* RAW (for Finalmask) */}
             {net === 'raw' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
                     <div className="col-span-full flex items-center gap-2">
                         <span className="text-xs font-bold text-emerald-400">RAW Socket Settings</span>
                         <Help>Used primarily with Finalmask for obfuscation.</Help>
@@ -98,7 +106,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {/* HTTP Upgrade */}
             {net === 'httpupgrade' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
                     <div className="col-span-full flex items-center gap-2">
                         <span className="text-xs font-bold text-blue-400">HTTP Upgrade Configuration</span>
                     </div>
@@ -109,7 +117,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {/* TCP (RAW) */}
             {net === 'tcp' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
                     <div className="col-span-full flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-slate-400">TCP (RAW) Settings</span>
                         {!isClient && (
@@ -120,16 +128,15 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             />
                         )}
                     </div>
-                    <div>
-                        <label className="label-xs">Header Type (Obfuscation)</label>
-                        <select className="input-base"
+                        <Select 
+                            label="Header Type (Obfuscation)"
                             value={streamSettings.tcpSettings?.header?.type || "none"}
-                            onChange={e => update(['tcpSettings', 'header', 'type'], e.target.value)}
-                        >
-                            <option value="none">None</option>
-                            <option value="http">HTTP</option>
-                        </select>
-                    </div>
+                            onChange={val => update(['tcpSettings', 'header', 'type'], val)}
+                            options={[
+                                { value: "none", label: "None", description: "No obfuscation" },
+                                { value: "http", label: "HTTP", description: "Simulate HTTP request" },
+                            ]}
+                        />
 
                     {streamSettings.tcpSettings?.header?.type === 'http' && (
                         <div className="md:col-span-2 space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
@@ -162,7 +169,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             )}
 
             {net === 'ws' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
                     <div className="col-span-full flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-indigo-400">WebSocket</span>
                         {!isClient && (
@@ -212,20 +219,19 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'kcp' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="col-span-full text-xs font-bold text-indigo-400">mKCP</div>
-                    <div>
-                        <label className="label-xs">Header Type</label>
-                        <select className="input-base"
+                        <Select 
+                            label="Header Type"
                             value={streamSettings.kcpSettings?.header?.type || "none"}
-                            onChange={e => update(['kcpSettings', 'header', 'type'], e.target.value)}
-                        >
-                            <option value="none">None</option>
-                            <option value="srtp">SRTP (Video)</option>
-                            <option value="utp">uTP (Torrent)</option>
-                            <option value="wechat-video">WeChat</option>
-                            <option value="dtls">DTLS</option>
-                            <option value="wireguard">WireGuard</option>
-                        </select>
-                    </div>
+                            onChange={val => update(['kcpSettings', 'header', 'type'], val)}
+                            options={[
+                                { value: "none", label: "None" },
+                                { value: "srtp", label: "SRTP", description: "Video call simulation" },
+                                { value: "utp", label: "uTP", description: "BitTorrent simulation" },
+                                { value: "wechat-video", label: "WeChat", description: "WeChat video call" },
+                                { value: "dtls", label: "DTLS", description: "DTLS 1.2 simulation" },
+                                { value: "wireguard", label: "WireGuard", description: "WireGuard simulation" },
+                            ]}
+                        />
                     <div><label className="label-xs">Seed</label><input className="input-base font-mono" placeholder="password" value={streamSettings.kcpSettings?.seed || ""} onChange={e => update(['kcpSettings', 'seed'], e.target.value)} /></div>
                     <div><label className="label-xs">MTU</label><input className="input-base font-mono" type="number" placeholder="1350" value={streamSettings.kcpSettings?.mtu || ""} onChange={e => update(['kcpSettings', 'mtu'], Number(e.target.value))} /></div>
                     <div><label className="label-xs">TTI (ms)</label><input className="input-base font-mono" type="number" placeholder="50" value={streamSettings.kcpSettings?.tti || ""} onChange={e => update(['kcpSettings', 'tti'], Number(e.target.value))} /></div>
@@ -246,26 +252,29 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'quic' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="col-span-full text-xs font-bold text-indigo-400">QUIC</div>
-                    <div>
-                        <label className="label-xs">Security</label>
-                        <select className="input-base" value={streamSettings.quicSettings?.security || "none"} onChange={e => update(['quicSettings', 'security'], e.target.value)}>
-                            <option value="none">None</option><option value="aes-128-gcm">AES-128-GCM</option><option value="chacha20-poly1305">ChaCha20</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="label-xs">Header Type</label>
-                        <select className="input-base"
+                        <Select 
+                            label="Security"
+                            value={streamSettings.quicSettings?.security || "none"}
+                            onChange={val => update(['quicSettings', 'security'], val)}
+                            options={[
+                                { value: "none", label: "None" },
+                                { value: "aes-128-gcm", label: "AES-128-GCM" },
+                                { value: "chacha20-poly1305", label: "ChaCha20" },
+                            ]}
+                        />
+                        <Select 
+                            label="Header Type"
                             value={streamSettings.quicSettings?.header?.type || "none"}
-                            onChange={e => update(['quicSettings', 'header', 'type'], e.target.value)}
-                        >
-                            <option value="none">None</option>
-                            <option value="srtp">SRTP</option>
-                            <option value="utp">uTP</option>
-                            <option value="wechat-video">WeChat</option>
-                            <option value="dtls">DTLS</option>
-                            <option value="wireguard">WireGuard</option>
-                        </select>
-                    </div>
+                            onChange={val => update(['quicSettings', 'header', 'type'], val)}
+                            options={[
+                                { value: "none", label: "None" },
+                                { value: "srtp", label: "SRTP" },
+                                { value: "utp", label: "uTP" },
+                                { value: "wechat-video", label: "WeChat" },
+                                { value: "dtls", label: "DTLS" },
+                                { value: "wireguard", label: "WireGuard" },
+                            ]}
+                        />
                     <div className="md:col-span-2"><label className="label-xs">Key</label><input className="input-base font-mono" placeholder="key" value={streamSettings.quicSettings?.key || ""} onChange={e => update(['quicSettings', 'key'], e.target.value)} /></div>
                 </div>
             )}
@@ -358,27 +367,25 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         </div>
 
                         {isClient && (
-                            <div>
-                                <label className="label-xs flex items-center">
-                                    uTLS Fingerprint
-                                    <Help>TLS fingerprint to mimic specific browsers (Chrome, Firefox, etc.) to avoid detection.</Help>
-                                </label>
-                                <select className="input-base"
+                                <Select 
+                                    label="uTLS Fingerprint"
+                                    hint="Mimic specific browser fingerprints."
                                     value={streamSettings.realitySettings?.fingerprint || ""}
-                                    onChange={e => update(['realitySettings', 'fingerprint'], e.target.value)}>
-                                    <option value="">None</option>
-                                    <option value="chrome">Chrome</option>
-                                    <option value="firefox">Firefox</option>
-                                    <option value="safari">Safari</option>
-                                    <option value="ios">iOS</option>
-                                    <option value="android">Android</option>
-                                    <option value="edge">Edge</option>
-                                    <option value="360">360</option>
-                                    <option value="qq">QQ</option>
-                                    <option value="random">Random</option>
-                                    <option value="randomized">Randomized</option>
-                                </select>
-                            </div>
+                                    onChange={val => update(['realitySettings', 'fingerprint'], val)}
+                                    options={[
+                                        { value: "", label: "None" },
+                                        { value: "chrome", label: "Chrome" },
+                                        { value: "firefox", label: "Firefox" },
+                                        { value: "safari", label: "Safari" },
+                                        { value: "ios", label: "iOS" },
+                                        { value: "android", label: "Android" },
+                                        { value: "edge", label: "Edge" },
+                                        { value: "360", label: "360" },
+                                        { value: "qq", label: "QQ" },
+                                        { value: "random", label: "Random" },
+                                        { value: "randomized", label: "Randomized" },
+                                    ]}
+                                />
                         )}
                     </div>
                 </div>
@@ -420,45 +427,49 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             </div>
                         )}
 
-                        <div>
-                            <label className="label-xs">Min Version</label>
-                            <select className="input-base"
-                                value={streamSettings.tlsSettings?.minVersion || "1.2"}
-                                onChange={e => update(['tlsSettings', 'minVersion'], e.target.value)}>
-                                <option value="1.0">1.0</option><option value="1.1">1.1</option><option value="1.2">1.2</option><option value="1.3">1.3</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="label-xs">Max Version</label>
-                            <select className="input-base"
-                                value={streamSettings.tlsSettings?.maxVersion || "1.3"}
-                                onChange={e => update(['tlsSettings', 'maxVersion'], e.target.value)}>
-                                <option value="1.0">1.0</option><option value="1.1">1.1</option><option value="1.2">1.2</option><option value="1.3">1.3</option>
-                            </select>
-                        </div>
+                        <Select 
+                            label="Min TLS Version"
+                            value={streamSettings.tlsSettings?.minVersion || "1.2"}
+                            onChange={val => update(['tlsSettings', 'minVersion'], val)}
+                            options={[
+                                { value: "1.0", label: "1.0" },
+                                { value: "1.1", label: "1.1" },
+                                { value: "1.2", label: "1.2" },
+                                { value: "1.3", label: "1.3" },
+                            ]}
+                        />
+                        <Select 
+                            label="Max TLS Version"
+                            value={streamSettings.tlsSettings?.maxVersion || "1.3"}
+                            onChange={val => update(['tlsSettings', 'maxVersion'], val)}
+                            options={[
+                                { value: "1.0", label: "1.0" },
+                                { value: "1.1", label: "1.1" },
+                                { value: "1.2", label: "1.2" },
+                                { value: "1.3", label: "1.3" },
+                            ]}
+                        />
 
                         {isClient && (
-                            <div className="md:col-span-2">
-                                <label className="label-xs flex items-center">
-                                    uTLS Fingerprint
-                                    <Help>TLS client fingerprint to mimic a browser.</Help>
-                                </label>
-                                <select className="input-base"
+                                <Select 
+                                    label="uTLS Fingerprint"
+                                    hint="Mimic specific browser fingerprints."
                                     value={streamSettings.tlsSettings?.fingerprint || ""}
-                                    onChange={e => update(['tlsSettings', 'fingerprint'], e.target.value)}>
-                                    <option value="">None (Go TLS)</option>
-                                    <option value="chrome">Chrome</option>
-                                    <option value="firefox">Firefox</option>
-                                    <option value="safari">Safari</option>
-                                    <option value="ios">iOS</option>
-                                    <option value="android">Android</option>
-                                    <option value="edge">Edge</option>
-                                    <option value="360">360</option>
-                                    <option value="qq">QQ</option>
-                                    <option value="random">Random</option>
-                                    <option value="randomized">Randomized</option>
-                                </select>
-                            </div>
+                                    onChange={val => update(['tlsSettings', 'fingerprint'], val)}
+                                    options={[
+                                        { value: "", label: "None (Go TLS)" },
+                                        { value: "chrome", label: "Chrome" },
+                                        { value: "firefox", label: "Firefox" },
+                                        { value: "safari", label: "Safari" },
+                                        { value: "ios", label: "iOS" },
+                                        { value: "android", label: "Android" },
+                                        { value: "edge", label: "Edge" },
+                                        { value: "360", label: "360" },
+                                        { value: "qq", label: "QQ" },
+                                        { value: "random", label: "Random" },
+                                        { value: "randomized", label: "Randomized" },
+                                    ]}
+                                />
                         )}
 
                         <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">

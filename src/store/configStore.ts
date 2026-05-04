@@ -59,6 +59,7 @@ interface ConfigState {
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
+    moveItem: (section: 'inbounds' | 'outbounds', fromIndex: number, toIndex: number) => void;
     addOutbounds: (items: any[]) => void;
     
     reorderRules: (newRules: RoutingRule[]) => void;
@@ -223,6 +224,15 @@ export const useConfigStore = create(
                 if (state.config && state.config[section]) {
                     state.config[section].splice(index, 1);
                 }
+            })),
+            
+            moveItem: (section, fromIndex, toIndex) => set(produce((state) => {
+                if (!state.config || !state.config[section]) return;
+                const list = state.config[section];
+                if (toIndex < 0 || toIndex >= list.length) return;
+                
+                const [movedItem] = list.splice(fromIndex, 1);
+                list.splice(toIndex, 0, movedItem);
             })),
 
             reorderRules: (newRules) => set(produce((state) => {

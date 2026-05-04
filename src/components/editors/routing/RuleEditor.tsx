@@ -4,8 +4,55 @@ import { Help } from '../../ui/Help';
 import { SmartTagInput } from '../../ui/SmartTagInput';
 import { TagSelector } from '../../ui/TagSelector';
 import { JsonField } from '../../ui/JsonField';
+import { Select } from '../../ui/Select';
 import { validateRule, lintRule } from '../../../utils/validator';
 import { TagDetailsModal } from '../TagDetailsModal';
+import { useEffect } from 'react';
+
+const AttrsEditor = ({ value, onChange }: any) => {
+    const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        const currentText = value ? JSON.stringify(value, null, 2) : "";
+        try {
+            if (JSON.stringify(JSON.parse(text)) === JSON.stringify(value)) return;
+        } catch (e) { }
+        setText(currentText);
+    }, [value]);
+
+    const handleChange = (v: string) => {
+        setText(v);
+        if (!v.trim()) {
+            onChange(undefined);
+            setError(false);
+            return;
+        }
+        try {
+            const parsed = JSON.parse(v);
+            onChange(parsed);
+            setError(false);
+        } catch (e) {
+            setError(true);
+        }
+    };
+
+    return (
+        <div className="flex-1 flex flex-col relative">
+            <textarea
+                className={`input-base font-mono text-xs flex-1 min-h-[140px] resize-none bg-slate-950/50 border-slate-800/80 focus:border-indigo-500/50 transition-all p-3 ${error ? 'ring-1 ring-rose-500/30 border-rose-500/50' : ''}`}
+                placeholder='{":method": "GET"}'
+                value={text}
+                onChange={e => handleChange(e.target.value)}
+            />
+            {error && (
+                <div className="absolute bottom-2 right-2 text-[9px] font-bold text-rose-500 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/30 animate-pulse">
+                    INVALID JSON
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const RuleEditor = ({
     rule,
@@ -30,7 +77,7 @@ export const RuleEditor = ({
 
     if (rawMode) {
         return (
-            <div className="flex-1 w-full h-full p-4 bg-slate-950">
+            <div className="flex-1 w-full h-full bg-slate-950 overflow-hidden">
                 <JsonField label="Raw Rule JSON" value={rule} onChange={onChange} className="h-full" schemaMode="rule" />
             </div>
         );
@@ -52,14 +99,14 @@ export const RuleEditor = ({
     const handleAutofixCase = () => onChange({
         ...rule,
         ...(rule.domain ? { domain: rule.domain.map((d: string) => d.toLowerCase()) } : {}),
-        ...(rule.ip     ? { ip:     rule.ip.map((ip: string)   => ip.toLowerCase())  } : {}),
+        ...(rule.ip ? { ip: rule.ip.map((ip: string) => ip.toLowerCase()) } : {}),
     });
 
-    const errors   = validateRule(rule);
+    const errors = validateRule(rule);
     const warnings = lintRule(rule);
 
     const hasMissingMatchers = errors.some((e: any) => e.field === 'matchers');
-    const missingTarget      = errors.some((e: any) => e.field === 'target');
+    const missingTarget = errors.some((e: any) => e.field === 'target');
 
     const invalidDomains = errors
         .filter((e: any) => e.field.startsWith('domain_'))
@@ -144,25 +191,19 @@ export const RuleEditor = ({
                     <div className="text-[10px] text-slate-500 font-mono">Where to send traffic</div>
                 </div>
                 <div className="flex gap-2">
-                    <select
-                        className={`flex-1 select-base font-bold ${missingTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
+                    <Select
+                        className="flex-1"
                         value={currentTarget}
-                        onChange={e => {
-                            const val = e.target.value;
+                        placeholder="Select Target..."
+                        onChange={val => {
                             if (val.startsWith('bal:')) update('balancerTag', val.replace('bal:', ''));
                             else update('outboundTag', val);
                         }}
-                    >
-                        <option value="" disabled>Select Target...</option>
-                        <optgroup label="Outbounds (Direct)">
-                            {outboundTags.map((t: string) => <option key={t} value={t}>{t}</option>)}
-                        </optgroup>
-                        {balancerTags.length > 0 && (
-                            <optgroup label="Balancers (Load Balance)">
-                                {balancerTags.map((t: string) => <option key={t} value={`bal:${t}`}>⚡ {t}</option>)}
-                            </optgroup>
-                        )}
-                    </select>
+                        options={[
+                            ...outboundTags.map((t: string) => ({ value: t, label: t, description: 'Outbound' })),
+                            ...balancerTags.map((t: string) => ({ value: `bal:${t}`, label: `⚡ ${t}`, description: 'Load Balancer' }))
+                        ]}
+                    />
                     <input
                         className={`w-1/3 input-base text-slate-300 ${missingTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         placeholder="Custom tag..."
@@ -215,8 +256,8 @@ export const RuleEditor = ({
                     </label>
                     <div className="grid grid-cols-2 gap-6">
                         <div>
-                            <TagSelector 
-                                label={<span className="flex items-center">Inbound Source <Help>Filter traffic by the tag of the inbound connection.</Help></span>} 
+                            <TagSelector
+                                label={<span className="flex items-center">Inbound Source <Help>Filter traffic by the tag of the inbound connection.</Help></span>}
                                 availableTags={inboundTags} selected={rule.inboundTag || []}
                                 onChange={v => update('inboundTag', v)} multi={true} />
                         </div>
@@ -238,68 +279,68 @@ export const RuleEditor = ({
                             <TagSelector label="Protocol" availableTags={['http', 'tls', 'bittorrent']} selected={rule.protocol || []}
                                 onChange={v => update('protocol', v)} multi={true} />
                         </div>
-                        
+
                         {/* Domain Strategy (Force IP) */}
-                        <div>
-                            <label className="label-xs text-indigo-400 flex items-center">
-                                Domain Strategy (Force IP)
-                                <Help>Determines how Xray handles domains. UseIP will force Xray to resolve the domain to an IP before matching.</Help>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="label-xs flex items-center gap-1.5 text-slate-400">
+                                Domain Strategy (Force IP) <Help>UseIP will force Xray to resolve the domain before matching.</Help>
                             </label>
-                            <select 
-                                className="select-base text-xs font-mono"
+                            <Select
                                 value={rule.domainStrategy || ""}
-                                onChange={e => update('domainStrategy', e.target.value || undefined)}
-                            >
-                                <option value="">Default (Inherit)</option>
-                                <option value="AsIs">AsIs</option>
-                                <option value="UseIP">UseIP</option>
-                                <option value="UseIPv4">UseIPv4</option>
-                                <option value="UseIPv6">UseIPv6</option>
-                            </select>
+                                onChange={val => update('domainStrategy', val || undefined)}
+                                options={[
+                                    { value: "", label: "Default (Inherit)" },
+                                    { value: "AsIs", label: "AsIs" },
+                                    { value: "UseIP", label: "UseIP" },
+                                    { value: "UseIPv4", label: "UseIPv4" },
+                                    { value: "UseIPv6", label: "UseIPv6" },
+                                ]}
+                                className="w-full"
+                            />
                         </div>
 
-                        <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-2 border-t border-slate-800/50">
-                            <div>
-                                <label className="label-xs">Target Port</label>
-                                <input className="input-base text-xs font-mono" placeholder="e.g. 443, 1000-2000"
+                        <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 pt-6 mt-2 border-t border-slate-800/50">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs text-slate-500">Target Port</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 443"
                                     value={rule.port || ""} onChange={e => update('port', e.target.value)} />
                             </div>
-                            <div>
-                                <label className="label-xs">Source Port</label>
-                                <input className="input-base text-xs font-mono" placeholder="e.g. 1000-2000"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs text-slate-500">Source Port</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 1000-2000"
                                     value={rule.sourcePort || ""} onChange={e => update('sourcePort', e.target.value)} />
                             </div>
-                            <div>
-                                <label className="label-xs">Local Port</label>
-                                <input className="input-base text-xs font-mono" placeholder="e.g. 53"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs text-slate-500">Local Port</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 53"
                                     value={rule.localPort || ""} onChange={e => update('localPort', e.target.value)} />
                             </div>
-                            <div>
-                                <label className="label-xs flex items-center">vlessRoute <Help>e.g. 1 or 14514</Help></label>
-                                <input className="input-base text-xs font-mono" placeholder="e.g. 1"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs flex items-center gap-1.5 text-slate-500">vlessRoute <Help>e.g. 1 or 14514</Help></label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 1"
                                     value={rule.vlessRoute || ""} onChange={e => update('vlessRoute', e.target.value)} />
                             </div>
-                            <div>
-                                <label className="label-xs">Source IP (CIDR)</label>
-                                <input className="input-base text-xs font-mono" placeholder="10.0.0.1"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs text-slate-500">Source IP (CIDR)</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="10.0.0.1"
                                     value={(rule.sourceIP || rule.source || []).join(',')}
                                     onChange={e => update('sourceIP', e.target.value ? e.target.value.split(',') : undefined)} />
                             </div>
-                            <div>
-                                <label className="label-xs">Local IP</label>
-                                <input className="input-base text-xs font-mono" placeholder="192.168.0.1"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs text-slate-500">Local IP</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="192.168.0.1"
                                     value={(rule.localIP || []).join(',')}
                                     onChange={e => update('localIP', e.target.value ? e.target.value.split(',') : undefined)} />
                             </div>
-                            <div>
-                                <label className="label-xs">User (Email / Regexp)</label>
-                                <input className="input-base text-xs font-mono" placeholder="user@xray.com"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs text-slate-500">User (Email)</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="user@xray.com"
                                     value={(rule.user || []).join(',')}
                                     onChange={e => update('user', e.target.value ? e.target.value.split(',') : undefined)} />
                             </div>
-                            <div>
-                                <label className="label-xs flex items-center">Process <Help>e.g. curl, xray/</Help></label>
-                                <input className="input-base text-xs font-mono" placeholder="curl, self/"
+                            <div className="flex flex-col gap-1.5">
+                                <label className="label-xs flex items-center gap-1.5 text-slate-500">Process <Help>e.g. curl, xray/</Help></label>
+                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="curl, self/"
                                     value={(rule.process || []).join(',')}
                                     onChange={e => update('process', e.target.value ? e.target.value.split(',') : undefined)} />
                             </div>
@@ -308,42 +349,33 @@ export const RuleEditor = ({
                 </div>
 
                 {/* HTTP Attrs & Webhook */}
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 space-y-4">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">
+                <div className="bg-slate-900/40 p-5 rounded-2xl border border-slate-800/60 space-y-5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] block border-b border-slate-800 pb-3">
                         Advanced Features
                     </label>
-                    <div className="grid grid-cols-2 gap-6">
-                        <div>
-                            <label className="label-xs flex items-center">
+                    <div className="grid grid-cols-2 gap-8">
+                        <div className="flex flex-col gap-2 h-full">
+                            <label className="label-xs flex items-center gap-1.5 text-slate-400">
                                 HTTP Attributes (JSON) <Help>{`e.g. {":method": "GET", ":path": "/test"}`}</Help>
                             </label>
-                            <textarea 
-                                className="input-base font-mono text-xs h-24 resize-none" 
-                                placeholder='{":method": "GET"}'
-                                value={rule.attrs ? JSON.stringify(rule.attrs, null, 2) : ""}
-                                onChange={e => {
-                                    try {
-                                        const parsed = e.target.value ? JSON.parse(e.target.value) : undefined;
-                                        update('attrs', parsed);
-                                    } catch(err) { /* ignore while typing */ }
-                                }}
-                            />
+                            <AttrsEditor value={rule.attrs} onChange={(v: any) => update('attrs', v)} />
                         </div>
-                        <div>
-                            <label className="label-xs flex items-center">
-                                Webhook <Help>Send HTTP POST notification on match.</Help>
+                        <div className="flex flex-col gap-2 h-full">
+                            <label className="label-xs flex items-center gap-1.5 text-slate-400">
+                                Webhook Notification <Help>Send HTTP POST notification on match.</Help>
                             </label>
-                            <div className="space-y-2 p-2 bg-slate-950 rounded border border-slate-800">
-                                <input className="input-base text-xs font-mono" placeholder="URL (e.g. https://api...)"
-                                    value={rule.webhook?.url || ""}
-                                    onChange={e => update('webhook', { ...rule.webhook, url: e.target.value })} />
-                                <div className="flex gap-2">
-                                    <div className="w-1/2">
-                                        <label className="label-xs">Deduplication (s)</label>
-                                        <input className="input-base text-xs font-mono" type="number" placeholder="10"
-                                            value={rule.webhook?.deduplication || ""}
-                                            onChange={e => update('webhook', { ...rule.webhook, deduplication: Number(e.target.value) })} />
-                                    </div>
+                            <div className="flex flex-col gap-4 flex-1">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Callback URL</label>
+                                    <input className="input-base text-xs font-mono bg-slate-950/50 border-slate-800/80" placeholder="https://api.site.com/hook"
+                                        value={rule.webhook?.url || ""}
+                                        onChange={e => update('webhook', { ...rule.webhook, url: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Deduplication (seconds)</label>
+                                    <input className="input-base text-xs font-mono bg-slate-950/50 border-slate-800/80" type="number" placeholder="10"
+                                        value={rule.webhook?.deduplication || ""}
+                                        onChange={e => update('webhook', { ...rule.webhook, deduplication: Number(e.target.value) })} />
                                 </div>
                             </div>
                         </div>

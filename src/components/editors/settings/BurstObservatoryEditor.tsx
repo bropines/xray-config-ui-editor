@@ -2,6 +2,7 @@ import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
 import { Switch } from '../../ui/Switch';
 import { Card } from '../../ui/Card';
+import { Select } from '../../ui/Select';
 
 export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, outboundTags }: any) => {
     const enabled = !!burstObservatory;
@@ -75,17 +76,16 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                                 onChange={e => updatePing('sampling', parseInt(e.target.value))}
                             />
                         </div>
-                        <div>
-                            <label className="label-xs">HTTP Method</label>
-                            <select className="input-base font-mono" 
+                            <Select 
+                                label="HTTP Method"
                                 value={localObs.pingConfig?.httpMethod || "HEAD"} 
-                                onChange={e => updatePing('httpMethod', e.target.value)}
-                            >
-                                <option value="HEAD">HEAD</option>
-                                <option value="GET">GET</option>
-                                <option value="POST">POST</option>
-                            </select>
-                        </div>
+                                onChange={val => updatePing('httpMethod', val)}
+                                options={[
+                                    { value: "HEAD", label: "HEAD" },
+                                    { value: "GET", label: "GET" },
+                                    { value: "POST", label: "POST" },
+                                ]}
+                            />
                     </div>
 
                     <div>

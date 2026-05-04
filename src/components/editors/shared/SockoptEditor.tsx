@@ -4,6 +4,7 @@ import { Help } from '../../ui/Help';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
+import { Select } from '../../ui/Select';
 
 export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
     const local = sockopt || {};
@@ -37,7 +38,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
     }
 
     return (
-        <div className="border-t border-slate-800 pt-4 space-y-4 animate-in fade-in">
+        <div className="border-t border-slate-800/60 pt-6 space-y-4">
             <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
                     <Icon name="Sliders" size={14} /> Socket Options (Sockopt)
@@ -47,7 +48,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                 </button>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/60 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* GENERAL / ROUTING */}
                     <div>
@@ -71,37 +72,34 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                     {/* INBOUND ONLY */}
                     {!isClient && (
                         <>
-                            <div>
-                                <label className="label-xs text-rose-300">TProxy (Linux)</label>
-                                <select className="input-base"
+                                <Select 
+                                    label="TProxy (Linux)"
                                     value={local.tproxy || "off"}
-                                    onChange={e => update('tproxy', e.target.value)}
-                                >
-                                    <option value="off">Off</option>
-                                    <option value="tproxy">TProxy</option>
-                                    <option value="redirect">Redirect</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="label-xs text-indigo-300">Accept PROXY Protocol</label>
-                                <select className="input-base border-indigo-500/30"
+                                    onChange={val => update('tproxy', val)}
+                                    options={[
+                                        { value: "off", label: "Off" },
+                                        { value: "tproxy", label: "TProxy" },
+                                        { value: "redirect", label: "Redirect" },
+                                    ]}
+                                />
+                                <Select 
+                                    label="Accept PROXY Protocol"
                                     value={local.acceptProxyProtocol === true ? "true" : "false"}
-                                    onChange={e => update('acceptProxyProtocol', e.target.value === "true")}
-                                >
-                                    <option value="false">Disabled</option>
-                                    <option value="true">Enabled</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="label-xs">V6 Only (Bind ::)</label>
-                                <select className="input-base"
+                                    onChange={val => update('acceptProxyProtocol', val === "true")}
+                                    options={[
+                                        { value: "false", label: "Disabled" },
+                                        { value: "true", label: "Enabled" },
+                                    ]}
+                                />
+                                <Select 
+                                    label="V6 Only (Bind ::)"
                                     value={local.v6only === true ? "true" : "false"}
-                                    onChange={e => update('v6only', e.target.value === "true")}
-                                >
-                                    <option value="false">Disabled</option>
-                                    <option value="true">Enabled</option>
-                                </select>
-                            </div>
+                                    onChange={val => update('v6only', val === "true")}
+                                    options={[
+                                        { value: "false", label: "Disabled" },
+                                        { value: "true", label: "Enabled" },
+                                    ]}
+                                />
                         </>
                     )}
 
@@ -123,45 +121,43 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                     placeholder="Select outbound..."
                                 />
                             </div>
-                            <div>
-                                <label className="label-xs">Domain Strategy</label>
-                                <select className="input-base"
+                                <Select 
+                                    label="Domain Strategy"
                                     value={local.domainStrategy || "AsIs"}
-                                    onChange={e => update('domainStrategy', e.target.value)}
-                                >
-                                    <option value="AsIs">AsIs</option>
-                                    <option value="UseIP">UseIP</option>
-                                    <option value="UseIPv4">UseIPv4</option>
-                                    <option value="UseIPv6">UseIPv6</option>
-                                    <option value="UseIPv4v6">UseIPv4v6</option>
-                                    <option value="UseIPv6v4">UseIPv6v4</option>
-                                </select>
-                            </div>
+                                    onChange={val => update('domainStrategy', val)}
+                                    options={[
+                                        { value: "AsIs", label: "AsIs" },
+                                        { value: "UseIP", label: "UseIP" },
+                                        { value: "UseIPv4", label: "UseIPv4" },
+                                        { value: "UseIPv6", label: "UseIPv6" },
+                                        { value: "UseIPv4v6", label: "UseIPv4v6" },
+                                        { value: "UseIPv6v4", label: "UseIPv6v4" },
+                                    ]}
+                                />
                         </>
                     )}
 
                     {/* TCP ADVANCED / KERNEL */}
-                    <div>
-                        <label className="label-xs text-emerald-300">TCP Fast Open</label>
-                        <select className="input-base border-emerald-500/30"
-                            value={local.tcpFastOpen === true ? "true" : "false"}
-                            onChange={e => update('tcpFastOpen', e.target.value === "true")}
-                        >
-                            <option value="false">Disabled</option>
-                            <option value="true">Enabled</option>
-                        </select>
-                    </div>
+                                <Select 
+                                    label="TCP Fast Open"
+                                    value={local.tcpFastOpen === true ? "true" : "false"}
+                                    onChange={val => update('tcpFastOpen', val === "true")}
+                                    options={[
+                                        { value: "false", label: "Disabled" },
+                                        { value: "true", label: "Enabled" },
+                                    ]}
+                                />
 
-                    <div>
-                        <label className="label-xs">TCP MPTCP (Linux 5.6+)</label>
-                        <select className="input-base"
-                            value={local.tcpMptcp === true ? "true" : "false"}
-                            onChange={e => update('tcpMptcp', e.target.value === "true")}
-                        >
-                            <option value="false">Disabled</option>
-                            <option value="true">Enabled</option>
-                        </select>
-                    </div>
+                                <Select 
+                                    label="TCP MPTCP"
+                                    hint="Linux 5.6+"
+                                    value={local.tcpMptcp === true ? "true" : "false"}
+                                    onChange={val => update('tcpMptcp', val === "true")}
+                                    options={[
+                                        { value: "false", label: "Disabled" },
+                                        { value: "true", label: "Enabled" },
+                                    ]}
+                                />
                 </div>
 
                 {/* EXTENDED TCP TIMEOUTS & WINDOWS */}

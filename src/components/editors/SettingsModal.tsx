@@ -3,6 +3,7 @@ import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
 import { EditorLayout } from '../ui/EditorLayout';
 import { Card } from '../ui/Card';
+import { Select } from '../ui/Select';
 import { FormField } from '../ui/FormField';
 
 import { LogEditor } from './settings/LogEditor';
@@ -62,16 +63,17 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                 {activeTab === 'general' && (
                     <>
                         <Card title="Core Compatibility" icon="Cpu">
-                            <FormField label="Target Xray-core Version" help="Adjusts UI fields and validation based on core features (e.g., XHTTP requires v1.8.10+).">
-                                <select className="select-base font-bold text-indigo-400"
+                                <Select 
+                                    label="Target Xray-core Version"
+                                    hint="Adjusts UI fields and validation based on core features."
                                     value={coreVersion}
-                                    onChange={e => setCoreVersion(e.target.value)}
-                                >
-                                    <option value="v1.8.10">Latest (v1.8.10+)</option>
-                                    <option value="v1.8.0">Stable (v1.8.0)</option>
-                                    <option value="v1.5.0">Legacy (v1.5.0)</option>
-                                </select>
-                            </FormField>
+                                    onChange={val => setCoreVersion(val)}
+                                    options={[
+                                        { value: "v1.8.10", label: "Latest (v1.8.10+)" },
+                                        { value: "v1.8.0", label: "Stable (v1.8.0)" },
+                                        { value: "v1.5.0", label: "Legacy (v1.5.0)" },
+                                    ]}
+                                />
                         </Card>
                         
                         <LogEditor 

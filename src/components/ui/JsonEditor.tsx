@@ -177,7 +177,9 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                 ".cm-scroller": {
                     overflow: "auto !important",
                     scrollbarWidth: "thin",
-                    scrollbarColor: "#334155 #0f172a"
+                    scrollbarColor: "#334155 #0f172a",
+                    height: "100%",
+                    maxHeight: "100%"
                 },
                 ".cm-scroller::-webkit-scrollbar": {
                     width: "10px",

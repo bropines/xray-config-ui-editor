@@ -3,6 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { Switch } from '../../ui/Switch';
 import { Help } from '../../ui/Help';
 import { SockoptEditor } from './SockoptEditor';
+import { Select } from '../../ui/Select';
 
 interface XhttpSettingsEditorProps {
     xhttpSettings: any;
@@ -44,25 +45,18 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="label-xs flex items-center">
-                        Mode 
-                        <Help position="bottom">
-                            auto: TLS H2 -&gt; stream-up, Reality -&gt; stream-one, else packet-up.
-                            packet-up: Highest compatibility (split uploads).
-                            stream-up: Full duplex streaming (recommended for gRPC/CF).
-                            stream-one: Single HTTP request for both directions.
-                        </Help>
-                    </label>
-                    <select className="input-base font-bold" 
+                    <Select 
+                        label="Mode"
+                        hint="auto: TLS H2 -> stream-up, Reality -> stream-one, else packet-up. packet-up: Highest compatibility (split uploads). stream-up: Full duplex streaming (recommended for gRPC/CF). stream-one: Single HTTP request for both directions."
                         value={xhttpSettings.mode || "auto"} 
-                        onChange={e => update(['mode'], e.target.value)}>
-                        <option value="auto">AUTO (Recommended)</option>
-                        <option value="packet-up">Packet-Up (Compat)</option>
-                        <option value="stream-up">Stream-Up (Fast)</option>
-                        <option value="stream-one">Stream-One (Single)</option>
-                    </select>
-                </div>
+                        onChange={val => update(['mode'], val)}
+                        options={[
+                            { value: "auto", label: "AUTO", description: "Recommended" },
+                            { value: "packet-up", label: "Packet-Up", description: "Highest compatibility" },
+                            { value: "stream-up", label: "Stream-Up", description: "Full duplex (Fast)" },
+                            { value: "stream-one", label: "Stream-One", description: "Single request" },
+                        ]}
+                    />
                 <div>
                     <label className="label-xs">Path</label>
                     <input className="input-base font-mono" 
@@ -241,12 +235,15 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                                         <Icon name="ShieldCheck" /> Download Security
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <select className="input-base text-xs"
+                                        <Select 
                                             value={extra.downloadSettings?.security || "tls"}
-                                            onChange={e => update(['extra', 'downloadSettings', 'security'], e.target.value)}>
-                                            <option value="tls">TLS</option>
-                                            <option value="reality">REALITY</option>
-                                        </select>
+                                            onChange={val => update(['extra', 'downloadSettings', 'security'], val)}
+                                            options={[
+                                                { value: "tls", label: "TLS" },
+                                                { value: "reality", label: "REALITY" },
+                                            ]}
+                                            className="w-full"
+                                        />
                                         <input className="input-base text-xs font-mono" placeholder="SNI (optional)"
                                             value={extra.downloadSettings?.[extra.downloadSettings?.security === 'reality' ? 'realitySettings' : 'tlsSettings']?.serverName || ""}
                                             onChange={e => update(['extra', 'downloadSettings', extra.downloadSettings?.security === 'reality' ? 'realitySettings' : 'tlsSettings', 'serverName'], e.target.value)} />

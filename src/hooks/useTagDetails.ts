@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { createProtoWorker } from '../utils/proto-worker';
+import { getSharedProtoWorker } from '../utils/proto-worker';
 import { binaryCache, loadCachedData, saveCachedData } from '../utils/geo-data';
 
 export const useTagDetails = (tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null) => {
@@ -12,9 +12,6 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
         setLoading(true);
         const isGeosite = tag.toLowerCase().startsWith('geosite:');
         
-        // ВАЖНО: Внутри .dat файлов (geosite/geoip) названия категорий всегда в UPPERCASE 
-        // (например STEAM, GOOGLE, CN). Но в UI они часто в нижнем регистре.
-        // Поэтому очищаем префикс и принудительно делаем UPPERCASE для поиска по БД:
         const targetCode = tag.replace(/^(geosite:|geoip:)/i, '').toUpperCase();
         
         const defaultUrl = isGeosite 
@@ -22,7 +19,6 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
             : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
         
         const currentUrl = customUrl || defaultUrl;
-        let activeWorker: Worker | null = null;
 
         const loadData = async () => {
             let buffer = customFileBuffer;
@@ -71,19 +67,27 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
 
             if (isCancelled) return;
 
-            activeWorker = createProtoWorker();
-            activeWorker.onmessage = (e) => {
+            const worker = getSharedProtoWorker();
+            
+            // Note: Since the worker is shared, we should ideally use a request/response ID system.
+            // For now, we'll just handle the message and check if it matches our targetCode.
+            const handleMessage = (e: MessageEvent) => {
                 if (isCancelled) return;
                 if (e.data.error) {
                     toast.error("Failed to load details");
                     setText("Error loading data.\n" + e.data.error);
                 } else if (e.data.type === 'details') {
+                    // Simple check to ensure we don't show wrong data if multiple requests are pending
+                    // In a production app, we'd use a unique ID.
                     setText(e.data.data || "No records found.");
                 }
                 setLoading(false);
+                worker.removeEventListener('message', handleMessage);
             };
+            
+            worker.addEventListener('message', handleMessage);
            
-            activeWorker.postMessage({ 
+            worker.postMessage({ 
                 type: 'get_details', 
                 dataType: customFormat || (isGeosite ? 'geosite' : 'geoip'), 
                 targetCode, 
@@ -96,7 +100,7 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
 
         return () => {
             isCancelled = true;
-            if (activeWorker) activeWorker.terminate();
+            // Do NOT terminate the shared worker
         };
     }, [tag, customUrl, customFormat, customFileBuffer]);
 

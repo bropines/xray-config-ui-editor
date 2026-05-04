@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { JsonField } from '../../ui/JsonField';
 import { validateBalancer } from '../../../utils/validator';
+import { Select } from '../../ui/Select';
 
 export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: any) => {
     // Локальный стейт для инпута, чтобы делать подсветку "на лету"
@@ -89,26 +90,22 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                     {tagError && <span className="text-[10px] text-rose-500">{tagError.message}</span>}
                 </div>
                 
-                <div>
-                    <label className="label-xs">Strategy</label>
-                    <select 
-                        className="input-base font-mono" 
+                    <Select 
+                        label="Strategy"
                         value={balancer.strategy?.type || "random"} 
-                        onChange={e => update('strategy', { ...balancer.strategy, type: e.target.value })}>
-                        <option value="random">Random</option>
-                        <option value="roundRobin">Round Robin</option>
-                        <option value="leastPing">Least Ping</option>
-                        <option value="leastLoad">Least Load</option>
-                    </select>
-                </div>
+                        onChange={val => update('strategy', { ...balancer.strategy, type: val })}
+                        options={[
+                            { value: "random", label: "Random", description: "Standard load balancing" },
+                            { value: "roundRobin", label: "Round Robin", description: "Sequential selection" },
+                            { value: "leastPing", label: "Least Ping", description: "Best latency (Requires Observatory)" },
+                            { value: "leastLoad", label: "Least Load", description: "Least active connections" },
+                        ]}
+                    />
 
-                <div>
-                    <label className="label-xs">Fallback Tag (Optional)</label>
-                    <select 
-                        className="input-base font-mono" 
+                    <Select 
+                        label="Fallback Tag (Optional)"
                         value={balancer.fallbackTag || ""} 
-                        onChange={e => {
-                            const val = e.target.value;
+                        onChange={val => {
                             if (val === "") {
                                 const newB = { ...balancer };
                                 delete newB.fallbackTag;
@@ -116,13 +113,12 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                             } else {
                                 update('fallbackTag', val);
                             }
-                        }}>
-                        <option value="">None</option>
-                        {outboundTags.map((tag: string) => (
-                            <option key={tag} value={tag}>{tag}</option>
-                        ))}
-                    </select>
-                </div>
+                        }}
+                        options={[
+                            { value: "", label: "None" },
+                            ...outboundTags.map((tag: string) => ({ value: tag, label: tag }))
+                        ]}
+                    />
             </div>
 
             <div className={`bg-slate-900/50 p-4 rounded-xl border ${selectorError ? 'border-rose-500/50' : 'border-slate-800/50'}`}>

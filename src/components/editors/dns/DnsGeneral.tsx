@@ -1,5 +1,6 @@
 import React from 'react';
 import { Switch } from '../../ui/Switch';
+import { Select } from '../../ui/Select';
 
 export const DnsGeneral = ({ dns, onChange }) => {
     const update = (field: string, val: any) => {
@@ -28,18 +29,16 @@ export const DnsGeneral = ({ dns, onChange }) => {
                         placeholder="Your public IP (for ECS)"
                     />
                 </div>
-                <div>
-                    <label className="label-xs">Query Strategy</label>
-                    <select 
-                        className="input-base" 
+                    <Select 
+                        label="Query Strategy"
                         value={dns.queryStrategy || "UseIP"} 
-                        onChange={e => update('queryStrategy', e.target.value)}
-                    >
-                        <option value="UseIP">UseIP (A + AAAA)</option>
-                        <option value="UseIPv4">UseIPv4 (A only)</option>
-                        <option value="UseIPv6">UseIPv6 (AAAA only)</option>
-                    </select>
-                </div>
+                        onChange={val => update('queryStrategy', val)}
+                        options={[
+                            { value: "UseIP", label: "UseIP", description: "Dual stack (A + AAAA)" },
+                            { value: "UseIPv4", label: "UseIPv4", description: "IPv4 only (A)" },
+                            { value: "UseIPv6", label: "UseIPv6", description: "IPv6 only (AAAA)" },
+                        ]}
+                    />
             </div>
 
             {/* Toggles */}

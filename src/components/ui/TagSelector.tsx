@@ -37,20 +37,24 @@ export const TagSelector = ({ availableTags, selected, onChange, multi = false, 
             {label && <label className="text-xs uppercase font-bold text-slate-500">{label}</label>}
             <div className="bg-slate-950 border border-slate-700 rounded-lg p-2 min-h-[42px]">
                 <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto custom-scroll">
-                    {availableTags.map(tag => (
-                        <button
-                            key={tag}
-                            onClick={() => handleClick(tag)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-mono border transition-all ${
-                                isSelected(tag)
-                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
-                            }`}
-                        >
-                            {tag}
-                            {multi && isSelected(tag) && <Icon name="check" className="ml-1"/>}
-                        </button>
-                    ))}
+                    {availableTags.map(tag => {
+                        const active = isSelected(tag);
+                        const radius = multi ? 'rounded-md' : 'rounded-full';
+                        
+                        return (
+                            <button
+                                key={tag}
+                                onClick={() => handleClick(tag)}
+                                className={`px-4 py-1.5 ${radius} text-xs font-mono border transition-all duration-200 ${
+                                    active
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20 font-bold'
+                                        : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                                }`}
+                            >
+                                {tag}
+                            </button>
+                        );
+                    })}
                 </div>
                 
                 {/* Custom Input area only for single select mode mostly, or if needed */}

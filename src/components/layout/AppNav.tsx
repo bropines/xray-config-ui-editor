@@ -80,17 +80,17 @@ export const AppNav = ({
         <div className="flex items-center gap-1.5 md:gap-3">
             {/* Cloud controls (connected) */}
             {connected && (
-                <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1">
+                <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1 h-11">
                     <button
                         onClick={onOpenSwitchProfile}
-                        className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
+                        className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
                         title="Switch Profile"
                     >
                         <Icon name="ListDashes" weight="bold" />
                     </button>
                     <button
                         onClick={onPush}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-300 ${
+                        className={`flex items-center justify-center gap-2 px-4 h-9 rounded-lg font-bold text-xs transition-all duration-300 ${
                             pushStage === 'confirm'
                                 ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
                                 : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
@@ -102,7 +102,7 @@ export const AppNav = ({
                     <div className="w-px h-4 bg-slate-800 mx-1" />
                     <button
                         onClick={onDisconnect}
-                        className="p-2 hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
+                        className="w-9 h-9 flex items-center justify-center hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
                         title="Disconnect"
                     >
                         <Icon name="LinkBreak" weight="bold" />
@@ -115,7 +115,7 @@ export const AppNav = ({
                 <Button
                     variant="secondary"
                     onClick={onOpenRemnawave}
-                    className="text-xs h-9 border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10"
+                    className="text-xs h-11 px-4 border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10"
                 >
                     <Icon name="Cloud" /> <span className="hidden md:inline">Connect Cloud</span>
                 </Button>
@@ -124,16 +124,16 @@ export const AppNav = ({
             <div className="w-px h-8 bg-slate-800/50 mx-1 hidden sm:block" />
 
             {/* File / Download */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800">
                 <label
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-xl cursor-pointer transition-all border border-slate-700 flex items-center gap-2 text-sm h-9"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 w-9 h-9 rounded-lg cursor-pointer transition-all border border-slate-700 flex items-center justify-center text-sm"
                     title="Load JSON"
                 >
                     <Icon name="FolderOpen" />
                     <input type="file" className="hidden" accept=".json" onChange={onFileUpload} />
                 </label>
-                <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-xl h-9 px-4 text-sm" disabled={!hasConfig}>
-                    <span className="hidden md:inline">Download</span>
+                <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-lg h-9 px-4 text-sm shadow-none" disabled={!hasConfig}>
+                    <span className="hidden md:inline text-xs">Download</span>
                 </Button>
             </div>
 
@@ -141,7 +141,7 @@ export const AppNav = ({
 
             <button
                 onClick={onOpenAbout}
-                className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-300 transition-all border border-transparent hover:border-slate-700"
+                className="h-11 px-3 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all border border-slate-800 bg-slate-950/50"
                 title="About / Repository"
             >
                 <Icon name="Info" className="text-lg" />
@@ -151,7 +151,7 @@ export const AppNav = ({
                 href="https://xtls.github.io/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all font-bold text-[10px] uppercase tracking-wider"
+                className="hidden sm:flex items-center gap-2 px-4 h-11 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
             >
                 <Icon name="BookOpen" weight="bold" />
                 Docs

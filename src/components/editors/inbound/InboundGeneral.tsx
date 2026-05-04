@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../ui/Card';
 import { FormField } from '../../ui/FormField';
+import { Select } from '../../ui/Select';
 
 export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {} }: any) => {
     const isTun = inbound.protocol === 'tun';
@@ -9,21 +10,21 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
         <Card title="Inbound Connectivity" icon="Globe">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <FormField label="Protocol" help="Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.">
-                    <select 
-                        className="select-base font-bold text-indigo-400"
+                    <Select 
                         value={inbound.protocol} 
-                        onChange={e => onProtocolChange(e.target.value)}
-                    >
-                        <option value="vless">VLESS</option>
-                        <option value="vmess">VMess</option>
-                        <option value="trojan">Trojan</option>
-                        <option value="shadowsocks">Shadowsocks</option>
-                        <option value="hysteria2">Hysteria 2</option>
-                        <option value="socks">Socks</option>
-                        <option value="http">HTTP</option>
-                        <option value="dokodemo-door">Dokodemo</option>
-                        <option value="tun">TUN (Transparent)</option> 
-                    </select>
+                        onChange={val => onProtocolChange(val)}
+                        options={[
+                            { value: "vless", label: "VLESS", description: "Modern, secure protocol" },
+                            { value: "vmess", label: "VMess", description: "Standard secure protocol" },
+                            { value: "trojan", label: "Trojan", description: "Simulates HTTPS traffic" },
+                            { value: "shadowsocks", label: "Shadowsocks", description: "Classic lightweight proxy" },
+                            { value: "hysteria2", label: "Hysteria 2", description: "UDP-based high speed" },
+                            { value: "socks", label: "SOCKS", description: "Standard proxy protocol" },
+                            { value: "http", label: "HTTP", description: "Insecure web proxy" },
+                            { value: "dokodemo-door", label: "Dokodemo", description: "Transparent redirection" },
+                            { value: "tun", label: "TUN", description: "Transparent system adapter" },
+                        ]}
+                    />
                 </FormField>
 
                 {!isTun && (

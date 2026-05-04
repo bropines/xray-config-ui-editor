@@ -1,9 +1,11 @@
 import React from 'react';
+import { Select } from '../../ui/Select';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Help } from '../../ui/Help';
 import { Switch } from '../../ui/Switch';
 import { generateUUID, generateShortId } from '../../../utils/generators';
+
 
 import { useConfigStore } from '../../../store/configStore';
 
@@ -38,28 +40,25 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                     {remnawave.connected && <span className="text-[10px] text-indigo-400 ml-auto flex items-center gap-1 font-normal"><Icon name="Cloud" /> Remnawave Active</span>}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="label-xs flex items-center">
-                            Method
-                            <Help>Encryption algorithm for Shadowsocks. aes-256-gcm is recommended for security, or 2022-blake3-* for SS-2022.</Help>
-                        </label>
-                        <select className="select-base"
+                        <Select 
+                            label="Method"
+                            hint="Encryption algorithm for Shadowsocks."
                             value={inbound.settings?.method || (is2022 ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
-                            onChange={e => onChange(['settings', 'method'], e.target.value)}
-                        >
-                            {!is2022 && (
-                                <>
-                                    <option value="aes-256-gcm">aes-256-gcm</option>
-                                    <option value="aes-128-gcm">aes-128-gcm</option>
-                                    <option value="chacha20-ietf-poly1305">chacha20-ietf-poly1305</option>
-                                    <option value="xchacha20-ietf-poly1305">xchacha20-ietf-poly1305</option>
-                                </>
-                            )}
-                            <option value="2022-blake3-aes-128-gcm">2022-blake3-aes-128-gcm</option>
-                            <option value="2022-blake3-aes-256-gcm">2022-blake3-aes-256-gcm</option>
-                            <option value="2022-blake3-chacha20-poly1305">2022-blake3-chacha20-poly1305</option>
-                        </select>
-                    </div>
+                            onChange={val => onChange(['settings', 'method'], val)}
+                            options={!is2022 ? [
+                                { value: "aes-256-gcm", label: "aes-256-gcm" },
+                                { value: "aes-128-gcm", label: "aes-128-gcm" },
+                                { value: "chacha20-ietf-poly1305", label: "chacha20-ietf-poly1305" },
+                                { value: "xchacha20-ietf-poly1305", label: "xchacha20-ietf-poly1305" },
+                                { value: "2022-blake3-aes-128-gcm", label: "2022-blake3-aes-128-gcm" },
+                                { value: "2022-blake3-aes-256-gcm", label: "2022-blake3-aes-256-gcm" },
+                                { value: "2022-blake3-chacha20-poly1305", label: "2022-blake3-chacha20-poly1305" },
+                            ] : [
+                                { value: "2022-blake3-aes-128-gcm", label: "2022-blake3-aes-128-gcm" },
+                                { value: "2022-blake3-aes-256-gcm", label: "2022-blake3-aes-256-gcm" },
+                                { value: "2022-blake3-chacha20-poly1305", label: "2022-blake3-chacha20-poly1305" },
+                            ]}
+                        />
                     <div>
                         <label className="label-xs flex items-center justify-between">
                             <span>Password / Pre-shared Key</span>
@@ -190,16 +189,15 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {proto === 'socks' && (
-                            <div>
-                                <label className="label-xs">Auth Type</label>
-                                <select className="select-base"
-                                    value={inbound.settings?.auth || "noauth"}
-                                    onChange={e => onChange(['settings', 'auth'], e.target.value)}
-                                >
-                                    <option value="noauth">No Auth</option>
-                                    <option value="password">Password</option>
-                                </select>
-                            </div>
+                            <Select 
+                                label="Auth Type"
+                                value={inbound.settings?.auth || "noauth"}
+                                onChange={val => onChange(['settings', 'auth'], val)}
+                                options={[
+                                    { value: "noauth", label: "No Auth" },
+                                    { value: "password", label: "Password" },
+                                ]}
+                            />
                         )}
                         <div className="flex items-center gap-6">
                             {proto === 'socks' && (
@@ -348,15 +346,15 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                                 </div>
                             </div>
                             {proto === 'vless' && (
-                                <div className="md:col-span-2">
-                                    <label className="label-xs">Flow</label>
-                                    <select className="select-base py-1.5 text-xs"
+                                    <Select 
+                                        label="Flow"
                                         value={c.flow || ""}
-                                        onChange={e => updateClient(i, 'flow', e.target.value)}>
-                                        <option value="">None</option>
-                                        <option value="xtls-rprx-vision">xtls-rprx-vision</option>
-                                    </select>
-                                </div>
+                                        onChange={val => updateClient(i, 'flow', val)}
+                                        options={[
+                                            { value: "", label: "None" },
+                                            { value: "xtls-rprx-vision", label: "xtls-rprx-vision" },
+                                        ]}
+                                    />
                             )}
                         </div>
                     </div>

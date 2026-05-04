@@ -1,6 +1,7 @@
 import React from 'react';
 import { Switch } from '../../ui/Switch';
 import { Card } from '../../ui/Card';
+import { Select } from '../../ui/Select';
 
 export const LogEditor = ({ log, onChange, onToggle }) => {
     const enabled = !!log;
@@ -22,15 +23,18 @@ export const LogEditor = ({ log, onChange, onToggle }) => {
                 <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-slate-800/50">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-2">
-                            <label className="label-xs">Log Level</label>
-                            <select className="select-base" 
-                                value={localLog.loglevel || "warning"} 
-                                onChange={e => update('loglevel', e.target.value)}
-                            >
-                                {["debug", "info", "warning", "error", "none"].map(l => (
-                                    <option key={l} value={l}>{l.toUpperCase()}</option>
-                                ))}
-                            </select>
+                            <Select 
+                                label="Log Level"
+                                value={localLog.loglevel || "warning"}
+                                onChange={val => update('loglevel', val)}
+                                options={[
+                                    { value: "debug", label: "DEBUG", description: "Most verbose logs" },
+                                    { value: "info", label: "INFO", description: "Standard information" },
+                                    { value: "warning", label: "WARNING", description: "Default (only issues)" },
+                                    { value: "error", label: "ERROR", description: "Only fatal errors" },
+                                    { value: "none", label: "NONE", description: "Silent mode" }
+                                ]}
+                            />
                         </div>
                         <div className="flex items-end pb-3">
                             <Switch 

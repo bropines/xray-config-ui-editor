@@ -2,6 +2,7 @@ import React from 'react';
 import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
+import { Select } from '../../ui/Select';
 
 export const FinalmaskEditor = ({ finalmask, onChange }) => {
     const enabled = !!finalmask;
@@ -69,7 +70,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
             </div>
             
             {enabled && (
-                <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-8 animate-in fade-in zoom-in-95">
+                <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/60 space-y-8">
                     {/* UDP & TCP Configurations */}
                     {(['udp', 'tcp'] as const).map(netType => {
                         const layers = finalmask[netType] || [];
@@ -98,26 +99,24 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                         </button>
                                                     </div>
                                                     
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <select className="select-base text-xs h-8"
+                                                        <Select 
+                                                            label="Layer Type"
                                                             value={currentType}
-                                                            onChange={e => changeType(netType, index, e.target.value)}
-                                                        >
-                                                            {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                                        </select>
-                                                    </div>
+                                                            onChange={val => changeType(netType, index, val)}
+                                                            options={TYPES.map(t => ({ value: t, label: t }))}
+                                                            className="flex-1"
+                                                        />
 
                                                     {currentType === 'noise' && layer.settings?.noise && (
                                                         <div className="space-y-2">
                                                             {layer.settings.noise.map((n: any, i: number) => (
                                                                 <div key={i} className="flex gap-2 items-center bg-slate-950 p-2 rounded border border-slate-800/50">
-                                                                    <select 
-                                                                        className="bg-slate-900 border-slate-700 text-[10px] rounded px-1 h-7"
+                                                                    <Select 
                                                                         value={n.packet !== undefined ? "hex" : "rand"}
-                                                                        onChange={e => {
+                                                                        onChange={val => {
                                                                             const newNoise = [...layer.settings.noise];
                                                                             const newN = { ...n };
-                                                                            if (e.target.value === 'hex') {
+                                                                            if (val === 'hex') {
                                                                                 delete newN.rand;
                                                                                 newN.packet = "";
                                                                                 newN.type = "hex";
@@ -129,10 +128,12 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                                             newNoise[i] = newN;
                                                                             updateSetting(netType, index, 'noise', newNoise);
                                                                         }}
-                                                                    >
-                                                                        <option value="hex">HEX</option>
-                                                                        <option value="rand">RAND</option>
-                                                                    </select>
+                                                                        options={[
+                                                                            { value: "hex", label: "HEX" },
+                                                                            { value: "rand", label: "RAND" },
+                                                                        ]}
+                                                                        className="w-24 shrink-0"
+                                                                    />
                                                                     
                                                                     {n.packet !== undefined ? (
                                                                         <div className="flex-1 relative group/input">
@@ -204,19 +205,38 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                     })}
 
                     {/* QUIC Params */}
-                    <div className="space-y-2 pt-2 border-t border-slate-800/50">
-                        <span className="text-[10px] text-blue-400 uppercase font-bold flex items-center">QUIC Parameters <Help>Experimental. Controls BBR/Brutal congestion and limits.</Help></span>
-                        <div className="grid grid-cols-2 gap-2">
-                            <input className="input-base text-[10px] font-mono py-1 h-7" placeholder="Max Idle Timeout (s)" value={finalmask.quicParams?.max_idle_timeout || ""} onChange={e => updateQuic('max_idle_timeout', e.target.value)} />
-                            <input className="input-base text-[10px] font-mono py-1 h-7" placeholder="Handshake Timeout (s)" value={finalmask.quicParams?.handshake_timeout || ""} onChange={e => updateQuic('handshake_timeout', e.target.value)} />
-                            <select className="input-base text-[10px] h-7" value={finalmask.quicParams?.congestion || ""} onChange={e => updateQuic('congestion', e.target.value)}>
-                                <option value="">Congestion (Auto)</option>
-                                <option value="bbr">BBR</option>
-                                <option value="brutal">Brutal</option>
-                                <option value="force-brutal">Force Brutal</option>
-                                <option value="reno">Reno</option>
-                            </select>
-                            <input className="input-base text-[10px] font-mono py-1 h-7" placeholder="Brutal Up (e.g. 100 mbps)" value={finalmask.quicParams?.brutalUp || ""} onChange={e => updateQuic('brutalUp', e.target.value)} />
+                    <div className="space-y-4 pt-4 border-t border-slate-800/50">
+                        <span className="text-[10px] text-blue-400 uppercase font-bold flex items-center gap-1.5">
+                            QUIC Parameters <Help>Experimental. Controls BBR/Brutal congestion and limits.</Help>
+                        </span>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Max Idle Timeout (s)</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/50" placeholder="e.g. 30" value={finalmask.quicParams?.max_idle_timeout || ""} onChange={e => updateQuic('max_idle_timeout', e.target.value)} />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Handshake Timeout (s)</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/50" placeholder="e.g. 20" value={finalmask.quicParams?.handshake_timeout || ""} onChange={e => updateQuic('handshake_timeout', e.target.value)} />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Congestion Control</label>
+                                <Select 
+                                    value={finalmask.quicParams?.congestion || ""} 
+                                    onChange={val => updateQuic('congestion', val)}
+                                    options={[
+                                        { value: "", label: "Auto" },
+                                        { value: "bbr", label: "BBR" },
+                                        { value: "brutal", label: "Brutal" },
+                                        { value: "force-brutal", label: "Force Brutal" },
+                                        { value: "reno", label: "Reno" },
+                                    ]}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Brutal Up (Mbps)</label>
+                                <input className="input-base text-xs font-mono bg-slate-950/50" placeholder="e.g. 100" value={finalmask.quicParams?.brutalUp || ""} onChange={e => updateQuic('brutalUp', e.target.value)} />
+                            </div>
                         </div>
                     </div>
                 </div>

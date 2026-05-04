@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 import { useConfigStore } from '../../store/configStore';
 import { Icon } from '../ui/Icon';
 
@@ -71,15 +72,17 @@ export const RoutingModal = ({ onClose }: any) => {
                 {mobileEditMode && (
                     <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">Back</Button>
                 )}
-                <div className={`flex flex-col w-full md:w-auto ${mobileEditMode ? 'hidden md:flex' : ''}`}>
-                    <label className="label-xs">Domain Strategy</label>
-                    <select
-                        className="input-base py-1.5 text-xs"
+                <div className={`flex flex-col w-full md:w-64 ${mobileEditMode ? 'hidden md:flex' : ''}`}>
+                    <Select
+                        label="Domain Strategy"
                         value={config?.routing?.domainStrategy || "AsIs"}
-                        onChange={e => updateSection('routing', { ...config?.routing, domainStrategy: e.target.value })}
-                    >
-                        {["AsIs", "IPIfNonMatch", "IPOnDemand"].map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                        onChange={val => updateSection('routing', { ...config?.routing, domainStrategy: val })}
+                        options={[
+                            { value: "AsIs", label: "AsIs", description: "Use domain as provided" },
+                            { value: "IPIfNonMatch", label: "IPIfNonMatch", description: "Resolve if no domain match" },
+                            { value: "IPOnDemand", label: "IPOnDemand", description: "Resolve before matching" },
+                        ]}
+                    />
                 </div>
 
                 {((activeTab === 'rules' && activeRuleIdx !== null) || (activeTab === 'balancers' && activeBalancerIdx !== null)) && (

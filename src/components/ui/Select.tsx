@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from './Icon';
 
 export interface SelectOption<T extends string = string> {
@@ -28,58 +28,106 @@ export function Select<T extends string = string>({
     label,
     error,
     hint,
-    placeholder,
+    placeholder = "Select option...",
     disabled = false,
     className = '',
     id,
 }: SelectProps<T>) {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    
+    const selectedOption = options.find(opt => opt.value === value);
     const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSelect = (val: T) => {
+        onChange(val);
+        setIsOpen(false);
+    };
+
     const border = error
-        ? 'border-rose-500/70 focus:border-rose-500'
-        : 'border-slate-700 focus:border-indigo-500';
+        ? 'border-rose-500/70'
+        : isOpen ? 'border-indigo-500 ring-1 ring-indigo-500/20' : 'border-slate-700';
 
     return (
-        <div className={`flex flex-col gap-1.5 ${className}`}>
+        <div className={`flex flex-col gap-1.5 ${isOpen ? 'relative z-[110]' : ''} ${className}`} ref={containerRef}>
             {label && (
-                <label
-                    htmlFor={selectId}
-                    className="text-[10px] uppercase text-slate-500 font-bold tracking-widest"
-                >
+                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">
                     {label}
                 </label>
             )}
+            
             <div className="relative">
-                <select
-                    id={selectId}
-                    value={value}
-                    onChange={(e) => onChange(e.target.value as T)}
+                <button
+                    type="button"
+                    onClick={() => !disabled && setIsOpen(!isOpen)}
                     disabled={disabled}
                     className={`
-                        w-full bg-slate-950 border rounded-lg outline-none
-                        text-white py-2 pl-3 pr-9 text-sm
-                        appearance-none cursor-pointer
-                        focus:ring-1 focus:ring-indigo-500/30 transition-all
+                        w-full bg-slate-950 border rounded-lg h-11
+                        text-white px-4 text-sm flex items-center justify-between
+                        transition-all duration-200 text-left
                         disabled:opacity-50 disabled:cursor-not-allowed
                         ${border}
                     `}
                 >
-                    {placeholder && (
-                        <option value="" disabled>
-                            {placeholder}
-                        </option>
-                    )}
-                    {options.map((opt) => (
-                        <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
-                <Icon
-                    name="CaretDown"
-                    weight="bold"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none text-xs"
-                />
+                    <span className={!selectedOption ? 'text-slate-500' : 'text-white'}>
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </span>
+                    <Icon
+                        name="CaretDown"
+                        weight="bold"
+                        className={`text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                </button>
+
+                {isOpen && (
+                    <div className="absolute z-[100] w-full mt-1.5 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top ring-1 ring-white/5">
+                        <div className="max-h-[250px] overflow-y-auto custom-scroll p-1.5 space-y-0.5">
+                            {options.length === 0 ? (
+                                <div className="p-3 text-xs text-slate-600 text-center italic">No options</div>
+                            ) : (
+                                options.map((opt) => {
+                                    const isActive = opt.value === value;
+                                    return (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => !opt.disabled && handleSelect(opt.value)}
+                                            disabled={opt.disabled}
+                                            className={`
+                                                w-full text-left px-3 py-2 rounded-lg transition-all duration-200
+                                                ${isActive 
+                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 ring-1 ring-indigo-400/30' 
+                                                    : 'text-slate-300 hover:bg-white/5 hover:text-white'}
+                                                ${opt.disabled ? 'opacity-30 cursor-not-allowed' : ''}
+                                            `}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-bold text-xs">{opt.label}</span>
+                                                {isActive && <Icon name="Check" weight="bold" className="text-[10px]" />}
+                                            </div>
+                                            {opt.description && (
+                                                <div className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-indigo-100/70' : 'text-slate-500'}`}>
+                                                    {opt.description}
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
+
             {error && (
                 <span className="text-[10px] text-rose-500 font-bold animate-in fade-in">
                     {error}

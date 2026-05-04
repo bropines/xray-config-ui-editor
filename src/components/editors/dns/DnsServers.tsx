@@ -74,8 +74,8 @@ export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder 
             <div className="flex justify-between items-center">
                 <label className="label-xs">DNS Servers Priority List</label>
                 <div className="flex gap-2">
-                    <Button variant="secondary" className="px-2 py-1 text-[10px]" onClick={() => onAdd("8.8.8.8")}>+ Simple</Button>
-                    <Button variant="primary" className="px-2 py-1 text-[10px]" onClick={() => onAdd({ address: "https://1.1.1.1/dns-query", domains: [] })}>+ Advanced</Button>
+                    <Button variant="secondary" size="sm" onClick={() => onAdd("8.8.8.8")} icon="Plus">Simple</Button>
+                    <Button variant="primary" size="sm" onClick={() => onAdd({ address: "https://1.1.1.1/dns-query", domains: [] })} icon="Plus">Advanced</Button>
                 </div>
             </div>
             
