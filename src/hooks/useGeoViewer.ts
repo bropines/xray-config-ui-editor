@@ -47,16 +47,24 @@ export const useGeoViewer = () => {
     useEffect(() => {
         let isMounted = true;
         setLoading(true);
-        Promise.all([
-            getDefaultGeoList('geosite'),
-            getDefaultGeoList('geoip')
-        ]).then(([sites, ips]) => {
-            if (isMounted) {
-                setGeoSites(sites);
-                setGeoIps(ips);
-                setLoading(false);
+
+        const loadData = async () => {
+            try {
+                const [sites, ips] = await Promise.all([
+                    getDefaultGeoList('geosite'),
+                    getDefaultGeoList('geoip')
+                ]);
+                if (isMounted) {
+                    setGeoSites(sites);
+                    setGeoIps(ips);
+                    setLoading(false);
+                }
+            } catch (e) {
+                if (isMounted) setLoading(false);
             }
-        });
+        };
+
+        loadData();
         return () => { isMounted = false; };
     }, []);
 
