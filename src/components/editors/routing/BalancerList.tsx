@@ -18,7 +18,13 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete }) => 
                         </div>
                         <div className="text-[10px] text-slate-500 mt-0.5">Strategy: {b.strategy?.type || 'random'}</div>
                     </div>
-                    {/* ... кнопка удаления ... */}
+                    {/* Кнопка удаления */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onDelete(i); }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-rose-900/50 rounded-md text-slate-500 hover:text-rose-400 transition-all"
+                    >
+                        <Icon name="Trash" className="text-xs" />
+                    </button>
                 </div>
             ))}
         </div>

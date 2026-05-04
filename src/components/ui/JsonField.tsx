@@ -45,7 +45,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         setText(v);
         try {
             if (v.trim() === "") {
-                onChange(undefined);
+                // Ignore empty input to prevent undefined crashes in parent
                 setError(false);
             } else {
                 const cleanJson = stripComments(v);
