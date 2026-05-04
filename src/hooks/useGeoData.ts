@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getDefaultGeoList } from '../utils/geo-data';
+import { getSharedProtoWorker } from '../utils/proto-worker';
 
 export const useGeoData = () => {
     const [geoSites, setGeoSites] = useState<string[]>([]);
@@ -7,6 +8,9 @@ export const useGeoData = () => {
     const [loadingGeo, setLoadingGeo] = useState(false);
 
     useEffect(() => {
+        // Ensure shared worker is initialized if needed
+        getSharedProtoWorker();
+
         let isMounted = true;
         setLoadingGeo(true);
         Promise.all([

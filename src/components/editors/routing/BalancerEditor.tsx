@@ -31,8 +31,12 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     const selectorError = errors.find(e => e.field === 'selector');
     const tagError = errors.find(e => e.field === 'tag');
 
-    const update = (field: string, val: any) => {
-        onChange({ ...balancer, [field]: val });
+    const update = (field: string | null, val: any) => {
+        if (field === null) {
+            onChange(null);
+        } else {
+            onChange({ ...balancer, [field]: val });
+        }
     };
 
     // Добавление/Удаление тега по клику
@@ -69,6 +73,18 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
             
+            <div className="flex justify-end mb-4">
+                 <button onClick={() => {
+                     if (confirm("Delete this balancer?")) {
+                         // Простой способ удаления: меняем тег на пустой или вызываем спец. экшен, 
+                         // но в данном случае достаточно сбросить balancer в null
+                         onChange(null);
+                     }
+                 }} className="text-xs text-rose-500 hover:text-rose-400 font-bold flex items-center gap-1 bg-rose-950/20 px-3 py-1.5 rounded-lg border border-rose-900/50 hover:bg-rose-900/30">
+                     <Icon name="Trash" /> Delete Balancer
+                 </button>
+            </div>
+
             {selectorError && (
                 <div className="p-4 rounded-xl bg-rose-900/20 border border-rose-500/50 text-rose-200 flex gap-3 items-start animate-pulse">
                     <Icon name="WarningOctagon" className="mt-1 shrink-0 text-xl" weight="fill" />
