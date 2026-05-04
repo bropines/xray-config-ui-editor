@@ -256,7 +256,7 @@ export const parseXrayLink = (link: string): any => {
       if (query.security === 'reality') {
         tlsSettings.publicKey = query.pbk;
         tlsSettings.shortId = query.sid;
-        tlsSettings.spiderX = query.spx || "/";
+        tlsSettings.spiderX = query.spx || query.path || query.serviceName || "/";
         baseOutbound.streamSettings.realitySettings = tlsSettings;
       } else {
         baseOutbound.streamSettings.tlsSettings = tlsSettings;
@@ -271,6 +271,15 @@ export const parseXrayLink = (link: string): any => {
     }
     if (network === 'grpc') {
       baseOutbound.streamSettings.grpcSettings = { serviceName: query.serviceName || "" };
+    }
+    if (network === 'xhttp' || network === 'splithttp') {
+      const settings = {
+          path: query.path || "/",
+          mode: query.mode || "auto",
+          host: query.host || ""
+      };
+      if (network === 'xhttp') baseOutbound.streamSettings.xhttpSettings = settings;
+      else baseOutbound.streamSettings.splithttpSettings = settings;
     }
 
     return baseOutbound;

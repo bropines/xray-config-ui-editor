@@ -1,8 +1,9 @@
 import type { Inbound, Outbound, RoutingRule, Balancer } from '../types';
+import { generateUUID } from '../../utils/crypto';
 
 export const createDefaultInbound = (protocol = 'vless'): Inbound => {
     const tag = `in-${Math.floor(Math.random() * 1000)}`;
-    const uuid = crypto.randomUUID();
+    const uuid = generateUUID();
 
     const base: Inbound = {
         tag,
@@ -82,7 +83,7 @@ export const createDefaultOutbound = (protocol = 'vless'): Outbound => {
             if (['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'socks', 'http', 'hysteria2'].includes(protocol)) {
                 base.settings = {
                     vnext: protocol === 'vless' || protocol === 'vmess'
-                        ? [{ address: 'example.com', port: 443, users: [{ id: crypto.randomUUID(), security: 'auto' }] }]
+                        ? [{ address: 'example.com', port: 443, users: [{ id: generateUUID(), security: 'auto' }] }]
                         : undefined,
                     servers: ['trojan', 'socks', 'http', 'shadowsocks', 'shadowsocks-2022'].includes(protocol)
                         ? [{

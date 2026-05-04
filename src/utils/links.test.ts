@@ -29,6 +29,16 @@ describe("Link Parser & Generator", () => {
             expect(generated).toContain("type=grpc");
             expect(generated).toContain("MyServer");
         });
+
+        test("should parse xhttp + reality correctly", () => {
+            const link = "vless://645fe702bf804f968d6c6e1d078de119@38.180.38.126:8443?encryption=none&type=xhttp&security=reality&sni=ya.ru&fp=random&pbk=2focynRNhiclDiJQF7pWuJcZMdWsRzHun80Bnp8YLBY&sid=aabbccdd&path=/x&mode=auto#%F0%9F%87%B0%F0%9F%87%BFNEO-KZ";
+            const parsed = parseXrayLink(link);
+            expect(parsed.streamSettings.network).toBe("xhttp");
+            expect(parsed.streamSettings.xhttpSettings.path).toBe("/x");
+            expect(parsed.streamSettings.xhttpSettings.mode).toBe("auto");
+            expect(parsed.streamSettings.realitySettings.spiderX).toBe("/x");
+            expect(parsed.tag).toBe("🇰🇿NEO-KZ");
+        });
     });
 
     describe("Shadowsocks parsing", () => {

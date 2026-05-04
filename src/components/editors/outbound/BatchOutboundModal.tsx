@@ -5,6 +5,7 @@ import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
 import { parseXrayLink } from '../../../utils/link-parser';
 import { generateXrayLink } from '../../../utils/link-generator';
+import { generateUUID } from '../../../core/generators/crypto';
 import { toast } from 'sonner';
 
 // Ключ для хранения HWID
@@ -28,7 +29,7 @@ export const BatchOutboundModal = ({ onClose }: { onClose: () => void }) => {
         const saved = localStorage.getItem(HWID_STORAGE_KEY);
         if (saved) return saved;
         // Если нет сохраненного - генерим новый
-        const newId = crypto.randomUUID();
+        const newId = generateUUID();
         localStorage.setItem(HWID_STORAGE_KEY, newId);
         return newId;
     });
@@ -98,7 +99,7 @@ const handleFetchSub = async () => {
 
     const regenerateHwid = () => {
         if (confirm("Regenerate HWID? The panel will see this as a NEW device.")) {
-            const newId = crypto.randomUUID();
+            const newId = generateUUID();
             setCustomClientId(newId);
             localStorage.setItem(HWID_STORAGE_KEY, newId);
             toast.info("New HWID generated and saved");
