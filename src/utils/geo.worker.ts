@@ -33,16 +33,22 @@ const formatIp = (bytes: Uint8Array) => {
 };
 
 const getDecodedData = (buffer: ArrayBuffer, type: string) => {
+    console.log("getDecodedData called for type:", type, "buffer size:", buffer.byteLength);
     if (cachedBuffer === buffer && cachedType === type && cachedData) {
+        console.log("Returning cached data");
         return cachedData;
     }
 
     const isGeoSite = type === 'geosite';
     const root = new protobuf.Root();
+    console.log("Parsing protobuf schema...");
     protobuf.parse(isGeoSite ? GEOSITE_PROTO : GEOIP_PROTO, root);
     const ListType = root.lookupType(isGeoSite ? "router.GeoSiteList" : "router.GeoIPList");
+    
+    console.log("Decoding message...");
     const message = ListType.decode(new Uint8Array(buffer));
     const object = ListType.toObject(message, { defaults: true }) as any;
+    console.log("Decoding complete, entry count:", object.entry?.length);
 
     cachedData = object;
     cachedBuffer = buffer;
@@ -64,16 +70,22 @@ self.onmessage = async (e: MessageEvent) => {
         const getBuffer = async () => {
             const url = customUrl || (isGeoSite ? "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" : "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat");
             const targets = [url, `https://crs.bropines.workers.dev/${url}`, `https://mirror.ghproxy.com/${url}`];
+            console.log("Fetching buffer from:", url);
             for (const t of targets) {
                 try {
                     const res = await fetch(t);
-                    if (res.ok) return await res.arrayBuffer();
-                } catch (err) { }
+                    if (res.ok) {
+                        const b = await res.arrayBuffer();
+                        console.log("Fetch success from:", t, "size:", b.byteLength);
+                        return b;
+                    }
+                } catch (err) { console.warn("Fetch failed for:", t); }
             }
             throw new Error("Failed to download DAT file");
         };
 
-        if (!buffer && (type === 'get_details' || type === 'deep_search')) {
+        if (!buffer) {
+            console.log("Buffer missing, downloading fresh...");
             buffer = await getBuffer();
         }
 
@@ -137,9 +149,8 @@ self.onmessage = async (e: MessageEvent) => {
         }
 
         if (buffer) {
-            console.log("Decoding buffer...");
+            console.log("Decoding buffer for standard load...");
             const object = getDecodedData(buffer, isGeoSite ? 'geosite' : 'geoip');
-            console.log("Decoding successful, mapping results...");
             const result = object.entry.map((en: any) => ({
                 code: en.countryCode || en.country_code,
                 count: (en.domain || en.cidr || []).length
