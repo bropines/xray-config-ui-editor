@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { createProtoWorker } from '../utils/proto-worker';
+import { getSharedProtoWorker } from '../utils/proto-worker';
 import { binaryCache, loadCachedData, saveCachedData, getDefaultGeoList } from '../utils/geo-data';
 
 export interface GeoItem { code: string; count: number; }
