@@ -211,10 +211,14 @@ export const useConfigStore = create(
                 const existingTags = new Set(state.config.outbounds?.map((o: any) => o.tag));
                 
                 const cleanItems = items.map((item) => {
-                    let tag = item.tag;
-                    if (!tag || existingTags.has(tag)) {
-                        tag = `${item.protocol}-${Math.floor(Math.random() * 10000)}`;
+                    let tag = item.tag || `${item.protocol}-${Math.floor(Math.random() * 1000)}`;
+                    
+                    if (existingTags.has(tag)) {
+                        const suffix = Math.random().toString(36).substring(2, 5);
+                        tag = `${tag}-${suffix}`;
                     }
+                    
+                    existingTags.add(tag); // Добавляем в сет, чтобы избежать дублей внутри самой пачки импорта
                     return { ...item, tag };
                 });
                 
