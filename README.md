@@ -15,7 +15,7 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 - 📝 **Dual Mode Editing**: Switch between a user-friendly GUI and a raw JSON editor ([CodeMirror 6](https://code.haverbeke.berlin/codemirror/dev/)) with one click.
 - 📂 **Local Management**: Drag & Drop your `config.json` to edit locally or use built-in presets.
 - 🧩 **Smart Routing**: Advanced routing manager with Drag-and-Drop rule reordering.
-- 😇 **Lots of tooltips**: Since developers (me) sometimes have silly little sun icons, we decided to label some of the features and explain what they are in tooltips or in captions below.
+- 😇 **Lots of tooltips**: As a developer, I know what it's like to be a stupid sunshine. Therefore, we have left hints on the main functions.
 
 ---
 
