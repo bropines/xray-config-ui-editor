@@ -21,13 +21,28 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
         if (!subUrl.trim()) return;
         setIsFetching(true);
         try {
-            const response = await fetch(subUrl);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const text = await response.text();
+            const targetUrl = subUrl.trim();
+            const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
             
-            let decoded = text;
-            if (!text.startsWith('{') && !text.startsWith('[')) {
-                try { decoded = atob(text); } catch {}
+            const headers: Record<string, string> = {
+                "x-custom-user-agent": "v2rayNG/1.8.5"
+            };
+
+            const response = await fetch(proxyUrl, { headers });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const rawText = await response.text();
+            let decoded = rawText.trim();
+            
+            if (!decoded.startsWith('{') && !decoded.startsWith('[')) {
+                try {
+                    let b64 = decoded.replace(/\s/g, '');
+                    while (b64.length % 4 !== 0) b64 += '=';
+                    decoded = atob(b64);
+                    try { decoded = decodeURIComponent(escape(decoded)); } catch (e) {}
+                } catch (e) {
+                    decoded = rawText.trim();
+                }
             }
             
             setInputText(decoded);
