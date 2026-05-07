@@ -288,3 +288,55 @@ export const parseXrayLink = (link: string): any => {
     return null;
   }
 };
+
+/**
+ * Парсит JSON-подписку (массив полных конфигов или объектов с remarks)
+ * Возвращает массив Outbounds
+ */
+export const parseJsonSubscription = (jsonText: string): any[] => {
+    try {
+        const data = JSON.parse(jsonText);
+        const outbounds: any[] = [];
+
+        const processConfig = (conf: any) => {
+            if (!conf || typeof conf !== 'object') return;
+            
+            // Если в объекте есть outbounds (классический конфиг Xray)
+            if (Array.isArray(conf.outbounds)) {
+                // Выгребаем ВСЕ "боевые" прокси (не freedom/dns/blackhole)
+                const proxies = conf.outbounds.filter((o: any) => 
+                    !['freedom', 'dns', 'blackhole', 'direct', 'block'].includes(o.protocol)
+                );
+
+                proxies.forEach((proxy: any, idx: number) => {
+                    // Если есть название от родителя (remarks), используем его как базу
+                    if (conf.remarks) {
+                        const baseTag = conf.remarks.trim();
+                        // Если нода одна - просто название. Если несколько - нумеруем: Название-1, Название-2
+                        proxy.tag = proxies.length > 1 ? `${baseTag}-${idx + 1}` : baseTag;
+                    }
+                    outbounds.push(proxy);
+                });
+
+                // Если боевых нет вообще, но что-то есть в списке, берем на всякий случай первый
+                if (proxies.length === 0 && conf.outbounds.length > 0) {
+                    outbounds.push(conf.outbounds[0]);
+                }
+            } 
+            // Если это просто объект прокси
+            else if (conf.protocol && conf.settings) {
+                outbounds.push(conf);
+            }
+        };
+
+        if (Array.isArray(data)) {
+            data.forEach(processConfig);
+        } else {
+            processConfig(data);
+        }
+
+        return outbounds;
+    } catch (e) {
+        return [];
+    }
+};

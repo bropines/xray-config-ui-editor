@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { Icon } from '../../ui/Icon';
-import { parseXrayLink, parseWireguardConfig } from '../../../utils/link-parser';
+import { parseXrayLink, parseWireguardConfig, parseJsonSubscription } from '../../../utils/link-parser';
 import { toast } from 'sonner';
 
 export const OutboundImport = ({ onImport }: any) => {
@@ -19,6 +19,22 @@ export const OutboundImport = ({ onImport }: any) => {
                 onImport(parsed);
                 setInput("");
                 toast.success("Link imported successfully");
+                return;
+            }
+        }
+
+        // Try JSON config
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            const parsed = parseJsonSubscription(trimmed);
+            if (parsed && parsed.length > 0) {
+                if (parsed.length === 1) {
+                    onImport(parsed[0]);
+                    toast.success("JSON configuration imported");
+                } else {
+                    onImport({ multiple: true, outbounds: parsed });
+                    toast.success(`Imported ${parsed.length} outbounds from JSON`);
+                }
+                setInput("");
                 return;
             }
         }

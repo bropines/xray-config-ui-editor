@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfigStore, type XrayConfig } from '../store/configStore';
 import { runFullDiagnostics } from '../utils/diagnostics';
+import { parseJsonSubscription } from '../utils/link-parser';
+import { toast } from 'sonner';
 
 export const useAppLogic = () => {
     const {
@@ -10,6 +12,7 @@ export const useAppLogic = () => {
         moveItem,
         updateItem,
         addItem,
+        addOutbounds,
         updateSection,
         remnawave,
         saveToRemnawave,
@@ -28,6 +31,7 @@ export const useAppLogic = () => {
     const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
     const [warpModalOpen, setWarpModalOpen] = useState(false);
+    const [configInspectorOpen, setConfigInspectorOpen] = useState(false);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -53,13 +57,28 @@ export const useAppLogic = () => {
             try {
                 const result = e.target?.result;
                 if (typeof result === 'string') {
-                    setConfig(JSON.parse(result) as XrayConfig);
+                    const parsed = JSON.parse(result);
+                    
+                    if (Array.isArray(parsed)) {
+                        // Это JSON-подписка (массив конфигов)
+                        const obs = parseJsonSubscription(result);
+                        if (obs.length > 0) {
+                            addOutbounds(obs);
+                            toast.success(`Imported ${obs.length} nodes from JSON file`);
+                        } else {
+                            toast.error("JSON array detected, but no valid outbounds found");
+                        }
+                    } else {
+                        // Это обычный конфиг (объект)
+                        setConfig(parsed as XrayConfig);
+                        toast.success("Configuration loaded from file");
+                    }
                     setRawMode(false);
                 }
-            } catch { alert("Invalid JSON file"); }
+            } catch { toast.error("Invalid JSON file"); }
         };
         reader.readAsText(file);
-    }, [setConfig]);
+    }, [setConfig, addOutbounds]);
 
     const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) loadFile(e.target.files[0]);
@@ -100,11 +119,11 @@ export const useAppLogic = () => {
         setSectionModal(prev => ({ ...prev, open: false }));
     }, [sectionModal.section, updateSection]);
 
-    const openSectionJson = useCallback((section: string, title: string) => {
+    const openSectionJson = useCallback((section: string, title: string, explicitData?: any) => {
         const modeMap: Record<string, string> = { inbounds: 'inbounds', outbounds: 'outbounds', routing: 'routing', dns: 'dns' };
         setSectionModal({
             open: true, title: title + " (JSON)", section,
-            data: config ? config[section as keyof typeof config] : (section === 'inbounds' || section === 'outbounds' ? [] : {}),
+            data: explicitData !== undefined ? explicitData : (config ? config[section as keyof typeof config] : (section === 'inbounds' || section === 'outbounds' ? [] : {})),
             schemaMode: modeMap[section] || 'full'
         });
     }, [config]);
@@ -141,6 +160,7 @@ export const useAppLogic = () => {
         diagnosticsOpen, setDiagnosticsOpen,
         aboutOpen, setAboutOpen,
         warpModalOpen, setWarpModalOpen,
+        configInspectorOpen, setConfigInspectorOpen,
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,

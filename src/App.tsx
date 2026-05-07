@@ -22,6 +22,7 @@ export const App = () => {
         diagnosticsOpen, setDiagnosticsOpen,
         aboutOpen, setAboutOpen,
         warpModalOpen, setWarpModalOpen,
+        configInspectorOpen, setConfigInspectorOpen,
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,
@@ -113,6 +114,7 @@ export const App = () => {
                         onOpenReverse={() => setModal({ type: 'reverse', data: null, index: null })}
                         onOpenTopology={() => setModal({ type: 'topology', data: null, index: null })}
                         onOpenGeoViewer={() => setGeoViewerOpen(true)}
+                        onOpenConfigInspector={() => setConfigInspectorOpen(true)}
                     />
                 )}
             </main>
@@ -138,6 +140,10 @@ export const App = () => {
                 diagnostics={diagnostics}
                 aboutOpen={aboutOpen}
                 onCloseAbout={() => setAboutOpen(false)}
+                configInspectorOpen={configInspectorOpen}
+                onCloseConfigInspector={() => setConfigInspectorOpen(false)}
+                setModal={setModal}
+                openSectionJson={openSectionJson}
             />
         </div>
     );

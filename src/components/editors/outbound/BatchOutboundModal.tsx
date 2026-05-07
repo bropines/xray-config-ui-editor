@@ -3,7 +3,7 @@ import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
-import { parseXrayLink } from '../../../utils/link-parser';
+import { parseXrayLink, parseJsonSubscription } from '../../../utils/link-parser';
 import { generateXrayLink } from '../../../utils/link-generator';
 import { generateUUID } from '../../../core/generators/crypto';
 import { toast } from 'sonner';
@@ -87,6 +87,22 @@ const handleFetchSub = async () => {
         if (decoded.includes('://')) {
             setText(prev => prev ? prev + '\n\n' + decoded : decoded);
             toast.success("Subscription fetched successfully");
+        } else if (decoded.startsWith('[') || decoded.startsWith('{')) {
+            // Пробуем распарсить JSON подписку и превратить её обратно в ссылки для удобства отображения/редактирования
+            const obs = parseJsonSubscription(decoded);
+            if (obs.length > 0) {
+                const links = obs.map(o => generateXrayLink(o)).filter(Boolean);
+                if (links.length > 0) {
+                    setText(prev => prev ? prev + '\n\n' + links.join('\n') : links.join('\n'));
+                    toast.success(`Imported ${links.length} nodes from JSON subscription`);
+                } else {
+                    // Если ссылки не сгенерились (странные протоколы), просто вставляем сырой JSON
+                    setText(prev => prev ? prev + '\n\n' + decoded : decoded);
+                    toast.success("JSON subscription fetched (Raw)");
+                }
+            } else {
+                toast.error("JSON detected but no valid outbounds found inside");
+            }
         } else {
             toast.error("No valid links found in response");
         }
@@ -159,13 +175,26 @@ const handleFetchSub = async () => {
 
                 <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[280px]' : 'h-[380px]'}`} placeholder="Nodes will appear here after Fetching or Paste manual links..." value={text} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
                 
-                {mode === 'import' && text.includes('://') && (
+                {mode === 'import' && text.trim() && (
                     <Button className="w-full" onClick={() => {
+                        let obs: any[] = [];
+                        
+                        // Сначала пробуем построчный парсинг ссылок
                         const lines = text.split(/\n/).filter(l => l.trim());
-                        const obs = lines.map(l => parseXrayLink(l.trim())).filter(Boolean);
-                        addOutbounds(obs as any);
-                        toast.success(`Imported ${obs.length} nodes`);
-                        onClose();
+                        obs = lines.map(l => parseXrayLink(l.trim())).filter(Boolean);
+                        
+                        // Если ничего не вышло, пробуем распарсить весь текст как JSON-подписку
+                        if (obs.length === 0) {
+                            obs = parseJsonSubscription(text);
+                        }
+
+                        if (obs.length > 0) {
+                            addOutbounds(obs);
+                            toast.success(`Imported ${obs.length} nodes`);
+                            onClose();
+                        } else {
+                            toast.error("No valid links or JSON configs found to import");
+                        }
                     }}>Save To Config</Button>
                 )}
             </div>

@@ -13,6 +13,7 @@ import { GeoViewerModal } from '../editors/GeoViewerModal';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { AboutModal } from '../AboutModal';
 import { WarpGeneratorModal } from '../editors/WarpGeneratorModal';
+import { ConfigInspectorModal } from '../editors/ConfigInspectorModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -57,6 +58,11 @@ interface ModalManagerProps {
 
     aboutOpen: boolean;
     onCloseAbout: () => void;
+
+    configInspectorOpen: boolean;
+    onCloseConfigInspector: () => void;
+    setModal: (m: any) => void;
+    openSectionJson: (section: string, title: string, data: any) => void;
 }
 
 /**
@@ -84,8 +90,14 @@ export const ModalManager = ({
     onGenerateWarp,
     aboutOpen,
     onCloseAbout,
+    configInspectorOpen,
+    onCloseConfigInspector,
+    setModal,
+    openSectionJson,
 }: ModalManagerProps) => (
     <>
+        {configInspectorOpen && <ConfigInspectorModal onClose={onCloseConfigInspector} setModal={setModal} openSectionJson={openSectionJson} />}
+        
         {modal.type === 'inbound' && (
             <InboundModal data={modal.data} onClose={onCloseModal} onSave={onSaveModal} />
         )}

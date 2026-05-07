@@ -172,6 +172,7 @@ interface ConfigDashboardProps {
   onOpenReverse: () => void;
   onOpenTopology: () => void;
   onOpenGeoViewer: () => void;
+  onOpenConfigInspector: () => void;
 }
 
 export const ConfigDashboard = ({
@@ -203,6 +204,7 @@ export const ConfigDashboard = ({
   onOpenReverse,
   onOpenTopology,
   onOpenGeoViewer,
+  onOpenConfigInspector,
 }: ConfigDashboardProps) => {
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
@@ -270,6 +272,14 @@ export const ConfigDashboard = ({
               icon="GlobeHemisphereWest"
             >
               Geo Viewer
+            </Button>
+            <Button
+              className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+              variant="secondary"
+              onClick={onOpenConfigInspector}
+              icon="FileSearch"
+            >
+              Config Inspector
             </Button>
           </div>
         </div>
