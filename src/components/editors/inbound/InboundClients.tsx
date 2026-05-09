@@ -15,7 +15,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
     const proto = inbound.protocol;
 
     // Remnawave integration: Hide users if connected (only for multi-user protocols)
-    if (remnawave.connected && ['vless', 'vmess', 'trojan', 'hysteria2'].includes(proto)) {
+    if (remnawave.connected && ['vless', 'vmess', 'trojan', 'hysteria'].includes(proto)) {
         return (
             <div className="bg-indigo-900/10 border border-indigo-500/20 p-4 rounded-xl mt-4 flex items-start gap-3">
                 <Icon name="Cloud" className="text-indigo-400 text-lg shrink-0 mt-0.5" />
@@ -89,7 +89,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
     }
 
     // 2. Hysteria 2
-    if (proto === 'hysteria2') {
+    if (proto === 'hysteria') {
         const users = inbound.settings?.users || [];
         const addUser = () => onChange(['settings', 'users'], [...users, { password: generateShortId() }]);
         const removeUser = (i: number) => {

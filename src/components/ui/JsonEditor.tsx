@@ -121,7 +121,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                 // Добавляем значения для протоколов, если мы в поле "protocol"
                 const line = doc.slice(0, context.pos).split('\n').pop() || "";
                 if (line.includes('"protocol"')) {
-                    const protocols = ["vless", "vmess", "trojan", "shadowsocks", "hysteria2", "socks", "http", "wireguard", "freedom", "blackhole"];
+                    const protocols = ["vless", "vmess", "trojan", "shadowsocks", "hysteria", "hysteria2", "socks", "http", "wireguard", "freedom", "blackhole"];
                     protocols.forEach(p => options.push({ label: `"${p}"`, type: "keyword", detail: "protocol" }));
                 }
 

@@ -16,9 +16,10 @@ interface TransportProps {
     onChange: (newSettings: any) => void;
     isClient?: boolean;
     errors?: Record<string, string | undefined>;
+    protocol?: string;
 }
 
-export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {} }: TransportProps) => {
+export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
     const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
 
     const update = (path: string[], value: any) => {
@@ -85,7 +86,9 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         options={[
                             { value: "none", label: "NONE", description: "Plaintext (unsafe)" },
                             { value: "tls", label: "TLS", description: "Standard SSL/TLS encryption" },
-                            { value: "reality", label: "REALITY", description: "Next-gen stealth encryption" },
+                            ...(['vless', 'vmess', 'trojan', 'shadowsocks'].includes(protocol || '') ? [
+                                { value: "reality", label: "REALITY", description: "Next-gen stealth encryption" }
+                            ] : []),
                         ]}
                     />
             </div>

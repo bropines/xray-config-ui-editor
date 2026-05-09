@@ -59,7 +59,7 @@ export const generateXrayLink = (item: any) => {
     const getCredentials = () => {
         // Inbound style
         if (settings?.clients?.[0]) return settings.clients[0].id || settings.clients[0].password;
-        if (settings?.users?.[0]) return settings.users[0].password || settings.users[0].id;
+        if (settings?.users?.[0]) return settings.users[0].password || settings.users[0].id || settings.users[0].auth;
         // Outbound style
         if (settings?.vnext?.[0]?.users?.[0]) return settings.vnext[0].users[0].id;
         if (settings?.servers?.[0]?.users?.[0]) return settings.servers[0].users[0].password;
@@ -102,7 +102,7 @@ export const generateXrayLink = (item: any) => {
     }
 
     // 5. Hysteria 2
-    if (protocol === 'hysteria2') {
+    if (protocol === 'hysteria') {
         return `hysteria2://${creds}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag || 'Hysteria2')}`;
     }
 

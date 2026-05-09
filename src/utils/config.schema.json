@@ -387,7 +387,8 @@
             "grpc",
             "xhttp",
             "raw",
-            "httpupgrade"
+            "httpupgrade",
+            "hysteria"
           ]
         },
         "security": {
@@ -425,6 +426,9 @@
           "type": "object"
         },
         "httpupgradeSettings": {
+          "type": "object"
+        },
+        "hysteriaSettings": {
           "type": "object"
         },
         "sockopt": {

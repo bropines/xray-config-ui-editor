@@ -18,7 +18,7 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
                             { value: "vmess", label: "VMess", description: "Standard secure protocol" },
                             { value: "trojan", label: "Trojan", description: "Simulates HTTPS traffic" },
                             { value: "shadowsocks", label: "Shadowsocks", description: "Classic lightweight proxy" },
-                            { value: "hysteria2", label: "Hysteria 2", description: "UDP-based high speed" },
+                            { value: "hysteria", label: "Hysteria 2", description: "UDP-based high speed" },
                             { value: "socks", label: "SOCKS", description: "Standard proxy protocol" },
                             { value: "http", label: "HTTP", description: "Insecure web proxy" },
                             { value: "dokodemo-door", label: "Dokodemo", description: "Transparent redirection" },

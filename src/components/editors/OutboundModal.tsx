@@ -120,6 +120,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
                         onChange={(s: any) => updateField('streamSettings', s)}
                         isClient={true}
                         errors={{ reality: getError('reality') }}
+                        protocol={local.protocol}
                     />
                 </div>
             </div>

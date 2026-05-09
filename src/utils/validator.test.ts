@@ -89,10 +89,10 @@ describe("Xray Outbound Validation", () => {
         expect(errors.some(e => e.field === "address")).toBe(true);
     });
 
-    test("validateOutbound with flat settings (hysteria2/socks)", () => {
+    test("validateOutbound with flat settings (hysteria/socks)", () => {
         const outbound = {
             tag: "h2-out",
-            protocol: "hysteria2",
+            protocol: "hysteria",
             settings: {
                 address: "89.46.38.91",
                 port: 443,

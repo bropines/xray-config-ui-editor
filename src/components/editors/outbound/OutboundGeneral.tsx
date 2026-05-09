@@ -7,7 +7,7 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
     return (
         <Card title="Outbound Protocol" icon="PaperPlaneTilt">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label="Protocol" help="Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria2, etc.">
+                <FormField label="Protocol" help="Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria, etc.">
                     <Select 
                         value={outbound.protocol} 
                         onChange={val => onProtocolChange(val)}
@@ -19,7 +19,7 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
                             { value: "socks", label: "SOCKS", description: "Standard proxy" },
                             { value: "http", label: "HTTP", description: "Web proxy" },
                             { value: "wireguard", label: "WireGuard", description: "Modern UDP VPN" },
-                            { value: "hysteria2", label: "Hysteria 2", description: "Brutal speed over UDP" },
+                            { value: "hysteria", label: "Hysteria 2", description: "Brutal speed over UDP" },
                             { value: "tuic", label: "TUIC", description: "QUIC-based protocol" },
                             { value: "freedom", label: "Freedom (Direct)", description: "Bypass proxy (Direct IP)" },
                             { value: "blackhole", label: "Blackhole (Block)", description: "Silently drop traffic" },

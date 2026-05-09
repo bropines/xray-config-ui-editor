@@ -60,6 +60,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                         streamSettings={local.streamSettings}
                         onChange={(s: any) => updateField('streamSettings', s)}
                         isClient={false}
+                        protocol={local.protocol}
                     />
                 </section>
 

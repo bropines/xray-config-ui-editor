@@ -32,8 +32,8 @@ export const createDefaultInbound = (protocol = 'vless'): Inbound => {
                 network: 'tcp,udp',
             };
             break;
-        case 'hysteria2':
-            base.settings = { up_mbps: 100, down_mbps: 100, users: [{ password: 'password' }] };
+        case 'hysteria':
+            base.settings = { version: 2, up_mbps: 100, down_mbps: 100, users: [{ password: 'password' }] };
             base.streamSettings = { network: 'udp', security: 'tls', tlsSettings: { certificates: [] } };
             break;
         case 'socks':
@@ -80,7 +80,7 @@ export const createDefaultOutbound = (protocol = 'vless'): Outbound => {
             base.streamSettings = { network: 'udp' };
             break;
         default:
-            if (['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'socks', 'http', 'hysteria2'].includes(protocol)) {
+            if (['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'socks', 'http', 'hysteria', 'hysteria2'].includes(protocol)) {
                 base.settings = {
                     vnext: protocol === 'vless' || protocol === 'vmess'
                         ? [{ address: 'example.com', port: 443, users: [{ id: generateUUID(), security: 'auto' }] }]

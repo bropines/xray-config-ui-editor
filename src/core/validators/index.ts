@@ -51,14 +51,14 @@ export const validateOutbound = (data: any): ValidationError[] => {
     const VALID_PROTOCOLS = [
         'vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http',
         'freedom', 'blackhole', 'dns', 'wireguard', 'loopback',
-        'dokodemo-door', 'tun', 'hysteria2', 'shadowsocks-2022',
+        'dokodemo-door', 'tun', 'hysteria', 'hysteria2', 'shadowsocks-2022',
     ];
 
     if (!VALID_PROTOCOLS.includes(data.protocol)) {
         errors.push({ field: 'protocol', message: `Protocol "${data.protocol}" is not supported.` });
     }
 
-    if (['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'socks', 'http', 'hysteria2'].includes(data.protocol)) {
+    if (['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'socks', 'http', 'hysteria', 'hysteria2'].includes(data.protocol)) {
         const settings = data.settings || {};
         let address = '';
         let port = 0;
