@@ -55,3 +55,4 @@ export { SmartTagInput } from './SmartTagInput';
 export { TagSelector } from './TagSelector';
 export { JsonEditor } from './JsonEditor';
 export { JsonField } from './JsonField';
+export { SchemaField } from './SchemaField';
