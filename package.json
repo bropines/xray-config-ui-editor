@@ -51,6 +51,7 @@
     "tweetnacl": "^1.0.3",
     "validator": "^13.15.26",
     "virtua": "^0.49.1",
+    "zod-to-json-schema": "^3.25.2",
     "zustand": "^5.0.10"
   }
 }

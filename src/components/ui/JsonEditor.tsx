@@ -11,7 +11,17 @@ import { lintKeymap, linter, lintGutter } from "@codemirror/lint";
 import { jsonLanguage, json } from "@codemirror/lang-json";
 import { oneDark } from "@codemirror/theme-one-dark";
 import Ajv from "ajv";
-import xraySchema from "../../utils/config.schema.json";
+import { z } from 'zod';
+import { zodToJsonSchema } from "zod-to-json-schema";
+import {
+    XrayConfigSchema,
+    InboundSchema,
+    OutboundSchema,
+    RoutingRuleSchema,
+    RoutingSchema,
+    DnsSchema,
+    BalancerSchema
+} from "../../core/xray/schemas";
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 
@@ -32,20 +42,18 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
     // Подготовка схемы
     const schemaForMode = useMemo(() => {
         if (!isJson) return null;
-        if (schemaMode === 'full') return xraySchema;
-        let refPath = "";
         switch (schemaMode) {
-            case 'inbound': refPath = "InboundObject"; break;
-            case 'outbound': refPath = "OutboundObject"; break;
-            case 'rule': refPath = "RoutingRule"; break;
-            case 'routing': refPath = "RoutingObject"; break;
-            case 'dns': refPath = "DnsObject"; break;
-            case 'balancer': refPath = "BalancerObject"; break;
-            case 'inbounds': return { ...xraySchema, $ref: undefined, type: "array", items: { $ref: "#/definitions/InboundObject" } };
-            case 'outbounds': return { ...xraySchema, $ref: undefined, type: "array", items: { $ref: "#/definitions/OutboundObject" } };
-            default: return xraySchema;
+            case 'full': return zodToJsonSchema(XrayConfigSchema);
+            case 'inbound': return zodToJsonSchema(InboundSchema);
+            case 'outbound': return zodToJsonSchema(OutboundSchema);
+            case 'rule': return zodToJsonSchema(RoutingRuleSchema);
+            case 'routing': return zodToJsonSchema(RoutingSchema);
+            case 'dns': return zodToJsonSchema(DnsSchema);
+            case 'balancer': return zodToJsonSchema(BalancerSchema);
+            case 'inbounds': return zodToJsonSchema(z.array(InboundSchema));
+            case 'outbounds': return zodToJsonSchema(z.array(OutboundSchema));
+            default: return zodToJsonSchema(XrayConfigSchema);
         }
-        return { ...xraySchema, $ref: `#/definitions/${refPath}` };
     }, [schemaMode, isJson]);
 
     // Единый линтер (синтаксис + схема)
@@ -92,14 +100,13 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
                 const doc = context.state.doc.toString();
                 const options: any[] = [];
-                const definitions: any = xraySchema.definitions || {};
-                
                 // Функция для рекурсивного поиска ключей в схеме
                 const getKeysFromSchema = (schema: any): string[] => {
                     if (!schema) return [];
                     if (schema.$ref) {
                         const ref = schema.$ref.split('/').pop();
-                        return getKeysFromSchema(definitions[ref]);
+                        const defs = schema.definitions || schema.$defs || {};
+                        return getKeysFromSchema(defs[ref]);
                     }
                     if (schema.properties) return Object.keys(schema.properties);
                     if (schema.items) return getKeysFromSchema(schema.items);
