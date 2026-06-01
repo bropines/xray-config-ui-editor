@@ -44,7 +44,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
 
                 <section className="relative z-30">
                     {local.protocol === 'tun' ? (
-                        <InboundTun inbound={local} onChange={updateField} />
+                        <InboundTun inbound={local} onChange={updateField} errors={errors} />
                     ) : (
                         <InboundClients 
                             inbound={local} 
@@ -61,6 +61,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                         onChange={(s: any) => updateField('streamSettings', s)}
                         isClient={false}
                         protocol={local.protocol}
+                        errors={errors}
                     />
                 </section>
 
@@ -68,6 +69,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                     <InboundSniffing
                         sniffing={local.sniffing}
                         onChange={updateField}
+                        errors={errors}
                     />
                 </section>
             </div>

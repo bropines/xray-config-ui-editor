@@ -65,6 +65,7 @@ interface SchemaFieldProps {
     label?: string;
     help?: string;
     placeholder?: string;
+    options?: string[];
 }
 
 export const SchemaField = ({
@@ -75,10 +76,15 @@ export const SchemaField = ({
     error,
     label,
     help,
-    placeholder
+    placeholder,
+    options
 }: SchemaFieldProps) => {
     // If schema is not provided, fallback to string type
     const details = schema ? getSchemaTypeAndDetails(schema) : { type: 'string' as const };
+    if (options && options.length > 0) {
+        details.type = 'enum';
+        details.options = options;
+    }
     const fieldLabel = label ?? name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
 
     switch (details.type) {
@@ -114,13 +120,40 @@ export const SchemaField = ({
                     />
                 </FormField>
             );
+        case 'array': {
+            const innerDetails = details.innerSchema ? getSchemaTypeAndDetails(details.innerSchema) : { type: 'string' as const };
+            const displayValue = Array.isArray(value) ? value.join(', ') : '';
+            return (
+                <FormField label={fieldLabel} help={help} error={error}>
+                    <input
+                        type="text"
+                        className="input-base font-mono"
+                        placeholder={placeholder ?? "e.g. value1, value2"}
+                        value={displayValue}
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (val.trim() === '') {
+                                onChange(undefined);
+                            } else {
+                                const items = val.split(',').map(s => s.trim());
+                                if (innerDetails.type === 'number') {
+                                    onChange(items.map(Number).filter(n => !isNaN(n)));
+                                } else {
+                                    onChange(items);
+                                }
+                            }
+                        }}
+                    />
+                </FormField>
+            );
+        }
         case 'string':
         default:
             return (
                 <FormField label={fieldLabel} help={help} error={error}>
                     <input
                         type="text"
-                        className="input-base"
+                        className="input-base font-mono"
                         placeholder={placeholder}
                         value={value !== undefined && value !== null ? value : ''}
                         onChange={e => onChange(e.target.value === '' ? undefined : e.target.value)}

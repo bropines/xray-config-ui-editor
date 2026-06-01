@@ -144,7 +144,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                         <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
                             <Icon name="Users" /> Hysteria 2 Users
                         </h4>
-                        <Button variant="ghost" className="px-2 py-1 text-xs" onClick={addUser} icon="Plus">Add</Button>
+                        <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addUser} icon="Plus">Add</Button>
                     </div>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scroll pr-1">
                         {users.map((u: any, i: number) => (
@@ -232,7 +232,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
                                 <Icon name="Users" /> {proto.toUpperCase()} Accounts
                             </h4>
-                            <Button variant="ghost" className="px-2 py-1 text-xs" onClick={addAccount} icon="Plus">Add Account</Button>
+                            <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addAccount} icon="Plus">Add Account</Button>
                         </div>
                         <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scroll pr-1">
                             {accounts.map((acc: any, i: number) => (
@@ -308,7 +308,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                 <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
                     <Icon name="Users" /> Clients / Users
                 </h4>
-                <Button variant="ghost" className="px-2 py-1 text-xs" onClick={addClient} icon="Plus">Add</Button>
+                <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addClient} icon="Plus">Add</Button>
             </div>
 
             {errors.clients && (

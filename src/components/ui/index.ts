@@ -56,3 +56,4 @@ export { TagSelector } from './TagSelector';
 export { JsonEditor } from './JsonEditor';
 export { JsonField } from './JsonField';
 export { SchemaField } from './SchemaField';
+export { SchemaForm } from './SchemaForm';

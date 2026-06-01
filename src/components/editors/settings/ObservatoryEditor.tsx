@@ -1,9 +1,8 @@
 import React from 'react';
-import { TagSelector } from '../../ui/TagSelector';
-import { Switch } from '../../ui/Switch';
-import { Card } from '../../ui/Card';
+import { Switch, Card, TagSelector, SchemaForm } from '../../ui';
+import { ObservatorySchema } from '../../../core/xray/schemas/observatory.schema';
 
-export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTags }) => {
+export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTags }: any) => {
     const enabled = !!observatory;
     const localObs = observatory || { 
         subjectSelector: [], 
@@ -30,29 +29,34 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
                 />
             }
         >
-            <p className="text-xs text-slate-500 -mt-2">Health checks for Load Balancers</p>
+            <p className="text-xs text-slate-500 -mt-2 mb-4">Health checks for Load Balancers</p>
 
             {enabled && (
-                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="label-xs">Probe URL</label>
-                            <input className="input-base font-mono" 
-                                value={localObs.probeUrl || ""} 
-                                onChange={e => update('probeUrl', e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="label-xs">Interval</label>
-                            <input className="input-base" 
-                                placeholder="1m, 30s"
-                                value={localObs.probeInterval || ""} 
-                                onChange={e => update('probeInterval', e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div>
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2 border-t border-slate-800/50">
+                    <SchemaForm
+                        schema={ObservatorySchema}
+                        value={localObs}
+                        onChange={onChange}
+                        excludeKeys={['subjectSelector']}
+                        fieldConfigs={{
+                            probeUrl: {
+                                label: 'Probe URL',
+                                help: 'URL used for probing outbound connectivity.',
+                                placeholder: 'https://www.google.com/generate_204'
+                            },
+                            probeInterval: {
+                                label: 'Probe Interval',
+                                help: 'Probe interval (e.g. "10s", "1m", "2h").',
+                                placeholder: '1m'
+                            },
+                            enableConcurrency: {
+                                label: 'Enable Concurrency',
+                                help: 'Enable concurrent probing of all matched outbounds.'
+                            }
+                        }}
+                    />
+                    
+                    <div className="mt-4 pt-4 border-t border-slate-800/50">
                         <TagSelector 
                             label="Subject Selector (Outbounds to Watch)"
                             availableTags={outboundTags}

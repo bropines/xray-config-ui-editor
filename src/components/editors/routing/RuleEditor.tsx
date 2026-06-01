@@ -1,13 +1,8 @@
-import React, { useState } from 'react';
-import { Icon } from '../../ui/Icon';
-import { Help } from '../../ui/Help';
-import { SmartTagInput } from '../../ui/SmartTagInput';
-import { TagSelector } from '../../ui/TagSelector';
-import { JsonField } from '../../ui/JsonField';
-import { Select } from '../../ui/Select';
+import React, { useState, useEffect } from 'react';
+import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm } from '../../ui';
 import { validateRule, lintRule } from '../../../utils/validator';
 import { TagDetailsModal } from '../TagDetailsModal';
-import { useEffect } from 'react';
+import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
 
 const AttrsEditor = ({ value, onChange }: any) => {
     const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
@@ -129,6 +124,11 @@ export const RuleEditor = ({
         .filter((v): v is string => v !== undefined);
 
     const currentTarget = rule.balancerTag ? `bal:${rule.balancerTag}` : (rule.outboundTag || "");
+
+    const errorRecord: Record<string, string> = {};
+    errors.forEach((e: any) => {
+        errorRecord[e.field] = e.message;
+    });
 
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full relative">
@@ -299,51 +299,60 @@ export const RuleEditor = ({
                             />
                         </div>
 
-                        <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 pt-6 mt-2 border-t border-slate-800/50">
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs text-slate-500">Target Port</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 443"
-                                    value={rule.port || ""} onChange={e => update('port', e.target.value)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs text-slate-500">Source Port</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 1000-2000"
-                                    value={rule.sourcePort || ""} onChange={e => update('sourcePort', e.target.value)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs text-slate-500">Local Port</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 53"
-                                    value={rule.localPort || ""} onChange={e => update('localPort', e.target.value)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs flex items-center gap-1.5 text-slate-500">vlessRoute <Help>e.g. 1 or 14514</Help></label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="e.g. 1"
-                                    value={rule.vlessRoute || ""} onChange={e => update('vlessRoute', e.target.value)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs text-slate-500">Source IP (CIDR)</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="10.0.0.1"
-                                    value={(rule.sourceIP || rule.source || []).join(',')}
-                                    onChange={e => update('sourceIP', e.target.value ? e.target.value.split(',') : undefined)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs text-slate-500">Local IP</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="192.168.0.1"
-                                    value={(rule.localIP || []).join(',')}
-                                    onChange={e => update('localIP', e.target.value ? e.target.value.split(',') : undefined)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs text-slate-500">User (Email)</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="user@xray.com"
-                                    value={(rule.user || []).join(',')}
-                                    onChange={e => update('user', e.target.value ? e.target.value.split(',') : undefined)} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="label-xs flex items-center gap-1.5 text-slate-500">Process <Help>e.g. curl, xray/</Help></label>
-                                <input className="input-base text-xs font-mono bg-slate-950/30" placeholder="curl, self/"
-                                    value={(rule.process || []).join(',')}
-                                    onChange={e => update('process', e.target.value ? e.target.value.split(',') : undefined)} />
-                            </div>
+                        <div className="col-span-2 pt-6 mt-2 border-t border-slate-800/50">
+                            <SchemaForm
+                                schema={RoutingRuleSchema}
+                                value={rule}
+                                onChange={onChange}
+                                errors={errorRecord}
+                                excludeKeys={[
+                                    'domain', 'ip', 'inboundTag', 'network', 'protocol',
+                                    'domainStrategy', 'attrs', 'webhook', 'outboundTag', 'balancerTag',
+                                    'ruleTag', 'type'
+                                ]}
+                                fieldConfigs={{
+                                    port: {
+                                        label: 'Target Port',
+                                        help: 'Destination port or port range, e.g. "80", "1-65535", "53,443".',
+                                        placeholder: 'e.g. 443'
+                                    },
+                                    sourcePort: {
+                                        label: 'Source Port',
+                                        help: 'Source port or port range.',
+                                        placeholder: 'e.g. 1000-2000'
+                                    },
+                                    localPort: {
+                                        label: 'Local Port',
+                                        help: 'Local port (for transparent proxy).',
+                                        placeholder: 'e.g. 53'
+                                    },
+                                    vlessRoute: {
+                                        label: 'vlessRoute',
+                                        help: 'Match VLESS route header.',
+                                        placeholder: 'e.g. 1'
+                                    },
+                                    source: {
+                                        label: 'Source IP (CIDR)',
+                                        help: 'Source IP/CIDR match list.',
+                                        placeholder: 'e.g. 10.0.0.1'
+                                    },
+                                    localIP: {
+                                        label: 'Local IP',
+                                        help: 'Local IP match list (for transparent proxy).',
+                                        placeholder: 'e.g. 192.168.0.1'
+                                    },
+                                    user: {
+                                        label: 'User (Email)',
+                                        help: 'User email match list.',
+                                        placeholder: 'e.g. user@xray.com'
+                                    },
+                                    process: {
+                                        label: 'Process Name',
+                                        help: 'Process name match list.',
+                                        placeholder: 'e.g. curl, self/'
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
@@ -365,22 +374,34 @@ export const RuleEditor = ({
                                 Webhook Notification <Help>Send HTTP POST notification on match.</Help>
                             </label>
                             <div className="flex flex-col gap-4 flex-1">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Callback URL</label>
-                                    <input className="input-base text-xs font-mono bg-slate-950/50 border-slate-800/80" placeholder="https://api.site.com/hook"
-                                        value={rule.webhook?.url || ""}
-                                        onChange={e => update('webhook', { ...rule.webhook, url: e.target.value })} />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Deduplication (seconds)</label>
-                                    <input className="input-base text-xs font-mono bg-slate-950/50 border-slate-800/80" type="number" placeholder="10"
-                                        value={rule.webhook?.deduplication || ""}
-                                        onChange={e => update('webhook', { ...rule.webhook, deduplication: Number(e.target.value) })} />
-                                </div>
+                                <SchemaForm
+                                    schema={WebhookObjectSchema}
+                                    value={typeof rule.webhook === 'object' ? rule.webhook : {}}
+                                    onChange={val => update('webhook', val)}
+                                    errors={errorRecord}
+                                    fieldConfigs={{
+                                        url: {
+                                            label: 'Callback URL',
+                                            placeholder: 'https://api.site.com/hook',
+                                            help: 'URL to POST webhook notifications.'
+                                        },
+                                        deduplication: {
+                                            label: 'Deduplication (seconds)',
+                                            placeholder: '10',
+                                            help: 'Deduplication interval in seconds.'
+                                        },
+                                        headers: {
+                                            label: 'Headers',
+                                            placeholder: 'e.g. Authorization: Bearer token',
+                                            help: 'Custom HTTP headers for the webhook request.'
+                                        }
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             {/* Рендерим модалку деталей тега поверх формы */}

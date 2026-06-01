@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '../../ui/Button';
-import { SmartTagInput } from '../../ui/SmartTagInput';
-import { Switch } from '../../ui/Switch';
+import { Button, SmartTagInput, SchemaForm } from '../../ui';
 import { getDefaultGeoList } from '../../../utils/geo-data';
+import { DnsServerObjectSchema } from '../../../core/xray/schemas/dns.schema';
 
-export const DnsServerEditor = ({ server, onChange, onCancel }) => {
+export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     const isString = typeof server === 'string';
-    const[local, setLocal] = useState(isString ? { address: server } : { ...server });
+    const [local, setLocal] = useState(isString ? { address: server } : { ...server });
 
-    const[geoSites, setGeoSites] = useState([]);
+    const [geoSites, setGeoSites] = useState([]);
     const [geoIps, setGeoIps] = useState([]);
     const [loadingGeo, setLoadingGeo] = useState(false);
 
@@ -34,15 +33,7 @@ export const DnsServerEditor = ({ server, onChange, onCancel }) => {
         setLocal(prev => ({ ...prev, [field]: val }));
     };
 
-    const handleSave = () => {
-        // Если это advanced объект, но в нем только адрес и порт (стандартный), можно попытаться упростить до строки?
-        // Нет, Xray различает: строка = UDP/53 (обычно), объект = гибкость.
-        // Просто сохраняем как есть.
-        onChange(local);
-    };
-
     const convertToAdvanced = () => {
-        // Конвертируем строку в объект и перерендерим
         onChange({ address: server, domains: [], expectIPs: [] });
     };
 
@@ -77,25 +68,72 @@ export const DnsServerEditor = ({ server, onChange, onCancel }) => {
             </div>
 
             <div className="overflow-y-auto custom-scroll flex-1 space-y-4 pr-2">
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-2">
-                        <label className="label-xs">Address</label>
-                        <input className="input-base font-mono" 
-                            value={local.address || ""} 
-                            onChange={e => update('address', e.target.value)} 
-                        />
-                    </div>
-                    <div>
-                        <label className="label-xs">Port</label>
-                        <input type="number" className="input-base font-mono" 
-                            value={local.port || ""} 
-                            onChange={e => update('port', parseInt(e.target.value) || undefined)} 
-                            placeholder="53"
-                        />
-                    </div>
-                </div>
+                <SchemaForm
+                    schema={DnsServerObjectSchema}
+                    value={local}
+                    onChange={setLocal}
+                    excludeKeys={['domains', 'expectIPs']}
+                    fieldConfigs={{
+                        address: {
+                            label: 'Server Address',
+                            help: 'DNS server address. E.g. 8.8.8.8, https://dns.google/dns-query, udp://1.1.1.1',
+                            placeholder: '8.8.8.8'
+                        },
+                        port: {
+                            label: 'Port',
+                            help: 'DNS server port (default 53).',
+                            placeholder: '53'
+                        },
+                        unexpectedIPs: {
+                            label: 'Unexpected IPs (Optional)',
+                            help: 'List of unexpected IPs (e.g. geoip:cn) that trigger fallback.',
+                            placeholder: 'geoip:cn'
+                        },
+                        skipFallback: {
+                            label: 'Skip Fallback',
+                            help: 'Skip this server when other servers\' expectIPs match failed.'
+                        },
+                        finalQuery: {
+                            label: 'Final Query',
+                            help: 'If enabled, always query even if other servers already matched.'
+                        },
+                        timeoutMs: {
+                            label: 'Timeout (ms)',
+                            help: 'Per-server query timeout in milliseconds.',
+                            placeholder: 'e.g. 5000'
+                        },
+                        clientIp: {
+                            label: 'Client IP (ECS)',
+                            help: 'Client IP for EDNS Client Subnet (ECS) on this server.',
+                            placeholder: 'e.g. 1.2.3.4'
+                        },
+                        queryStrategy: {
+                            label: 'Query Strategy',
+                            help: 'Per-server query strategy: UseIP (dual-stack), UseIPv4, UseIPv6.',
+                            options: ['UseIP', 'UseIPv4', 'UseIPv6']
+                        },
+                        disableCache: {
+                            label: 'Disable Cache',
+                            help: 'Disable DNS cache for this server.'
+                        },
+                        serveStale: {
+                            label: 'Serve Stale',
+                            help: 'Serve stale/expired cache entries from this server.'
+                        },
+                        serveExpiredTTL: {
+                            label: 'Serve Expired TTL (sec)',
+                            help: 'Extended TTL for stale cache entries in seconds.',
+                            placeholder: 'e.g. 86400'
+                        },
+                        tag: {
+                            label: 'Server Tag',
+                            help: 'Unique tag for this server, used in DNS routing.',
+                            placeholder: 'e.g. google-dns'
+                        }
+                    }}
+                />
 
-                <div>
+                <div className="pt-4 border-t border-slate-800">
                     <SmartTagInput 
                         label="Domains (Routing)" 
                         prefix="geosite:" 
@@ -116,19 +154,6 @@ export const DnsServerEditor = ({ server, onChange, onCancel }) => {
                         onChange={v => update('expectIPs', v)}
                         suggestions={geoIps}
                         isLoading={loadingGeo}
-                    />
-                </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-3">
-                    <Switch 
-                        checked={local.skipFallback || false}
-                        onChange={checked => update('skipFallback', checked)}
-                        label="Skip Fallback (Critical)"
-                    />
-                    <Switch 
-                        checked={local.queryStrategy === 'UseIPv4'}
-                        onChange={checked => update('queryStrategy', checked ? 'UseIPv4' : undefined)}
-                        label="Force IPv4 (A Record)"
                     />
                 </div>
             </div>

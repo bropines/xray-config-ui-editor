@@ -1,24 +1,12 @@
 import React from 'react';
-import { Switch } from '../../ui/Switch';
-import { Card } from '../../ui/Card';
+import { Switch, Card, SchemaForm } from '../../ui';
+import { SystemPolicySchema, LevelPolicySchema } from '../../../core/xray/schemas/policy.schema';
 
-export const PolicyEditor = ({ policy, onChange, onToggle }) => {
+export const PolicyEditor = ({ policy, onChange, onToggle }: any) => {
     const enabled = !!policy;
     const localPolicy = policy || { 
         system: { statsInboundUplink: true, statsInboundDownlink: true },
         levels: { "0": { handshake: 4, connIdle: 300, uplinkOnly: 2, downlinkOnly: 5, bufferSize: 4 } }
-    };
-
-    const updateSystem = (field: string, val: boolean) => {
-        const sys = { ...localPolicy.system, [field]: val };
-        onChange({ ...localPolicy, system: sys });
-    };
-
-    const updateLevel0 = (field: string, val: number) => {
-        const lvls = JSON.parse(JSON.stringify(localPolicy.levels || { "0": {} }));
-        if (!lvls["0"]) lvls["0"] = {};
-        lvls["0"][field] = val;
-        onChange({ ...localPolicy, levels: lvls });
     };
 
     const l0 = localPolicy.levels?.["0"] || {};
@@ -43,45 +31,42 @@ export const PolicyEditor = ({ policy, onChange, onToggle }) => {
                 <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2 border-t border-slate-800/50">
                     {/* System Stats */}
                     <div className="p-4 border border-slate-800 rounded-xl bg-slate-950/50">
-                        <label className="label-xs mb-3">System Traffic Counters</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {['statsInboundUplink', 'statsInboundDownlink', 'statsOutboundUplink', 'statsOutboundDownlink'].map(k => (
-                                <div key={k} className="flex items-center h-8">
-                                    <Switch 
-                                        checked={localPolicy.system?.[k] || false}
-                                        onChange={checked => updateSystem(k, checked)}
-                                        label={k}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                        <label className="label-xs mb-3 block text-slate-400 font-bold uppercase tracking-wider">System Traffic Counters</label>
+                        <SchemaForm
+                            schema={SystemPolicySchema}
+                            value={localPolicy.system || {}}
+                            onChange={sys => onChange({ ...localPolicy, system: sys })}
+                            fieldConfigs={{
+                                statsInboundUplink: { label: 'Inbound Uplink Stats', help: 'Collect uplink stats for all inbounds.' },
+                                statsInboundDownlink: { label: 'Inbound Downlink Stats', help: 'Collect downlink stats for all inbounds.' },
+                                statsOutboundUplink: { label: 'Outbound Uplink Stats', help: 'Collect uplink stats for all outbounds.' },
+                                statsOutboundDownlink: { label: 'Outbound Downlink Stats', help: 'Collect downlink stats for all outbounds.' }
+                            }}
+                        />
                     </div>
 
                     {/* Level 0 Timeouts */}
                     <div className="p-4 border border-slate-800 rounded-xl bg-slate-950/50">
-                        <label className="label-xs mb-3">Level 0 (Default User) Timeouts (sec)</label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-[10px] text-slate-500 block mb-1">Handshake</label>
-                                <input type="number" className="input-base" value={l0.handshake || 4} onChange={e => updateLevel0('handshake', parseInt(e.target.value))} />
-                            </div>
-                            <div>
-                                <label className="text-[10px] text-slate-500 block mb-1">Conn Idle</label>
-                                <input type="number" className="input-base" value={l0.connIdle || 300} onChange={e => updateLevel0('connIdle', parseInt(e.target.value))} />
-                            </div>
-                            <div>
-                                <label className="text-[10px] text-slate-500 block mb-1">Buffer Size (kB)</label>
-                                <input type="number" className="input-base" value={l0.bufferSize || 4} onChange={e => updateLevel0('bufferSize', parseInt(e.target.value))} />
-                            </div>
-                            <div>
-                                <label className="text-[10px] text-slate-500 block mb-1">Uplink Only</label>
-                                <input type="number" className="input-base" value={l0.uplinkOnly || 2} onChange={e => updateLevel0('uplinkOnly', parseInt(e.target.value))} />
-                            </div>
-                            <div>
-                                <label className="text-[10px] text-slate-500 block mb-1">Downlink Only</label>
-                                <input type="number" className="input-base" value={l0.downlinkOnly || 5} onChange={e => updateLevel0('downlinkOnly', parseInt(e.target.value))} />
-                            </div>
-                        </div>
+                        <label className="label-xs mb-3 block text-slate-400 font-bold uppercase tracking-wider">Level 0 (Default User) Settings</label>
+                        <SchemaForm
+                            schema={LevelPolicySchema}
+                            value={l0}
+                            onChange={lvl => {
+                                const lvls = { ...localPolicy.levels };
+                                lvls["0"] = lvl;
+                                onChange({ ...localPolicy, levels: lvls });
+                            }}
+                            fieldConfigs={{
+                                handshake: { label: 'Handshake Timeout (sec)', help: 'Handshake timeout. Default: 4.', placeholder: '4' },
+                                connIdle: { label: 'Connection Idle (sec)', help: 'Connection idle timeout. Default: 300.', placeholder: '300' },
+                                uplinkOnly: { label: 'Uplink Only (sec)', help: 'Time to wait after downlink closes.', placeholder: '2' },
+                                downlinkOnly: { label: 'Downlink Only (sec)', help: 'Time to wait after uplink closes.', placeholder: '5' },
+                                statsUserUplink: { label: 'User Uplink Stats', help: 'Enable per-user uplink traffic statistics.' },
+                                statsUserDownlink: { label: 'User Downlink Stats', help: 'Enable per-user downlink traffic statistics.' },
+                                statsUserOnline: { label: 'User Online Count Stats', help: 'Enable per-user online count statistics.' },
+                                bufferSize: { label: 'Buffer Size (KB)', help: 'Internal buffer size per request. Default depends on platform.', placeholder: 'e.g. 4' }
+                            }}
+                        />
                     </div>
                 </div>
             )}

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Icon } from '../../ui/Icon';
-import { JsonField } from '../../ui/JsonField';
+import { Icon, JsonField, Select, SchemaForm } from '../../ui';
 import { validateBalancer } from '../../../utils/validator';
-import { Select } from '../../ui/Select';
+import { BalancerSchema, StrategySettingsSchema } from '../../../core/xray/schemas/routing.schema';
 
 export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: any) => {
     // Локальный стейт для инпута, чтобы делать подсветку "на лету"
@@ -28,6 +27,10 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     const currentSelector = balancer.selector || [];
     
     const errors = validateBalancer(balancer);
+    const errorRecord: Record<string, string> = {};
+    errors.forEach((e: any) => {
+        errorRecord[e.field] = e.message;
+    });
     const selectorError = errors.find(e => e.field === 'selector');
     const tagError = errors.find(e => e.field === 'tag');
 
@@ -95,17 +98,27 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                 </div>
             )}
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label className="label-xs">Balancer Tag</label>
-                    <input 
-                        className={`input-base font-bold font-mono ${tagError ? 'border-rose-500 bg-rose-500/10' : ''}`} 
-                        value={balancer.tag || ""} 
-                        onChange={e => update('tag', e.target.value)} 
-                    />
-                    {tagError && <span className="text-[10px] text-rose-500">{tagError.message}</span>}
-                </div>
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-1 gap-4">
+                <SchemaForm
+                    schema={BalancerSchema}
+                    value={balancer}
+                    onChange={onChange}
+                    errors={errorRecord}
+                    excludeKeys={['selector', 'strategy']}
+                    fieldConfigs={{
+                        tag: {
+                            label: 'Balancer Tag',
+                            help: 'Unique identifier for this balancer, used in routing rules.'
+                        },
+                        fallbackTag: {
+                            label: 'Fallback Tag (Optional)',
+                            help: 'Outbound tag to use when no selected outbound is available.',
+                            options: ['', ...outboundTags]
+                        }
+                    }}
+                />
                 
+                <div className="border-t border-slate-800/50 pt-4">
                     <Select 
                         label="Strategy"
                         value={balancer.strategy?.type || "random"} 
@@ -117,24 +130,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                             { value: "leastLoad", label: "Least Load", description: "Least active connections" },
                         ]}
                     />
-
-                    <Select 
-                        label="Fallback Tag (Optional)"
-                        value={balancer.fallbackTag || ""} 
-                        onChange={val => {
-                            if (val === "") {
-                                const newB = { ...balancer };
-                                delete newB.fallbackTag;
-                                onChange(newB);
-                            } else {
-                                update('fallbackTag', val);
-                            }
-                        }}
-                        options={[
-                            { value: "", label: "None" },
-                            ...outboundTags.map((tag: string) => ({ value: tag, label: tag }))
-                        ]}
-                    />
+                </div>
             </div>
 
             <div className={`bg-slate-900/50 p-4 rounded-xl border ${selectorError ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
@@ -222,34 +218,40 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
             {balancer.strategy?.type === 'leastLoad' && (
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 space-y-4">
                     <h4 className="text-xs font-bold text-slate-400">LeastLoad Settings</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="label-xs">Expected Nodes</label>
-                            <input className="input-base font-mono" type="number" placeholder="2" 
-                                value={balancer.strategy?.settings?.expected || ""} 
-                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, expected: Number(e.target.value) } })} />
-                        </div>
-                        <div>
-                            <label className="label-xs">Max RTT</label>
-                            <input className="input-base font-mono" placeholder="1s" 
-                                value={balancer.strategy?.settings?.maxRTT || ""} 
-                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, maxRTT: e.target.value } })} />
-                        </div>
-                        <div>
-                            <label className="label-xs">Tolerance</label>
-                            <input className="input-base font-mono" type="number" step="0.01" placeholder="0.01" 
-                                value={balancer.strategy?.settings?.tolerance || ""} 
-                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, tolerance: Number(e.target.value) } })} />
-                        </div>
-                        <div>
-                            <label className="label-xs">Baselines (CSV)</label>
-                            <input className="input-base font-mono" placeholder="1s, 2s" 
-                                value={(balancer.strategy?.settings?.baselines || []).join(', ')} 
-                                onChange={e => update('strategy', { ...balancer.strategy, settings: { ...balancer.strategy?.settings, baselines: e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s) } })} />
-                        </div>
-                    </div>
+                    <SchemaForm
+                        schema={StrategySettingsSchema}
+                        value={balancer.strategy?.settings || {}}
+                        onChange={settings => update('strategy', { ...balancer.strategy, settings })}
+                        fieldConfigs={{
+                            expected: {
+                                label: 'Expected Nodes',
+                                help: 'Number of expected nodes to probe.',
+                                placeholder: '2'
+                            },
+                            maxRTT: {
+                                label: 'Max RTT',
+                                help: 'Maximum acceptable RTT (e.g. "1s", "500ms").',
+                                placeholder: '1s'
+                            },
+                            tolerance: {
+                                label: 'Tolerance',
+                                help: 'RTT difference tolerance.',
+                                placeholder: '0.01'
+                            },
+                            baselines: {
+                                label: 'Baselines',
+                                help: 'Baseline RTT values (comma-separated).',
+                                placeholder: '1s, 2s'
+                            },
+                            costs: {
+                                label: 'Costs',
+                                help: 'Cost adjustments for specific outbounds.'
+                            }
+                        }}
+                    />
                 </div>
             )}
+
         </div>
     );
 };

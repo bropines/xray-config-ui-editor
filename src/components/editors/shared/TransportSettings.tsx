@@ -10,6 +10,8 @@ import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 import { FinalmaskEditor } from './FinalmaskEditor';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
+import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
+import { SchemaForm } from '../../ui/SchemaForm';
 
 interface TransportProps {
     streamSettings: any;
@@ -21,6 +23,31 @@ interface TransportProps {
 
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
     const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
+
+    // Map array/object errors to fields
+    const parsedErrors: Record<string, string | undefined> = {};
+    if (Array.isArray(errors)) {
+        errors.forEach((err: any) => {
+            if (err.field) {
+                parsedErrors[err.field] = err.message;
+            }
+        });
+    } else if (errors && typeof errors === 'object') {
+        Object.assign(parsedErrors, errors);
+    }
+
+    const realityErrors: Record<string, string | undefined> = {};
+    const tlsErrors: Record<string, string | undefined> = {};
+
+    Object.entries(parsedErrors).forEach(([key, val]) => {
+        if (key.startsWith('streamSettings.realitySettings.')) {
+            const field = key.replace('streamSettings.realitySettings.', '');
+            realityErrors[field] = val;
+        } else if (key.startsWith('streamSettings.tlsSettings.')) {
+            const field = key.replace('streamSettings.tlsSettings.', '');
+            tlsErrors[field] = val;
+        }
+    });
 
     const update = (path: string[], value: any) => {
         const newObj = JSON.parse(JSON.stringify(streamSettings));
@@ -292,7 +319,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             REALITY Keys
                             <Help>Reality: A TLS extension for mimicking popular websites to bypass firewalls.</Help>
                         </span>
-                        <Button variant="secondary" className="px-2 py-1 text-[10px]" onClick={handleGenKeys}>Gen Keys Pair</Button>
+                        <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={handleGenKeys}>Gen Keys Pair</Button>
                     </div>
 
                     {!isClient && tempPublicKey && (
@@ -300,97 +327,62 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <label className="label-xs text-emerald-400">Generated Public Key</label>
                             <div className="flex gap-2">
                                 <code className="flex-1 bg-black/30 p-2 rounded text-xs font-mono break-all text-emerald-200">{tempPublicKey}</code>
-                                <Button variant="ghost" icon="Copy" onClick={() => navigator.clipboard.writeText(tempPublicKey)} />
+                                <Button variant="ghost" size="sm" icon="Copy" onClick={() => navigator.clipboard.writeText(tempPublicKey)} />
                             </div>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-wrap gap-2 mb-2">
                         {isClient ? (
                             <>
-                                {/* Public Key — единственное обязательное поле для клиента */}
-                                <div>
-                                    <label className="label-xs text-purple-400">Public Key</label>
-                                    <input
-                                        className={`input-base font-mono ${errors.reality ? 'border-rose-500 bg-rose-500/10 focus:border-rose-500' : ''}`}
-                                        value={streamSettings.realitySettings?.publicKey || ""}
-                                        onChange={e => update(['realitySettings', 'publicKey'], e.target.value)}
-                                    />
-                                    {errors.reality && (
-                                        <span className="text-[10px] text-rose-500 mt-1 block">{errors.reality}</span>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="label-xs text-purple-400 flex items-center justify-between">
-                                        Short ID
-                                        <button onClick={() => update(['realitySettings', 'shortId'], generateRealityShortIds(1)[0])} className="text-[10px] text-slate-500 hover:text-indigo-400">Gen</button>
-                                    </label>
-                                    <input className="input-base font-mono" value={streamSettings.realitySettings?.shortId || ""} onChange={e => update(['realitySettings', 'shortId'], e.target.value)} />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="label-xs text-purple-400 flex items-center justify-between">
-                                        SpiderX
-                                        <button onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())} className="text-[10px] text-slate-500 hover:text-indigo-400">Gen</button>
-                                    </label>
-                                    <input className="input-base font-mono" value={streamSettings.realitySettings?.spiderX || ""} onChange={e => update(['realitySettings', 'spiderX'], e.target.value)} />
-                                </div>
+                                <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'shortId'], generateRealityShortIds(1)[0])}>Gen Short ID</Button>
+                                <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>Gen SpiderX Path</Button>
                             </>
                         ) : (
-                            <>
-                                <div>
-                                    <label className="label-xs">Dest</label>
-                                    <input className="input-base font-mono" placeholder="google.com:443" value={streamSettings.realitySettings?.dest || ""} onChange={e => update(['realitySettings', 'dest'], e.target.value)} />
-                                </div>
-                                <div>
-                                    <label className="label-xs">Private Key</label>
-                                    <input className="input-base font-mono text-emerald-400" value={streamSettings.realitySettings?.privateKey || ""} onChange={e => update(['realitySettings', 'privateKey'], e.target.value)} />
-                                </div>
-                                <div>
-                                    <label className="label-xs flex items-center justify-between">
-                                        Short IDs (CSV)
-                                        <button onClick={() => update(['realitySettings', 'shortIds'], generateRealityShortIds(3))} className="text-[10px] text-slate-500 hover:text-indigo-400">Gen List</button>
-                                    </label>
-                                    <input className="input-base font-mono" placeholder="a1b2, c3d4" value={(streamSettings.realitySettings?.shortIds || []).join(', ')} onChange={e => update(['realitySettings', 'shortIds'], e.target.value.split(',').map((s: string) => s.trim()))} />
-                                </div>
-                            </>
-                        )}
-
-                        <div className="md:col-span-2">
-                            <label className="label-xs flex items-center">
-                                Server Names (SNI) <Help>Allowed domains for Reality.</Help>
-                            </label>
-                            <input className="input-base font-mono"
-                                placeholder="example.com, www.example.com"
-                                value={isClient ? (streamSettings.realitySettings?.serverName || "") : (streamSettings.realitySettings?.serverNames || []).join(', ')}
-                                onChange={e => {
-                                    const val = e.target.value;
-                                    update(['realitySettings', isClient ? 'serverName' : 'serverNames'], isClient ? val : val.split(',').map((s: string) => s.trim()));
-                                }}
-                            />
-                        </div>
-
-                        {isClient && (
-                                <Select 
-                                    label="uTLS Fingerprint"
-                                    hint="Mimic specific browser fingerprints."
-                                    value={streamSettings.realitySettings?.fingerprint || ""}
-                                    onChange={val => update(['realitySettings', 'fingerprint'], val)}
-                                    options={[
-                                        { value: "", label: "None" },
-                                        { value: "chrome", label: "Chrome" },
-                                        { value: "firefox", label: "Firefox" },
-                                        { value: "safari", label: "Safari" },
-                                        { value: "ios", label: "iOS" },
-                                        { value: "android", label: "Android" },
-                                        { value: "edge", label: "Edge" },
-                                        { value: "360", label: "360" },
-                                        { value: "qq", label: "QQ" },
-                                        { value: "random", label: "Random" },
-                                        { value: "randomized", label: "Randomized" },
-                                    ]}
-                                />
+                            <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'shortIds'], generateRealityShortIds(3))}>Gen Short IDs List</Button>
                         )}
                     </div>
+
+                    <SchemaForm
+                        schema={RealitySchema}
+                        value={streamSettings.realitySettings || {}}
+                        onChange={val => update(['realitySettings'], val)}
+                        errors={realityErrors}
+                        excludeKeys={
+                            isClient
+                                ? [
+                                      'show',
+                                      'target',
+                                      'dest',
+                                      'xver',
+                                      'serverNames',
+                                      'privateKey',
+                                      'minClientVer',
+                                      'maxClientVer',
+                                      'maxTimeDiff',
+                                      'shortIds',
+                                      'mldsa65Seed',
+                                      'limitFallbackUpload',
+                                      'limitFallbackDownload',
+                                      'mldsa65Verify',
+                                      'password'
+                                  ]
+                                : [
+                                      'serverName',
+                                      'fingerprint',
+                                      'password',
+                                      'publicKey',
+                                      'shortId',
+                                      'mldsa65Verify',
+                                      'minClientVer',
+                                      'maxClientVer',
+                                      'maxTimeDiff',
+                                      'mldsa65Seed',
+                                      'limitFallbackUpload',
+                                      'limitFallbackDownload'
+                                  ]
+                        }
+                    />
                 </div>
             )}
 
@@ -399,97 +391,31 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="text-xs font-bold text-blue-400">Standard TLS Settings</div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                            <label className="label-xs flex items-center">Server Name (SNI) <Help>Target domain.</Help></label>
-                            <input className="input-base font-mono" value={streamSettings.tlsSettings?.serverName || ""} onChange={e => update(['tlsSettings', 'serverName'], e.target.value)} />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <TagSelector
-                                label={<span className="flex items-center">ALPN <Help>Application-Layer Protocol Negotiation (e.g. h2, http/1.1).</Help></span>}
-                                availableTags={['h2', 'http/1.1', 'h3']}
-                                selected={streamSettings.tlsSettings?.alpn || []}
-                                onChange={v => update(['tlsSettings', 'alpn'], v)}
-                                multi={true}
-                                placeholder="Custom ALPN..."
-                            />
-                        </div>
-
-                        {!isClient && (
-                            <div className="md:col-span-2">
-                                <label className="label-xs">Certificates (Paths)</label>
-                                <div className="flex gap-2 mb-2">
-                                    <input className="input-base text-xs flex-1" placeholder="/path/to/fullchain.crt"
-                                        value={streamSettings.tlsSettings?.certificates?.[0]?.certificateFile || ""}
-                                        onChange={e => update(['tlsSettings', 'certificates'], [{ ...streamSettings.tlsSettings?.certificates?.[0], certificateFile: e.target.value }])} />
-                                    <input className="input-base text-xs flex-1" placeholder="/path/to/private.key"
-                                        value={streamSettings.tlsSettings?.certificates?.[0]?.keyFile || ""}
-                                        onChange={e => update(['tlsSettings', 'certificates'], [{ ...streamSettings.tlsSettings?.certificates?.[0], keyFile: e.target.value }])} />
-                                </div>
+                    {!isClient && (
+                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 mb-4">
+                            <label className="label-xs font-bold text-slate-400">Certificates (Paths)</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <input className="input-base text-xs font-mono" placeholder="Certificate file path (e.g. /path/to/fullchain.crt)"
+                                    value={streamSettings.tlsSettings?.certificates?.[0]?.certificateFile || ""}
+                                    onChange={e => update(['tlsSettings', 'certificates'], [{ ...streamSettings.tlsSettings?.certificates?.[0], certificateFile: e.target.value }])} />
+                                <input className="input-base text-xs font-mono" placeholder="Private key file path (e.g. /path/to/private.key)"
+                                    value={streamSettings.tlsSettings?.certificates?.[0]?.keyFile || ""}
+                                    onChange={e => update(['tlsSettings', 'certificates'], [{ ...streamSettings.tlsSettings?.certificates?.[0], keyFile: e.target.value }])} />
                             </div>
-                        )}
-
-                        <Select 
-                            label="Min TLS Version"
-                            value={streamSettings.tlsSettings?.minVersion || "1.2"}
-                            onChange={val => update(['tlsSettings', 'minVersion'], val)}
-                            options={[
-                                { value: "1.0", label: "1.0" },
-                                { value: "1.1", label: "1.1" },
-                                { value: "1.2", label: "1.2" },
-                                { value: "1.3", label: "1.3" },
-                            ]}
-                        />
-                        <Select 
-                            label="Max TLS Version"
-                            value={streamSettings.tlsSettings?.maxVersion || "1.3"}
-                            onChange={val => update(['tlsSettings', 'maxVersion'], val)}
-                            options={[
-                                { value: "1.0", label: "1.0" },
-                                { value: "1.1", label: "1.1" },
-                                { value: "1.2", label: "1.2" },
-                                { value: "1.3", label: "1.3" },
-                            ]}
-                        />
-
-                        {isClient && (
-                                <Select 
-                                    label="uTLS Fingerprint"
-                                    hint="Mimic specific browser fingerprints."
-                                    value={streamSettings.tlsSettings?.fingerprint || ""}
-                                    onChange={val => update(['tlsSettings', 'fingerprint'], val)}
-                                    options={[
-                                        { value: "", label: "None (Go TLS)" },
-                                        { value: "chrome", label: "Chrome" },
-                                        { value: "firefox", label: "Firefox" },
-                                        { value: "safari", label: "Safari" },
-                                        { value: "ios", label: "iOS" },
-                                        { value: "android", label: "Android" },
-                                        { value: "edge", label: "Edge" },
-                                        { value: "360", label: "360" },
-                                        { value: "qq", label: "QQ" },
-                                        { value: "random", label: "Random" },
-                                        { value: "randomized", label: "Randomized" },
-                                    ]}
-                                />
-                        )}
-
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                            {isClient && (
-                                <Switch
-                                    checked={streamSettings.tlsSettings?.allowInsecure || false}
-                                    onChange={checked => update(['tlsSettings', 'allowInsecure'], checked)}
-                                    label="Allow Insecure"
-                                />
-                            )}
-                            <Switch
-                                checked={streamSettings.tlsSettings?.rejectUnknownSni || false}
-                                onChange={checked => update(['tlsSettings', 'rejectUnknownSni'], checked)}
-                                label="Reject Unknown SNI"
-                            />
                         </div>
-                    </div>
+                    )}
+
+                    <SchemaForm
+                        schema={TlsSchema}
+                        value={streamSettings.tlsSettings || {}}
+                        onChange={val => update(['tlsSettings'], val)}
+                        errors={tlsErrors}
+                        excludeKeys={[
+                            'certificates',
+                            'echSockopt',
+                            ...(isClient ? ['rejectUnknownSni'] : ['allowInsecure', 'fingerprint'])
+                        ]}
+                    />
                 </div>
             )}
 

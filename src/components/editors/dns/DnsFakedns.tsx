@@ -1,23 +1,23 @@
 import React from 'react';
-import { Button } from '../../ui/Button';
-import { Icon } from '../../ui/Icon';
+import { Button, Icon, SchemaForm } from '../../ui';
+import { FakeDnsPoolSchema } from '../../../core/xray/schemas/fakedns.schema';
 
-export const DnsFakedns = ({ fakedns = [], onChange }) => {
+export const DnsFakedns = ({ fakedns = [], onChange }: any) => {
     // fakedns - это массив объектов { ipPool, poolSize }
 
     const addPool = () => {
         onChange([...fakedns, { ipPool: "198.18.0.0/15", poolSize: 65535 }]);
     };
 
-    const removePool = (idx) => {
+    const removePool = (idx: number) => {
         const n = [...fakedns];
         n.splice(idx, 1);
         onChange(n);
     };
 
-    const updatePool = (idx, field, val) => {
+    const updatePool = (idx: number, val: any) => {
         const n = [...fakedns];
-        n[idx] = { ...n[idx], [field]: val };
+        n[idx] = val;
         onChange(n);
     };
 
@@ -35,18 +35,22 @@ export const DnsFakedns = ({ fakedns = [], onChange }) => {
                 {fakedns.map((item, i) => (
                     <div key={i} className="bg-slate-900 p-3 rounded-lg border border-slate-800 flex gap-4 items-end">
                         <div className="flex-1">
-                            <label className="label-xs mb-1">IP Pool (CIDR)</label>
-                            <input className="input-base font-mono text-xs" 
-                                value={item.ipPool} 
-                                onChange={e => updatePool(i, 'ipPool', e.target.value)}
-                                placeholder="198.18.0.0/15"
-                            />
-                        </div>
-                        <div className="w-1/3">
-                            <label className="label-xs mb-1">Size</label>
-                            <input type="number" className="input-base font-mono text-xs" 
-                                value={item.poolSize} 
-                                onChange={e => updatePool(i, 'poolSize', parseInt(e.target.value))}
+                            <SchemaForm
+                                schema={FakeDnsPoolSchema}
+                                value={item}
+                                onChange={val => updatePool(i, val)}
+                                fieldConfigs={{
+                                    ipPool: {
+                                        label: 'IP Pool (CIDR)',
+                                        placeholder: '198.18.0.0/15',
+                                        help: 'CIDR for FakeIP address pool.'
+                                    },
+                                    poolSize: {
+                                        label: 'Size',
+                                        placeholder: '65535',
+                                        help: 'Maximum number of domain-IP mappings.'
+                                    }
+                                }}
                             />
                         </div>
                         <button onClick={() => removePool(i)} className="p-2.5 bg-slate-800 hover:bg-rose-600 rounded text-slate-400 hover:text-white transition-colors">
