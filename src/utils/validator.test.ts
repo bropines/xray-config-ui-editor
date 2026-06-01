@@ -4,7 +4,8 @@ import {
     isValidIP, 
     isValidDomain, 
     isValidPort, 
-    validateOutbound 
+    validateOutbound,
+    validateFullConfig
 } from "./validator";
 
 describe("Validator Basic Utils", () => {
@@ -101,5 +102,71 @@ describe("Xray Outbound Validation", () => {
         };
         const errors = validateOutbound(outbound);
         expect(errors).toHaveLength(0);
+    });
+});
+
+describe("Xray Full Config Validation", () => {
+    test("should pass valid full config", () => {
+        const config = {
+            log: { loglevel: "warning" },
+            inbounds: [
+                {
+                    tag: "socks-in",
+                    port: 10808,
+                    protocol: "socks",
+                    settings: { auth: "noauth", udp: true }
+                }
+            ],
+            outbounds: [
+                {
+                    tag: "proxy",
+                    protocol: "vless",
+                    settings: {
+                        vnext: [{ address: "example.com", port: 443, users: [{ id: "uuid" }] }]
+                    }
+                },
+                {
+                    tag: "direct",
+                    protocol: "freedom"
+                }
+            ],
+            routing: {
+                domainStrategy: "IPIfNonMatch",
+                rules: [
+                    {
+                        type: "field",
+                        outboundTag: "direct",
+                        domain: ["geosite:cn"]
+                    }
+                ]
+            }
+        };
+        const errors = validateFullConfig(config);
+        expect(errors).toHaveLength(0);
+    });
+
+    test("should catch invalid inbounds and outbounds inside full config", () => {
+        const config = {
+            inbounds: [
+                {
+                    // missing tag, invalid port
+                    protocol: "socks",
+                    port: 0
+                }
+            ],
+            outbounds: [
+                {
+                    tag: "proxy",
+                    protocol: "vless",
+                    settings: {
+                        vnext: [{ address: "---", port: 99999 }] // invalid address and port
+                    }
+                }
+            ]
+        };
+        const errors = validateFullConfig(config);
+        expect(errors.length).toBeGreaterThan(0);
+        expect(errors.some(e => e.field.includes("port"))).toBe(true);
+        expect(errors.some(e => e.field.includes("address"))).toBe(true);
     });
 });

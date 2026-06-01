@@ -8,6 +8,7 @@ export const useAppLogic = () => {
     const {
         config,
         setConfig,
+        loadConfig,
         deleteItem,
         moveItem,
         updateItem,
@@ -70,7 +71,7 @@ export const useAppLogic = () => {
                         }
                     } else {
                         // Это обычный конфиг (объект)
-                        setConfig(parsed as XrayConfig);
+                        loadConfig(parsed);
                         toast.success("Configuration loaded from file");
                     }
                     setRawMode(false);

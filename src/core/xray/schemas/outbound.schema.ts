@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { OutboundProtocolSchema, DomainStrategyFullSchema } from './primitives';
+import { StreamSettingsSchema } from './transport/stream.schema';
 
 // --- Mux ---
 export const MuxSchema = z.object({
@@ -37,7 +38,7 @@ export const OutboundSchema = z.object({
   /** Protocol-specific settings (passthrough) */
   settings: z.record(z.string(), z.unknown()).optional(),
   /** Transport settings */
-  streamSettings: z.record(z.string(), z.unknown()).optional(),
+  streamSettings: StreamSettingsSchema.optional(),
   /** Proxy chaining settings */
   proxySettings: ProxySettingsSchema.optional(),
   /** Mux multiplexing settings */

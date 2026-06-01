@@ -1,4 +1,4 @@
-import type { XrayConfig } from '../types/xray.types';
+import type { XrayConfig } from '../types';
 import type { ValidationError } from '../validators';
 
 export type DiagnosticSeverity = 'critical' | 'warning' | 'info';

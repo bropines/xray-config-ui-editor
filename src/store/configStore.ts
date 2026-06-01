@@ -5,6 +5,7 @@ import { RemnawaveClient } from '../core/api/remnawave-client';
 import { validateBalancer } from '../core/validators';
 import { toast } from 'sonner';
 import type { RemnawaveProfile } from '../core/types';
+import { XrayConfigSchema } from '../core/xray/schemas';
 
 // Re-export types from core for backward compatibility
 export type {
@@ -41,6 +42,7 @@ interface RemnawaveState {
 interface ConfigState {
     config: XrayConfig | null;
     setConfig: (config: XrayConfig | null) => void;
+    loadConfig: (json: unknown) => void;
     coreVersion: string;
     setCoreVersion: (version: string) => void;
     
@@ -135,7 +137,7 @@ export const useConfigStore = create(
                 client.setToken(token);
                 try {
                     const configData = await client.getConfigProfile(uuid);
-                    set({ config: configData as XrayConfig });
+                    get().loadConfig(configData);
                     set(produce((state) => {
                         state.remnawave.activeProfileUuid = uuid;
                     }));
@@ -180,6 +182,17 @@ export const useConfigStore = create(
             // --- Standard CRUD Actions ---
             
             setConfig: (config) => set({ config }),
+
+            loadConfig: (json) => {
+                const result = XrayConfigSchema.safeParse(json);
+                if (result.success) {
+                    set({ config: result.data });
+                } else {
+                    console.warn('Validation warnings:', result.error.issues);
+                    toast.warning("Configuration loaded with validation warnings. Check console.");
+                    set({ config: json as XrayConfig });
+                }
+            },
 
             updateSection: (section, data) => set(produce((state) => {
                 if (!state.config) {

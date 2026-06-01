@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { PortSchema, DestOverrideSchema, InboundProtocolSchema } from './primitives';
+import { StreamSettingsSchema } from './transport/stream.schema';
 
 // --- Sniffing ---
 export const SniffingSchema = z.object({
@@ -47,7 +48,7 @@ export const InboundSchema = z.object({
   /** Protocol-specific settings (passthrough to avoid dropping unknown fields) */
   settings: z.record(z.string(), z.unknown()).optional(),
   /** Transport settings */
-  streamSettings: z.record(z.string(), z.unknown()).optional(),
+  streamSettings: StreamSettingsSchema.optional(),
   /** Content sniffing configuration */
   sniffing: SniffingSchema.optional(),
   /** Port allocation settings */
