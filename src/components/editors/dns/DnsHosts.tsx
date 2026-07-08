@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-import { isValidDomain, isValidHostDestination } from '../../../utils/validator';
+import { isValidDomain, isValidHostDestination } from '../../../core/validators';
 
 export const DnsHosts = ({ hosts = {}, onChange }: any) => {
     const [entries, setEntries] = useState<{ domain: string, ips: string[] }[]>(() => 

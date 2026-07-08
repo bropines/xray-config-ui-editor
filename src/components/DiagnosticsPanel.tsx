@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './ui/Icon';
-import type { Diagnostic, DiagnosticSeverity } from '../../utils/diagnostics';
+import type { Diagnostic, DiagnosticSeverity } from '../core/diagnostics';
 
 interface Props {
     diagnostics: Diagnostic[];

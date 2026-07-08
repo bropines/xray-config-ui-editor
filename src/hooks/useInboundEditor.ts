@@ -1,5 +1,5 @@
 import { useXrayEditor } from './useXrayEditor';
-import { validateInbound } from '../utils/validator';
+import { validateInbound } from '../core/validators';
 import { createDefaultInbound } from '../utils/protocol-factories';
 import type { Inbound } from '../store/configStore';
 

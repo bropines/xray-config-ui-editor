@@ -3,7 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getCriticalRuleErrors } from '../../../utils/validator';
+import { getCriticalRuleErrors } from '../../../core/validators';
 
 const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });

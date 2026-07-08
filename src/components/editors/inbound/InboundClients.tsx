@@ -4,7 +4,7 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Help } from '../../ui/Help';
 import { Switch } from '../../ui/Switch';
-import { generateUUID, generateShortId } from '../../../utils/generators';
+import { generateUUID, generateShortId } from '../../../core/generators';
 
 
 import { useConfigStore } from '../../../store/configStore';

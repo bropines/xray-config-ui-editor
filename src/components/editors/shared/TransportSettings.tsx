@@ -3,7 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { generateX25519Keys } from '../../../utils/crypto';
-import { generateRealitySpiderX, generateRealityShortIds } from '../../../utils/generators';
+import { generateRealitySpiderX, generateRealityShortIds } from '../../../core/generators';
 import { SockoptEditor } from './SockoptEditor';
 import { TagSelector } from '../../ui/TagSelector';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';

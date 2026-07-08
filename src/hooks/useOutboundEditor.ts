@@ -1,6 +1,6 @@
 import { useXrayEditor } from './useXrayEditor';
-import { validateOutbound, validateWireguard, checkOutboundDuplication } from '../utils/validator';
-import type { ValidationError } from '../utils/validator';
+import { validateOutbound, validateWireguard, checkOutboundDuplication } from '../core/validators';
+import type { ValidationError } from '../core/validators';
 import { createDefaultOutbound } from '../utils/protocol-factories';
 import { useConfigStore } from '../store/configStore';
 import type { Outbound } from '../store/configStore';

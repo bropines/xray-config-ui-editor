@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useConfigStore } from '../store/configStore';
-import { getCriticalRuleErrors } from '../utils/validator';
+import { getCriticalRuleErrors } from '../core/validators';
 import { createDefaultRoutingRule, createDefaultBalancer } from '../utils/protocol-factories';
 
 export const useRoutingEditor = (onClose: () => void) => {

@@ -6,7 +6,7 @@ import { Switch } from './Switch';
 import { SmartTagInput } from './SmartTagInput';
 import { NumberInput } from './NumberInput';
 import { Icon } from './Icon';
-import { generateRealityShortIds } from '../../utils/generators';
+import { generateRealityShortIds } from '../../core/generators';
 import { generateX25519Keys } from '../../utils/crypto';
 import { toast } from 'sonner';
 

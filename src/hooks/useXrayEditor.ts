@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { produce } from 'immer';
-import type { ValidationError } from '../utils/validator';
+import type { ValidationError } from '../core/validators';
 import { toast } from 'sonner';
 
 interface UseXrayEditorOptions<T> {

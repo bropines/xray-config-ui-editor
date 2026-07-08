@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { FormField } from '../../ui/FormField';
-import { generateWarpAccount } from '../../../utils/generators';
+import { generateWarpAccount } from '../../../core/generators';
 import { useConfigStore } from '../../../store/configStore';
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {

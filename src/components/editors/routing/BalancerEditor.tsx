@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Icon, JsonField, Select, SchemaForm } from '../../ui';
-import { validateBalancer } from '../../../utils/validator';
+import { validateBalancer } from '../../../core/validators';
 import { BalancerSchema, StrategySettingsSchema } from '../../../core/xray/schemas/routing.schema';
 
 export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: any) => {
