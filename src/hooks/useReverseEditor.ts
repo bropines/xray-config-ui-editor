@@ -26,12 +26,17 @@ export const useReverseEditor = () => {
         updateList(type, n);
     }, [reverse, updateList]);
 
+    const updateReverse = useCallback((newReverse: any) => {
+        updateSection('reverse', newReverse);
+    }, [updateSection]);
+
     return {
         reverse,
         activeTab,
         setActiveTab,
         addItem,
         removeItem,
-        updateItem
+        updateItem,
+        updateReverse
     };
 };

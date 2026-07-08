@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
+import { JsonField } from '../ui/JsonField';
 import { useReverseEditor } from '../../hooks/useReverseEditor';
 
 export const ReverseModal = ({ onClose }: any) => {
@@ -11,8 +12,36 @@ export const ReverseModal = ({ onClose }: any) => {
         setActiveTab,
         addItem,
         removeItem,
-        updateItem
+        updateItem,
+        updateReverse
     } = useReverseEditor();
+
+    const [rawMode, setRawMode] = useState(false);
+
+    // --- JSON MODE VIEW ---
+    if (rawMode) {
+        return (
+            <Modal
+                title="Reverse Proxy (JSON)"
+                onClose={onClose}
+                onSave={() => onClose()}
+                extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">Form Mode</Button>}
+            >
+                <div className="h-[500px] flex flex-col gap-2">
+                    <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded text-[10px] text-slate-400 font-mono">
+                        This editor manages the <code>reverse</code> root section directly.
+                    </div>
+                    <JsonField
+                        label="Reverse Proxy Configuration"
+                        value={reverse}
+                        onChange={updateReverse}
+                        className="flex-1"
+                        schemaMode="reverse"
+                    />
+                </div>
+            </Modal>
+        );
+    }
 
     const renderList = (type: 'bridges' | 'portals') => (
         <div className="space-y-4">
@@ -62,9 +91,12 @@ export const ReverseModal = ({ onClose }: any) => {
             onSave={() => onClose()}
             className="md:max-w-[800px]"
             extraButtons={
-                <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
-                    <button onClick={() => setActiveTab('bridges')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'bridges' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>Bridges</button>
-                    <button onClick={() => setActiveTab('portals')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'portals' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'}`}>Portals</button>
+                <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+                    <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
+                        <button onClick={() => setActiveTab('bridges')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'bridges' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>Bridges</button>
+                        <button onClick={() => setActiveTab('portals')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'portals' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'}`}>Portals</button>
+                    </div>
+                    <Button variant="secondary" className="text-xs py-1 shrink-0" onClick={() => setRawMode(true)} icon="Code">JSON</Button>
                 </div>
             }
         >
