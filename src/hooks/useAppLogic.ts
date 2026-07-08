@@ -121,7 +121,7 @@ export const useAppLogic = () => {
     }, [sectionModal.section, updateSection]);
 
     const openSectionJson = useCallback((section: string, title: string, explicitData?: any) => {
-        const modeMap: Record<string, string> = { inbounds: 'inbounds', outbounds: 'outbounds', routing: 'routing', dns: 'dns' };
+        const modeMap: Record<string, string> = { inbounds: 'inbounds', outbounds: 'outbounds', routing: 'routing', dns: 'dns', reverse: 'reverse' };
         setSectionModal({
             open: true, title: title + " (JSON)", section,
             data: explicitData !== undefined ? explicitData : (config ? config[section as keyof typeof config] : (section === 'inbounds' || section === 'outbounds' ? [] : {})),
@@ -135,8 +135,8 @@ export const useAppLogic = () => {
 
     const filteredOutbounds = useMemo(() => {
         return (config?.outbounds || [])
-            .map((ob: any, i: number) => ({ ...ob, i }))
-            .filter((ob: any) => {
+            .map((ob: any, originalIndex: number) => ({ ob, originalIndex }))
+            .filter(({ ob }) => {
                 const q = obSearch.toLowerCase();
                 if (!q) return true;
                 const s = ob.settings || {};

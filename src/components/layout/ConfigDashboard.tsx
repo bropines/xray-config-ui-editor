@@ -51,6 +51,7 @@ const DashCard = ({
 
 const SortableOutboundItem = ({
   ob,
+  index,
   onEdit,
   onDelete,
   onMove,
@@ -63,21 +64,13 @@ const SortableOutboundItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: `ob-${ob.i}` });
+  } = useSortable({ id: `ob-${index}` });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 50 : "auto",
     position: "relative" as const,
-  };
-
-  const handleIndexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value);
-    if (!isNaN(val)) {
-      const target = Math.max(0, Math.min(totalCount - 1, val));
-      if (target !== ob.i) onMove(ob.i, target);
-    }
   };
 
   return (
@@ -96,7 +89,7 @@ const SortableOutboundItem = ({
         </div>
         
         <div className="text-xl font-black text-slate-600/40 italic tabular-nums w-6 text-center select-none">
-          {ob.i}
+          {index}
         </div>
       </div>
 
@@ -125,7 +118,7 @@ const SortableOutboundItem = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onEdit(ob, ob.i)}
+          onClick={() => onEdit(ob, index)}
           icon="PencilSimple"
           title="Edit"
           className="h-8 w-8 p-0 text-slate-500 hover:text-white hover:bg-transparent transition-all duration-300"
@@ -133,7 +126,7 @@ const SortableOutboundItem = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onDelete(ob.i)}
+          onClick={() => onDelete(index)}
           icon="Trash"
           title="Delete"
           className="h-8 w-8 p-0 text-slate-500 hover:!text-rose-500 hover:bg-transparent transition-all duration-300"
@@ -576,14 +569,15 @@ export const ConfigDashboard = ({
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext
-                    items={filteredOutbounds.map((ob) => `ob-${ob.i}`)}
+                    items={filteredOutbounds.map((item) => `ob-${item.originalIndex}`)}
                     strategy={verticalListSortingStrategy}
                   >
                     {filteredOutbounds.length > 0 ? (
-                      filteredOutbounds.map((ob: any) => (
+                      filteredOutbounds.map((item: any) => (
                         <SortableOutboundItem
-                          key={ob.i}
-                          ob={ob}
+                          key={item.originalIndex}
+                          ob={item.ob}
+                          index={item.originalIndex}
                           totalCount={config.outbounds?.length || 0}
                           onEdit={onEditOutbound}
                           onDelete={onDeleteOutbound}
