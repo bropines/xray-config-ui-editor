@@ -34,6 +34,7 @@ export function Select<T extends string = string>({
     id,
 }: SelectProps<T>) {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const containerRef = useRef<HTMLDivElement>(null);
     
     const selectedOption = options.find(opt => opt.value === value);
@@ -49,6 +50,12 @@ export function Select<T extends string = string>({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (!isOpen) {
+            setSearchQuery("");
+        }
+    }, [isOpen]);
+
     const handleSelect = (val: T) => {
         onChange(val);
         setIsOpen(false);
@@ -57,6 +64,15 @@ export function Select<T extends string = string>({
     const border = error
         ? 'border-rose-500/70'
         : isOpen ? 'border-indigo-500 ring-1 ring-indigo-500/20' : 'border-slate-700';
+
+    const filteredOptions = options.filter(opt => {
+        const q = searchQuery.toLowerCase();
+        return (
+            opt.label.toLowerCase().includes(q) ||
+            opt.value.toLowerCase().includes(q) ||
+            (opt.description && opt.description.toLowerCase().includes(q))
+        );
+    });
 
     return (
         <div className={`flex flex-col gap-1.5 ${isOpen ? 'relative z-[110]' : ''} ${className}`} ref={containerRef}>
@@ -90,12 +106,38 @@ export function Select<T extends string = string>({
                 </button>
 
                 {isOpen && (
-                    <div className="absolute left-0 right-0 z-[500] mt-1.5 bg-[#0f172a] border border-slate-700 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden origin-top ring-1 ring-white/10 opacity-100">
+                    <div className="absolute left-0 right-0 z-[500] mt-1.5 bg-[#0f172a] border border-slate-700 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden origin-top ring-1 ring-white/10 opacity-100 flex flex-col">
+                        {options.length > 5 && (
+                            <div className="p-1.5 border-b border-slate-800 bg-[#0b0f19]">
+                                <div className="relative">
+                                    <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
+                                    <input
+                                        className="w-full bg-slate-900 border border-slate-700/50 rounded-md pl-8 pr-6 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        onClick={e => e.stopPropagation()}
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSearchQuery("");
+                                            }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs font-mono"
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         <div className="max-h-[250px] overflow-y-auto custom-scroll p-1.5 space-y-0.5 bg-[#0f172a] opacity-100">
-                            {options.length === 0 ? (
-                                <div className="p-3 text-xs text-slate-600 text-center italic">No options</div>
+                            {filteredOptions.length === 0 ? (
+                                <div className="p-3 text-xs text-slate-600 text-center italic">No options found</div>
                             ) : (
-                                options.map((opt) => {
+                                filteredOptions.map((opt) => {
                                     const isActive = opt.value === value;
                                     return (
                                         <button

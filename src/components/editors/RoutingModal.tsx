@@ -34,10 +34,13 @@ export const RoutingModal = ({ onClose }: any) => {
         setMobileEditMode,
         searchQuery,
         setSearchQuery,
+        balancerSearchQuery,
+        setBalancerSearchQuery,
         brokenRules,
         hasCriticalErrors,
         handleClose,
         filteredRules,
+        filteredBalancers,
         handleSelectRule,
         handleAddRule,
         handleDeleteRule,
@@ -184,15 +187,26 @@ export const RoutingModal = ({ onClose }: any) => {
                 ) : (
                     <>
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
-                            <div className="p-3 border-b border-slate-800 flex justify-between bg-slate-900/50 items-center">
-                                <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
-                                <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddBalancer} />
+                            <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
+                                    <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddBalancer} />
+                                </div>
+                                <div className="relative">
+                                    <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
+                                    <input
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500 transition-colors"
+                                        placeholder="Search by tag, strategy, target..."
+                                        value={balancerSearchQuery}
+                                        onChange={e => setBalancerSearchQuery(e.target.value)}
+                                    />
+                                </div>
                             </div>
                             <BalancerList
-                                balancers={balancers}
+                                balancers={filteredBalancers}
                                 activeIndex={activeBalancerIdx}
-                                onSelect={(idx: number) => { setActiveBalancerIdx(idx); setMobileEditMode(true); }}
-                                onDelete={handleDeleteBalancer}
+                                onSelect={(idx: number) => { setActiveBalancerIdx(filteredBalancers[idx].originalIndex); setMobileEditMode(true); }}
+                                onDelete={(idx: number) => handleDeleteBalancer(filteredBalancers[idx].originalIndex)}
                             />
                         </div>
 

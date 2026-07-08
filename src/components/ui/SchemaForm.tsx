@@ -168,7 +168,6 @@ export const SchemaForm = ({
     const getColSpanClass = (key: string, zodType: z.ZodTypeAny) => {
         const details = getSchemaTypeAndDetails(zodType);
         if (
-            details.type === 'array' ||
             key.toLowerCase().includes('path') ||
             key.toLowerCase().includes('cert')
         ) {
@@ -177,36 +176,70 @@ export const SchemaForm = ({
         return '';
     };
 
+    const toggleKeys = keys.filter(key => getSchemaTypeAndDetails(shape[key]).type === 'boolean');
+    const otherKeys = keys.filter(key => getSchemaTypeAndDetails(shape[key]).type !== 'boolean');
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
-            {keys.map(key => {
-                const fieldSchema = shape[key];
-                const customConfig = fieldConfigs[key] || {};
-                const standardConfig = STANDARD_FIELD_CONFIGS[key] || {};
-                
-                const label = customConfig.label ?? standardConfig.label;
-                const help = customConfig.help ?? standardConfig.help ?? (fieldSchema._def?.description);
-                const placeholder = customConfig.placeholder ?? standardConfig.placeholder;
-                const options = customConfig.options ?? standardConfig.options;
+        <div className="space-y-4 animate-in fade-in duration-200">
+            {toggleKeys.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800/50">
+                    {toggleKeys.map(key => {
+                        const fieldSchema = shape[key];
+                        const customConfig = fieldConfigs[key] || {};
+                        const standardConfig = STANDARD_FIELD_CONFIGS[key] || {};
+                        
+                        const label = customConfig.label ?? standardConfig.label;
+                        const help = customConfig.help ?? standardConfig.help ?? (fieldSchema._def?.description);
 
-                const colSpanClass = getColSpanClass(key, fieldSchema);
+                        return (
+                            <div key={key} className="flex items-center">
+                                <SchemaField
+                                    name={key}
+                                    schema={fieldSchema}
+                                    value={value[key]}
+                                    onChange={val => handleFieldChange(key, val)}
+                                    error={errors[key]}
+                                    label={label}
+                                    help={help}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
-                return (
-                    <div key={key} className={colSpanClass}>
-                        <SchemaField
-                            name={key}
-                            schema={fieldSchema}
-                            value={value[key]}
-                            onChange={val => handleFieldChange(key, val)}
-                            error={errors[key]}
-                            label={label}
-                            help={help}
-                            placeholder={placeholder}
-                            options={options}
-                        />
-                    </div>
-                );
-            })}
+            {otherKeys.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {otherKeys.map(key => {
+                        const fieldSchema = shape[key];
+                        const customConfig = fieldConfigs[key] || {};
+                        const standardConfig = STANDARD_FIELD_CONFIGS[key] || {};
+                        
+                        const label = customConfig.label ?? standardConfig.label;
+                        const help = customConfig.help ?? standardConfig.help ?? (fieldSchema._def?.description);
+                        const placeholder = customConfig.placeholder ?? standardConfig.placeholder;
+                        const options = customConfig.options ?? standardConfig.options;
+
+                        const colSpanClass = getColSpanClass(key, fieldSchema);
+
+                        return (
+                            <div key={key} className={colSpanClass}>
+                                <SchemaField
+                                    name={key}
+                                    schema={fieldSchema}
+                                    value={value[key]}
+                                    onChange={val => handleFieldChange(key, val)}
+                                    error={errors[key]}
+                                    label={label}
+                                    help={help}
+                                    placeholder={placeholder}
+                                    options={options}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

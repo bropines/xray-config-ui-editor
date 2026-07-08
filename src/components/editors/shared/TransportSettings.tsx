@@ -10,6 +10,7 @@ import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 import { FinalmaskEditor } from './FinalmaskEditor';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
+import { NumberInput } from '../../ui/NumberInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
 import { SchemaForm } from '../../ui/SchemaForm';
 
@@ -147,17 +148,22 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {/* TCP (RAW) */}
             {net === 'tcp' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
-                    <div className="col-span-full flex items-center justify-between gap-2">
+                <div className="space-y-4 border-t border-slate-800/50 pt-4 animate-in fade-in">
+                    <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-slate-400">TCP (RAW) Settings</span>
-                        {!isClient && (
+                    </div>
+
+                    {!isClient && (
+                        <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
                             <Switch
                                 checked={streamSettings.tcpSettings?.acceptProxyProtocol || false}
                                 onChange={checked => update(['tcpSettings', 'acceptProxyProtocol'], checked)}
                                 label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>}
                             />
-                        )}
-                    </div>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select 
                             label="Header Type (Obfuscation)"
                             value={streamSettings.tcpSettings?.header?.type || "none"}
@@ -168,19 +174,20 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             ]}
                         />
 
-                    {streamSettings.tcpSettings?.header?.type === 'http' && (
-                        <div className="md:col-span-2 space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
-                            <label className="label-xs text-yellow-500">HTTP Request (Legacy Obfuscation)</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <input className="input-base text-xs font-mono" placeholder="Path (e.g. /)"
-                                    value={streamSettings.tcpSettings?.header?.request?.path?.[0] || "/"}
-                                    onChange={e => update(['tcpSettings', 'header', 'request', 'path'], [e.target.value])} />
-                                <input className="input-base text-xs font-mono" placeholder="Host (e.g. bing.com)"
-                                    value={streamSettings.tcpSettings?.header?.request?.headers?.Host?.[0] || ""}
-                                    onChange={e => update(['tcpSettings', 'header', 'request', 'headers', 'Host'], [e.target.value])} />
+                        {streamSettings.tcpSettings?.header?.type === 'http' && (
+                            <div className="col-span-full space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
+                                <label className="label-xs text-yellow-500">HTTP Request (Legacy Obfuscation)</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input className="input-base text-xs font-mono" placeholder="Path (e.g. /)"
+                                        value={streamSettings.tcpSettings?.header?.request?.path?.[0] || "/"}
+                                        onChange={e => update(['tcpSettings', 'header', 'request', 'path'], [e.target.value])} />
+                                    <input className="input-base text-xs font-mono" placeholder="Host (e.g. bing.com)"
+                                        value={streamSettings.tcpSettings?.header?.request?.headers?.Host?.[0] || ""}
+                                        onChange={e => update(['tcpSettings', 'header', 'request', 'headers', 'Host'], [e.target.value])} />
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -199,56 +206,108 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             )}
 
             {net === 'ws' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
-                    <div className="col-span-full flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-indigo-400">WebSocket</span>
-                        {!isClient && (
+                <div className="space-y-4 border-t border-slate-800/50 pt-4 animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-indigo-400">WebSocket Settings</span>
+                    </div>
+
+                    {!isClient && (
+                        <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
                             <Switch
                                 checked={streamSettings.wsSettings?.acceptProxyProtocol || false}
                                 onChange={checked => update(['wsSettings', 'acceptProxyProtocol'], checked)}
                                 label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>}
                             />
-                        )}
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label className="label-xs">Path</label><input className="input-base font-mono" value={streamSettings.wsSettings?.path || "/"} onChange={e => update(['wsSettings', 'path'], e.target.value)} /></div>
+                        <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="host.com" value={streamSettings.wsSettings?.headers?.Host || ""} onChange={e => update(['wsSettings', 'headers', 'Host'], e.target.value)} /></div>
+                        <div>
+                            <label className="label-xs">Heartbeat Period (s)</label>
+                            <NumberInput
+                                placeholder="10"
+                                value={streamSettings.wsSettings?.heartbeatPeriod}
+                                onChange={val => update(['wsSettings', 'heartbeatPeriod'], val)}
+                            />
+                        </div>
                     </div>
-                    <div><label className="label-xs">Path</label><input className="input-base font-mono" value={streamSettings.wsSettings?.path || "/"} onChange={e => update(['wsSettings', 'path'], e.target.value)} /></div>
-                    <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="host.com" value={streamSettings.wsSettings?.headers?.Host || ""} onChange={e => update(['wsSettings', 'headers', 'Host'], e.target.value)} /></div>
-                    <div><label className="label-xs">Heartbeat Period (s)</label><input className="input-base font-mono" type="number" placeholder="10" value={streamSettings.wsSettings?.heartbeatPeriod || ""} onChange={e => update(['wsSettings', 'heartbeatPeriod'], Number(e.target.value))} /></div>
                 </div>
             )}
 
             {net === 'grpc' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="col-span-full text-xs font-bold text-indigo-400">gRPC</div>
-                    <div className="md:col-span-2"><label className="label-xs">Service Name</label><input className="input-base font-mono" placeholder="GunService" value={streamSettings.grpcSettings?.serviceName || ""} onChange={e => update(['grpcSettings', 'serviceName'], e.target.value)} /></div>
-                    <div><label className="label-xs">Authority</label><input className="input-base font-mono" placeholder="grpc.example.com" value={streamSettings.grpcSettings?.authority || ""} onChange={e => update(['grpcSettings', 'authority'], e.target.value)} /></div>
+                <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-indigo-400">gRPC Settings</span>
+                    </div>
+
                     {isClient && (
-                        <>
-                            <div><label className="label-xs flex items-center">Multi Mode <Help>Experimental feature. Can improve performance by ~20%.</Help></label>
-                                <Switch
-                                    checked={streamSettings.grpcSettings?.multiMode || false}
-                                    onChange={checked => update(['grpcSettings', 'multiMode'], checked)}
-                                    label="Enable Multi Mode"
-                                />
-                            </div>
-                            <div><label className="label-xs">User Agent</label><input className="input-base font-mono" placeholder="custom user agent" value={streamSettings.grpcSettings?.user_agent || ""} onChange={e => update(['grpcSettings', 'user_agent'], e.target.value)} /></div>
-                            <div><label className="label-xs">Idle Timeout (s)</label><input className="input-base font-mono" type="number" placeholder="60" value={streamSettings.grpcSettings?.idle_timeout || ""} onChange={e => update(['grpcSettings', 'idle_timeout'], Number(e.target.value))} /></div>
-                            <div><label className="label-xs">Health Check Timeout (s)</label><input className="input-base font-mono" type="number" placeholder="20" value={streamSettings.grpcSettings?.health_check_timeout || ""} onChange={e => update(['grpcSettings', 'health_check_timeout'], Number(e.target.value))} /></div>
-                            <div><label className="label-xs">Initial Windows Size</label><input className="input-base font-mono" type="number" placeholder="0" value={streamSettings.grpcSettings?.initial_windows_size || ""} onChange={e => update(['grpcSettings', 'initial_windows_size'], Number(e.target.value))} /></div>
-                            <div><label className="label-xs">Permit Without Stream</label>
-                                <Switch
-                                    checked={streamSettings.grpcSettings?.permit_without_stream || false}
-                                    onChange={checked => update(['grpcSettings', 'permit_without_stream'], checked)}
-                                    label="Enable"
-                                />
-                            </div>
-                        </>
+                        <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Switch
+                                checked={streamSettings.grpcSettings?.multiMode || false}
+                                onChange={checked => update(['grpcSettings', 'multiMode'], checked)}
+                                label="Enable Multi Mode"
+                            />
+                            <Switch
+                                checked={streamSettings.grpcSettings?.permit_without_stream || false}
+                                onChange={checked => update(['grpcSettings', 'permit_without_stream'], checked)}
+                                label="Permit Without Stream"
+                            />
+                        </div>
                     )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="col-span-full"><label className="label-xs">Service Name</label><input className="input-base font-mono" placeholder="GunService" value={streamSettings.grpcSettings?.serviceName || ""} onChange={e => update(['grpcSettings', 'serviceName'], e.target.value)} /></div>
+                        <div><label className="label-xs">Authority</label><input className="input-base font-mono" placeholder="grpc.example.com" value={streamSettings.grpcSettings?.authority || ""} onChange={e => update(['grpcSettings', 'authority'], e.target.value)} /></div>
+                        {isClient && (
+                            <>
+                                <div><label className="label-xs">User Agent</label><input className="input-base font-mono" placeholder="custom user agent" value={streamSettings.grpcSettings?.user_agent || ""} onChange={e => update(['grpcSettings', 'user_agent'], e.target.value)} /></div>
+                                <div>
+                                    <label className="label-xs">Idle Timeout (s)</label>
+                                    <NumberInput
+                                        placeholder="60"
+                                        value={streamSettings.grpcSettings?.idle_timeout}
+                                        onChange={val => update(['grpcSettings', 'idle_timeout'], val)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label-xs">Health Check Timeout (s)</label>
+                                    <NumberInput
+                                        placeholder="20"
+                                        value={streamSettings.grpcSettings?.health_check_timeout}
+                                        onChange={val => update(['grpcSettings', 'health_check_timeout'], val)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label-xs">Initial Windows Size</label>
+                                    <NumberInput
+                                        placeholder="0"
+                                        value={streamSettings.grpcSettings?.initial_windows_size}
+                                        onChange={val => update(['grpcSettings', 'initial_windows_size'], val)}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
             {net === 'kcp' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="col-span-full text-xs font-bold text-indigo-400">mKCP</div>
+                <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-indigo-400">mKCP Settings</span>
+                    </div>
+
+                    <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
+                        <Switch
+                            checked={streamSettings.kcpSettings?.congestion || false}
+                            onChange={checked => update(['kcpSettings', 'congestion'], checked)}
+                            label="Enable Congestion Control"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select 
                             label="Header Type"
                             value={streamSettings.kcpSettings?.header?.type || "none"}
@@ -262,26 +321,66 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                 { value: "wireguard", label: "WireGuard", description: "WireGuard simulation" },
                             ]}
                         />
-                    <div><label className="label-xs">Seed</label><input className="input-base font-mono" placeholder="password" value={streamSettings.kcpSettings?.seed || ""} onChange={e => update(['kcpSettings', 'seed'], e.target.value)} /></div>
-                    <div><label className="label-xs">MTU</label><input className="input-base font-mono" type="number" placeholder="1350" value={streamSettings.kcpSettings?.mtu || ""} onChange={e => update(['kcpSettings', 'mtu'], Number(e.target.value))} /></div>
-                    <div><label className="label-xs">TTI (ms)</label><input className="input-base font-mono" type="number" placeholder="50" value={streamSettings.kcpSettings?.tti || ""} onChange={e => update(['kcpSettings', 'tti'], Number(e.target.value))} /></div>
-                    <div><label className="label-xs">Uplink Capacity (MB/s)</label><input className="input-base font-mono" type="number" placeholder="5" value={streamSettings.kcpSettings?.uplinkCapacity || ""} onChange={e => update(['kcpSettings', 'uplinkCapacity'], Number(e.target.value))} /></div>
-                    <div><label className="label-xs">Downlink Capacity (MB/s)</label><input className="input-base font-mono" type="number" placeholder="20" value={streamSettings.kcpSettings?.downlinkCapacity || ""} onChange={e => update(['kcpSettings', 'downlinkCapacity'], Number(e.target.value))} /></div>
-                    <div><label className="label-xs">Read Buffer Size (MB)</label><input className="input-base font-mono" type="number" placeholder="2" value={streamSettings.kcpSettings?.readBufferSize || ""} onChange={e => update(['kcpSettings', 'readBufferSize'], Number(e.target.value))} /></div>
-                    <div><label className="label-xs">Write Buffer Size (MB)</label><input className="input-base font-mono" type="number" placeholder="2" value={streamSettings.kcpSettings?.writeBufferSize || ""} onChange={e => update(['kcpSettings', 'writeBufferSize'], Number(e.target.value))} /></div>
-                    <div className="md:col-span-2">
-                        <Switch
-                            checked={streamSettings.kcpSettings?.congestion || false}
-                            onChange={checked => update(['kcpSettings', 'congestion'], checked)}
-                            label="Enable Congestion Control"
-                        />
+                        <div><label className="label-xs">Seed</label><input className="input-base font-mono" placeholder="password" value={streamSettings.kcpSettings?.seed || ""} onChange={e => update(['kcpSettings', 'seed'], e.target.value)} /></div>
+                        <div>
+                            <label className="label-xs">MTU</label>
+                            <NumberInput
+                                placeholder="1350"
+                                value={streamSettings.kcpSettings?.mtu}
+                                onChange={val => update(['kcpSettings', 'mtu'], val)}
+                            />
+                        </div>
+                        <div>
+                            <label className="label-xs">TTI (ms)</label>
+                            <NumberInput
+                                placeholder="50"
+                                value={streamSettings.kcpSettings?.tti}
+                                onChange={val => update(['kcpSettings', 'tti'], val)}
+                            />
+                        </div>
+                        <div>
+                            <label className="label-xs">Uplink Capacity (MB/s)</label>
+                            <NumberInput
+                                placeholder="5"
+                                value={streamSettings.kcpSettings?.uplinkCapacity}
+                                onChange={val => update(['kcpSettings', 'uplinkCapacity'], val)}
+                            />
+                        </div>
+                        <div>
+                            <label className="label-xs">Downlink Capacity (MB/s)</label>
+                            <NumberInput
+                                placeholder="20"
+                                value={streamSettings.kcpSettings?.downlinkCapacity}
+                                onChange={val => update(['kcpSettings', 'downlinkCapacity'], val)}
+                            />
+                        </div>
+                        <div>
+                            <label className="label-xs">Read Buffer Size (MB)</label>
+                            <NumberInput
+                                placeholder="2"
+                                value={streamSettings.kcpSettings?.readBufferSize}
+                                onChange={val => update(['kcpSettings', 'readBufferSize'], val)}
+                            />
+                        </div>
+                        <div>
+                            <label className="label-xs">Write Buffer Size (MB)</label>
+                            <NumberInput
+                                placeholder="2"
+                                value={streamSettings.kcpSettings?.writeBufferSize}
+                                onChange={val => update(['kcpSettings', 'writeBufferSize'], val)}
+                            />
+                        </div>
                     </div>
                 </div>
             )}
 
             {net === 'quic' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="col-span-full text-xs font-bold text-indigo-400">QUIC</div>
+                <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-indigo-400">QUIC Settings</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select 
                             label="Security"
                             value={streamSettings.quicSettings?.security || "none"}
@@ -305,7 +404,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                 { value: "wireguard", label: "WireGuard" },
                             ]}
                         />
-                    <div className="md:col-span-2"><label className="label-xs">Key</label><input className="input-base font-mono" placeholder="key" value={streamSettings.quicSettings?.key || ""} onChange={e => update(['quicSettings', 'key'], e.target.value)} /></div>
+                        <div className="col-span-full"><label className="label-xs">Key</label><input className="input-base font-mono" placeholder="key" value={streamSettings.quicSettings?.key || ""} onChange={e => update(['quicSettings', 'key'], e.target.value)} /></div>
+                    </div>
                 </div>
             )}
 
@@ -319,29 +419,13 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             REALITY Keys
                             <Help>Reality: A TLS extension for mimicking popular websites to bypass firewalls.</Help>
                         </span>
-                        <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={handleGenKeys}>Gen Keys Pair</Button>
                     </div>
 
-                    {!isClient && tempPublicKey && (
-                        <div className="bg-emerald-900/20 border border-emerald-500/50 p-3 rounded-lg">
-                            <label className="label-xs text-emerald-400">Generated Public Key</label>
-                            <div className="flex gap-2">
-                                <code className="flex-1 bg-black/30 p-2 rounded text-xs font-mono break-all text-emerald-200">{tempPublicKey}</code>
-                                <Button variant="ghost" size="sm" icon="Copy" onClick={() => navigator.clipboard.writeText(tempPublicKey)} />
-                            </div>
+                    {isClient && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>Gen SpiderX Path</Button>
                         </div>
                     )}
-
-                    <div className="flex flex-wrap gap-2 mb-2">
-                        {isClient ? (
-                            <>
-                                <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'shortId'], generateRealityShortIds(1)[0])}>Gen Short ID</Button>
-                                <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>Gen SpiderX Path</Button>
-                            </>
-                        ) : (
-                            <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'shortIds'], generateRealityShortIds(3))}>Gen Short IDs List</Button>
-                        )}
-                    </div>
 
                     <SchemaForm
                         schema={RealitySchema}

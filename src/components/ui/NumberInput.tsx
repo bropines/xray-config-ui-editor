@@ -1,69 +1,76 @@
 import React from 'react';
+import { Icon } from './Icon';
 
-export interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'value'> {
-    value: number | string;
-    onChange: (value: number) => void;
-    label?: string;
-    error?: string;
-    hint?: string;
+interface NumberInputProps {
+    value: number | undefined | '';
+    onChange: (val: number | undefined) => void;
+    placeholder?: string;
+    className?: string;
     min?: number;
     max?: number;
-    step?: number;
-    suffix?: string;
 }
 
-export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
-    ({ value, onChange, label, error, hint, min, max, step = 1, suffix, className = '', id, ...rest }, ref) => {
-        const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
-        const border = error
-            ? 'border-rose-500/70 focus:border-rose-500 focus:ring-rose-500/30'
-            : 'border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/30';
+export const NumberInput = ({
+    value,
+    onChange,
+    placeholder,
+    className = '',
+    min,
+    max
+}: NumberInputProps) => {
+    const handleIncrement = () => {
+        const currentVal = value !== undefined && value !== '' ? Number(value) : 0;
+        const newVal = currentVal + 1;
+        if (max !== undefined && newVal > max) return;
+        onChange(newVal);
+    };
 
-        return (
-            <div className="flex flex-col gap-1.5">
-                {label && (
-                    <label
-                        htmlFor={inputId}
-                        className="text-[10px] uppercase text-slate-500 font-bold tracking-widest"
-                    >
-                        {label}
-                    </label>
-                )}
-                <div className="relative">
-                    <input
-                        ref={ref}
-                        id={inputId}
-                        type="number"
-                        value={value}
-                        min={min}
-                        max={max}
-                        step={step}
-                        onChange={(e) => onChange(Number(e.target.value))}
-                        className={`
-                            w-full bg-slate-950 border rounded-lg outline-none
-                            text-white py-2 text-sm font-mono
-                            focus:ring-1 transition-all
-                            ${suffix ? 'pl-3 pr-12' : 'px-3'}
-                            ${border}
-                            ${className}
-                        `}
-                        {...rest}
-                    />
-                    {suffix && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono pointer-events-none">
-                            {suffix}
-                        </span>
-                    )}
-                </div>
-                {error && (
-                    <span className="text-[10px] text-rose-500 font-bold animate-in fade-in">
-                        {error}
-                    </span>
-                )}
-                {hint && !error && <span className="text-[10px] text-slate-600">{hint}</span>}
+    const handleDecrement = () => {
+        const currentVal = value !== undefined && value !== '' ? Number(value) : 0;
+        const newVal = currentVal - 1;
+        if (min !== undefined && newVal < min) return;
+        onChange(newVal);
+    };
+
+    const displayValue = value !== undefined && value !== null ? value : '';
+
+    return (
+        <div className={`relative flex items-center w-full ${className}`}>
+            <input
+                type="number"
+                className="input-base pr-12 font-mono"
+                placeholder={placeholder}
+                value={displayValue}
+                min={min}
+                max={max}
+                onChange={e => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                        onChange(undefined);
+                    } else {
+                        const parsed = Number(raw);
+                        if (!isNaN(parsed)) {
+                            onChange(parsed);
+                        }
+                    }
+                }}
+            />
+            <div className="absolute right-1 flex flex-col h-[34px] justify-between border-l border-slate-800/80 pl-2 pr-1.5 select-none">
+                <button
+                    type="button"
+                    onClick={handleIncrement}
+                    className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[14px]"
+                >
+                    <Icon name="CaretUp" weight="bold" className="text-[10px]" />
+                </button>
+                <button
+                    type="button"
+                    onClick={handleDecrement}
+                    className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[14px]"
+                >
+                    <Icon name="CaretDown" weight="bold" className="text-[10px]" />
+                </button>
             </div>
-        );
-    },
-);
-
-NumberInput.displayName = 'NumberInput';
+        </div>
+    );
+};

@@ -18,6 +18,7 @@ export const useRoutingEditor = (onClose: () => void) => {
     const [rawMode, setRawMode] = useState(false);
     const [mobileEditMode, setMobileEditMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [balancerSearchQuery, setBalancerSearchQuery] = useState("");
 
     const brokenRules = useMemo(() => rules
         .map((r: any, i: number) => ({
@@ -62,6 +63,18 @@ export const useRoutingEditor = (onClose: () => void) => {
                 rule.protocol?.some((p: string) => p.toLowerCase().includes(q))
             );
         }), [rules, searchQuery]);
+
+    const filteredBalancers = useMemo(() => balancers
+        .map((b: any, originalIndex: number) => ({ ...b, originalIndex }))
+        .filter((balancer: any) => {
+            const q = balancerSearchQuery.toLowerCase();
+            if (!q) return true;
+            return (
+                balancer.tag?.toLowerCase().includes(q) ||
+                balancer.strategy?.type?.toLowerCase().includes(q) ||
+                balancer.selector?.some((s: string) => s.toLowerCase().includes(q))
+            );
+        }), [balancers, balancerSearchQuery]);
 
     const handleAddRule = useCallback(() => {
         const newRule = createDefaultRoutingRule();
@@ -127,10 +140,13 @@ export const useRoutingEditor = (onClose: () => void) => {
         setMobileEditMode,
         searchQuery,
         setSearchQuery,
+        balancerSearchQuery,
+        setBalancerSearchQuery,
         brokenRules,
         hasCriticalErrors,
         handleClose,
         filteredRules,
+        filteredBalancers,
         handleSelectRule,
         handleAddRule,
         handleDeleteRule,

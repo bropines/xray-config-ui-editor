@@ -99,15 +99,18 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }) 
 
             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={rules.map((_, i) => `rule-${i}`)} strategy={verticalListSortingStrategy}>
-                    {rules.map((rule, i) => (
-                        <SortableRuleItem
-                            key={`rule-${i}`} id={`rule-${i}`}
-                            rule={rule}
-                            isActive={activeIndex === i}
-                            onClick={() => onSelect(i)}
-                            onDelete={() => onDelete(i)}
-                        />
-                    ))}
+                    {rules.map((rule, i) => {
+                        const isActive = rule.originalIndex !== undefined ? rule.originalIndex === activeIndex : activeIndex === i;
+                        return (
+                            <SortableRuleItem
+                                key={`rule-${i}`} id={`rule-${i}`}
+                                rule={rule}
+                                isActive={isActive}
+                                onClick={() => onSelect(i)}
+                                onDelete={() => onDelete(i)}
+                            />
+                        );
+                    })}
                 </SortableContext>
             </DndContext>
         </div>

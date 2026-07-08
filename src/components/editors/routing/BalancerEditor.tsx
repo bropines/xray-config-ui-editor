@@ -6,6 +6,7 @@ import { BalancerSchema, StrategySettingsSchema } from '../../../core/xray/schem
 export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: any) => {
     // Локальный стейт для инпута, чтобы делать подсветку "на лету"
     const [inputValue, setInputValue] = useState("");
+    const [outboundSearch, setOutboundSearch] = useState("");
 
     if (!balancer) {
         return (
@@ -73,6 +74,10 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
         }
     };
 
+    const filteredOutbounds = outboundTags.filter((tag: string) =>
+        tag.toLowerCase().includes(outboundSearch.toLowerCase())
+    );
+
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
             
@@ -134,17 +139,37 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
             </div>
 
             <div className={`bg-slate-900/50 p-4 rounded-xl border ${selectorError ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
-                <div className="flex justify-between items-end mb-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
                     <div>
                         <label className={`label-xs block ${selectorError ? 'text-rose-400' : ''}`}>Target Outbounds</label>
                         <span className="text-[10px] text-slate-500">
                             Purple = Active. <span className="text-amber-400">Amber = Preview (Matches current input)</span>.
                         </span>
                     </div>
+                    {outboundTags.length > 4 && (
+                        <div className="relative w-full md:w-48 shrink-0">
+                            <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
+                            <input
+                                className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-6 py-1 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
+                                placeholder="Search outbounds..."
+                                value={outboundSearch}
+                                onChange={e => setOutboundSearch(e.target.value)}
+                            />
+                            {outboundSearch && (
+                                <button
+                                    type="button"
+                                    onClick={() => setOutboundSearch("")}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs font-mono"
+                                >
+                                    ×
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
                 
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto custom-scroll">
-                    {outboundTags.map((tag: string) => {
+                    {filteredOutbounds.map((tag: string) => {
                         const { exact, prefixMatch, pendingMatch } = checkMatch(tag);
                         
                         // Определяем стиль на основе состояния
@@ -170,6 +195,11 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                             </div>
                         )
                     })}
+                    {filteredOutbounds.length === 0 && (
+                        <div className="col-span-full py-4 text-center text-xs text-slate-500 italic">
+                            No outbounds match your search query
+                        </div>
+                    )}
                 </div>
                 
                 <div className="mt-4 pt-4 border-t border-slate-800">

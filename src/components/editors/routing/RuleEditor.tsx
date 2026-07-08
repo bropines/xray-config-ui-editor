@@ -246,6 +246,7 @@ export const RuleEditor = ({
                             invalidTags={invalidIPs}
                             warnTags={warnIPs}
                             onTagClick={setViewTag}
+                            allowedPattern={/[^0-9a-zA-Z./:, ]/g}
                         />
                     </div>
                 </div>

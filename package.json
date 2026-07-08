@@ -21,7 +21,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "bun test"
+    "test": "bun test",
+    "schema:generate": "node scripts/generate-xray-schema.cjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
@@ -37,6 +38,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@phosphor-icons/react": "^2.1.10",
+    "@platformos/lang-jsonc": "^0.0.17",
     "@types/dagre": "^0.7.53",
     "@xyflow/react": "^12.10.0",
     "ajv": "^8.20.0",
