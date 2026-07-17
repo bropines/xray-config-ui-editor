@@ -6,7 +6,7 @@ import {
     isValidPort, 
     validateOutbound,
     validateFullConfig
-} from "./validator";
+} from "../core/validators";
 
 describe("Validator Basic Utils", () => {
     test("isValidIP", () => {
