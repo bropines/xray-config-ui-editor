@@ -113,16 +113,134 @@ export const parseWireguardConfig = (text: string, mode: 'direct' | 'chained' = 
     return outbound;
 };
 
+const decodeBase64Safe = (b64: string): string => {
+  try {
+    const cleaned = b64.trim().replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = atob(cleaned);
+    try {
+      return decodeURIComponent(escape(decoded));
+    } catch {
+      return decoded;
+    }
+  } catch (e) {
+    return "";
+  }
+};
+
 export const parseXrayLink = (link: string): any => {
   try {
-    const url = new URL(link);
+    const trimmed = link.trim();
+
+    // --- VMess (Base64 JSON format) ---
+    if (trimmed.startsWith('vmess://')) {
+      const base64Part = trimmed.substring(8).split('#')[0].trim();
+      const decoded = decodeBase64Safe(base64Part);
+      if (!decoded) return null;
+      const data = JSON.parse(decoded);
+
+      const tag = data.ps || `vmess-${Math.floor(Math.random() * 1000)}`;
+      const outbound: any = {
+        tag: tag,
+        protocol: "vmess",
+        settings: {
+          vnext: [{
+            address: data.add,
+            port: parseInt(data.port) || 443,
+            users: [{
+              id: data.id,
+              alterId: parseInt(data.aid) || 0,
+              security: data.scy || "auto",
+              level: 0
+            }]
+          }]
+        },
+        streamSettings: {
+          network: data.net || "tcp",
+          security: data.tls || "none"
+        }
+      };
+
+      const network = outbound.streamSettings.network;
+      const security = outbound.streamSettings.security;
+
+      if (security === 'tls' || security === 'reality') {
+        const tlsSettings: any = {
+          serverName: data.sni || data.host || data.add,
+          fingerprint: data.fp || "chrome",
+          alpn: data.alpn ? data.alpn.split(',').map((s: string) => s.trim()) : undefined
+        };
+
+        if (security === 'reality') {
+          tlsSettings.publicKey = data.pbk || "";
+          tlsSettings.shortId = data.sid || "";
+          tlsSettings.spiderX = data.spx || data.path || "/";
+          outbound.streamSettings.realitySettings = tlsSettings;
+        } else {
+          outbound.streamSettings.tlsSettings = tlsSettings;
+        }
+      }
+
+      if (network === 'ws') {
+        outbound.streamSettings.wsSettings = {
+          path: data.path || "/",
+          headers: { Host: data.host || "" }
+        };
+      } else if (network === 'grpc') {
+        outbound.streamSettings.grpcSettings = {
+          serviceName: data.path || data.serviceName || ""
+        };
+      } else if (network === 'h2' || network === 'http') {
+        outbound.streamSettings.httpSettings = {
+          path: data.path || "/",
+          host: data.host ? data.host.split(',').map((s: string) => s.trim()) : []
+        };
+      } else if (network === 'xhttp' || network === 'splithttp') {
+        const settings = {
+          path: data.path || "/",
+          mode: data.mode || "auto",
+          host: data.host || ""
+        };
+        if (network === 'xhttp') outbound.streamSettings.xhttpSettings = settings;
+        else outbound.streamSettings.splithttpSettings = settings;
+      } else if (network === 'httpupgrade') {
+        outbound.streamSettings.httpUpgradeSettings = {
+          path: data.path || "/",
+          host: data.host || ""
+        };
+      } else if (network === 'kcp') {
+        outbound.streamSettings.kcpSettings = {
+          header: {
+            type: data.type || "none"
+          }
+        };
+      } else if (network === 'tcp' && data.type === 'http') {
+        outbound.streamSettings.tcpSettings = {
+          header: {
+            type: "http",
+            request: {
+              version: "1.1",
+              method: "GET",
+              path: [data.path || "/"],
+              headers: {
+                Host: data.host ? data.host.split(',').map((s: string) => s.trim()) : []
+              }
+            }
+          }
+        };
+      }
+
+      return outbound;
+    }
+
+    // --- URI-based protocols (VLESS, Shadowsocks, Trojan) ---
+    const url = new URL(trimmed);
     let protocol = url.protocol.replace(':', '');
     
     if (protocol === 'ss') {
         protocol = 'shadowsocks';
     }
 
-    const hashPart = link.includes('#') ? link.split('#')[1] : '';
+    const hashPart = trimmed.includes('#') ? trimmed.split('#')[1] : '';
     const tag = decodeURIComponent(hashPart);
     const query = Object.fromEntries(url.searchParams.entries());
 
@@ -172,7 +290,7 @@ export const parseXrayLink = (link: string): any => {
       let serverPort = 443;
 
       // 1. Try to parse as ss://BASE64(method:password@host:port)
-      const linkBody = link.split('://')[1].split('#')[0];
+      const linkBody = trimmed.split('://')[1].split('#')[0];
       
       try {
         // If it's a legacy all-in-one base64 link
@@ -269,10 +387,16 @@ export const parseXrayLink = (link: string): any => {
           headers: { Host: query.host || "" } 
       };
     }
-    if (network === 'grpc') {
-      baseOutbound.streamSettings.grpcSettings = { serviceName: query.serviceName || "" };
+    else if (network === 'grpc') {
+      baseOutbound.streamSettings.grpcSettings = { serviceName: query.serviceName || query.path || "" };
     }
-    if (network === 'xhttp' || network === 'splithttp') {
+    else if (network === 'h2' || network === 'http') {
+      baseOutbound.streamSettings.httpSettings = {
+        path: query.path || "/",
+        host: query.host ? query.host.split(',').map((s: string) => s.trim()) : []
+      };
+    }
+    else if (network === 'xhttp' || network === 'splithttp') {
       const settings = {
           path: query.path || "/",
           mode: query.mode || "auto",
@@ -280,6 +404,34 @@ export const parseXrayLink = (link: string): any => {
       };
       if (network === 'xhttp') baseOutbound.streamSettings.xhttpSettings = settings;
       else baseOutbound.streamSettings.splithttpSettings = settings;
+    }
+    else if (network === 'httpupgrade') {
+      baseOutbound.streamSettings.httpUpgradeSettings = {
+        path: query.path || "/",
+        host: query.host || ""
+      };
+    }
+    else if (network === 'kcp') {
+      baseOutbound.streamSettings.kcpSettings = {
+        header: {
+          type: query.headerType || query.type || "none"
+        }
+      };
+    }
+    else if (network === 'tcp' && (query.headerType === 'http' || query.type === 'http')) {
+      baseOutbound.streamSettings.tcpSettings = {
+        header: {
+          type: "http",
+          request: {
+            version: "1.1",
+            method: "GET",
+            path: [query.path || "/"],
+            headers: {
+              Host: query.host ? query.host.split(',').map((s: string) => s.trim()) : []
+            }
+          }
+        }
+      };
     }
 
     return baseOutbound;

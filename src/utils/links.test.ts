@@ -64,6 +64,35 @@ describe("Link Parser & Generator", () => {
         });
     });
 
+    describe("VMess parsing & generation", () => {
+        const vmessLink = "vmess://eyJhZGQiOiI4OS40Ni4zOC45MSIsImFpZCI6IjAiLCJhbHBuIjoiaDIsaHR0cC8xLjEiLCJmcCI6ImNocm9tZSIsImhvc3QiOiJnb29nbGUuY29tIiwiaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJuZXQiOiJ3cyIsInBhdGgiOiIvY2hhdCIsInBzIjoiVk1lc3MtU2VydmVyIiwicG9ydCI6IjQ0MyIsInNjeSI6ImF1dG8iLCJzbmkiOiJnb29nbGUuY29tIiwidGxzIjoidGxzIiwidiI6IjIifQ==";
+
+        test("should parse VMess link correctly", () => {
+            const parsed = parseXrayLink(vmessLink);
+            expect(parsed).not.toBeNull();
+            expect(parsed.protocol).toBe("vmess");
+            expect(parsed.tag).toBe("VMess-Server");
+            expect(parsed.settings.vnext[0].address).toBe("89.46.38.91");
+            expect(parsed.settings.vnext[0].port).toBe(443);
+            expect(parsed.settings.vnext[0].users[0].id).toBe("00000000-0000-0000-0000-000000000000");
+            expect(parsed.streamSettings.security).toBe("tls");
+            expect(parsed.streamSettings.network).toBe("ws");
+            expect(parsed.streamSettings.wsSettings.path).toBe("/chat");
+            expect(parsed.streamSettings.wsSettings.headers.Host).toBe("google.com");
+        });
+
+        test("should generate VMess link from object", () => {
+            const obj = parseXrayLink(vmessLink);
+            const generated = generateXrayLink(obj);
+            expect(generated).toContain("vmess://");
+            // Decode and check fields
+            const b64 = generated.substring(8);
+            const decoded = JSON.parse(atob(b64));
+            expect(decoded.add).toBe("89.46.38.91");
+            expect(decoded.ps).toBe("VMess-Server");
+        });
+    });
+
     describe("WireGuard / AmneziaWG parser", () => {
         const wgConfig = `
 [Interface]
