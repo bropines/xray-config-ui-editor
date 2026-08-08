@@ -188,21 +188,56 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                 <div className="space-y-4">
                     <FormField
                         label="History Depth (Max Snapshots)"
-                        help="Number of rollback snapshots saved locally in browser memory (Range: 10 - 50)."
+                        help="Number of rollback snapshots saved locally in browser memory (10 – 1000)."
                     >
-                        <div className="flex items-center gap-4">
-                            <input
-                                type="range"
-                                min={10}
-                                max={50}
-                                step={5}
-                                value={historyLimit}
-                                onChange={e => setHistoryLimit(Number(e.target.value))}
-                                className="flex-1 accent-indigo-500 cursor-pointer"
-                            />
-                            <span className="text-xs font-mono font-bold text-indigo-400 bg-indigo-950 px-3 py-1 rounded border border-indigo-800/50">
-                                {historyLimit} saves
-                            </span>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-4">
+                                <input
+                                    type="range"
+                                    min={10}
+                                    max={1000}
+                                    step={10}
+                                    value={historyLimit}
+                                    onChange={e => setHistoryLimit(Number(e.target.value))}
+                                    className="flex-1 accent-indigo-500 cursor-pointer"
+                                />
+                                <input
+                                    type="number"
+                                    min={10}
+                                    max={1000}
+                                    step={10}
+                                    value={historyLimit}
+                                    onChange={e => {
+                                        const v = Math.max(10, Math.min(1000, Number(e.target.value)));
+                                        setHistoryLimit(v);
+                                    }}
+                                    className="w-20 bg-slate-950 border border-indigo-800/50 text-indigo-400 font-mono font-bold text-xs rounded px-2 py-1 outline-none focus:border-indigo-500 text-center"
+                                />
+                            </div>
+                            {/* Quick-select presets */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] text-slate-500 font-bold mr-1">Quick:</span>
+                                {[25, 50, 100, 250, 500, 1000].map(preset => (
+                                    <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() => setHistoryLimit(preset)}
+                                        className={`px-2 py-0.5 text-[10px] font-bold rounded border transition-colors ${
+                                            historyLimit === preset
+                                                ? 'bg-indigo-600 border-indigo-500 text-white'
+                                                : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-indigo-500 hover:text-indigo-300'
+                                        }`}
+                                    >
+                                        {preset}
+                                    </button>
+                                ))}
+                            </div>
+                            {historyLimit > 100 && (
+                                <p className="text-[10px] text-amber-400/80 flex items-center gap-1">
+                                    <Icon name="Warning" className="text-amber-400 shrink-0" />
+                                    Large history (≥100 snapshots) may use significant browser memory.
+                                </p>
+                            )}
                         </div>
                     </FormField>
 

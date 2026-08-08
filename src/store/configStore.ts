@@ -238,7 +238,7 @@ export const useConfigStore = create(
             activeProfileId: 'default',
             baselineConfigJson: null,
             history: [],
-            historyLimit: 25,
+            historyLimit: 50,
             autoSave: true,
 
             recordSnapshot: (label = "Config Edit") => {
@@ -256,7 +256,7 @@ export const useConfigStore = create(
                     summary,
                     config: JSON.parse(JSON.stringify(config))
                 };
-                const limit = Math.max(10, Math.min(50, historyLimit));
+                const limit = Math.max(10, Math.min(1000, historyLimit));
                 const newHistory = [snapshot, ...history].slice(0, limit);
                 set({ history: newHistory });
             },
