@@ -63,42 +63,43 @@ export const RuleEditor = ({
     // Стейт для просмотра деталей тега по клику
     const [viewTag, setViewTag] = useState<string | null>(null);
 
-    // Calculate shadowed duplicate matchers in earlier rules with jump links
+    // Calculate duplicate matchers across all rules (flagging all conflicting rules)
     const duplicateWarnings = React.useMemo(() => {
         if (!allRules || !rule) return [];
         const currentIdx = rule.originalIndex !== undefined ? rule.originalIndex : allRules.findIndex((r: any) => r === rule);
-        if (currentIdx <= 0) return [];
+        if (currentIdx < 0) return [];
 
-        const itemWarnings: Array<{ matcher: string; prevRuleName: string; prevIndex: number }> = [];
-        const seenDomains = new Map<string, { index: number; name: string }>();
-        const seenIPs = new Map<string, { index: number; name: string }>();
+        const itemWarnings: Array<{ matcher: string; otherRuleName: string; otherIndex: number }> = [];
+        const domainToRules = new Map<string, Array<{ index: number; name: string }>>();
+        const ipToRules = new Map<string, Array<{ index: number; name: string }>>();
 
-        for (let i = 0; i < currentIdx; i++) {
-            const r = allRules[i];
+        allRules.forEach((r: any, i: number) => {
             const rName = r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`;
             if (Array.isArray(r.domain)) {
-                r.domain.forEach((d: string) => d && typeof d === 'string' && seenDomains.set(d.trim().toLowerCase(), { index: i, name: rName }));
+                r.domain.forEach((d: string) => d && typeof d === 'string' && (domainToRules.has(d.trim().toLowerCase()) ? domainToRules.get(d.trim().toLowerCase())!.push({ index: i, name: rName }) : domainToRules.set(d.trim().toLowerCase(), [{ index: i, name: rName }])));
             }
             if (Array.isArray(r.ip)) {
-                r.ip.forEach((ip: string) => ip && typeof ip === 'string' && seenIPs.set(ip.trim().toLowerCase(), { index: i, name: rName }));
+                r.ip.forEach((ip: string) => ip && typeof ip === 'string' && (ipToRules.has(ip.trim().toLowerCase()) ? ipToRules.get(ip.trim().toLowerCase())!.push({ index: i, name: rName }) : ipToRules.set(ip.trim().toLowerCase(), [{ index: i, name: rName }])));
             }
-        }
+        });
 
         if (Array.isArray(rule.domain)) {
             rule.domain.forEach((d: string) => {
-                if (d && typeof d === 'string' && seenDomains.has(d.trim().toLowerCase())) {
-                    const prev = seenDomains.get(d.trim().toLowerCase())!;
-                    itemWarnings.push({ matcher: d, prevRuleName: prev.name, prevIndex: prev.index });
-                }
+                if (!d || typeof d !== 'string') return;
+                const matches = domainToRules.get(d.trim().toLowerCase()) || [];
+                matches.filter(m => m.index !== currentIdx).forEach(m => {
+                    itemWarnings.push({ matcher: d, otherRuleName: m.name, otherIndex: m.index });
+                });
             });
         }
 
         if (Array.isArray(rule.ip)) {
             rule.ip.forEach((ip: string) => {
-                if (ip && typeof ip === 'string' && seenIPs.has(ip.trim().toLowerCase())) {
-                    const prev = seenIPs.get(ip.trim().toLowerCase())!;
-                    itemWarnings.push({ matcher: ip, prevRuleName: prev.name, prevIndex: prev.index });
-                }
+                if (!ip || typeof ip !== 'string') return;
+                const matches = ipToRules.get(ip.trim().toLowerCase()) || [];
+                matches.filter(m => m.index !== currentIdx).forEach(m => {
+                    itemWarnings.push({ matcher: ip, otherRuleName: m.name, otherIndex: m.index });
+                });
             });
         }
 
@@ -182,22 +183,22 @@ export const RuleEditor = ({
                     <Icon name="Warning" weight="fill" className="text-amber-400 text-lg shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0 space-y-1.5">
                         <p className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">
-                            Shadowed Duplicate Matchers ({duplicateWarnings.length})
+                            Conflicting Duplicate Matchers ({duplicateWarnings.length})
                         </p>
                         <ul className="space-y-1.5 text-[11px] text-amber-200/80">
                             {duplicateWarnings.map((warn, i) => (
                                 <li key={i} className="flex flex-wrap items-center justify-between gap-1 bg-amber-900/20 p-1.5 px-2 rounded-lg border border-amber-500/20">
                                     <span>
-                                        <b>"{warn.matcher}"</b> is already matched in <b>{warn.prevRuleName}</b> (Rule #{warn.prevIndex + 1})
+                                        <b>"{warn.matcher}"</b> is also used in <b>{warn.otherRuleName}</b> (Rule #{warn.otherIndex + 1})
                                     </span>
                                     {onSelectRule && (
                                         <button
                                             type="button"
-                                            onClick={() => onSelectRule(warn.prevIndex)}
+                                            onClick={() => onSelectRule(warn.otherIndex)}
                                             className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-200 hover:text-white bg-amber-800/60 hover:bg-amber-700/80 border border-amber-500/40 rounded px-2 py-0.5 transition-all shadow-sm"
-                                            title={`Jump to Rule #${warn.prevIndex + 1}`}
+                                            title={`Jump to Rule #${warn.otherIndex + 1}`}
                                         >
-                                            Jump to Rule #{warn.prevIndex + 1} <Icon name="ArrowRight" className="text-[9px]" />
+                                            View Rule #{warn.otherIndex + 1} <Icon name="ArrowRight" className="text-[9px]" />
                                         </button>
                                     )}
                                 </li>

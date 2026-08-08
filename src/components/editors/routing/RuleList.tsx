@@ -87,26 +87,21 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete, warnings = []
 export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }: any) => {
     const brokenCount = rules.filter((r: any) => getCriticalRuleErrors(r).length > 0).length;
 
-    // Calculate duplicate matchers across all rules
+    // Calculate duplicate matchers across all rules (flagging ALL rules involved in a conflict)
     const warningsMap = React.useMemo(() => {
         const map = new Map<number, string[]>();
-        const seenDomains = new Map<string, { index: number; name: string }>();
-        const seenIPs = new Map<string, { index: number; name: string }>();
+        const domainToRules = new Map<string, Array<{ index: number; name: string }>>();
+        const ipToRules = new Map<string, Array<{ index: number; name: string }>>();
 
         rules.forEach((rule: any, i: number) => {
             const name = rule.ruleTag || rule.outboundTag || rule.balancerTag || `Rule #${i + 1}`;
-            const ruleWarnings: string[] = [];
 
             if (Array.isArray(rule.domain)) {
                 rule.domain.forEach((d: string) => {
                     if (!d || typeof d !== 'string') return;
                     const k = d.trim().toLowerCase();
-                    if (seenDomains.has(k)) {
-                        const first = seenDomains.get(k)!;
-                        ruleWarnings.push(`Duplicate domain/geosite matcher "${d}" — already matched in ${first.name} (Rule #${first.index + 1})`);
-                    } else {
-                        seenDomains.set(k, { index: i, name });
-                    }
+                    if (!domainToRules.has(k)) domainToRules.set(k, []);
+                    domainToRules.get(k)!.push({ index: i, name });
                 });
             }
 
@@ -114,17 +109,35 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }: 
                 rule.ip.forEach((ip: string) => {
                     if (!ip || typeof ip !== 'string') return;
                     const k = ip.trim().toLowerCase();
-                    if (seenIPs.has(k)) {
-                        const first = seenIPs.get(k)!;
-                        ruleWarnings.push(`Duplicate IP/geoip matcher "${ip}" — already matched in ${first.name} (Rule #${first.index + 1})`);
-                    } else {
-                        seenIPs.set(k, { index: i, name });
-                    }
+                    if (!ipToRules.has(k)) ipToRules.set(k, []);
+                    ipToRules.get(k)!.push({ index: i, name });
                 });
             }
+        });
 
-            if (ruleWarnings.length > 0) {
-                map.set(i, ruleWarnings);
+        domainToRules.forEach((occurrences, matcher) => {
+            if (occurrences.length > 1) {
+                occurrences.forEach(occ => {
+                    if (!map.has(occ.index)) map.set(occ.index, []);
+                    const otherRules = occurrences
+                        .filter(o => o.index !== occ.index)
+                        .map(o => `${o.name} (Rule #${o.index + 1})`)
+                        .join(', ');
+                    map.get(occ.index)!.push(`Duplicate matcher "${matcher}" is also used in: ${otherRules}`);
+                });
+            }
+        });
+
+        ipToRules.forEach((occurrences, matcher) => {
+            if (occurrences.length > 1) {
+                occurrences.forEach(occ => {
+                    if (!map.has(occ.index)) map.set(occ.index, []);
+                    const otherRules = occurrences
+                        .filter(o => o.index !== occ.index)
+                        .map(o => `${o.name} (Rule #${o.index + 1})`)
+                        .join(', ');
+                    map.get(occ.index)!.push(`Duplicate IP matcher "${matcher}" is also used in: ${otherRules}`);
+                });
             }
         });
 
