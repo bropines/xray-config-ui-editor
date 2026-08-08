@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { JsonEditor } from "./JsonEditor";
-import { parseJsonc, stripJsoncComments } from "../../utils/jsonc";
+import { parseJsonc, stringifyJsonc, stripJsoncComments } from "../../utils/jsonc";
 
 interface JsonFieldProps {
     label?: string;
