@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
 import { parseJsonc, stringifyJsonc, stripJsoncComments } from "../../utils/jsonc";
 
@@ -13,9 +13,15 @@ interface JsonFieldProps {
 export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full' }: JsonFieldProps) => {
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
+    const isLocalEditRef = useRef(false);
 
     // Синхронизация внешнего value -> внутренний текст
     useEffect(() => {
+        if (isLocalEditRef.current) {
+            isLocalEditRef.current = false;
+            return;
+        }
+
         let displayValue = value;
         if (value && typeof value === 'object' && !Array.isArray(value) && 'i' in value) {
             displayValue = { ...value };
@@ -26,21 +32,12 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         }
         
         const newText = stringifyJsonc(displayValue, 2);
-        
-        try {
-            if (text.trim() !== "") {
-                const currentObj = parseJsonc(text);
-                if (JSON.stringify(currentObj) === JSON.stringify(displayValue)) {
-                    return;
-                }
-            }
-        } catch (e) {}
-
         setText(newText);
     }, [value]);
 
     const handleEditorChange = (v: string) => {
         setText(v);
+        isLocalEditRef.current = true;
         try {
             if (v.trim() === "") {
                 onChange({ inbounds: [], outbounds: [] });
