@@ -15,6 +15,8 @@ import Ajv from "ajv";
 import xraySchema from "../../utils/config.schema.json";
 
 
+import { parseJsonc } from "../../utils/jsonc";
+
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 function findPathPosition(doc: string, path: string): { from: number; to: number } | null {
@@ -187,8 +189,9 @@ function cleanAjvErrors(errors: any[], parsedObj: any): any[] {
             
             // Игнорируем расширения Xray-core и UI свойства в подстветке JSON
             const ALLOWED_ADDITIONAL_PROPERTIES = [
-                'i', '_id', 'ruleTag', 'vlessRoute', 'attrs', 'webhook', 'balancerTag', 'outboundTag',
-                'fallbackTag', 'expected', 'maxRTT', 'tolerance', 'baselines', 'costs'
+                'i', '_id', 'ruleTag', 'rule_tag', 'ruleName', 'vlessRoute', 'attrs', 'webhook', 'balancerTag', 'outboundTag',
+                'fallbackTag', 'expected', 'maxRTT', 'tolerance', 'baselines', 'costs', 'domain', 'ip', 'port', 'sourcePort',
+                'network', 'source', 'user', 'inboundTag', 'protocol', 'localIP', 'localPort', 'process'
             ];
             if (additionalProp && ALLOWED_ADDITIONAL_PROPERTIES.includes(additionalProp)) {
                 return false;
@@ -355,8 +358,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             if (!doc.trim()) return [];
 
             try {
-                const cleanJson = doc.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => group1 || "");
-                const parsed = JSON.parse(cleanJson);
+                const parsed = parseJsonc(doc);
                 const valid = validate(parsed);
 
                 if (!valid && validate.errors) {

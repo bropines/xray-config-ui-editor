@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { JsonEditor } from "./JsonEditor";
+import { parseJsonc, stripJsoncComments } from "../../utils/jsonc";
 
 interface JsonFieldProps {
     label?: string;
@@ -15,7 +16,6 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
 
     // Синхронизация внешнего value -> внутренний текст
     useEffect(() => {
-        // Убираем технический индекс 'i' перед отображением в JSON
         let displayValue = value;
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             const { i, ...cleanValue } = value as any;
@@ -24,10 +24,8 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         
         const newText = JSON.stringify(displayValue, null, 2);
         
-        // Сравниваем распарсенные значения, чтобы не затирать текст пользователя, если данные те же
         try {
-            const cleanJson = stripComments(text);
-            if (text.trim() !== "" && JSON.stringify(JSON.parse(cleanJson)) === JSON.stringify(displayValue)) {
+            if (text.trim() !== "" && JSON.stringify(parseJsonc(text)) === JSON.stringify(displayValue)) {
                 return;
             }
         } catch (e) {}
@@ -35,21 +33,14 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         setText(newText);
     }, [value]);
 
-    const stripComments = (jsonString: string) => {
-        return jsonString.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
-            return group1 ? group1 : "";
-        });
-    };
-const handleEditorChange = (v: string) => {
-    setText(v);
-    try {
-        if (v.trim() === "") {
-            // If user clears the field, provide an empty config base instead of undefined
-            onChange({ inbounds: [], outbounds: [] });
-            setError(false);
-        } else {
-            const cleanJson = stripComments(v);
-            const parsed = JSON.parse(cleanJson);
+    const handleEditorChange = (v: string) => {
+        setText(v);
+        try {
+            if (v.trim() === "") {
+                onChange({ inbounds: [], outbounds: [] });
+                setError(false);
+            } else {
+                const parsed = parseJsonc(v);
 
             // Recursively remove 'i' property and ignore nulls
             const sanitize = (obj: any): any => {

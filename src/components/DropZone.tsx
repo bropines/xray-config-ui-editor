@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './ui/Button';
 import { Icon } from './ui/Icon';
+import { parseJsonc } from '../utils/jsonc';
 
 interface DropZoneProps {
     onFileLoaded: (config: any) => void;
@@ -11,7 +12,7 @@ export const DropZone = ({ onFileLoaded }: DropZoneProps) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                onFileLoaded(JSON.parse(e.target?.result as string));
+                onFileLoaded(parseJsonc(e.target?.result as string));
             } catch (err) {
                 alert("Invalid JSON");
             }

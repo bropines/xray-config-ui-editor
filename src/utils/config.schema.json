@@ -1110,17 +1110,27 @@
     "RouterRule": {
       "type": "object",
       "properties": {
-        "ruleTag": {
-          "type": "string"
-        },
-        "outboundTag": {
-          "type": "string"
-        },
-        "balancerTag": {
-          "type": "string"
-        }
+        "ruleTag": { "type": "string" },
+        "type": { "type": "string" },
+        "domain": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "ip": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "port": { "anyOf": [{ "type": "string" }, { "type": "number" }, { "type": "array", "items": { "anyOf": [{ "type": "string" }, { "type": "number" }] } }] },
+        "sourcePort": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
+        "network": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "source": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "user": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "inboundTag": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "protocol": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "attrs": { "type": "object", "additionalProperties": true },
+        "outboundTag": { "type": "string" },
+        "balancerTag": { "type": "string" },
+        "vlessRoute": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
+        "localIP": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "localPort": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
+        "process": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "webhook": { "type": "object", "additionalProperties": true }
       },
-      "additionalProperties": false
+      "additionalProperties": true
     },
     "WebhookRuleConfig": {
       "type": "object",

@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
+import { parseJsonc } from '../../utils/jsonc';
 
 export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: { 
     onClose: () => void, 
@@ -56,7 +57,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
 
     const handleParse = () => {
         try {
-            const data = JSON.parse(inputText);
+            const data = parseJsonc(inputText);
             const configs = Array.isArray(data) ? data : [data];
             if (configs.some(c => !c || typeof c !== 'object')) throw new Error("Invalid format");
             setParsedConfigs(configs);

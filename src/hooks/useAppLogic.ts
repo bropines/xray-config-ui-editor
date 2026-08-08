@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { parseJsonc } from '../utils/jsonc';
 import { useConfigStore, type XrayConfig } from '../store/configStore';
 import { runFullDiagnostics } from '../core/diagnostics';
 import { parseJsonSubscription } from '../utils/link-parser';
@@ -107,7 +108,7 @@ export const useAppLogic = () => {
             try {
                 const result = e.target?.result;
                 if (typeof result === 'string') {
-                    const parsed = JSON.parse(result);
+                    const parsed = parseJsonc(result);
                     
                     if (Array.isArray(parsed)) {
                         // Это JSON-подписка (массив конфигов)

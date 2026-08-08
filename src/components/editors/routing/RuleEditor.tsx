@@ -3,6 +3,7 @@ import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm }
 import { validateRule, lintRule } from '../../../core/validators';
 import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
+import { parseJsonc } from '../../../utils/jsonc';
 
 const AttrsEditor = ({ value, onChange }: any) => {
     const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
@@ -11,7 +12,7 @@ const AttrsEditor = ({ value, onChange }: any) => {
     useEffect(() => {
         const currentText = value ? JSON.stringify(value, null, 2) : "";
         try {
-            if (JSON.stringify(JSON.parse(text)) === JSON.stringify(value)) return;
+            if (JSON.stringify(parseJsonc(text)) === JSON.stringify(value)) return;
         } catch (e) { }
         setText(currentText);
     }, [value]);
@@ -24,7 +25,7 @@ const AttrsEditor = ({ value, onChange }: any) => {
             return;
         }
         try {
-            const parsed = JSON.parse(v);
+            const parsed = parseJsonc(v);
             onChange(parsed);
             setError(false);
         } catch (e) {
