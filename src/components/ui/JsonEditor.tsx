@@ -4,7 +4,7 @@ import { EditorView, keymap, drawSelection, highlightActiveLine, dropCursor,
          rectangularSelection, highlightSpecialChars, crosshairCursor,
          lineNumbers, highlightActiveLineGutter } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldGutter, foldKeymap } from "@codemirror/language";
+import { indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldGutter, foldKeymap, syntaxTree } from "@codemirror/language";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { lintKeymap, linter, lintGutter } from "@codemirror/lint";
@@ -398,6 +398,11 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
         if (!isJson) return null;
         return jsoncLanguage.data.of({
             autocomplete: (context: any) => {
+                const node = syntaxTree(context.state).resolveInner(context.pos, -1);
+                if (node && (node.type.name.includes("Comment") || node.type.name.includes("LineComment") || node.type.name.includes("BlockComment"))) {
+                    return null;
+                }
+
                 const word = context.matchBefore(/[\w"]*/);
                 if (!word || (word.from === word.to && !context.explicit)) return null;
 

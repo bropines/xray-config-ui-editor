@@ -28,8 +28,11 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
         const newText = stringifyJsonc(displayValue, 2);
         
         try {
-            if (text.trim() !== "" && stringifyJsonc(parseJsonc(text), 2) === stringifyJsonc(displayValue, 2)) {
-                return;
+            if (text.trim() !== "") {
+                const currentObj = parseJsonc(text);
+                if (JSON.stringify(currentObj) === JSON.stringify(displayValue)) {
+                    return;
+                }
             }
         } catch (e) {}
 
