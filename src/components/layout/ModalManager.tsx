@@ -14,7 +14,7 @@ import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { AboutModal } from '../AboutModal';
 import { WarpGeneratorModal } from '../editors/WarpGeneratorModal';
 import { ConfigInspectorModal } from '../editors/ConfigInspectorModal';
-import { VersionHistoryModal } from '../editors/VersionHistoryModal';
+import { GitHistoryModal } from '../git/GitHistoryModal';
 import { EditorSettingsModal } from '../editors/EditorSettingsModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
@@ -128,7 +128,7 @@ export const ModalManager = ({
         {batchModalOpen && <BatchOutboundModal onClose={onCloseBatch} />}
         {geoViewerOpen && <GeoViewerModal onClose={onCloseGeoViewer} />}
         {warpModalOpen && <WarpGeneratorModal onClose={onCloseWarpModal} onGenerate={onGenerateWarp} />}
-        {historyModalOpen && onCloseHistory && <VersionHistoryModal onClose={onCloseHistory} />}
+        {historyModalOpen && onCloseHistory && <GitHistoryModal onClose={onCloseHistory} />}
         {editorSettingsOpen && onCloseEditorSettings && (
             <EditorSettingsModal onClose={onCloseEditorSettings} onOpenHistory={onOpenHistory} />
         )}

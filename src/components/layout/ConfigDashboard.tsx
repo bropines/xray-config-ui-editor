@@ -13,6 +13,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { XrayConfig } from "../../core/types";
 import { useConfigStore } from "../../store/configStore";
 import { Select } from "../ui/Select";
+import { CommitModal } from "../git/CommitModal";
 
 // Re-usable column Card for the dashboard
 interface DashCardProps {
@@ -276,6 +277,7 @@ export const ConfigDashboard = ({
     }
   }, [baselineConfigJson, storeConfig, profiles, activeProfileId]);
 
+  const [commitModalOpen, setCommitModalOpen] = React.useState(false);
   const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
   const [lastClickedFilteredIdx, setLastClickedFilteredIdx] = React.useState<number | null>(null);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -487,33 +489,34 @@ export const ConfigDashboard = ({
             <div className="flex items-center gap-1.5 shrink-0 animate-in fade-in">
               <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                Modified
+                Uncommitted
               </span>
               <button
                 type="button"
-                onClick={saveActiveProfile}
-                className="px-2 py-1 text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-800/60 rounded-md transition-colors"
-                title="Save changes to active profile"
+                onClick={() => setCommitModalOpen(true)}
+                className="px-2 py-1 text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/50 rounded-md transition-colors flex items-center gap-1 shadow-sm"
+                title="Commit changes (git commit)"
               >
-                Save
+                <Icon name="GitCommit" className="text-xs" />
+                Commit
               </button>
               <button
                 type="button"
                 onClick={revertToBaseline}
                 className="px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-700/60 rounded-md transition-colors"
-                title="Revert to last saved baseline"
+                title="Revert working tree to HEAD (git reset --hard)"
               >
-                Revert
+                Reset
               </button>
             </div>
           ) : (
             <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              Saved
+              Clean (HEAD)
             </span>
           )}
 
-          {/* History Timeline */}
+          {/* History Timeline / Git Log */}
           {onOpenHistory && (
             <Button
               className="text-[10px] md:text-xs py-1.5 md:py-2"
@@ -521,8 +524,12 @@ export const ConfigDashboard = ({
               onClick={onOpenHistory}
               icon="GitBranch"
             >
-              History ({history.length})
+              Git Log ({history.length})
             </Button>
+          )}
+
+          {commitModalOpen && (
+            <CommitModal onClose={() => setCommitModalOpen(false)} />
           )}
 
           <Button
