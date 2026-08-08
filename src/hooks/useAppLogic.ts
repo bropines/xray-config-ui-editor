@@ -57,6 +57,29 @@ export const useAppLogic = () => {
         }
     }, [pushStage]);
 
+    // Global Ctrl+S / Cmd+S shortcut for instant Git Commit
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                const store = useConfigStore.getState();
+                if (store.config) {
+                    const hash = Math.random().toString(36).substring(2, 9);
+                    const inbounds = store.config.inbounds?.length || 0;
+                    const outbounds = store.config.outbounds?.length || 0;
+                    const rules = store.config.routing?.rules?.length || 0;
+                    const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
+                    
+                    store.recordSnapshot(msg);
+                    store.saveActiveProfile();
+                    toast.success(`Git Commit ${hash} saved!`);
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const handleRealPush = useCallback(() => {
         saveToRemnawave();
         setPushStage('idle');

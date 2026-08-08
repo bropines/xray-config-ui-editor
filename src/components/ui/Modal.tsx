@@ -3,7 +3,20 @@ import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Icon } from './Icon';
 
-export const Modal = ({ title, onClose, onSave, children, extraButtons = null, className = "", isSecondary = false }: any) => {
+export const Modal = ({
+  title,
+  onClose,
+  onSave,
+  saveText = "Save",
+  saveIcon = "FloppyDisk",
+  closeText = "Close",
+  variantSave = "success",
+  hideFooter = false,
+  children,
+  extraButtons = null,
+  className = "",
+  isSecondary = false
+}: any) => {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   React.useEffect(() => {
@@ -47,15 +60,17 @@ export const Modal = ({ title, onClose, onSave, children, extraButtons = null, c
         </div>
 
         {/* Footer */}
-        <div className="p-4 md:p-5 border-t border-slate-800 flex flex-col-reverse md:flex-row justify-between items-center bg-slate-900 md:rounded-b-2xl shrink-0 gap-3 md:gap-0 z-20">
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10">
-              {extraButtons}
+        {!hideFooter && (
+          <div className="p-4 md:p-5 border-t border-slate-800 flex flex-col-reverse md:flex-row justify-between items-center bg-slate-900 md:rounded-b-2xl shrink-0 gap-3 md:gap-0 z-20">
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10">
+                {extraButtons}
+            </div>
+            <div className="flex gap-3 w-full md:w-auto relative z-10">
+                <Button variant="secondary" onClick={onClose} className="flex-1 md:flex-none">{closeText}</Button>
+                {onSave && onSave !== onClose && <Button variant={variantSave} onClick={onSave} icon={saveIcon} className="flex-1 md:flex-none">{saveText}</Button>}
+            </div>
           </div>
-          <div className="flex gap-3 w-full md:w-auto relative z-10">
-              <Button variant="secondary" onClick={onClose} className="flex-1 md:flex-none">Close</Button>
-              {onSave !== onClose && <Button variant="success" onClick={onSave} icon="FloppyDisk" className="flex-1 md:flex-none">Save</Button>}
-          </div>
-        </div>
+        )}
       </div>
     </div>,
     document.body

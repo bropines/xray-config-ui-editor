@@ -27,24 +27,31 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
 
     const shortHash = React.useMemo(() => generateShortHash(), []);
 
-    const handleCommit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const submitCommit = () => {
         if (!message.trim()) return;
-
         recordSnapshot(message.trim());
         saveActiveProfile();
         if (onCommitSuccess) onCommitSuccess();
         onClose();
     };
 
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        submitCommit();
+    };
+
     return (
         <Modal
             title="Git Commit Changes"
             onClose={onClose}
+            onSave={submitCommit}
+            saveText={`Commit (${shortHash})`}
+            saveIcon="GitCommit"
+            variantSave="indigo"
+            closeText="Cancel"
             className="max-w-lg"
-            extraButtons={null}
         >
-            <form onSubmit={handleCommit} className="space-y-4">
+            <form onSubmit={handleFormSubmit} className="space-y-4">
                 {/* Branch & Commit Header */}
                 <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -85,16 +92,6 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
                         placeholder="Describe what changed in this config version..."
                         className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl p-3 text-xs text-white outline-none transition-colors custom-scroll resize-none"
                     />
-                </div>
-
-                {/* Footer Action Buttons */}
-                <div className="flex justify-end gap-2 pt-2">
-                    <Button variant="secondary" onClick={onClose} type="button">
-                        Cancel
-                    </Button>
-                    <Button variant="indigo" type="submit" icon="GitCommit">
-                        Commit ({shortHash})
-                    </Button>
                 </div>
             </form>
         </Modal>

@@ -491,15 +491,38 @@ export const ConfigDashboard = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
                 Uncommitted
               </span>
-              <button
-                type="button"
-                onClick={() => setCommitModalOpen(true)}
-                className="px-2.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/50 rounded-lg transition-all flex items-center gap-1 shadow-sm active:scale-95"
-                title="Commit changes (git commit)"
-              >
-                <Icon name="GitCommit" className="text-xs text-emerald-400" />
-                Commit
-              </button>
+              <div className="flex items-center rounded-lg bg-emerald-950/60 border border-emerald-500/50 overflow-hidden shadow-sm">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    if (e.shiftKey) {
+                      setCommitModalOpen(true);
+                      return;
+                    }
+                    const hash = Math.random().toString(36).substring(2, 9);
+                    const inbounds = storeConfig?.inbounds?.length || 0;
+                    const outbounds = storeConfig?.outbounds?.length || 0;
+                    const rules = storeConfig?.routing?.rules?.length || 0;
+                    const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
+                    useConfigStore.getState().recordSnapshot(msg);
+                    saveActiveProfile();
+                    toast.success(`Git Commit ${hash} saved!`);
+                  }}
+                  className="px-2.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold text-emerald-300 hover:text-white hover:bg-emerald-900 transition-colors flex items-center gap-1 active:scale-95"
+                  title="Instant Commit (Ctrl+S). Shift+click for custom message"
+                >
+                  <Icon name="GitCommit" className="text-xs text-emerald-400" />
+                  Commit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCommitModalOpen(true)}
+                  className="px-1.5 py-1.5 md:py-2 text-[10px] md:text-xs text-emerald-400 hover:text-white hover:bg-emerald-900 border-l border-emerald-500/40 transition-colors"
+                  title="Commit with custom message..."
+                >
+                  <Icon name="PencilSimple" className="text-[10px]" />
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={revertToBaseline}
