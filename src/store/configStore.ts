@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type { RemnawaveProfile } from '../core/types';
 import { XrayConfigSchema } from '../core/xray/schemas';
 import { diffLines } from 'diff';
+import { parseJsonc, stringifyJsonc } from '../utils/jsonc';
 
 // Re-export types from core for backward compatibility
 export type {
@@ -292,7 +293,7 @@ export const useConfigStore = create(
                     timestamp: Date.now(),
                     label,
                     summary,
-                    config: JSON.parse(JSON.stringify(config)),
+                    config: parseJsonc(stringifyJsonc(config)),
                     additions,
                     deletions,
                 };
@@ -310,7 +311,7 @@ export const useConfigStore = create(
                 const history = histories[key] || [];
                 const found = history.find(h => h.id === id);
                 if (found) {
-                    const restored = JSON.parse(JSON.stringify(found.config));
+                    const restored = parseJsonc(stringifyJsonc(found.config));
                     set({ config: restored });
                     toast.success(`✓ Restored to commit ${id.substring(0, 7)} (${new Date(found.timestamp).toLocaleTimeString()})`);
                 }
@@ -374,13 +375,13 @@ export const useConfigStore = create(
                     id: newId,
                     name: name.trim() || 'New Profile',
                     updatedAt: Date.now(),
-                    config: JSON.parse(JSON.stringify(cfg))
+                    config: parseJsonc(stringifyJsonc(cfg))
                 };
                 set(produce((state) => {
                     state.profiles.push(newProfile);
                     state.activeProfileId = newId;
                     state.config = newProfile.config;
-                    state.baselineConfigJson = JSON.stringify(newProfile.config);
+                    state.baselineConfigJson = stringifyJsonc(newProfile.config);
                     state.remnawave.activeProfileUuid = null;
                 }));
                 get().recordSnapshot(`Created Profile (${newProfile.name})`);
@@ -393,8 +394,8 @@ export const useConfigStore = create(
                 if (!target) return;
                 set(produce((state) => {
                     state.activeProfileId = id;
-                    state.config = JSON.parse(JSON.stringify(target.config));
-                    state.baselineConfigJson = JSON.stringify(target.config);
+                    state.config = parseJsonc(stringifyJsonc(target.config));
+                    state.baselineConfigJson = stringifyJsonc(target.config);
                     state.remnawave.activeProfileUuid = null;
                 }));
                 toast.info(`Switched to "${target.name}"`);
@@ -430,8 +431,8 @@ export const useConfigStore = create(
                 set({
                     profiles: remaining,
                     activeProfileId: nextActive,
-                    config: nextConfig ? JSON.parse(JSON.stringify(nextConfig)) : null,
-                    baselineConfigJson: nextConfig ? JSON.stringify(nextConfig) : null,
+                    config: nextConfig ? parseJsonc(stringifyJsonc(nextConfig)) : null,
+                    baselineConfigJson: nextConfig ? stringifyJsonc(nextConfig) : null,
                     histories: newHistories
                 });
                 toast.success("Profile deleted");
@@ -448,10 +449,10 @@ export const useConfigStore = create(
                 set(produce((state) => {
                     const target = state.profiles.find((p: any) => p.id === activeProfileId);
                     if (target) {
-                        target.config = JSON.parse(JSON.stringify(config));
+                        target.config = parseJsonc(stringifyJsonc(config));
                         target.updatedAt = Date.now();
                     }
-                    state.baselineConfigJson = JSON.stringify(config);
+                    state.baselineConfigJson = stringifyJsonc(config);
                 }));
                 get().recordSnapshot("Profile Saved");
                 toast.success("Local Profile Saved!");
@@ -487,13 +488,13 @@ export const useConfigStore = create(
                 }
                 set(produce((state) => {
                     state.config = parsedConfig;
-                    state.baselineConfigJson = JSON.stringify(parsedConfig);
+                    state.baselineConfigJson = stringifyJsonc(parsedConfig);
                     if (!isCloud) {
                         state.remnawave.activeProfileUuid = null;
                     }
                     const active = state.profiles.find((p: any) => p.id === state.activeProfileId);
                     if (active) {
-                        active.config = JSON.parse(JSON.stringify(parsedConfig));
+                        active.config = parseJsonc(stringifyJsonc(parsedConfig));
                         active.updatedAt = Date.now();
                     }
                 }));
