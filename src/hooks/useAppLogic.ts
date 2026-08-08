@@ -43,6 +43,13 @@ export const useAppLogic = () => {
     const [obSearch, setObSearch] = useState("");
     const [pushStage, setPushStage] = useState<'idle' | 'confirm'>('idle');
 
+    // Auto-fetch Remnawave cloud profiles on startup / connection state load
+    useEffect(() => {
+        if (remnawave.connected && remnawave.url && remnawave.token) {
+            useConfigStore.getState().fetchRemnawaveProfiles().catch(() => {});
+        }
+    }, [remnawave.connected, remnawave.url, remnawave.token]);
+
     useEffect(() => {
         if (pushStage === 'confirm') {
             const timer = setTimeout(() => setPushStage('idle'), 3000);
