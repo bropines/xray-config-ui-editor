@@ -15,13 +15,8 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
     const [error, setError] = useState(false);
     const isLocalEditRef = useRef(false);
 
-    // Синхронизация внешнего value -> внутренний текст
+    // Synchronize external value -> internal text only when external data is structurally different
     useEffect(() => {
-        if (isLocalEditRef.current) {
-            isLocalEditRef.current = false;
-            return;
-        }
-
         let displayValue = value;
         if (value && typeof value === 'object' && !Array.isArray(value) && 'i' in value) {
             displayValue = { ...value };
@@ -31,6 +26,18 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             delete (displayValue as any).i;
         }
         
+        try {
+            if (text.trim() !== "") {
+                const currentObj = parseJsonc(text);
+                if (JSON.stringify(currentObj) === JSON.stringify(displayValue)) {
+                    return; // Retain user's text (with comments, spacing, formatting)!
+                }
+            }
+        } catch (e) {
+            // While text has syntax error or in-progress edits, do not overwrite!
+            return;
+        }
+
         const newText = stringifyJsonc(displayValue, 2);
         setText(newText);
     }, [value]);

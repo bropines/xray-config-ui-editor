@@ -17,19 +17,29 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
         setLocalData(data);
     }, [data]);
 
+    const handleChange = (newData: any) => {
+        setLocalData(newData);
+        if (newData && typeof newData === 'object') {
+            onSave(newData);
+        }
+    };
+
     return (
         <Modal 
             title={title} 
             onClose={onClose} 
-            onSave={() => onSave(localData)}
+            onSave={() => {
+                onSave(localData);
+                onClose();
+            }}
             className="h-full overflow-hidden"
         >
             <JsonField 
                 label="Partial Configuration" 
                 value={localData} 
-                onChange={setLocalData} 
+                onChange={handleChange} 
                 className="flex-1" 
-                schemaMode={schemaMode} // Передаем сюда
+                schemaMode={schemaMode}
             />
         </Modal>
     );
