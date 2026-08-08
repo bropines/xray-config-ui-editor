@@ -11,6 +11,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
     const {
         profiles,
         activeProfileId,
+        remnawave,
         createProfile,
         switchProfile,
         renameProfile,
@@ -21,9 +22,15 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
         setHistoryLimit,
         autoSave,
         setAutoSave,
-        history,
+        histories,
         clearHistory
     } = useConfigStore();
+
+    // Per-profile history
+    const activeKey = remnawave.activeProfileUuid
+        ? `rw:${remnawave.activeProfileUuid}`
+        : activeProfileId;
+    const history = histories[activeKey] || [];
 
     const [newProfileName, setNewProfileName] = useState("");
     const [editingProfileId, setEditingProfileId] = useState<string | null>(null);

@@ -67,7 +67,7 @@ interface ConfigState {
     profiles: LocalProfile[];
     activeProfileId: string;
     baselineConfigJson: string | null;
-    history: ConfigHistorySnapshot[];
+    histories: Record<string, ConfigHistorySnapshot[]>;
     historyLimit: number;
     autoSave: boolean;
 
@@ -241,13 +241,20 @@ export const useConfigStore = create(
             ],
             activeProfileId: 'default',
             baselineConfigJson: null,
-            history: [],
+            histories: {},
             historyLimit: 50,
             autoSave: true,
 
             recordSnapshot: (label = "Config Edit") => {
-                const { config, history, historyLimit } = get();
+                const { config, histories, historyLimit, activeProfileId, remnawave } = get();
                 if (!config) return;
+
+                // Determine active history key
+                const key = remnawave.activeProfileUuid
+                    ? `rw:${remnawave.activeProfileUuid}`
+                    : activeProfileId;
+
+                const history = histories[key] || [];
 
                 // Compare against previous snapshot — skip if nothing changed
                 const prevConfig = history.length > 0 ? history[0].config : null;
@@ -282,34 +289,46 @@ export const useConfigStore = create(
                 };
                 const limit = Math.max(10, Math.min(1000, historyLimit));
                 const newHistory = [snapshot, ...history].slice(0, limit);
-                set({ history: newHistory });
+                set({ histories: { ...histories, [key]: newHistory } });
             },
 
             restoreSnapshot: (id) => {
-                const { history } = get();
+                const { histories, activeProfileId, remnawave } = get();
+                const key = remnawave.activeProfileUuid
+                    ? `rw:${remnawave.activeProfileUuid}`
+                    : activeProfileId;
+                const history = histories[key] || [];
                 const found = history.find(h => h.id === id);
                 if (found) {
                     const restored = JSON.parse(JSON.stringify(found.config));
                     set({ config: restored });
-                    toast.success(`Restored version from ${new Date(found.timestamp).toLocaleTimeString()}`);
+                    toast.success(`✓ Restored to commit ${id.substring(0, 7)} (${new Date(found.timestamp).toLocaleTimeString()})`);
                 }
             },
 
             clearHistory: () => {
-                set({ history: [] });
+                const { histories, activeProfileId, remnawave } = get();
+                const key = remnawave.activeProfileUuid
+                    ? `rw:${remnawave.activeProfileUuid}`
+                    : activeProfileId;
+                set({ histories: { ...histories, [key]: [] } });
                 toast.info("Version history cleared");
             },
 
             deduplicateHistory: () => {
-                const { history } = get();
+                const { histories, activeProfileId, remnawave } = get();
+                const key = remnawave.activeProfileUuid
+                    ? `rw:${remnawave.activeProfileUuid}`
+                    : activeProfileId;
+                const history = histories[key] || [];
                 // Remove consecutive snapshots with identical configs
                 const deduped = history.filter((snapshot, idx) => {
-                    if (idx === history.length - 1) return true; // always keep oldest
-                    const next = history[idx + 1]; // next = older (history is newest-first)
+                    if (idx === history.length - 1) return true;
+                    const next = history[idx + 1];
                     return JSON.stringify(snapshot.config) !== JSON.stringify(next.config);
                 });
                 const removed = history.length - deduped.length;
-                set({ history: deduped });
+                set({ histories: { ...histories, [key]: deduped } });
                 if (removed > 0) {
                     toast.success(`Removed ${removed} duplicate snapshot${removed > 1 ? 's' : ''}`);
                 } else {
@@ -381,11 +400,16 @@ export const useConfigStore = create(
                 const remaining = profiles.filter(p => p.id !== id);
                 const nextActive = activeProfileId === id ? remaining[0].id : activeProfileId;
                 const nextConfig = remaining.find(p => p.id === nextActive)?.config || null;
+                // Remove history for deleted profile
+                const { histories } = get();
+                const newHistories = { ...histories };
+                delete newHistories[id];
                 set({
                     profiles: remaining,
                     activeProfileId: nextActive,
                     config: nextConfig ? JSON.parse(JSON.stringify(nextConfig)) : null,
-                    baselineConfigJson: nextConfig ? JSON.stringify(nextConfig) : null
+                    baselineConfigJson: nextConfig ? JSON.stringify(nextConfig) : null,
+                    histories: newHistories
                 });
                 toast.success("Profile deleted");
             },
@@ -554,7 +578,7 @@ export const useConfigStore = create(
                 profiles: state.profiles,
                 activeProfileId: state.activeProfileId,
                 baselineConfigJson: state.baselineConfigJson,
-                history: state.history,
+                histories: state.histories,
                 historyLimit: state.historyLimit,
                 autoSave: state.autoSave
             }),

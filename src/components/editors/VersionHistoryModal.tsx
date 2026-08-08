@@ -6,7 +6,14 @@ import { useConfigStore } from '../../store/configStore';
 import { JsonField } from '../ui/JsonField';
 
 export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
-    const { history, restoreSnapshot, clearHistory, historyLimit } = useConfigStore();
+    const { histories, activeProfileId, remnawave, restoreSnapshot, clearHistory, historyLimit } = useConfigStore();
+
+    // Per-profile history
+    const activeKey = remnawave.activeProfileUuid
+        ? `rw:${remnawave.activeProfileUuid}`
+        : activeProfileId;
+    const history = histories[activeKey] || [];
+
     const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(
         history.length > 0 ? history[0].id : null
     );

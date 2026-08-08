@@ -7,7 +7,30 @@ import { GitDiffViewer } from './GitDiffViewer';
 import { computeJsonDiff, type GitCommit } from '../../core/git/gitEngine';
 
 export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
-    const { history, restoreSnapshot, clearHistory, deduplicateHistory, historyLimit, config } = useConfigStore();
+    const {
+        histories,
+        activeProfileId,
+        profiles,
+        remnawave,
+        restoreSnapshot,
+        clearHistory,
+        deduplicateHistory,
+        historyLimit,
+        config
+    } = useConfigStore();
+
+    // Determine which history to show based on active profile
+    const activeKey = remnawave.activeProfileUuid
+        ? `rw:${remnawave.activeProfileUuid}`
+        : activeProfileId;
+
+    const history = histories[activeKey] || [];
+
+    // Profile display name
+    const profileName = remnawave.activeProfileUuid
+        ? (remnawave.profiles?.find(p => p.uuid === remnawave.activeProfileUuid)?.name || 'Remnawave Cloud')
+        : (profiles.find(p => p.id === activeProfileId)?.name || 'Default');
+
     const [selectedCommitId, setSelectedCommitId] = useState<string | null>(
         history.length > 0 ? history[0].id : null
     );
@@ -23,20 +46,27 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
     }, [selectedSnapshot, selectedIdx, history]);
 
     const handleRestore = (id: string) => {
-        restoreSnapshot(id);
-        onClose();
+        const snapshot = history.find(h => h.id === id);
+        if (!snapshot) return;
+        const confirmed = confirm(
+            `Checkout to commit ${id.substring(0, 7)} "${snapshot.label}"?\n\nThis will replace your current config with the version from ${new Date(snapshot.timestamp).toLocaleString()}.`
+        );
+        if (confirmed) {
+            restoreSnapshot(id);
+            onClose();
+        }
     };
 
     const handleClear = () => {
-        if (confirm("Clear all commit history for this project?")) {
+        if (confirm(`Clear all commit history for profile "${profileName}"?`)) {
             clearHistory();
-            setSelectedSnapshotId(null);
+            setSelectedCommitId(null);
         }
     };
 
     return (
         <Modal
-            title={`Git Repository Log (${history.length} commits)`}
+            title={`Git Log — ${profileName} (${history.length} commits)`}
             onClose={onClose}
             className="max-w-6xl h-[88vh]"
             extraButtons={
