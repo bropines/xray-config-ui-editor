@@ -486,32 +486,32 @@ export const ConfigDashboard = ({
         >
           {/* Modified Status Badge */}
           {isModified ? (
-            <div className="flex items-center gap-1.5 shrink-0 animate-in fade-in">
-              <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+            <div className="flex items-center gap-2 shrink-0 animate-in fade-in">
+              <span className="text-xs sm:text-sm font-extrabold text-amber-400 bg-amber-950/70 border border-amber-500/50 px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
                 Uncommitted
               </span>
               <button
                 type="button"
                 onClick={() => setCommitModalOpen(true)}
-                className="px-2 py-1 text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/50 rounded-md transition-colors flex items-center gap-1 shadow-sm"
+                className="px-3.5 py-1.5 text-xs sm:text-sm font-extrabold text-emerald-300 hover:text-white bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 rounded-xl transition-all flex items-center gap-1.5 shadow-md hover:shadow-emerald-500/20 active:scale-95"
                 title="Commit changes (git commit)"
               >
-                <Icon name="GitCommit" className="text-xs" />
+                <Icon name="GitCommit" className="text-sm sm:text-base text-emerald-400" />
                 Commit
               </button>
               <button
                 type="button"
                 onClick={revertToBaseline}
-                className="px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-700/60 rounded-md transition-colors"
+                className="px-3 py-1.5 text-xs sm:text-sm font-extrabold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-700/80 rounded-xl transition-all active:scale-95"
                 title="Revert working tree to HEAD (git reset --hard)"
               >
                 Reset
               </button>
             </div>
           ) : (
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-xs sm:text-sm font-extrabold text-emerald-400 bg-emerald-950/50 border border-emerald-500/40 px-3 py-1.5 rounded-xl flex items-center gap-2 shrink-0 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
               Clean (HEAD)
             </span>
           )}
@@ -519,7 +519,7 @@ export const ConfigDashboard = ({
           {/* History Timeline / Git Log */}
           {onOpenHistory && (
             <Button
-              className="text-[10px] md:text-xs py-1.5 md:py-2"
+              className="text-xs sm:text-sm px-3.5 py-2 font-extrabold border-indigo-500/40 text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60"
               variant="secondary"
               onClick={onOpenHistory}
               icon="GitBranch"
