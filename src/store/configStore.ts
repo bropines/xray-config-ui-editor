@@ -269,11 +269,13 @@ export const useConfigStore = create(
                 const prevJson = prevConfig ? JSON.stringify(prevConfig) : '';
                 if (currentJson === prevJson) return;
 
-                // Count line-level additions/deletions
+                // Count line-level additions/deletions on pretty-printed JSON
                 let additions = 0;
                 let deletions = 0;
                 try {
-                    const changes = diffLines(prevJson, currentJson);
+                    const prettyCurrent = JSON.stringify(config, null, 2);
+                    const prettyPrev = prevConfig ? JSON.stringify(prevConfig, null, 2) : '';
+                    const changes = diffLines(prettyPrev, prettyCurrent);
                     changes.forEach((c) => {
                         if (c.added) additions += c.count || 1;
                         if (c.removed) deletions += c.count || 1;

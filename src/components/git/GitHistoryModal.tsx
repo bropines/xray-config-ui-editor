@@ -46,6 +46,23 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         return computeJsonDiff(parentSnapshot?.config || null, selectedSnapshot.config);
     }, [selectedSnapshot, selectedIdx, history]);
 
+    // Compute exact formatted line stats (+N -N) for every commit card
+    const commitStatsMap = React.useMemo(() => {
+        const map = new Map<string, { additions: number; deletions: number }>();
+        history.forEach((commit, idx) => {
+            const parent = idx < history.length - 1 ? history[idx + 1] : null;
+            const changes = computeJsonDiff(parent?.config || null, commit.config);
+            let additions = 0;
+            let deletions = 0;
+            changes.forEach((c) => {
+                if (c.added) additions += c.count || 1;
+                if (c.removed) deletions += c.count || 1;
+            });
+            map.set(commit.id, { additions, deletions });
+        });
+        return map;
+    }, [history]);
+
     const handleRestore = (id: string) => {
         const snapshot = history.find(h => h.id === id);
         if (!snapshot) return;
@@ -171,16 +188,19 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                         <div className="text-[10px] text-slate-400 font-mono flex justify-between items-center mt-1.5 gap-2">
                                             <span className="truncate text-slate-400">{commit.summary}</span>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                {(commit.additions !== undefined || commit.deletions !== undefined) && (
-                                                    <span className="flex items-center gap-1 font-bold font-mono">
-                                                        {(commit.additions ?? 0) > 0 && (
-                                                            <span className="text-emerald-400">+{commit.additions}</span>
-                                                        )}
-                                                        {(commit.deletions ?? 0) > 0 && (
-                                                            <span className="text-rose-400">-{commit.deletions}</span>
-                                                        )}
-                                                    </span>
-                                                )}
+                                                {(() => {
+                                                    const stats = commitStatsMap.get(commit.id) || { additions: commit.additions ?? 0, deletions: commit.deletions ?? 0 };
+                                                    return (
+                                                        <span className="flex items-center gap-1 font-bold font-mono">
+                                                            {stats.additions > 0 && (
+                                                                <span className="text-emerald-400">+{stats.additions}</span>
+                                                            )}
+                                                            {stats.deletions > 0 && (
+                                                                <span className="text-rose-400">-{stats.deletions}</span>
+                                                            )}
+                                                        </span>
+                                                    );
+                                                })()}
                                                 <span className="text-slate-500 text-[9px]">
                                                     {new Date(commit.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
