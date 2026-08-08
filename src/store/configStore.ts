@@ -82,7 +82,7 @@ interface ConfigState {
     markBaseline: () => void;
 
     // Version Control Actions
-    recordSnapshot: (label?: string) => void;
+    recordSnapshot: (label?: string) => ConfigHistorySnapshot | null;
     restoreSnapshot: (id: string) => void;
     deleteSnapshot: (id: string) => void;
     clearHistory: () => void;
@@ -254,7 +254,7 @@ export const useConfigStore = create(
 
             recordSnapshot: (label = "Config Edit") => {
                 const { config, histories, historyLimit, activeProfileId, remnawave } = get();
-                if (!config) return;
+                if (!config) return null;
 
                 // Determine active history key
                 const key = remnawave.activeProfileUuid
@@ -267,7 +267,7 @@ export const useConfigStore = create(
                 const prevConfig = history.length > 0 ? history[0].config : null;
                 const currentJson = JSON.stringify(config);
                 const prevJson = prevConfig ? JSON.stringify(prevConfig) : '';
-                if (currentJson === prevJson) return;
+                if (currentJson === prevJson) return null;
 
                 // Count line-level additions/deletions on pretty-printed JSON
                 let additions = 0;
@@ -299,6 +299,7 @@ export const useConfigStore = create(
                 const limit = Math.max(10, Math.min(1000, historyLimit));
                 const newHistory = [snapshot, ...history].slice(0, limit);
                 set({ histories: { ...histories, [key]: newHistory } });
+                return snapshot;
             },
 
             restoreSnapshot: (id) => {

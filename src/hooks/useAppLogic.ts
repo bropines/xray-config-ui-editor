@@ -66,15 +66,19 @@ export const useAppLogic = () => {
                 e.stopPropagation();
                 const store = useConfigStore.getState();
                 if (store.config) {
-                    const hash = Math.random().toString(36).substring(2, 9);
                     const inbounds = store.config.inbounds?.length || 0;
                     const outbounds = store.config.outbounds?.length || 0;
                     const rules = store.config.routing?.rules?.length || 0;
                     const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
 
-                    store.recordSnapshot(msg);
+                    const snapshot = store.recordSnapshot(msg);
                     store.saveActiveProfile();
-                    toast.success(`✓ Committed: ${hash}`, { duration: 2000 });
+
+                    if (snapshot) {
+                        toast.success(`✓ Committed: ${snapshot.id.substring(0, 7)}`, { duration: 2000 });
+                    } else {
+                        toast.info(`Already at HEAD (no changes to commit)`, { duration: 2000 });
+                    }
                 }
             }
         };

@@ -499,14 +499,17 @@ export const ConfigDashboard = ({
                       setCommitModalOpen(true);
                       return;
                     }
-                    const hash = Math.random().toString(36).substring(2, 9);
                     const inbounds = storeConfig?.inbounds?.length || 0;
                     const outbounds = storeConfig?.outbounds?.length || 0;
                     const rules = storeConfig?.routing?.rules?.length || 0;
                     const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
-                    useConfigStore.getState().recordSnapshot(msg);
+                    const snapshot = useConfigStore.getState().recordSnapshot(msg);
                     saveActiveProfile();
-                    toast.success(`Git Commit ${hash} saved!`);
+                    if (snapshot) {
+                      toast.success(`✓ Committed: ${snapshot.id.substring(0, 7)}`);
+                    } else {
+                      toast.info(`Already at HEAD (no changes to commit)`);
+                    }
                   }}
                   className="px-2.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold text-emerald-300 hover:text-white hover:bg-emerald-900 transition-colors flex items-center gap-1 active:scale-95"
                   title="Instant Commit (Ctrl+S). Shift+click for custom message"
