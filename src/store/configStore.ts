@@ -277,7 +277,7 @@ export const useConfigStore = create(
             },
 
             setHistoryLimit: (limit) => {
-                const clamped = Math.max(10, Math.min(50, limit));
+                const clamped = Math.max(10, Math.min(1000, limit));
                 set(produce((state) => {
                     state.historyLimit = clamped;
                     state.history = state.history.slice(0, clamped);
