@@ -24,6 +24,7 @@ interface AppNavProps {
     hasConfig: boolean;
     onOpenEditorSettings?: () => void;
     onClearConfig?: () => void;
+    onOpenHistory?: () => void;
 }
 
 /**
@@ -170,7 +171,7 @@ export const AppNav = ({
                     </div>
                 )}
 
-                {/* Container for Profiles & Clear buttons */}
+                {/* Container for Profiles, Git Log & Clear buttons */}
                 {hasConfig && (
                     <div className="flex items-center gap-1 bg-slate-950/50 p-1 rounded-xl border border-slate-800 h-11 shrink-0">
                         {onOpenEditorSettings && (
@@ -182,6 +183,18 @@ export const AppNav = ({
                                 title="Profiles & Editor Settings"
                             >
                                 <span className="hidden sm:inline">Profiles</span>
+                            </Button>
+                        )}
+
+                        {onOpenHistory && (
+                            <Button
+                                variant="secondary"
+                                onClick={onOpenHistory}
+                                icon="GitBranch"
+                                className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none border-indigo-500/40 text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60"
+                                title="Git Version History & Log"
+                            >
+                                <span className="hidden sm:inline">Git Log</span>
                             </Button>
                         )}
 

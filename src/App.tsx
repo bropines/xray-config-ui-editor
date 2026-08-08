@@ -79,6 +79,7 @@ export const App = () => {
                 onFileUpload={handleFileUpload}
                 onDownload={downloadConfig}
                 onOpenEditorSettings={onOpenEditorSettings}
+                onOpenHistory={onOpenHistory}
                 onClearConfig={() => setConfig(null as any)}
             />
 
