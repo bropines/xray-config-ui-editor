@@ -265,8 +265,22 @@ export const ConfigDashboard = ({
     history
   } = useConfigStore();
 
+  const histories = useConfigStore(state => state.histories);
+  const remnawave = useConfigStore(state => state.remnawave);
+
   const isModified = React.useMemo(() => {
     if (!storeConfig) return false;
+    const activeKey = remnawave.activeProfileUuid ? `rw:${remnawave.activeProfileUuid}` : activeProfileId;
+    const currentHistory = histories[activeKey] || [];
+
+    if (currentHistory.length > 0) {
+      try {
+        return JSON.stringify(storeConfig) !== JSON.stringify(currentHistory[0].config);
+      } catch (e) {
+        return false;
+      }
+    }
+
     const activeProfile = profiles.find(p => p.id === activeProfileId);
     const baseline = baselineConfigJson || (activeProfile?.config ? JSON.stringify(activeProfile.config) : null);
     if (!baseline) return false;
@@ -275,7 +289,7 @@ export const ConfigDashboard = ({
     } catch (e) {
       return false;
     }
-  }, [baselineConfigJson, storeConfig, profiles, activeProfileId]);
+  }, [baselineConfigJson, storeConfig, profiles, activeProfileId, histories, remnawave.activeProfileUuid]);
 
   const [commitModalOpen, setCommitModalOpen] = React.useState(false);
   const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
