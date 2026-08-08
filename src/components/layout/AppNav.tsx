@@ -46,6 +46,7 @@ export const AppNav = ({
     hasConfig,
     onOpenEditorSettings,
     onClearConfig,
+    onOpenHistory,
 }: AppNavProps) => {
     const {
         profiles,
