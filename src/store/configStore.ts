@@ -84,6 +84,7 @@ interface ConfigState {
     // Version Control Actions
     recordSnapshot: (label?: string) => void;
     restoreSnapshot: (id: string) => void;
+    deleteSnapshot: (id: string) => void;
     clearHistory: () => void;
     deduplicateHistory: () => void;
     setHistoryLimit: (limit: number) => void;
@@ -310,6 +311,17 @@ export const useConfigStore = create(
                     set({ config: restored });
                     toast.success(`✓ Restored to commit ${id.substring(0, 7)} (${new Date(found.timestamp).toLocaleTimeString()})`);
                 }
+            },
+
+            deleteSnapshot: (id) => {
+                const { histories, activeProfileId, remnawave } = get();
+                const key = remnawave.activeProfileUuid
+                    ? `rw:${remnawave.activeProfileUuid}`
+                    : activeProfileId;
+                const history = histories[key] || [];
+                const filtered = history.filter(h => h.id !== id);
+                set({ histories: { ...histories, [key]: filtered } });
+                toast.success(`Deleted commit ${id.substring(0, 7)}`);
             },
 
             clearHistory: () => {

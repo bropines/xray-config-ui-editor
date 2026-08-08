@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { GitDiffViewer } from './GitDiffViewer';
-import { computeJsonDiff, type GitCommit } from '../../core/git/gitEngine';
+import { computeJsonDiff } from '../../core/git/gitEngine';
 
 export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
     const {
@@ -13,6 +13,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         profiles,
         remnawave,
         restoreSnapshot,
+        deleteSnapshot,
         clearHistory,
         deduplicateHistory,
         historyLimit,
@@ -49,11 +50,22 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         const snapshot = history.find(h => h.id === id);
         if (!snapshot) return;
         const confirmed = confirm(
-            `Checkout to commit ${id.substring(0, 7)} "${snapshot.label}"?\n\nThis will replace your current config with the version from ${new Date(snapshot.timestamp).toLocaleString()}.`
+            `⏪ ROLLBACK CONFIRMATION\n\nRollback configuration to commit ${id.substring(0, 7)} ("${snapshot.label}")?\n\nThis will restore the exact config from ${new Date(snapshot.timestamp).toLocaleString()}.`
         );
         if (confirmed) {
             restoreSnapshot(id);
             onClose();
+        }
+    };
+
+    const handleDeleteCommit = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (confirm(`Delete commit ${id.substring(0, 7)} from history?`)) {
+            deleteSnapshot(id);
+            if (selectedCommitId === id) {
+                const remaining = history.filter(h => h.id !== id);
+                setSelectedCommitId(remaining.length > 0 ? remaining[0].id : null);
+            }
         }
     };
 
@@ -123,14 +135,14 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                     <div
                                         key={commit.id}
                                         onClick={() => setSelectedCommitId(commit.id)}
-                                        className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
+                                        className={`group p-3 rounded-lg border text-left cursor-pointer transition-all relative ${
                                             isSelected
                                                 ? 'bg-indigo-950/70 border-indigo-500/80 ring-1 ring-indigo-500/30 shadow-lg'
                                                 : 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
                                         }`}
                                     >
                                         <div className="flex justify-between items-start gap-2 mb-1">
-                                            <div className="flex items-center gap-1.5 min-w-0">
+                                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                                 <span className="px-1.5 py-0.5 rounded bg-indigo-900/60 border border-indigo-500/40 text-[10px] font-mono font-bold text-indigo-300 shrink-0">
                                                     {shortHash}
                                                 </span>
@@ -138,12 +150,21 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                                     {commit.label || "Config update"}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-1 shrink-0">
+                                            <div className="flex items-center gap-1.5 shrink-0">
                                                 {isLatest && (
                                                     <span className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-[9px] font-bold text-emerald-400">
                                                         HEAD
                                                     </span>
                                                 )}
+                                                {/* Delete single commit button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleDeleteCommit(e, commit.id)}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-400 transition-opacity rounded hover:bg-slate-800"
+                                                    title="Delete this commit"
+                                                >
+                                                    <Icon name="Trash" className="text-xs" />
+                                                </button>
                                             </div>
                                         </div>
 
@@ -176,24 +197,35 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                 <div className="flex-1 flex flex-col bg-slate-950 border border-slate-800 rounded-xl overflow-hidden min-h-0">
                     {selectedSnapshot ? (
                         <>
-                            <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center shrink-0">
-                                <div>
-                                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
-                                        <Icon name="GitCommit" className="text-indigo-400" />
+                            <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex flex-wrap justify-between items-center shrink-0 gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="text-xs font-bold text-white flex items-center gap-2 truncate">
+                                        <Icon name="GitCommit" className="text-indigo-400 shrink-0" />
                                         Commit {selectedSnapshot.id.substring(0, 7)} — {selectedSnapshot.label}
                                     </h4>
-                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
                                         Committed on {new Date(selectedSnapshot.timestamp).toLocaleString()} • {selectedSnapshot.summary}
                                     </p>
                                 </div>
-                                <Button
-                                    variant="indigo"
-                                    className="text-xs py-1.5"
-                                    onClick={() => handleRestore(selectedSnapshot.id)}
-                                    icon="GitPullRequest"
-                                >
-                                    git checkout ({selectedSnapshot.id.substring(0, 7)})
-                                </Button>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <Button
+                                        variant="danger"
+                                        className="text-xs py-1.5 px-2.5 text-rose-300 hover:text-white"
+                                        onClick={(e) => handleDeleteCommit(e, selectedSnapshot.id)}
+                                        icon="Trash"
+                                        title="Delete this commit"
+                                    >
+                                        Delete
+                                    </Button>
+                                    <Button
+                                        variant="indigo"
+                                        className="text-xs py-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-bold shadow-lg shadow-emerald-950/50"
+                                        onClick={() => handleRestore(selectedSnapshot.id)}
+                                        icon="ArrowCounterClockwise"
+                                    >
+                                        ⏪ Rollback to this commit ({selectedSnapshot.id.substring(0, 7)})
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="flex-1 p-3 overflow-hidden">
@@ -207,7 +239,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-600 p-6 text-center">
                             <Icon name="GitCommit" className="text-5xl mb-3 opacity-20" />
-                            <p className="text-sm">Select a git commit from the left log to inspect visual diff and checkout</p>
+                            <p className="text-sm">Select a git commit from the left log to inspect visual diff and rollback</p>
                         </div>
                     )}
                 </div>
