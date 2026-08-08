@@ -173,9 +173,31 @@ export const SmartTagInput = ({
                                     if (e.ctrlKey || e.metaKey) {
                                         if (onTagClick) onTagClick(tag);
                                     } else {
-                                        navigator.clipboard.writeText(tag)
-                                            .then(() => toast.success(`Copied: ${tag}`))
-                                            .catch(() => toast.error("Copy failed"));
+                                        if (navigator?.clipboard?.writeText) {
+                                            navigator.clipboard.writeText(tag)
+                                                .then(() => toast.success(`Copied: ${tag}`))
+                                                .catch(() => {
+                                                    try {
+                                                        const el = document.createElement('textarea');
+                                                        el.value = tag;
+                                                        document.body.appendChild(el);
+                                                        el.select();
+                                                        document.execCommand('copy');
+                                                        document.body.removeChild(el);
+                                                        toast.success(`Copied: ${tag}`);
+                                                    } catch (e) { toast.error("Copy failed"); }
+                                                });
+                                        } else {
+                                            try {
+                                                const el = document.createElement('textarea');
+                                                el.value = tag;
+                                                document.body.appendChild(el);
+                                                el.select();
+                                                document.execCommand('copy');
+                                                document.body.removeChild(el);
+                                                toast.success(`Copied: ${tag}`);
+                                            } catch (e) { toast.error("Copy failed"); }
+                                        }
                                     }
                                 }}
                                 className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-colors cursor-pointer hover:ring-1 hover:ring-indigo-500 ${isInvalid

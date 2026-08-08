@@ -57,37 +57,38 @@ export const RuleEditor = ({
     inboundTags,
     geoData,
     rawMode,
-    allRules = []
+    allRules = [],
+    onSelectRule
 }: any) => {
     // Стейт для просмотра деталей тега по клику
     const [viewTag, setViewTag] = useState<string | null>(null);
 
-    // Calculate shadowed duplicate matchers in earlier rules
+    // Calculate shadowed duplicate matchers in earlier rules with jump links
     const duplicateWarnings = React.useMemo(() => {
         if (!allRules || !rule) return [];
         const currentIdx = rule.originalIndex !== undefined ? rule.originalIndex : allRules.findIndex((r: any) => r === rule);
         if (currentIdx <= 0) return [];
 
-        const itemWarnings: string[] = [];
-        const seenDomains = new Map<string, string>();
-        const seenIPs = new Map<string, string>();
+        const itemWarnings: Array<{ matcher: string; prevRuleName: string; prevIndex: number }> = [];
+        const seenDomains = new Map<string, { index: number; name: string }>();
+        const seenIPs = new Map<string, { index: number; name: string }>();
 
         for (let i = 0; i < currentIdx; i++) {
             const r = allRules[i];
             const rName = r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`;
             if (Array.isArray(r.domain)) {
-                r.domain.forEach((d: string) => d && typeof d === 'string' && seenDomains.set(d.trim().toLowerCase(), rName));
+                r.domain.forEach((d: string) => d && typeof d === 'string' && seenDomains.set(d.trim().toLowerCase(), { index: i, name: rName }));
             }
             if (Array.isArray(r.ip)) {
-                r.ip.forEach((ip: string) => ip && typeof ip === 'string' && seenIPs.set(ip.trim().toLowerCase(), rName));
+                r.ip.forEach((ip: string) => ip && typeof ip === 'string' && seenIPs.set(ip.trim().toLowerCase(), { index: i, name: rName }));
             }
         }
 
         if (Array.isArray(rule.domain)) {
             rule.domain.forEach((d: string) => {
                 if (d && typeof d === 'string' && seenDomains.has(d.trim().toLowerCase())) {
-                    const prevRule = seenDomains.get(d.trim().toLowerCase());
-                    itemWarnings.push(`"${d}" is already matched in ${prevRule}. Traffic for this domain/geosite will be intercepted before reaching this rule.`);
+                    const prev = seenDomains.get(d.trim().toLowerCase())!;
+                    itemWarnings.push({ matcher: d, prevRuleName: prev.name, prevIndex: prev.index });
                 }
             });
         }
@@ -95,8 +96,8 @@ export const RuleEditor = ({
         if (Array.isArray(rule.ip)) {
             rule.ip.forEach((ip: string) => {
                 if (ip && typeof ip === 'string' && seenIPs.has(ip.trim().toLowerCase())) {
-                    const prevRule = seenIPs.get(ip.trim().toLowerCase());
-                    itemWarnings.push(`"${ip}" is already matched in ${prevRule}. Traffic for this IP/geoip will be intercepted before reaching this rule.`);
+                    const prev = seenIPs.get(ip.trim().toLowerCase())!;
+                    itemWarnings.push({ matcher: ip, prevRuleName: prev.name, prevIndex: prev.index });
                 }
             });
         }
@@ -179,13 +180,27 @@ export const RuleEditor = ({
             {duplicateWarnings.length > 0 && (
                 <div className="p-3.5 bg-amber-950/40 border border-amber-500/50 rounded-xl flex items-start gap-2.5 animate-in fade-in">
                     <Icon name="Warning" weight="fill" className="text-amber-400 text-lg shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex-1 min-w-0 space-y-1.5">
                         <p className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">
                             Shadowed Duplicate Matchers ({duplicateWarnings.length})
                         </p>
-                        <ul className="space-y-1 text-[11px] text-amber-200/80 list-disc pl-4">
-                            {duplicateWarnings.map((msg: string, i: number) => (
-                                <li key={i}>{msg}</li>
+                        <ul className="space-y-1.5 text-[11px] text-amber-200/80">
+                            {duplicateWarnings.map((warn, i) => (
+                                <li key={i} className="flex flex-wrap items-center justify-between gap-1 bg-amber-900/20 p-1.5 px-2 rounded-lg border border-amber-500/20">
+                                    <span>
+                                        <b>"{warn.matcher}"</b> is already matched in <b>{warn.prevRuleName}</b> (Rule #{warn.prevIndex + 1})
+                                    </span>
+                                    {onSelectRule && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onSelectRule(warn.prevIndex)}
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-200 hover:text-white bg-amber-800/60 hover:bg-amber-700/80 border border-amber-500/40 rounded px-2 py-0.5 transition-all shadow-sm"
+                                            title={`Jump to Rule #${warn.prevIndex + 1}`}
+                                        >
+                                            Jump to Rule #{warn.prevIndex + 1} <Icon name="ArrowRight" className="text-[9px]" />
+                                        </button>
+                                    )}
+                                </li>
                             ))}
                         </ul>
                     </div>

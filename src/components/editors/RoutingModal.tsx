@@ -182,6 +182,7 @@ export const RoutingModal = ({ onClose }: any) => {
                                 geoData={{ sites: geoSites, ips: geoIps, loading: loadingGeo }}
                                 rawMode={rawMode}
                                 allRules={rules}
+                                onSelectRule={handleSelectRule}
                             />
                         </div>
                     </>
