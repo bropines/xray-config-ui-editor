@@ -58,32 +58,33 @@ export const useAppLogic = () => {
         }
     }, [pushStage]);
 
-    // Global Ctrl+S / Cmd+S shortcut for instant Git Commit
-    // Use capture:true so we intercept before browser's "Save page" dialog (important for GitHub Pages)
+    // Global Ctrl+S (Memory Save & UI Sync) and Ctrl+Shift+S (Git Commit)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault();
                 e.stopPropagation();
                 const store = useConfigStore.getState();
-                if (store.config) {
-                    const inbounds = store.config.inbounds?.length || 0;
-                    const outbounds = store.config.outbounds?.length || 0;
-                    const rules = store.config.routing?.rules?.length || 0;
-                    const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
+                if (!store.config) return;
 
-                    const snapshot = store.recordSnapshot(msg);
+                if (e.shiftKey) {
+                    // Ctrl + Shift + S -> Git Commit
+                    console.log('[Hotkeys] Ctrl+Shift+S -> Creating Git Commit...');
                     store.saveActiveProfile();
-
+                    const snapshot = store.recordSnapshot("Manual Commit (Ctrl+Shift+S)");
                     if (snapshot) {
-                        toast.success(`✓ Committed: ${snapshot.id.substring(0, 7)}`, { duration: 2000 });
+                        toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions} -${snapshot.deletions})`, { id: 'global-commit-toast' });
                     } else {
-                        toast.info(`Already at HEAD (no changes to commit)`, { duration: 2000 });
+                        toast.info("Already at HEAD (no changes to commit)", { id: 'global-commit-toast' });
                     }
+                } else {
+                    // Ctrl + S -> Instant Memory Save & UI Sync
+                    console.log('[Hotkeys] Ctrl+S -> Syncing memory & UI...');
+                    store.saveActiveProfile();
+                    toast.success("✓ Saved to memory & UI updated", { id: 'global-save-toast' });
                 }
             }
         };
-        // capture: true ensures we run BEFORE browser default (Ctrl+S = Save page)
         document.addEventListener('keydown', handleKeyDown, { capture: true });
         return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
     }, []);

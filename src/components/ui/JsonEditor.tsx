@@ -16,6 +16,8 @@ import xraySchema from "../../utils/config.schema.json";
 
 
 import { parseJsonc } from "../../utils/jsonc";
+import { useConfigStore } from "../../store/configStore";
+import { toast } from "sonner";
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 
@@ -549,7 +551,42 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
         ];
 
         if (isJson) {
+            const hotkeyKeymap = keymap.of([
+                {
+                    key: "Mod-s",
+                    run: (view) => {
+                        const currentDoc = view.state.doc.toString();
+                        console.log('[JsonEditor] Ctrl+S pressed -> Syncing memory & UI...');
+                        onChange(currentDoc);
+                        const store = useConfigStore.getState();
+                        store.saveActiveProfile();
+                        toast.success("✓ Saved to memory & UI updated", { id: 'ctrl-s-toast' });
+                        return true;
+                    }
+                },
+                {
+                    key: "Mod-Shift-s",
+                    run: (view) => {
+                        const currentDoc = view.state.doc.toString();
+                        console.log('[JsonEditor] Ctrl+Shift+S pressed -> Creating Git Commit...');
+                        onChange(currentDoc);
+                        const store = useConfigStore.getState();
+                        store.saveActiveProfile();
+                        const snapshot = store.recordSnapshot("Manual Commit (Ctrl+Shift+S)");
+                        if (snapshot) {
+                            console.log('[JsonEditor] Created snapshot commit:', snapshot);
+                            toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions} -${snapshot.deletions})`, { id: 'ctrl-shift-s-toast' });
+                        } else {
+                            console.log('[JsonEditor] Already at HEAD');
+                            toast.info("Already at HEAD (no changes to commit)", { id: 'ctrl-shift-s-toast' });
+                        }
+                        return true;
+                    }
+                }
+            ]);
+
             extensions.push(
+                hotkeyKeymap,
                 jsonc(),
                 autocompletion({
                     defaultKeymap: true,
