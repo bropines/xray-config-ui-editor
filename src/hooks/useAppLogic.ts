@@ -58,10 +58,12 @@ export const useAppLogic = () => {
     }, [pushStage]);
 
     // Global Ctrl+S / Cmd+S shortcut for instant Git Commit
+    // Use capture:true so we intercept before browser's "Save page" dialog (important for GitHub Pages)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault();
+                e.stopPropagation();
                 const store = useConfigStore.getState();
                 if (store.config) {
                     const hash = Math.random().toString(36).substring(2, 9);
@@ -69,18 +71,28 @@ export const useAppLogic = () => {
                     const outbounds = store.config.outbounds?.length || 0;
                     const rules = store.config.routing?.rules?.length || 0;
                     const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
-                    
+
                     store.recordSnapshot(msg);
                     store.saveActiveProfile();
-                    toast.success(`Git Commit ${hash} saved!`);
+                    toast.success(`✓ Committed: ${hash}`, { duration: 2000 });
                 }
             }
         };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        // capture: true ensures we run BEFORE browser default (Ctrl+S = Save page)
+        document.addEventListener('keydown', handleKeyDown, { capture: true });
+        return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
     }, []);
 
     const handleRealPush = useCallback(() => {
+        // Auto-commit before pushing to Remnawave
+        const store = useConfigStore.getState();
+        if (store.config) {
+            const inbounds = store.config.inbounds?.length || 0;
+            const outbounds = store.config.outbounds?.length || 0;
+            const rules = store.config.routing?.rules?.length || 0;
+            store.recordSnapshot(`Push to Remnawave (${inbounds} in, ${outbounds} out, ${rules} rules)`);
+            store.saveActiveProfile();
+        }
         saveToRemnawave();
         setPushStage('idle');
     }, [saveToRemnawave]);
