@@ -181,6 +181,7 @@ export const RoutingModal = ({ onClose }: any) => {
                                 inboundTags={inboundTags}
                                 geoData={{ sites: geoSites, ips: geoIps, loading: loadingGeo }}
                                 rawMode={rawMode}
+                                allRules={rules}
                             />
                         </div>
                     </>

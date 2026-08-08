@@ -56,10 +56,53 @@ export const RuleEditor = ({
     balancerTags,
     inboundTags,
     geoData,
-    rawMode
+    rawMode,
+    allRules = []
 }: any) => {
     // Стейт для просмотра деталей тега по клику
     const [viewTag, setViewTag] = useState<string | null>(null);
+
+    // Calculate shadowed duplicate matchers in earlier rules
+    const duplicateWarnings = React.useMemo(() => {
+        if (!allRules || !rule) return [];
+        const currentIdx = rule.originalIndex !== undefined ? rule.originalIndex : allRules.findIndex((r: any) => r === rule);
+        if (currentIdx <= 0) return [];
+
+        const itemWarnings: string[] = [];
+        const seenDomains = new Map<string, string>();
+        const seenIPs = new Map<string, string>();
+
+        for (let i = 0; i < currentIdx; i++) {
+            const r = allRules[i];
+            const rName = r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`;
+            if (Array.isArray(r.domain)) {
+                r.domain.forEach((d: string) => d && typeof d === 'string' && seenDomains.set(d.trim().toLowerCase(), rName));
+            }
+            if (Array.isArray(r.ip)) {
+                r.ip.forEach((ip: string) => ip && typeof ip === 'string' && seenIPs.set(ip.trim().toLowerCase(), rName));
+            }
+        }
+
+        if (Array.isArray(rule.domain)) {
+            rule.domain.forEach((d: string) => {
+                if (d && typeof d === 'string' && seenDomains.has(d.trim().toLowerCase())) {
+                    const prevRule = seenDomains.get(d.trim().toLowerCase());
+                    itemWarnings.push(`"${d}" is already matched in ${prevRule}. Traffic for this domain/geosite will be intercepted before reaching this rule.`);
+                }
+            });
+        }
+
+        if (Array.isArray(rule.ip)) {
+            rule.ip.forEach((ip: string) => {
+                if (ip && typeof ip === 'string' && seenIPs.has(ip.trim().toLowerCase())) {
+                    const prevRule = seenIPs.get(ip.trim().toLowerCase());
+                    itemWarnings.push(`"${ip}" is already matched in ${prevRule}. Traffic for this IP/geoip will be intercepted before reaching this rule.`);
+                }
+            });
+        }
+
+        return itemWarnings;
+    }, [rule, allRules]);
 
     if (!rule) {
         return (
@@ -132,6 +175,22 @@ export const RuleEditor = ({
 
     return (
         <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full relative">
+
+            {duplicateWarnings.length > 0 && (
+                <div className="p-3.5 bg-amber-950/40 border border-amber-500/50 rounded-xl flex items-start gap-2.5 animate-in fade-in">
+                    <Icon name="Warning" weight="fill" className="text-amber-400 text-lg shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0 space-y-1">
+                        <p className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">
+                            Shadowed Duplicate Matchers ({duplicateWarnings.length})
+                        </p>
+                        <ul className="space-y-1 text-[11px] text-amber-200/80 list-disc pl-4">
+                            {duplicateWarnings.map((msg: string, i: number) => (
+                                <li key={i}>{msg}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
 
             {errors.length > 0 && (
                 <div className="p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">

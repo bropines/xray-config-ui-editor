@@ -122,7 +122,12 @@ export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
     inbounds.forEach(checkInbound);
     outbounds.forEach(checkOutbound);
 
+    const seenDomains = new Map<string, { index: number; name: string }>();
+    const seenIPs = new Map<string, { index: number; name: string }>();
+
     rules.forEach((rule: any, i: number) => {
+        const ruleName = rule.ruleTag || rule.outboundTag || rule.balancerTag || `Rule #${i + 1}`;
+
         if (rule.outboundTag && !allTargetTags.has(rule.outboundTag)) {
             diagnostics.push({
                 section: 'routing', itemIndex: i, field: 'outboundTag',
@@ -133,6 +138,48 @@ export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
             diagnostics.push({
                 section: 'routing', itemIndex: i, field: 'balancerTag',
                 severity: 'critical', message: `Rule targets unknown balancer: "${rule.balancerTag}"`,
+            });
+        }
+
+        // Check duplicate domain / geosite matchers
+        if (Array.isArray(rule.domain)) {
+            rule.domain.forEach((d: string) => {
+                if (!d || typeof d !== 'string') return;
+                const key = d.trim().toLowerCase();
+                if (seenDomains.has(key)) {
+                    const first = seenDomains.get(key)!;
+                    diagnostics.push({
+                        section: 'routing',
+                        itemIndex: i,
+                        field: 'domain',
+                        severity: 'warning',
+                        message: `Duplicate matcher "${d}" in ${ruleName} — already matched in ${first.name} (Rule #${first.index + 1}). Traffic for "${d}" will be shadowed by Rule #${first.index + 1}.`,
+                        suggestion: `Remove duplicate "${d}" or reorder routing rules.`
+                    });
+                } else {
+                    seenDomains.set(key, { index: i, name: ruleName });
+                }
+            });
+        }
+
+        // Check duplicate IP / geoip matchers
+        if (Array.isArray(rule.ip)) {
+            rule.ip.forEach((ip: string) => {
+                if (!ip || typeof ip !== 'string') return;
+                const key = ip.trim().toLowerCase();
+                if (seenIPs.has(key)) {
+                    const first = seenIPs.get(key)!;
+                    diagnostics.push({
+                        section: 'routing',
+                        itemIndex: i,
+                        field: 'ip',
+                        severity: 'warning',
+                        message: `Duplicate IP matcher "${ip}" in ${ruleName} — already matched in ${first.name} (Rule #${first.index + 1}). Traffic for "${ip}" will be shadowed by Rule #${first.index + 1}.`,
+                        suggestion: `Remove duplicate "${ip}" or reorder routing rules.`
+                    });
+                } else {
+                    seenIPs.set(key, { index: i, name: ruleName });
+                }
             });
         }
     });
