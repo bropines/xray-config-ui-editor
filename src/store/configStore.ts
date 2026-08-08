@@ -59,7 +59,7 @@ interface RemnawaveState {
 interface ConfigState {
     config: XrayConfig | null;
     setConfig: (config: XrayConfig | null) => void;
-    loadConfig: (json: unknown, label?: string) => void;
+    loadConfig: (json: unknown, label?: string, isCloud?: boolean) => void;
     coreVersion: string;
     setCoreVersion: (version: string) => void;
     
@@ -186,14 +186,20 @@ export const useConfigStore = create(
 
                 const client = new RemnawaveClient(url);
                 client.setToken(token);
+                const prevUuid = get().remnawave.activeProfileUuid;
                 try {
-                    const configData = await client.getConfigProfile(uuid);
-                    get().loadConfig(configData);
+                    // Set activeProfileUuid FIRST so loadConfig and snapshots record under rw:uuid
                     set(produce((state) => {
                         state.remnawave.activeProfileUuid = uuid;
                     }));
+                    const configData = await client.getConfigProfile(uuid);
+                    const profile = get().remnawave.profiles.find(p => p.uuid === uuid);
+                    get().loadConfig(configData, `Loaded Profile (${profile?.name || 'Cloud'})`, true);
                     toast.success("Profile config loaded");
                 } catch (e: any) {
+                    set(produce((state) => {
+                        state.remnawave.activeProfileUuid = prevUuid;
+                    }));
                     toast.error("Failed to load profile from cloud");
                 }
             },
@@ -360,6 +366,7 @@ export const useConfigStore = create(
                     state.activeProfileId = newId;
                     state.config = newProfile.config;
                     state.baselineConfigJson = JSON.stringify(newProfile.config);
+                    state.remnawave.activeProfileUuid = null;
                 }));
                 get().recordSnapshot(`Created Profile (${newProfile.name})`);
                 toast.success(`Created profile "${newProfile.name}"`);
@@ -369,11 +376,12 @@ export const useConfigStore = create(
                 const { profiles } = get();
                 const target = profiles.find(p => p.id === id);
                 if (!target) return;
-                set({
-                    activeProfileId: id,
-                    config: JSON.parse(JSON.stringify(target.config)),
-                    baselineConfigJson: JSON.stringify(target.config)
-                });
+                set(produce((state) => {
+                    state.activeProfileId = id;
+                    state.config = JSON.parse(JSON.stringify(target.config));
+                    state.baselineConfigJson = JSON.stringify(target.config);
+                    state.remnawave.activeProfileUuid = null;
+                }));
                 toast.info(`Switched to "${target.name}"`);
             },
 
@@ -415,8 +423,13 @@ export const useConfigStore = create(
             },
 
             saveActiveProfile: () => {
-                const { config, activeProfileId } = get();
+                const { config, activeProfileId, remnawave } = get();
                 if (!config) return;
+                // If a cloud profile is active, do not overwrite the local profile
+                if (remnawave.activeProfileUuid) {
+                    get().recordSnapshot("Profile Saved");
+                    return;
+                }
                 set(produce((state) => {
                     const target = state.profiles.find((p: any) => p.id === activeProfileId);
                     if (target) {
@@ -450,7 +463,7 @@ export const useConfigStore = create(
             
             setConfig: (config) => set({ config }),
 
-            loadConfig: (json, label) => {
+            loadConfig: (json, label, isCloud = false) => {
                 const result = XrayConfigSchema.safeParse(json);
                 const parsedConfig = result.success ? result.data : (json as XrayConfig);
                 if (!result.success) {
@@ -460,6 +473,9 @@ export const useConfigStore = create(
                 set(produce((state) => {
                     state.config = parsedConfig;
                     state.baselineConfigJson = JSON.stringify(parsedConfig);
+                    if (!isCloud) {
+                        state.remnawave.activeProfileUuid = null;
+                    }
                     const active = state.profiles.find((p: any) => p.id === state.activeProfileId);
                     if (active) {
                         active.config = JSON.parse(JSON.stringify(parsedConfig));

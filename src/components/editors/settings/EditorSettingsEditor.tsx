@@ -76,8 +76,37 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                 }
             >
                 <div className="space-y-2 mt-2">
+                    {remnawave.activeProfileUuid && (
+                        <div className="p-3 rounded-xl border border-sky-500/60 bg-sky-950/40 shadow-lg ring-1 ring-sky-500/20 flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <Icon name="CloudCheck" className="text-lg shrink-0 text-sky-400" weight="fill" />
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-white truncate">
+                                            {remnawave.profiles?.find(p => p.uuid === remnawave.activeProfileUuid)?.name || 'Remnawave Cloud'}
+                                        </span>
+                                        <span className="text-[9px] bg-sky-600/30 text-sky-300 border border-sky-500/30 px-1.5 py-0.2 rounded font-mono font-bold uppercase">
+                                            ACTIVE CLOUD
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                        Remnawave Cloud Profile ({remnawave.activeProfileUuid.substring(0, 8)})
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="secondary"
+                                className="text-xs py-1 text-slate-300 hover:text-white"
+                                onClick={() => switchProfile(activeProfileId)}
+                                icon="Laptop"
+                            >
+                                Switch to Local
+                            </Button>
+                        </div>
+                    )}
+
                     {profiles.map(profile => {
-                        const isActive = profile.id === activeProfileId;
+                        const isActive = !remnawave.activeProfileUuid && profile.id === activeProfileId;
                         const isEditing = editingProfileId === profile.id;
                         const inbounds = profile.config?.inbounds?.length || 0;
                         const outbounds = profile.config?.outbounds?.length || 0;
