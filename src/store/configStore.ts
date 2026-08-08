@@ -6,6 +6,7 @@ import { validateBalancer } from '../core/validators';
 import { toast } from 'sonner';
 import type { RemnawaveProfile } from '../core/types';
 import { XrayConfigSchema } from '../core/xray/schemas';
+import { diffLines } from 'diff';
 
 // Re-export types from core for backward compatibility
 export type {
@@ -43,6 +44,8 @@ export interface ConfigHistorySnapshot {
     label: string;
     summary: string;
     config: XrayConfig;
+    additions?: number;
+    deletions?: number;
 }
 
 interface RemnawaveState {
@@ -244,6 +247,24 @@ export const useConfigStore = create(
             recordSnapshot: (label = "Config Edit") => {
                 const { config, history, historyLimit } = get();
                 if (!config) return;
+
+                // Compare against previous snapshot — skip if nothing changed
+                const prevConfig = history.length > 0 ? history[0].config : null;
+                const currentJson = JSON.stringify(config);
+                const prevJson = prevConfig ? JSON.stringify(prevConfig) : '';
+                if (currentJson === prevJson) return;
+
+                // Count line-level additions/deletions
+                let additions = 0;
+                let deletions = 0;
+                try {
+                    const changes = diffLines(prevJson, currentJson);
+                    changes.forEach((c) => {
+                        if (c.added) additions += c.count || 1;
+                        if (c.removed) deletions += c.count || 1;
+                    });
+                } catch { /* ignore */ }
+
                 const inbounds = config.inbounds?.length || 0;
                 const outbounds = config.outbounds?.length || 0;
                 const rules = config.routing?.rules?.length || 0;
@@ -254,7 +275,9 @@ export const useConfigStore = create(
                     timestamp: Date.now(),
                     label,
                     summary,
-                    config: JSON.parse(JSON.stringify(config))
+                    config: JSON.parse(JSON.stringify(config)),
+                    additions,
+                    deletions,
                 };
                 const limit = Math.max(10, Math.min(1000, historyLimit));
                 const newHistory = [snapshot, ...history].slice(0, limit);

@@ -98,18 +98,32 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                                     {commit.label || "Config update"}
                                                 </span>
                                             </div>
-                                            {isLatest && (
-                                                <span className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-[9px] font-bold text-emerald-400 shrink-0">
-                                                    HEAD
-                                                </span>
-                                            )}
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                {isLatest && (
+                                                    <span className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-[9px] font-bold text-emerald-400">
+                                                        HEAD
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        
-                                        <div className="text-[10px] text-slate-400 font-mono flex justify-between items-center mt-1.5">
+
+                                        <div className="text-[10px] text-slate-400 font-mono flex justify-between items-center mt-1.5 gap-2">
                                             <span className="truncate text-slate-400">{commit.summary}</span>
-                                            <span className="text-slate-500 text-[9px] shrink-0">
-                                                {new Date(commit.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {(commit.additions !== undefined || commit.deletions !== undefined) && (
+                                                    <span className="flex items-center gap-1 font-bold font-mono">
+                                                        {(commit.additions ?? 0) > 0 && (
+                                                            <span className="text-emerald-400">+{commit.additions}</span>
+                                                        )}
+                                                        {(commit.deletions ?? 0) > 0 && (
+                                                            <span className="text-rose-400">-{commit.deletions}</span>
+                                                        )}
+                                                    </span>
+                                                )}
+                                                <span className="text-slate-500 text-[9px]">
+                                                    {new Date(commit.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 );
