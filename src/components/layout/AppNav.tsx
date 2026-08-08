@@ -76,10 +76,11 @@ export const AppNav = ({
             const isCurrent = p.id === activeProfileId && !remnawave.activeProfileUuid;
             const inCount = isCurrent ? (config?.inbounds?.length || 0) : (p.config?.inbounds?.length || 0);
             const outCount = isCurrent ? (config?.outbounds?.length || 0) : (p.config?.outbounds?.length || 0);
+            const name = p.name === 'Default Profile' ? 'Default' : p.name;
 
             opts.push({
                 value: `local:${p.id}`,
-                label: remnawave.connected ? `💻 Local: ${p.name}` : p.name,
+                label: remnawave.connected ? `💻 Local: ${name}` : name,
                 description: `${inCount} inbounds, ${outCount} outbounds`
             });
         });
@@ -99,8 +100,10 @@ export const AppNav = ({
         if (remnawave.connected && remnawave.activeProfileUuid) {
             return `cloud:${remnawave.activeProfileUuid}`;
         }
-        return `local:${activeProfileId}`;
-    }, [remnawave.connected, remnawave.activeProfileUuid, activeProfileId]);
+        const activeExists = profiles.some(p => p.id === activeProfileId);
+        const fallbackId = activeExists ? activeProfileId : (profiles[0]?.id || 'default');
+        return `local:${fallbackId}`;
+    }, [remnawave.connected, remnawave.activeProfileUuid, activeProfileId, profiles]);
 
     const handleSelectChange = (val: string) => {
         if (val.startsWith('cloud:')) {

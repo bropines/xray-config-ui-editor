@@ -230,7 +230,7 @@ export const useConfigStore = create(
             profiles: [
                 {
                     id: 'default',
-                    name: 'Default Profile',
+                    name: 'Default',
                     updatedAt: Date.now(),
                     config: { inbounds: [], outbounds: [] }
                 }

@@ -90,12 +90,12 @@ export function Select<T extends string = string>({
                     className={`
                         w-full bg-slate-950 border rounded-lg h-11
                         text-white px-4 text-sm flex items-center justify-between
-                        transition-all duration-200 text-left
+                        transition-all duration-200 text-left min-w-0
                         disabled:opacity-50 disabled:cursor-not-allowed
                         ${border}
                     `}
                 >
-                    <span className={!selectedOption ? 'text-slate-500' : 'text-white'}>
+                    <span className={`truncate min-w-0 ${!selectedOption ? 'text-slate-500' : 'text-white'}`}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </span>
                     <Icon
