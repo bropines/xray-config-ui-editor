@@ -160,10 +160,10 @@ export const AppNav = ({
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 {/* Independent Selector OUTSIDE container when config is loaded */}
                 {hasConfig && (
-                    <div className="w-28 sm:w-36 md:w-52 shrink-0">
+                    <div className="w-32 sm:w-44 md:w-60 shrink-0">
                         <Select
                             value={currentOptionValue}
                             onChange={handleSelectChange}
@@ -174,13 +174,13 @@ export const AppNav = ({
 
                 {/* Container for Profiles, Git Log & Clear buttons */}
                 {hasConfig && (
-                    <div className="flex items-center gap-1 bg-slate-950/50 p-1 rounded-xl border border-slate-800 h-11 shrink-0">
+                    <div className="flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800 h-12 shrink-0 shadow-lg">
                         {onOpenEditorSettings && (
                             <Button
                                 variant="secondary"
                                 onClick={onOpenEditorSettings}
                                 icon="FolderUser"
-                                className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none border-slate-700/60"
+                                className="h-10 px-3 sm:px-4 text-xs sm:text-sm font-extrabold rounded-lg border-slate-700/80 hover:bg-slate-800"
                                 title="Profiles & Editor Settings"
                             >
                                 <span className="hidden sm:inline">Profiles</span>
@@ -192,7 +192,7 @@ export const AppNav = ({
                                 variant="secondary"
                                 onClick={onOpenHistory}
                                 icon="GitBranch"
-                                className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none border-indigo-500/40 text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60"
+                                className="h-10 px-3 sm:px-4 text-xs sm:text-sm font-extrabold rounded-lg border-indigo-500/50 text-indigo-300 hover:text-white bg-indigo-950/50 hover:bg-indigo-900/80 shadow-sm"
                                 title="Git Version History & Log"
                             >
                                 <span className="hidden sm:inline">Git Log</span>
@@ -206,7 +206,7 @@ export const AppNav = ({
                                     if (confirm("Clear config?")) onClearConfig();
                                 }}
                                 icon="XCircle"
-                                className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none bg-rose-600 hover:bg-rose-500 text-white font-bold"
+                                className="h-10 px-3 sm:px-4 text-xs sm:text-sm font-extrabold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-md"
                                 title="Clear Config"
                             >
                                 <span className="hidden sm:inline">Clear</span>
@@ -217,29 +217,29 @@ export const AppNav = ({
 
                 {/* Cloud controls (connected) */}
                 {connected && (
-                    <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1 h-11 shrink-0">
+                    <div className="flex items-center bg-slate-950/60 border border-slate-800 rounded-xl p-1 gap-1.5 h-12 shrink-0 shadow-lg">
                         <button
                             onClick={onOpenSwitchProfile}
-                            className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
+                            className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-300 hover:text-indigo-400 transition-all text-base"
                             title="Switch Profile"
                         >
                             <Icon name="ListDashes" weight="bold" />
                         </button>
                         <button
                             onClick={onPush}
-                            className={`flex items-center justify-center gap-2 px-3 sm:px-4 h-9 rounded-lg font-bold text-xs transition-all duration-300 ${
+                            className={`flex items-center justify-center gap-2 px-3 sm:px-4 h-10 rounded-lg font-extrabold text-xs sm:text-sm transition-all duration-300 ${
                                 pushStage === 'confirm'
                                     ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
-                                    : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md'
                             }`}
                         >
-                            <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" className="text-base" />
+                            <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" className="text-lg" />
                             <span className="hidden lg:inline">{pushStage === 'confirm' ? 'Confirm Push?' : 'Push'}</span>
                         </button>
-                        <div className="w-px h-4 bg-slate-800 mx-1" />
+                        <div className="w-px h-5 bg-slate-800 mx-1" />
                         <button
                             onClick={onDisconnect}
-                            className="w-9 h-9 flex items-center justify-center hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
+                            className="w-10 h-10 flex items-center justify-center hover:bg-rose-500/10 rounded-lg text-slate-500 hover:text-rose-400 transition-all text-base"
                             title="Disconnect"
                         >
                             <Icon name="LinkBreak" weight="bold" />
@@ -252,10 +252,10 @@ export const AppNav = ({
                     <Button
                         variant="secondary"
                         onClick={onOpenRemnawave}
-                        className="text-xs h-11 px-2.5 sm:px-4 border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 shrink-0"
+                        className="text-xs sm:text-sm font-extrabold h-12 px-3 sm:px-5 border-indigo-500/30 bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-300 hover:text-white shrink-0 shadow-md"
                         title="Connect Cloud"
                     >
-                        <Icon name="Cloud" /> <span className="hidden md:inline">Connect Cloud</span>
+                        <Icon name="Cloud" className="text-base sm:text-lg" /> <span className="hidden md:inline">Connect Cloud</span>
                     </Button>
                 )}
 

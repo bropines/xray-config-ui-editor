@@ -1,8 +1,9 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Icon } from './Icon';
 
-export const Modal = ({ title, onClose, onSave, children, extraButtons = null, className = "", isSecondary = false }) => {
+export const Modal = ({ title, onClose, onSave, children, extraButtons = null, className = "", isSecondary = false }: any) => {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   React.useEffect(() => {
@@ -13,11 +14,13 @@ export const Modal = ({ title, onClose, onSave, children, extraButtons = null, c
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center ${isSecondary ? 'bg-black/40' : 'bg-black/80 backdrop-blur-sm'} animate-in fade-in duration-200 ${isFullScreen ? 'p-0 is-modal-fullscreen' : 'p-2 md:p-4'}`}>
+  const modalWidthClass = className.split(' ').find(c => c.startsWith('max-w-')) || 'max-w-[95vw] xl:max-w-[75vw] 2xl:max-w-[1400px]';
+
+  return createPortal(
+    <div className={`fixed inset-0 z-[9999] flex items-center justify-center ${isSecondary ? 'bg-black/50' : 'bg-black/85 backdrop-blur-md'} animate-in fade-in duration-200 ${isFullScreen ? 'p-0 is-modal-fullscreen' : 'p-3 md:p-6'}`}>
       <div className={`bg-slate-900 border border-slate-700 w-full flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 
-        ${isFullScreen ? 'h-full md:rounded-none' : 'h-full md:h-auto md:max-h-[90vh] md:rounded-2xl'} 
-        ${isFullScreen ? 'max-w-full' : (className.includes('max-w-') ? '' : 'max-w-[95vw] xl:max-w-[75vw] 2xl:max-w-[1400px]')} ${className}`}>
+        ${isFullScreen ? 'h-full md:rounded-none' : 'h-auto max-h-[92vh] md:rounded-2xl'} 
+        ${isFullScreen ? 'max-w-full' : modalWidthClass} ${className}`}>
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 md:p-5 border-b border-slate-800 shrink-0">
@@ -54,6 +57,7 @@ export const Modal = ({ title, onClose, onSave, children, extraButtons = null, c
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
