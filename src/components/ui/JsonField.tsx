@@ -17,15 +17,18 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
     // Синхронизация внешнего value -> внутренний текст
     useEffect(() => {
         let displayValue = value;
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-            const { i, ...cleanValue } = value as any;
-            displayValue = cleanValue;
+        if (value && typeof value === 'object' && !Array.isArray(value) && 'i' in value) {
+            displayValue = { ...value };
+            Object.getOwnPropertySymbols(value).forEach(sym => {
+                (displayValue as any)[sym] = (value as any)[sym];
+            });
+            delete (displayValue as any).i;
         }
         
-        const newText = JSON.stringify(displayValue, null, 2);
+        const newText = stringifyJsonc(displayValue, 2);
         
         try {
-            if (text.trim() !== "" && JSON.stringify(parseJsonc(text)) === JSON.stringify(displayValue)) {
+            if (text.trim() !== "" && stringifyJsonc(parseJsonc(text), 2) === stringifyJsonc(displayValue, 2)) {
                 return;
             }
         } catch (e) {}
@@ -42,9 +45,15 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             } else {
                 const parsed = parseJsonc(v);
 
-            // Recursively remove 'i' property and ignore nulls
+            // Recursively remove 'i' property and ignore nulls, preserving comment Symbols
             const sanitize = (obj: any): any => {
-                if (Array.isArray(obj)) return obj.map(sanitize).filter(i => i !== null);
+                if (Array.isArray(obj)) {
+                    const arr = obj.map(sanitize).filter(i => i !== null);
+                    Object.getOwnPropertySymbols(obj).forEach(sym => {
+                        (arr as any)[sym] = (obj as any)[sym];
+                    });
+                    return arr;
+                }
                 if (obj && typeof obj === 'object') {
                     const newObj: any = {};
                     for (const key in obj) {
@@ -52,6 +61,9 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                         const val = sanitize(obj[key]);
                         if (val !== null && val !== undefined) newObj[key] = val;
                     }
+                    Object.getOwnPropertySymbols(obj).forEach(sym => {
+                        newObj[sym] = obj[sym];
+                    });
                     return newObj;
                 }
                 return obj;
