@@ -34,6 +34,8 @@ export const useAppLogic = () => {
     const [aboutOpen, setAboutOpen] = useState(false);
     const [warpModalOpen, setWarpModalOpen] = useState(false);
     const [configInspectorOpen, setConfigInspectorOpen] = useState(false);
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
+    const [editorSettingsOpen, setEditorSettingsOpen] = useState(false);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -163,6 +165,12 @@ export const useAppLogic = () => {
         aboutOpen, setAboutOpen,
         warpModalOpen, setWarpModalOpen,
         configInspectorOpen, setConfigInspectorOpen,
+        historyModalOpen, setHistoryModalOpen,
+        onOpenHistory: () => setHistoryModalOpen(true),
+        onCloseHistory: () => setHistoryModalOpen(false),
+        editorSettingsOpen, setEditorSettingsOpen,
+        onOpenEditorSettings: () => setEditorSettingsOpen(true),
+        onCloseEditorSettings: () => setEditorSettingsOpen(false),
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,

@@ -11,6 +11,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { XrayConfig } from "../../core/types";
+import { useConfigStore } from "../../store/configStore";
+import { Select } from "../ui/Select";
 
 // Re-usable column Card for the dashboard
 interface DashCardProps {
@@ -213,6 +215,8 @@ interface ConfigDashboardProps {
   onOpenTopology: () => void;
   onOpenGeoViewer: () => void;
   onOpenConfigInspector: () => void;
+  onOpenHistory?: () => void;
+  onOpenEditorSettings?: () => void;
 }
 
 export const ConfigDashboard = ({
@@ -246,7 +250,29 @@ export const ConfigDashboard = ({
   onOpenTopology,
   onOpenGeoViewer,
   onOpenConfigInspector,
+  onOpenHistory,
+  onOpenEditorSettings,
 }: ConfigDashboardProps) => {
+  const {
+    profiles,
+    activeProfileId,
+    switchProfile,
+    saveActiveProfile,
+    revertToBaseline,
+    baselineConfigJson,
+    config: storeConfig,
+    history
+  } = useConfigStore();
+
+  const isModified = React.useMemo(() => {
+    if (!baselineConfigJson || !storeConfig) return false;
+    try {
+      return JSON.stringify(storeConfig) !== baselineConfigJson;
+    } catch (e) {
+      return false;
+    }
+  }, [baselineConfigJson, storeConfig]);
+
   const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
   const [lastClickedFilteredIdx, setLastClickedFilteredIdx] = React.useState<number | null>(null);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -451,8 +477,51 @@ export const ConfigDashboard = ({
         </div>
 
         <div
-          className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-wrap gap-2 w-full md:w-auto pt-3 md:pt-0 border-t border-slate-800 md:border-transparent animate-in fade-in slide-in-from-top-1 duration-200`}
+          className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-wrap items-center gap-2 w-full md:w-auto pt-3 md:pt-0 border-t border-slate-800 md:border-transparent animate-in fade-in slide-in-from-top-1 duration-200`}
         >
+          {/* Modified Status Badge */}
+          {isModified ? (
+            <div className="flex items-center gap-1.5 shrink-0 animate-in fade-in">
+              <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                Modified
+              </span>
+              <button
+                type="button"
+                onClick={saveActiveProfile}
+                className="px-2 py-1 text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-800/60 rounded-md transition-colors"
+                title="Save changes to active profile"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={revertToBaseline}
+                className="px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-700/60 rounded-md transition-colors"
+                title="Revert to last saved baseline"
+              >
+                Revert
+              </button>
+            </div>
+          ) : (
+            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              Saved
+            </span>
+          )}
+
+          {/* History Timeline */}
+          {onOpenHistory && (
+            <Button
+              className="text-[10px] md:text-xs py-1.5 md:py-2"
+              variant="secondary"
+              onClick={onOpenHistory}
+              icon="GitBranch"
+            >
+              History ({history.length})
+            </Button>
+          )}
+
           <Button
             variant="secondary"
             onClick={() => setRawMode(!rawMode)}
@@ -460,17 +529,6 @@ export const ConfigDashboard = ({
             className={`flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 ${rawMode ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : ""}`}
           >
             {rawMode ? "UI Mode" : "JSON Mode"}
-          </Button>
-          <Button
-            variant="danger"
-            className="text-[10px] md:text-xs px-3 py-1.5 md:py-2 flex-1 md:flex-none"
-            onClick={() => {
-              if (confirm("Clear config?")) setConfig(null as any);
-            }}
-            icon="XCircle"
-            title="Close Config"
-          >
-            <span className="md:inline">Clear</span>
           </Button>
         </div>
       </div>

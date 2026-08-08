@@ -23,6 +23,10 @@ export const App = () => {
         aboutOpen, setAboutOpen,
         warpModalOpen, setWarpModalOpen,
         configInspectorOpen, setConfigInspectorOpen,
+        historyModalOpen, setHistoryModalOpen,
+        onOpenHistory, onCloseHistory,
+        editorSettingsOpen, setEditorSettingsOpen,
+        onOpenEditorSettings, onCloseEditorSettings,
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,
@@ -74,6 +78,8 @@ export const App = () => {
                 onOpenAbout={() => setAboutOpen(true)}
                 onFileUpload={handleFileUpload}
                 onDownload={downloadConfig}
+                onOpenEditorSettings={onOpenEditorSettings}
+                onClearConfig={() => setConfig(null as any)}
             />
 
             <main className="flex-1 min-h-0 flex flex-col p-3 md:p-4 max-w-[1800px] mx-auto w-full overflow-hidden">
@@ -116,6 +122,7 @@ export const App = () => {
                         onOpenTopology={() => setModal({ type: 'topology', data: null, index: null })}
                         onOpenGeoViewer={() => setGeoViewerOpen(true)}
                         onOpenConfigInspector={() => setConfigInspectorOpen(true)}
+                        onOpenEditorSettings={onOpenEditorSettings}
                     />
                 )}
             </main>
@@ -143,6 +150,11 @@ export const App = () => {
                 onCloseAbout={() => setAboutOpen(false)}
                 configInspectorOpen={configInspectorOpen}
                 onCloseConfigInspector={() => setConfigInspectorOpen(false)}
+                historyModalOpen={historyModalOpen}
+                onCloseHistory={onCloseHistory}
+                onOpenHistory={onOpenHistory}
+                editorSettingsOpen={editorSettingsOpen}
+                onCloseEditorSettings={onCloseEditorSettings}
                 setModal={setModal}
                 openSectionJson={openSectionJson}
             />

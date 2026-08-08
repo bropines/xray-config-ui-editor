@@ -14,6 +14,8 @@ import { DiagnosticsPanel } from '../DiagnosticsPanel';
 import { AboutModal } from '../AboutModal';
 import { WarpGeneratorModal } from '../editors/WarpGeneratorModal';
 import { ConfigInspectorModal } from '../editors/ConfigInspectorModal';
+import { VersionHistoryModal } from '../editors/VersionHistoryModal';
+import { EditorSettingsModal } from '../editors/EditorSettingsModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -61,6 +63,14 @@ interface ModalManagerProps {
 
     configInspectorOpen: boolean;
     onCloseConfigInspector: () => void;
+
+    historyModalOpen?: boolean;
+    onCloseHistory?: () => void;
+    onOpenHistory?: () => void;
+
+    editorSettingsOpen?: boolean;
+    onCloseEditorSettings?: () => void;
+
     setModal: (m: any) => void;
     openSectionJson: (section: string, title: string, data: any) => void;
 }
@@ -92,6 +102,11 @@ export const ModalManager = ({
     onCloseAbout,
     configInspectorOpen,
     onCloseConfigInspector,
+    historyModalOpen,
+    onCloseHistory,
+    onOpenHistory,
+    editorSettingsOpen,
+    onCloseEditorSettings,
     setModal,
     openSectionJson,
 }: ModalManagerProps) => (
@@ -113,6 +128,10 @@ export const ModalManager = ({
         {batchModalOpen && <BatchOutboundModal onClose={onCloseBatch} />}
         {geoViewerOpen && <GeoViewerModal onClose={onCloseGeoViewer} />}
         {warpModalOpen && <WarpGeneratorModal onClose={onCloseWarpModal} onGenerate={onGenerateWarp} />}
+        {historyModalOpen && onCloseHistory && <VersionHistoryModal onClose={onCloseHistory} />}
+        {editorSettingsOpen && onCloseEditorSettings && (
+            <EditorSettingsModal onClose={onCloseEditorSettings} onOpenHistory={onOpenHistory} />
+        )}
 
         {sectionModal.open && (
             <SectionJsonModal
