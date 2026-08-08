@@ -65,6 +65,7 @@ interface ConfigState {
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
+    deleteItems: (section: 'inbounds' | 'outbounds', indices: number[]) => void;
     moveItem: (section: 'inbounds' | 'outbounds', fromIndex: number, toIndex: number) => void;
     addOutbounds: (items: any[]) => void;
     
@@ -247,6 +248,17 @@ export const useConfigStore = create(
             deleteItem: (section, index) => set(produce((state) => {
                 if (state.config && state.config[section]) {
                     state.config[section].splice(index, 1);
+                }
+            })),
+
+            deleteItems: (section, indices) => set(produce((state) => {
+                if (state.config && state.config[section]) {
+                    const sorted = Array.from(new Set(indices)).sort((a, b) => b - a);
+                    for (const idx of sorted) {
+                        if (idx >= 0 && idx < state.config[section].length) {
+                            state.config[section].splice(idx, 1);
+                        }
+                    }
                 }
             })),
             

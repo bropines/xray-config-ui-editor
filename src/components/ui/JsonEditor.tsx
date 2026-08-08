@@ -185,8 +185,12 @@ function cleanAjvErrors(errors: any[], parsedObj: any): any[] {
             const path = err.instancePath;
             const additionalProp = err.params?.additionalProperty;
             
-            // Если это служебное свойство индекса "i" (используется UI), игнорируем ошибку
-            if (additionalProp === 'i') {
+            // Игнорируем расширения Xray-core и UI свойства в подстветке JSON
+            const ALLOWED_ADDITIONAL_PROPERTIES = [
+                'i', '_id', 'ruleTag', 'vlessRoute', 'attrs', 'webhook', 'balancerTag', 'outboundTag',
+                'fallbackTag', 'expected', 'maxRTT', 'tolerance', 'baselines', 'costs'
+            ];
+            if (additionalProp && ALLOWED_ADDITIONAL_PROPERTIES.includes(additionalProp)) {
                 return false;
             }
             

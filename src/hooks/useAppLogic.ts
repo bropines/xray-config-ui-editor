@@ -10,6 +10,7 @@ export const useAppLogic = () => {
         setConfig,
         loadConfig,
         deleteItem,
+        deleteItems,
         moveItem,
         updateItem,
         addItem,
@@ -152,7 +153,7 @@ export const useAppLogic = () => {
     }, [config?.outbounds, obSearch]);
 
     return {
-        config, setConfig, deleteItem, addItem, remnawave, disconnectRemnawave, initDns,
+        config, setConfig, deleteItem, deleteItems, addItem, remnawave, disconnectRemnawave, initDns,
         modal, setModal,
         sectionModal, setSectionModal,
         remnawaveModalOpen, setRemnawaveModalOpen,

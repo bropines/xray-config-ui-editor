@@ -2,6 +2,7 @@ import React from "react";
 import { Icon } from "../ui";
 import { Button } from "../ui";
 import { JsonField } from "../ui";
+import { toast } from "sonner";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -17,6 +18,7 @@ interface DashCardProps {
   icon: string;
   color: string;
   actions: React.ReactNode;
+  subHeader?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
@@ -27,6 +29,7 @@ const DashCard = ({
   color,
   children,
   actions,
+  subHeader,
   className = "",
 }: DashCardProps) => (
   <div
@@ -43,6 +46,7 @@ const DashCard = ({
         {actions}
       </div>
     </div>
+    {subHeader}
     <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scroll bg-slate-900/30 min-h-0">
       {children}
     </div>
@@ -52,9 +56,14 @@ const DashCard = ({
 const SortableOutboundItem = ({
   ob,
   index,
+  filteredIndex,
+  isSelected,
+  isAnySelected,
+  showCheckboxes,
   onEdit,
   onDelete,
   onMove,
+  onItemClick,
   totalCount,
 }: any) => {
   const {
@@ -77,18 +86,44 @@ const SortableOutboundItem = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`card-item group flex justify-between items-start gap-2 ${isDragging ? "opacity-50 ring-2 ring-indigo-500 bg-indigo-950/20" : ""}`}
+      onClick={(e) => onItemClick(e, filteredIndex, index, ob)}
+      className={`card-item group flex justify-between items-center gap-2 cursor-pointer transition-all duration-200 select-none ${
+        isSelected
+          ? "ring-2 ring-blue-500 bg-blue-950/50 border-blue-500/60 shadow-lg shadow-blue-500/10"
+          : isDragging
+          ? "opacity-50 ring-2 ring-indigo-500 bg-indigo-950/20"
+          : "hover:border-slate-600"
+      }`}
     >
-      <div className="flex items-center gap-3 shrink-0 py-2 px-3">
+      <div className="flex items-center gap-2.5 shrink-0 py-2 px-3">
         <div
           {...listeners}
           {...attributes}
+          onClick={(e) => e.stopPropagation()}
           className="cursor-grab text-slate-700 hover:text-slate-400 transition-colors duration-300 touch-none"
         >
-          <Icon name="DotsSixVertical" weight="bold" className="text-lg" />
+          <Icon name="DotsSixVertical" weight="bold" className="text-xl" />
         </div>
-        
-        <div className="text-xl font-black text-slate-600/40 italic tabular-nums w-6 text-center select-none">
+
+        {showCheckboxes && (
+          <div
+            className={`flex items-center justify-center transition-all ${
+              isSelected
+                ? "text-blue-400"
+                : isAnySelected
+                ? "text-slate-600 group-hover:text-slate-400"
+                : "text-slate-700 group-hover:text-slate-400 opacity-60 group-hover:opacity-100"
+            }`}
+          >
+            <Icon
+              name={isSelected ? "CheckSquare" : "Square"}
+              weight={isSelected ? "fill" : "regular"}
+              className="text-xl"
+            />
+          </div>
+        )}
+
+        <div className="text-xs font-black text-slate-600/60 italic tabular-nums w-5 text-center select-none">
           {index}
         </div>
       </div>
@@ -97,7 +132,7 @@ const SortableOutboundItem = ({
 
       <div className="min-w-0 flex-1 py-2 pl-3 flex flex-col justify-center">
         <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate">
-          <Icon name="PaperPlaneRight" weight="bold" className="text-[10px] opacity-40" />
+          <Icon name="PaperPlaneRight" weight="bold" className="text-xs opacity-40" />
           {ob.tag || "no-tag"}
         </div>
         <div className="text-[10px] text-slate-500 mt-0.5 font-mono truncate opacity-80">
@@ -114,20 +149,31 @@ const SortableOutboundItem = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0 px-2 self-center md:opacity-0 md:group-hover:opacity-100 transition-all duration-500 ease-in-out">
+      <div
+        className="flex items-center gap-1 shrink-0 px-2 self-center md:opacity-0 md:group-hover:opacity-100 transition-all duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onEdit(ob, index)}
+          onClick={(e: any) => {
+            e.stopPropagation();
+            onEdit(ob, index);
+          }}
           icon="PencilSimple"
+          iconClassName="text-sm"
           title="Edit"
           className="h-8 w-8 p-0 text-slate-500 hover:text-white hover:bg-transparent transition-all duration-300"
         />
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onDelete(index)}
+          onClick={(e: any) => {
+            e.stopPropagation();
+            onDelete(index);
+          }}
           icon="Trash"
+          iconClassName="text-sm"
           title="Delete"
           className="h-8 w-8 p-0 text-slate-500 hover:!text-rose-500 hover:bg-transparent transition-all duration-300"
         />
@@ -149,6 +195,7 @@ interface ConfigDashboardProps {
   onOpenRoutingJson: () => void;
   onEditOutbound: (data: any, index: number | null) => void;
   onDeleteOutbound: (index: number) => void;
+  onDeleteOutbounds?: (indices: number[]) => void;
   onMoveOutbound: (fromIndex: number, toIndex: number) => void;
   onOpenOutboundJson: () => void;
   onAddOutbound: () => void;
@@ -181,6 +228,7 @@ export const ConfigDashboard = ({
   onOpenRoutingJson,
   onEditOutbound,
   onDeleteOutbound,
+  onDeleteOutbounds,
   onMoveOutbound,
   onOpenOutboundJson,
   onAddOutbound,
@@ -199,6 +247,131 @@ export const ConfigDashboard = ({
   onOpenGeoViewer,
   onOpenConfigInspector,
 }: ConfigDashboardProps) => {
+  const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
+  const [lastClickedFilteredIdx, setLastClickedFilteredIdx] = React.useState<number | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [isSelectMode, setIsSelectMode] = React.useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  const showCheckboxes = isSelectMode || selectedIndices.size > 0;
+
+  React.useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  React.useEffect(() => {
+    if (obSearch && !isSearchOpen) {
+      setIsSearchOpen(true);
+    }
+  }, [obSearch]);
+
+  const handleItemClick = (
+    e: React.MouseEvent,
+    filteredIdx: number,
+    originalIdx: number,
+    ob: any
+  ) => {
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedIndices((prev) => {
+        const next = new Set(prev);
+        if (next.has(originalIdx)) {
+          next.delete(originalIdx);
+        } else {
+          next.add(originalIdx);
+        }
+        return next;
+      });
+      setLastClickedFilteredIdx(filteredIdx);
+      return;
+    }
+
+    if (e.shiftKey) {
+      const start = lastClickedFilteredIdx !== null ? lastClickedFilteredIdx : 0;
+      const end = filteredIdx;
+      const min = Math.min(start, end);
+      const max = Math.max(start, end);
+
+      const next = new Set(selectedIndices);
+      for (let i = min; i <= max; i++) {
+        if (filteredOutbounds[i]) {
+          next.add(filteredOutbounds[i].originalIndex);
+        }
+      }
+      setSelectedIndices(next);
+      setLastClickedFilteredIdx(filteredIdx);
+      return;
+    }
+
+    if (isSelectMode || selectedIndices.size > 0) {
+      setSelectedIndices((prev) => {
+        const next = new Set(prev);
+        if (next.has(originalIdx)) {
+          next.delete(originalIdx);
+        } else {
+          next.add(originalIdx);
+        }
+        return next;
+      });
+      setLastClickedFilteredIdx(filteredIdx);
+      return;
+    }
+
+    // Default action when multi-select is OFF and no modifier keys pressed: open Edit modal
+    onEditOutbound(ob, originalIdx);
+  };
+
+  const handleSelectAll = () => {
+    const all = new Set(filteredOutbounds.map((item) => item.originalIndex));
+    setSelectedIndices(all);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIndices(new Set());
+    setLastClickedFilteredIdx(null);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIndices.size === 0) return;
+    const indicesToDelete = Array.from(selectedIndices);
+    const count = indicesToDelete.length;
+    if (confirm(`Delete ${count} selected outbound${count > 1 ? "s" : ""}?`)) {
+      if (onDeleteOutbounds) {
+        onDeleteOutbounds(indicesToDelete);
+      } else {
+        const sorted = indicesToDelete.sort((a, b) => b - a);
+        sorted.forEach((idx) => onDeleteOutbound(idx));
+      }
+      setSelectedIndices(new Set());
+      setLastClickedFilteredIdx(null);
+      toast.success(`Deleted ${count} outbound${count > 1 ? "s" : ""}`);
+    }
+  };
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedIndices.size === 0) return;
+
+      const activeEl = document.activeElement;
+      const isEditingText =
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          (activeEl as HTMLElement).isContentEditable);
+
+      if (isEditingText) return;
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        handleDeleteSelected();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedIndices, filteredOutbounds, onDeleteOutbounds]);
+
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -330,6 +503,7 @@ export const ConfigDashboard = ({
                     size="sm"
                     onClick={onOpenInboundJson}
                     icon="Code"
+                    iconClassName="text-sm"
                     title="View JSON"
                     className="h-9 w-9 p-0"
                   />
@@ -338,6 +512,7 @@ export const ConfigDashboard = ({
                     size="sm"
                     onClick={onAddInbound}
                     icon="Plus"
+                    iconClassName="text-sm"
                     title="Add Inbound"
                     className="h-9 w-9 p-0"
                   />
@@ -376,6 +551,7 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={() => onEditInbound(ib, i)}
                       icon="PencilSimple"
+                      iconClassName="text-sm"
                       title="Edit"
                       className="h-8 w-8 p-0 text-slate-500 hover:text-white hover:bg-transparent transition-all duration-300"
                     />
@@ -384,6 +560,7 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={() => onDeleteInbound(i)}
                       icon="Trash"
+                      iconClassName="text-sm"
                       title="Delete"
                       className="h-8 w-8 p-0 text-slate-500 hover:!text-rose-500 hover:bg-transparent transition-all duration-300"
                     />
@@ -405,6 +582,7 @@ export const ConfigDashboard = ({
                     size="sm"
                     onClick={onOpenRoutingJson}
                     icon="Code"
+                    iconClassName="text-sm"
                     title="View JSON"
                     className="h-9 w-9 p-0"
                   />
@@ -413,6 +591,7 @@ export const ConfigDashboard = ({
                     size="sm"
                     onClick={onEditRouting}
                     icon="PencilSimple"
+                    iconClassName="text-sm"
                     title="Edit Routing"
                     className="h-9 w-9 p-0"
                   />
@@ -500,26 +679,49 @@ export const ConfigDashboard = ({
               color="bg-blue-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex gap-2 items-center">
-                  <div className="relative hidden md:flex h-11 items-center">
-                    <Icon
-                      name="MagnifyingGlass"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"
-                    />
-                    <input
-                      className="bg-slate-950/50 border border-slate-700/50 rounded-xl pl-9 pr-3 h-full w-32 outline-none focus:w-64 focus:border-indigo-500 transition-all text-white text-xs placeholder:text-slate-600 shadow-inner"
-                      placeholder="Filter IP, Tag..."
-                      value={obSearch}
-                      onChange={(e) => setObSearch(e.target.value)}
-                    />
-                  </div>
-
+                <div className="flex gap-1.5 items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsSearchOpen((prev) => !prev)}
+                    icon="MagnifyingGlass"
+                    iconClassName="text-sm"
+                    title="Search Outbounds"
+                    className={`h-9 w-9 p-0 transition-all ${
+                      isSearchOpen || obSearch
+                        ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsSelectMode((prev) => {
+                        const next = !prev;
+                        if (!next) {
+                          setSelectedIndices(new Set());
+                          setLastClickedFilteredIdx(null);
+                        }
+                        return next;
+                      });
+                    }}
+                    icon="ListChecks"
+                    iconClassName="text-sm"
+                    title="Toggle Multi-select Mode"
+                    className={`h-9 w-9 p-0 transition-all ${
+                      isSelectMode || selectedIndices.size > 0
+                        ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  />
                   <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={onOpenWarpModal}
                       icon="Lightning"
+                      iconClassName="text-sm"
                       title="Generate WARP Outbound"
                       className="h-9 w-9 p-0 text-amber-500 hover:text-amber-400"
                     />
@@ -528,6 +730,7 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={onBatchImport}
                       icon="Stack"
+                      iconClassName="text-sm"
                       title="Batch Import/Export"
                       className="h-9 w-9 p-0"
                     />
@@ -536,6 +739,7 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={onOpenOutboundJson}
                       icon="Code"
+                      iconClassName="text-sm"
                       title="View JSON"
                       className="h-9 w-9 p-0"
                     />
@@ -544,25 +748,94 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={onAddOutbound}
                       icon="Plus"
+                      iconClassName="text-sm"
                       title="Add New Outbound"
                       className="h-9 w-9 p-0"
                     />
                   </div>
                 </div>
               }
+              subHeader={
+                <div
+                  className={`transition-all duration-300 ease-in-out border-b border-slate-700/50 bg-slate-900/90 overflow-hidden ${
+                    isSearchOpen || obSearch
+                      ? "max-h-16 opacity-100 p-2.5 px-4"
+                      : "max-h-0 opacity-0 p-0 border-b-0"
+                  }`}
+                >
+                  <div className="relative flex items-center w-full gap-2">
+                    <Icon
+                      name="MagnifyingGlass"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+                    />
+                    <input
+                      ref={searchInputRef}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-24 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+                      placeholder="Filter IP, Tag, Protocol..."
+                      value={obSearch}
+                      onChange={(e) => setObSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                          setIsSearchOpen(false);
+                        }
+                      }}
+                    />
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                      {obSearch && (
+                        <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+                          {filteredOutbounds.length} / {config.outbounds?.length || 0}
+                        </span>
+                      )}
+                      {obSearch && (
+                        <button
+                          onClick={() => setObSearch("")}
+                          className="text-slate-400 hover:text-white p-0.5"
+                          title="Clear search"
+                        >
+                          <Icon name="X" className="text-xs" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              }
             >
-              <div className="md:hidden mb-3 relative shrink-0">
-                <Icon
-                  name="MagnifyingGlass"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500"
-                />
-                <input
-                  className="input-base pl-8 text-xs py-2 bg-slate-950/50"
-                  placeholder="Search outbounds..."
-                  value={obSearch}
-                  onChange={(e) => setObSearch(e.target.value)}
-                />
-              </div>
+              {selectedIndices.size > 0 && (
+                <div className="sticky top-0 z-20 flex items-center justify-between p-2 px-3 bg-blue-950/90 border border-blue-500/40 rounded-xl backdrop-blur-md shadow-lg mb-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-blue-300">
+                      Selected: <span className="text-white font-mono">{selectedIndices.size}</span>
+                    </span>
+                    <span className="text-slate-600">•</span>
+                    <button
+                      onClick={handleSelectAll}
+                      className="text-[11px] font-medium text-slate-300 hover:text-white underline decoration-slate-600 hover:decoration-white transition-colors"
+                    >
+                      Select All ({filteredOutbounds.length})
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearSelection}
+                      className="text-xs text-slate-400 hover:text-white h-7 px-2"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={handleDeleteSelected}
+                      icon="Trash"
+                      className="text-xs py-1 px-2.5 font-bold shadow-md"
+                    >
+                      Delete ({selectedIndices.size})
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <DndContext
                   collisionDetection={closestCenter}
@@ -573,15 +846,20 @@ export const ConfigDashboard = ({
                     strategy={verticalListSortingStrategy}
                   >
                     {filteredOutbounds.length > 0 ? (
-                      filteredOutbounds.map((item: any) => (
+                      filteredOutbounds.map((item: any, filteredIdx: number) => (
                         <SortableOutboundItem
                           key={item.originalIndex}
                           ob={item.ob}
                           index={item.originalIndex}
+                          filteredIndex={filteredIdx}
+                          isSelected={selectedIndices.has(item.originalIndex)}
+                          isAnySelected={selectedIndices.size > 0}
+                          showCheckboxes={showCheckboxes}
                           totalCount={config.outbounds?.length || 0}
                           onEdit={onEditOutbound}
                           onDelete={onDeleteOutbound}
                           onMove={onMoveOutbound}
+                          onItemClick={handleItemClick}
                         />
                       ))
                     ) : (
@@ -614,6 +892,7 @@ export const ConfigDashboard = ({
                   size="sm"
                   onClick={onOpenDnsJson}
                   icon="Code"
+                  iconClassName="text-sm"
                   title="View JSON"
                   className="h-9 w-9 p-0"
                 />
@@ -622,6 +901,7 @@ export const ConfigDashboard = ({
                   size="sm"
                   onClick={onEditDns}
                   icon="PencilSimple"
+                  iconClassName="text-sm"
                   title="Edit DNS"
                   className="h-9 w-9 p-0"
                 />

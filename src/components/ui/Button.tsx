@@ -9,6 +9,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     size?: ButtonSize;
     icon?: string;
     iconWeight?: 'regular' | 'bold' | 'fill' | 'duotone';
+    iconClassName?: string;
     loading?: boolean;
     children?: React.ReactNode;
 }
@@ -35,6 +36,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             size = 'md',
             icon,
             iconWeight = 'regular',
+            iconClassName = '',
             loading = false,
             children,
             className = '',
@@ -54,9 +56,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 {...rest}
             >
                 {loading ? (
-                    <Icon name="CircleNotch" className="animate-spin" />
+                    <Icon name="CircleNotch" className={`animate-spin ${iconClassName}`} />
                 ) : (
-                    icon && <Icon name={icon} weight={iconWeight} />
+                    icon && <Icon name={icon} weight={iconWeight} className={iconClassName} />
                 )}
                 {children}
             </button>

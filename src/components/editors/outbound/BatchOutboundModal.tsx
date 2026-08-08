@@ -45,50 +45,124 @@ export const BatchOutboundModal = ({ onClose }: { onClose: () => void }) => {
         }
     }, [mode, config]);
 
+const sanitizeUrl = (url: string): string => {
+    let clean = url.trim();
+    if (!clean) return '';
+    if (!/^https?:\/\//i.test(clean)) {
+        clean = `https://${clean}`;
+    }
+    return clean;
+};
+
+const decodeSubscriptionText = (raw: string): string => {
+    let text = raw.trim();
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    if (!text) return '';
+
+    if (text.includes('://')) return text;
+
+    try {
+        let b64 = text.replace(/[\s\r\n]+/g, '');
+        b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4 !== 0) {
+            b64 += '=';
+        }
+
+        const decodedB64 = atob(b64);
+        try {
+            const utf8Decoded = decodeURIComponent(escape(decodedB64));
+            if (utf8Decoded.includes('://') || utf8Decoded.startsWith('[') || utf8Decoded.startsWith('{')) {
+                return utf8Decoded;
+            }
+        } catch {}
+        if (decodedB64.includes('://') || decodedB64.startsWith('[') || decodedB64.startsWith('{')) {
+            return decodedB64;
+        }
+    } catch (e) {}
+
+    return text;
+};
+
 const handleFetchSub = async () => {
     if (!subUrl.trim()) return toast.error("Please enter a subscription URL");
+    const targetUrl = sanitizeUrl(subUrl);
     setIsFetching(true);
     try {
-        const targetUrl = subUrl.trim();
-        const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
-        
         const headers: Record<string, string> = {
             "x-custom-user-agent": customUA || "v2rayNG/1.8.5",
-            "x-hwid": customClientId // Передаем HWID согласно докам Remnawave
+            "x-hwid": customClientId
         };
 
-        let res = await fetch(proxyUrl, { headers });
+        let rawText = "";
+        let resHeaders: Headers | undefined = undefined;
 
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        // Stage 1: Primary Worker
+        try {
+            const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
+            const res = await fetch(proxyUrl, { headers });
+            if (res.ok) {
+                rawText = await res.text();
+                resHeaders = res.headers;
+            } else if (res.status === 403 || res.status === 429) {
+                // If Remnawave returned limit headers
+                if (res.headers.get('x-hwid-max-devices-reached') === 'true' || res.headers.get('x-hwid-limit') === 'true') {
+                    toast.error("Panel rejected this device (HWID)", {
+                        description: "Device limit reached. Check 'Active Devices' in the panel."
+                    });
+                    setIsFetching(false);
+                    return;
+                }
+            }
+        } catch (e) {
+            // Stage 1 failed
+        }
 
-        // Проверяем заголовки Remnawave на превышение лимита HWID
-        if (res.headers.get('x-hwid-max-devices-reached') === 'true' || res.headers.get('x-hwid-limit') === 'true') {
-            toast.error("Panel rejected this device (HWID)", { 
-                description: "Device limit reached. Check 'Active Devices' in the panel." 
+        // Stage 2: Direct fetch fallback
+        if (!rawText) {
+            try {
+                const res = await fetch(targetUrl, {
+                    headers: { "User-Agent": customUA || "v2rayNG/1.8.5" }
+                });
+                if (res.ok) {
+                    rawText = await res.text();
+                    resHeaders = res.headers;
+                }
+            } catch (e) {
+                // Stage 2 failed
+            }
+        }
+
+        // Stage 3: AllOrigins proxy fallback
+        if (!rawText) {
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                const res = await fetch(proxyUrl);
+                if (res.ok) {
+                    rawText = await res.text();
+                }
+            } catch (e) {
+                // Stage 3 failed
+            }
+        }
+
+        if (!rawText) {
+            throw new Error("Unable to fetch subscription. Check URL or internet connection.");
+        }
+
+        if (resHeaders && (resHeaders.get('x-hwid-max-devices-reached') === 'true' || resHeaders.get('x-hwid-limit') === 'true')) {
+            toast.error("Panel rejected this device (HWID)", {
+                description: "Device limit reached. Check 'Active Devices' in the panel."
             });
             setIsFetching(false);
             return;
         }
 
-        const rawText = await res.text();
-        let decoded = rawText.trim();
-
-        if (!decoded.includes('://')) {
-            try {
-                let b64 = decoded.replace(/\s/g, '');
-                while (b64.length % 4 !== 0) b64 += '=';
-                decoded = atob(b64);
-                try { decoded = decodeURIComponent(escape(decoded)); } catch (e) {}
-            } catch (e) {
-                decoded = rawText.trim();
-            }
-        }
+        const decoded = decodeSubscriptionText(rawText);
 
         if (decoded.includes('://')) {
             setText(prev => prev ? prev + '\n\n' + decoded : decoded);
             toast.success("Subscription fetched successfully");
         } else if (decoded.startsWith('[') || decoded.startsWith('{')) {
-            // Пробуем распарсить JSON подписку и превратить её обратно в ссылки для удобства отображения/редактирования
             const obs = parseJsonSubscription(decoded);
             if (obs.length > 0) {
                 const links = obs.map(o => generateXrayLink(o)).filter(Boolean);
@@ -96,7 +170,6 @@ const handleFetchSub = async () => {
                     setText(prev => prev ? prev + '\n\n' + links.join('\n') : links.join('\n'));
                     toast.success(`Imported ${links.length} nodes from JSON subscription`);
                 } else {
-                    // Если ссылки не сгенерились (странные протоколы), просто вставляем сырой JSON
                     setText(prev => prev ? prev + '\n\n' + decoded : decoded);
                     toast.success("JSON subscription fetched (Raw)");
                 }
@@ -104,7 +177,7 @@ const handleFetchSub = async () => {
                 toast.error("JSON detected but no valid outbounds found inside");
             }
         } else {
-            toast.error("No valid links found in response");
+            toast.error("No valid links or configuration found in response");
         }
     } catch (err: any) {
         toast.error("Fetch failed", { description: err.message });

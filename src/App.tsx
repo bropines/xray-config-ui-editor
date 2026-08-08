@@ -13,7 +13,7 @@ import {
 export const App = () => {
     const [modulesVisible, setModulesVisible] = React.useState(false);
     const {
-        config, setConfig, deleteItem, addItem, remnawave, disconnectRemnawave, initDns,
+        config, setConfig, deleteItem, deleteItems, addItem, remnawave, disconnectRemnawave, initDns,
         modal, setModal,
         sectionModal, setSectionModal,
         remnawaveModalOpen, setRemnawaveModalOpen,
@@ -103,6 +103,7 @@ export const App = () => {
                         onOpenRoutingJson={() => openSectionJson('routing', 'Routing')}
                         onEditOutbound={(data, index) => setModal({ type: 'outbound', data, index })}
                         onDeleteOutbound={(i) => deleteItem('outbounds', i)}
+                        onDeleteOutbounds={(indices) => deleteItems('outbounds', indices)}
                         onMoveOutbound={(from, to) => moveItem('outbounds', from, to)}
                         onAddOutbound={() => setModal({ type: 'outbound', data: null, index: null })}
                         onOpenOutboundJson={() => openSectionJson('outbounds', 'Outbounds')}

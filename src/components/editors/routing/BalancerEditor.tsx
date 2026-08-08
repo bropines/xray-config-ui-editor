@@ -7,6 +7,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     // Локальный стейт для инпута, чтобы делать подсветку "на лету"
     const [inputValue, setInputValue] = useState("");
     const [outboundSearch, setOutboundSearch] = useState("");
+    const [lastClickedIdx, setLastClickedIdx] = useState<number | null>(null);
 
     if (!balancer) {
         return (
@@ -45,13 +46,46 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
 
     // Добавление/Удаление тега по клику
     const toggleSelector = (tag: string) => {
-        // Если тег уже есть в списке (точное совпадение) - удаляем
         if (currentSelector.includes(tag)) {
             update('selector', currentSelector.filter((s: string) => s !== tag));
         } else {
-            // Иначе добавляем
             update('selector', [...currentSelector, tag]);
         }
+    };
+
+    const handleTagClick = (e: React.MouseEvent, tag: string, idx: number) => {
+        if (e.ctrlKey || e.metaKey) {
+            toggleSelector(tag);
+            setLastClickedIdx(idx);
+            return;
+        }
+
+        if (e.shiftKey) {
+            const start = lastClickedIdx !== null ? lastClickedIdx : 0;
+            const end = idx;
+            const min = Math.min(start, end);
+            const max = Math.max(start, end);
+
+            const tagsToSelect = filteredOutbounds.slice(min, max + 1);
+            const newSelector = Array.from(new Set([...currentSelector, ...tagsToSelect]));
+            update('selector', newSelector);
+            setLastClickedIdx(idx);
+            return;
+        }
+
+        toggleSelector(tag);
+        setLastClickedIdx(idx);
+    };
+
+    const handleSelectAll = () => {
+        const newSelector = Array.from(new Set([...currentSelector, ...filteredOutbounds]));
+        update('selector', newSelector);
+    };
+
+    const handleDeselectAll = () => {
+        const filteredSet = new Set(filteredOutbounds);
+        const newSelector = currentSelector.filter((s: string) => !filteredSet.has(s));
+        update('selector', newSelector);
     };
 
     // Логика проверки совпадений
@@ -84,8 +118,6 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
             <div className="flex justify-end mb-4">
                  <button onClick={() => {
                      if (confirm("Delete this balancer?")) {
-                         // Простой способ удаления: меняем тег на пустой или вызываем спец. экшен, 
-                         // но в данном случае достаточно сбросить balancer в null
                          onChange(null);
                      }
                  }} className="text-xs text-rose-500 hover:text-rose-400 font-bold flex items-center gap-1 bg-rose-950/20 px-3 py-1.5 rounded-lg border border-rose-900/50 hover:bg-rose-900/30">
@@ -103,27 +135,29 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                 </div>
             )}
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-1 gap-4">
-                <SchemaForm
-                    schema={BalancerSchema}
-                    value={balancer}
-                    onChange={onChange}
-                    errors={errorRecord}
-                    excludeKeys={['selector', 'strategy']}
-                    fieldConfigs={{
-                        tag: {
-                            label: 'Balancer Tag',
-                            help: 'Unique identifier for this balancer, used in routing rules.'
-                        },
-                        fallbackTag: {
-                            label: 'Fallback Tag (Optional)',
-                            help: 'Outbound tag to use when no selected outbound is available.',
-                            options: ['', ...outboundTags]
-                        }
-                    }}
-                />
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex flex-col gap-4 relative z-20">
+                <div className="relative z-30">
+                    <SchemaForm
+                        schema={BalancerSchema}
+                        value={balancer}
+                        onChange={onChange}
+                        errors={errorRecord}
+                        excludeKeys={['selector', 'strategy']}
+                        fieldConfigs={{
+                            tag: {
+                                label: 'Balancer Tag',
+                                help: 'Unique identifier for this balancer, used in routing rules.'
+                            },
+                            fallbackTag: {
+                                label: 'Fallback Tag (Optional)',
+                                help: 'Outbound tag to use when no selected outbound is available.',
+                                options: ['', ...outboundTags]
+                            }
+                        }}
+                    />
+                </div>
                 
-                <div className="border-t border-slate-800/50 pt-4">
+                <div className="border-t border-slate-800/50 pt-4 relative z-10">
                     <Select 
                         label="Strategy"
                         value={balancer.strategy?.type || "random"} 
@@ -138,7 +172,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                 </div>
             </div>
 
-            <div className={`bg-slate-900/50 p-4 rounded-xl border ${selectorError ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
+            <div className={`bg-slate-900/50 p-4 rounded-xl border relative z-10 ${selectorError ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
                     <div>
                         <label className={`label-xs block ${selectorError ? 'text-rose-400' : ''}`}>Target Outbounds</label>
@@ -146,46 +180,62 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                             Purple = Active. <span className="text-amber-400">Amber = Preview (Matches current input)</span>.
                         </span>
                     </div>
-                    {outboundTags.length > 4 && (
-                        <div className="relative w-full md:w-48 shrink-0">
-                            <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
-                            <input
-                                className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-6 py-1 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
-                                placeholder="Search outbounds..."
-                                value={outboundSearch}
-                                onChange={e => setOutboundSearch(e.target.value)}
-                            />
-                            {outboundSearch && (
-                                <button
-                                    type="button"
-                                    onClick={() => setOutboundSearch("")}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs font-mono"
-                                >
-                                    ×
-                                </button>
-                            )}
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={handleSelectAll}
+                                className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-950/60 border border-indigo-800/60 px-2.5 py-1 rounded-md transition-colors"
+                            >
+                                Select All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeselectAll}
+                                className="text-[11px] font-bold text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-md transition-colors"
+                            >
+                                Deselect All
+                            </button>
                         </div>
-                    )}
+                        {outboundTags.length > 4 && (
+                            <div className="relative w-full md:w-48 shrink-0">
+                                <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
+                                <input
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-6 py-1 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
+                                    placeholder="Search outbounds..."
+                                    value={outboundSearch}
+                                    onChange={e => setOutboundSearch(e.target.value)}
+                                />
+                                {outboundSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setOutboundSearch("")}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs font-mono"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto custom-scroll">
-                    {filteredOutbounds.map((tag: string) => {
+                    {filteredOutbounds.map((tag: string, idx: number) => {
                         const { exact, prefixMatch, pendingMatch } = checkMatch(tag);
                         
-                        // Определяем стиль на основе состояния
-                        let styleClass = 'bg-slate-950 border-slate-700 text-slate-400'; // Default
+                        let styleClass = 'bg-slate-950 border-slate-700 text-slate-400';
                         
                         if (exact) {
                             styleClass = 'bg-purple-600 border-purple-500 text-white';
                         } else if (prefixMatch) {
                             styleClass = 'bg-purple-900/40 border-purple-500/60 text-purple-200';
                         } else if (pendingMatch) {
-                            // Стиль для предпросмотра (то, что мы сейчас печатаем)
                             styleClass = 'bg-amber-900/30 border-amber-500 text-amber-200 animate-pulse';
                         }
 
                         return (
-                            <div key={tag} onClick={() => toggleSelector(tag)} 
+                            <div key={tag} onClick={(e) => handleTagClick(e, tag, idx)} 
                                 className={`cursor-pointer px-3 py-2 rounded-lg border text-xs font-mono flex justify-between items-center transition-all select-none ${styleClass}`}
                             >
                                 <span className="truncate">{tag}</span>

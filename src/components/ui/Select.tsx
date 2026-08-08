@@ -75,7 +75,7 @@ export function Select<T extends string = string>({
     });
 
     return (
-        <div className={`flex flex-col gap-1.5 ${isOpen ? 'relative z-[110]' : ''} ${className}`} ref={containerRef}>
+        <div className={`flex flex-col gap-1.5 ${isOpen ? 'relative z-[999]' : ''} ${className}`} ref={containerRef}>
             {label && (
                 <label className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">
                     {label}
@@ -106,7 +106,7 @@ export function Select<T extends string = string>({
                 </button>
 
                 {isOpen && (
-                    <div className="absolute left-0 right-0 z-[500] mt-1.5 bg-[#0f172a] border border-slate-700 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden origin-top ring-1 ring-white/10 opacity-100 flex flex-col">
+                    <div className="absolute left-0 right-0 z-[1000] mt-1.5 bg-[#0f172a] border border-slate-700 rounded-xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden origin-top ring-1 ring-white/10 opacity-100 flex flex-col backdrop-blur-xl">
                         {options.length > 5 && (
                             <div className="p-1.5 border-b border-slate-800 bg-[#0b0f19]">
                                 <div className="relative">
