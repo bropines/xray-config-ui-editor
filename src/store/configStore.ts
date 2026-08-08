@@ -85,6 +85,7 @@ interface ConfigState {
     recordSnapshot: (label?: string) => void;
     restoreSnapshot: (id: string) => void;
     clearHistory: () => void;
+    deduplicateHistory: () => void;
     setHistoryLimit: (limit: number) => void;
     setAutoSave: (enabled: boolean) => void;
     
@@ -297,6 +298,23 @@ export const useConfigStore = create(
             clearHistory: () => {
                 set({ history: [] });
                 toast.info("Version history cleared");
+            },
+
+            deduplicateHistory: () => {
+                const { history } = get();
+                // Remove consecutive snapshots with identical configs
+                const deduped = history.filter((snapshot, idx) => {
+                    if (idx === history.length - 1) return true; // always keep oldest
+                    const next = history[idx + 1]; // next = older (history is newest-first)
+                    return JSON.stringify(snapshot.config) !== JSON.stringify(next.config);
+                });
+                const removed = history.length - deduped.length;
+                set({ history: deduped });
+                if (removed > 0) {
+                    toast.success(`Removed ${removed} duplicate snapshot${removed > 1 ? 's' : ''}`);
+                } else {
+                    toast.info('No duplicates found');
+                }
             },
 
             setHistoryLimit: (limit) => {

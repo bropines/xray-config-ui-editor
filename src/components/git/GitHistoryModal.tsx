@@ -7,7 +7,7 @@ import { GitDiffViewer } from './GitDiffViewer';
 import { computeJsonDiff, type GitCommit } from '../../core/git/gitEngine';
 
 export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
-    const { history, restoreSnapshot, clearHistory, historyLimit, config } = useConfigStore();
+    const { history, restoreSnapshot, clearHistory, deduplicateHistory, historyLimit, config } = useConfigStore();
     const [selectedCommitId, setSelectedCommitId] = useState<string | null>(
         history.length > 0 ? history[0].id : null
     );
@@ -41,6 +41,16 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
             className="max-w-6xl h-[88vh]"
             extraButtons={
                 <div className="flex items-center gap-2">
+                    {history.length > 1 && (
+                        <Button
+                            variant="secondary"
+                            className="text-xs py-1 text-amber-400 hover:text-amber-300 border-amber-500/30 hover:border-amber-500/60"
+                            onClick={deduplicateHistory}
+                            icon="Broom"
+                        >
+                            Clean up duplicates
+                        </Button>
+                    )}
                     {history.length > 0 && (
                         <Button
                             variant="danger"
