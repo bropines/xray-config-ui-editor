@@ -265,13 +265,16 @@ export const ConfigDashboard = ({
   } = useConfigStore();
 
   const isModified = React.useMemo(() => {
-    if (!baselineConfigJson || !storeConfig) return false;
+    if (!storeConfig) return false;
+    const activeProfile = profiles.find(p => p.id === activeProfileId);
+    const baseline = baselineConfigJson || (activeProfile?.config ? JSON.stringify(activeProfile.config) : null);
+    if (!baseline) return false;
     try {
-      return JSON.stringify(storeConfig) !== baselineConfigJson;
+      return JSON.stringify(storeConfig) !== baseline;
     } catch (e) {
       return false;
     }
-  }, [baselineConfigJson, storeConfig]);
+  }, [baselineConfigJson, storeConfig, profiles, activeProfileId]);
 
   const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
   const [lastClickedFilteredIdx, setLastClickedFilteredIdx] = React.useState<number | null>(null);
