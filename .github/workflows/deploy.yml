@@ -2,7 +2,6 @@ name: Deploy to GitHub Pages & Release
 
 on:
   push:
-    branches: [ main ]
     tags:
       - 'v*'
   workflow_dispatch:
@@ -13,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -35,10 +34,9 @@ jobs:
       - name: Run Tests
         run: bun test
 
-  # ЭТАП 2: Сборка (только для ветки main или manual dispatch)
+  # ЭТАП 2: Сборка
   build:
     needs: test
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,10 +61,6 @@ jobs:
   # ЭТАП 3: Деплой на GitHub Pages
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
