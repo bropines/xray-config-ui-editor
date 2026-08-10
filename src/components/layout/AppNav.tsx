@@ -249,14 +249,16 @@ export const AppNav = ({
 
                 {/* Connect Cloud (disconnected) */}
                 {!connected && (
-                    <Button
-                        variant="secondary"
-                        onClick={onOpenRemnawave}
-                        className="text-xs h-11 px-2.5 sm:px-4 border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 shrink-0"
-                        title="Connect Cloud"
-                    >
-                        <Icon name="Cloud" /> <span className="hidden md:inline">Connect Cloud</span>
-                    </Button>
+                    <div className="flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                        <Button
+                            variant="secondary"
+                            onClick={onOpenRemnawave}
+                            className="h-9 px-2.5 sm:px-4 text-xs font-bold rounded-lg border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 shadow-none"
+                            title="Connect Cloud"
+                        >
+                            <Icon name="Cloud" /> <span className="hidden md:inline">Connect Cloud</span>
+                        </Button>
+                    </div>
                 )}
 
                 <div className="w-px h-8 bg-slate-800/50 mx-0.5 hidden sm:block shrink-0" />
@@ -264,47 +266,56 @@ export const AppNav = ({
                 {/* File / Download */}
                 <div className="flex gap-1 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                     <label
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 w-9 h-9 rounded-lg cursor-pointer transition-all border border-slate-700 flex items-center justify-center text-sm"
+                        className="bg-slate-800/80 hover:bg-slate-700 text-slate-200 w-9 h-9 rounded-lg cursor-pointer transition-all border border-slate-700/60 flex items-center justify-center text-sm"
                         title="Load JSON"
                     >
                         <Icon name="FolderOpen" />
                         <input type="file" className="hidden" accept=".json" onChange={onFileUpload} />
                     </label>
-                    <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-lg h-9 px-2.5 sm:px-4 text-sm shadow-none" disabled={!hasConfig} title="Download">
-                        <span className="hidden md:inline text-xs">Download</span>
+                    <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-lg h-9 px-2.5 sm:px-4 text-xs font-bold shadow-none" disabled={!hasConfig} title="Download">
+                        <span className="hidden md:inline">Download</span>
                     </Button>
                 </div>
 
                 <div className="w-px h-8 bg-slate-800/50 mx-0.5 hidden sm:block shrink-0" />
 
-                <button
-                    onClick={onOpenAbout}
-                    className="h-11 w-11 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all border border-slate-800 bg-slate-950/50 shrink-0"
-                    title="About / Repository"
-                >
-                    <Icon name="Info" className="text-lg" />
-                </button>
+                {/* About / Repository */}
+                <div className="flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    <button
+                        onClick={onOpenAbout}
+                        className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all"
+                        title="About / Repository"
+                    >
+                        <Icon name="Info" className="text-base" />
+                    </button>
+                </div>
 
-                <a
-                    href="https://t.me/xcue_dev"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hidden lg:flex items-center gap-2 px-3 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider shrink-0"
-                    title="Telegram Channel"
-                >
-                    <Icon name="TelegramLogo" weight="bold" />
-                    Telegram
-                </a>
+                {/* Telegram Link */}
+                <div className="hidden lg:flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    <a
+                        href="https://t.me/xcue_dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-9 px-3 sm:px-4 flex items-center gap-2 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
+                        title="Telegram Channel"
+                    >
+                        <Icon name="TelegramLogo" weight="bold" />
+                        <span>Telegram</span>
+                    </a>
+                </div>
 
-                <a
-                    href="https://xtls.github.io/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hidden lg:flex items-center gap-2 px-3 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider shrink-0"
-                >
-                    <Icon name="BookOpen" weight="bold" />
-                    Docs
-                </a>
+                {/* Docs Link */}
+                <div className="hidden lg:flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    <a
+                        href="https://xtls.github.io/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-9 px-3 sm:px-4 flex items-center gap-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
+                    >
+                        <Icon name="BookOpen" weight="bold" />
+                        <span>Docs</span>
+                    </a>
+                </div>
             </div>
         </nav>
     );
