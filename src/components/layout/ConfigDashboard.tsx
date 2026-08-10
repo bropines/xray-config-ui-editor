@@ -38,9 +38,9 @@ const DashCard = ({
   <div
     className={`bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col hover:border-slate-600 transition-colors shadow-xl overflow-hidden ${className}`}
   >
-    <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0 h-16">
+    <div className="flex justify-between items-center py-2 px-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0 min-h-[52px]">
       <div className="flex items-center gap-3 min-w-0">
-        <div className={`p-2 rounded-xl ${color} text-white shadow-lg ring-1 ring-white/10 shrink-0`}>
+        <div className={`p-2 rounded-lg ${color} text-white shadow-lg shrink-0 flex items-center justify-center`}>
           <Icon name={icon} className="text-xl" />
         </div>
         <h2 className="text-lg font-bold text-slate-100 tracking-tight truncate">{title}</h2>
@@ -605,7 +605,7 @@ export const ConfigDashboard = ({
               color="bg-emerald-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -613,16 +613,16 @@ export const ConfigDashboard = ({
                     icon="Code"
                     iconClassName="text-sm"
                     title="View JSON"
-                    className="h-9 w-9 p-0 text-slate-400 hover:text-white"
+                    className="h-9 w-9 p-0"
                   />
                   <Button
-                    variant="primary"
+                    variant="ghost"
                     size="sm"
                     onClick={onAddInbound}
                     icon="Plus"
                     iconClassName="text-sm"
                     title="Add Inbound"
-                    className="h-9 w-9 p-0 bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-none"
+                    className="h-9 w-9 p-0"
                   />
                 </div>
               }
@@ -684,7 +684,7 @@ export const ConfigDashboard = ({
               color="bg-purple-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -692,16 +692,16 @@ export const ConfigDashboard = ({
                     icon="Code"
                     iconClassName="text-sm"
                     title="View JSON"
-                    className="h-9 w-9 p-0 text-slate-400 hover:text-white"
+                    className="h-9 w-9 p-0"
                   />
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
                     onClick={onEditRouting}
                     icon="PencilSimple"
                     iconClassName="text-sm"
                     title="Edit Routing"
-                    className="h-9 w-9 p-0 text-purple-400 hover:text-white border-purple-500/30 bg-purple-500/10"
+                    className="h-9 w-9 p-0"
                   />
                 </div>
               }
@@ -1007,7 +1007,7 @@ export const ConfigDashboard = ({
             color="bg-indigo-600"
             className="shrink-0 w-full"
             actions={
-              <div className="flex items-center bg-slate-950/50 p-1 rounded-lg border border-slate-700/50 gap-1 h-11">
+              <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                 <Button
                   variant="ghost"
                   size="sm"
