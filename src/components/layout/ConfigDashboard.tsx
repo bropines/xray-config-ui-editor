@@ -38,14 +38,14 @@ const DashCard = ({
   <div
     className={`bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col hover:border-slate-600 transition-colors shadow-xl overflow-hidden ${className}`}
   >
-    <div className="flex flex-wrap sm:flex-nowrap justify-between items-center p-3 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0 min-h-16 gap-2">
-      <div className="flex items-center gap-2.5 min-w-0">
+    <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0 h-16">
+      <div className="flex items-center gap-3 min-w-0">
         <div className={`p-2 rounded-xl ${color} text-white shadow-lg ring-1 ring-white/10 shrink-0`}>
-          <Icon name={icon} className="text-lg sm:text-xl" />
+          <Icon name={icon} className="text-xl" />
         </div>
-        <h2 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight truncate">{title}</h2>
+        <h2 className="text-lg font-bold text-slate-100 tracking-tight truncate">{title}</h2>
       </div>
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         {actions}
       </div>
     </div>
@@ -787,15 +787,15 @@ export const ConfigDashboard = ({
               color="bg-blue-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex gap-1 items-center shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsSearchOpen((prev) => !prev)}
                     icon="MagnifyingGlass"
-                    iconClassName="text-xs sm:text-sm"
+                    iconClassName="text-sm"
                     title="Search Outbounds"
-                    className={`h-8 w-8 sm:h-9 sm:w-9 p-0 transition-all ${
+                    className={`h-9 w-9 p-0 transition-all ${
                       isSearchOpen || obSearch
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
                         : "text-slate-400 hover:text-white"
@@ -815,94 +815,113 @@ export const ConfigDashboard = ({
                       });
                     }}
                     icon="ListChecks"
-                    iconClassName="text-xs sm:text-sm"
+                    iconClassName="text-sm"
                     title="Toggle Multi-select Mode"
-                    className={`h-8 w-8 sm:h-9 sm:w-9 p-0 transition-all ${
+                    className={`h-9 w-9 p-0 transition-all ${
                       isSelectMode || selectedIndices.size > 0
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
                         : "text-slate-400 hover:text-white"
                     }`}
                   />
-                  <div className="flex items-center bg-slate-950/50 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 gap-0.5 sm:gap-1 h-8 sm:h-9">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onOpenWarpModal}
-                      icon="Lightning"
-                      iconClassName="text-xs"
-                      title="Generate WARP Outbound"
-                      className="h-7 w-7 p-0 text-amber-500 hover:text-amber-400"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onBatchImport}
-                      icon="Stack"
-                      iconClassName="text-xs"
-                      title="Batch Import/Export"
-                      className="h-7 w-7 p-0 text-slate-400 hover:text-white"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onOpenOutboundJson}
-                      icon="Code"
-                      iconClassName="text-xs"
-                      title="View JSON"
-                      className="h-7 w-7 p-0 text-slate-400 hover:text-white"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onAddOutbound}
-                      icon="Plus"
-                      iconClassName="text-xs"
-                      title="Add New Outbound"
-                      className="h-7 w-7 p-0 text-indigo-400 hover:text-white font-bold"
-                    />
-                  </div>
                 </div>
               }
               subHeader={
-                <div
-                  className={`transition-all duration-300 ease-in-out border-b border-slate-700/50 bg-slate-900/90 overflow-hidden ${
-                    isSearchOpen || obSearch
-                      ? "max-h-16 opacity-100 p-2.5 px-4"
-                      : "max-h-0 opacity-0 p-0 border-b-0"
-                  }`}
-                >
-                  <div className="relative flex items-center w-full gap-2">
-                    <Icon
-                      name="MagnifyingGlass"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
-                    />
-                    <input
-                      ref={searchInputRef}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-24 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
-                      placeholder="Filter IP, Tag, Protocol..."
-                      value={obSearch}
-                      onChange={(e) => setObSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") {
-                          setIsSearchOpen(false);
-                        }
-                      }}
-                    />
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                      {obSearch && (
-                        <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-                          {filteredOutbounds.length} / {config.outbounds?.length || 0}
-                        </span>
-                      )}
-                      {obSearch && (
-                        <button
-                          onClick={() => setObSearch("")}
-                          className="text-slate-400 hover:text-white p-0.5"
-                          title="Clear search"
-                        >
-                          <Icon name="X" className="text-xs" />
-                        </button>
-                      )}
+                <div className="flex flex-col border-b border-slate-700/50 bg-slate-900/60 shrink-0">
+                  {/* Action Toolbar Row */}
+                  <div className="flex items-center justify-between p-2 px-3 border-b border-slate-800/60 gap-2">
+                    <div className="text-[11px] uppercase font-bold text-slate-500 tracking-wider hidden sm:flex items-center gap-1.5">
+                      <Icon name="SlidersHorizontal" className="text-slate-400" />
+                      <span>Outbound Actions</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={onOpenWarpModal}
+                        icon="Lightning"
+                        iconClassName="text-xs"
+                        className="h-8 px-2.5 text-xs text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 font-bold"
+                        title="Generate WARP Outbound"
+                      >
+                        WARP
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={onBatchImport}
+                        icon="Stack"
+                        iconClassName="text-xs"
+                        className="h-8 px-2.5 text-xs text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold"
+                        title="Batch Import/Export"
+                      >
+                        Batch
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={onOpenOutboundJson}
+                        icon="Code"
+                        iconClassName="text-xs"
+                        className="h-8 px-2.5 text-xs text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold"
+                        title="JSON Mode"
+                      >
+                        JSON
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={onAddOutbound}
+                        icon="Plus"
+                        iconClassName="text-xs"
+                        className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none"
+                        title="Add New Outbound"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Search Input Bar */}
+                  <div
+                    className={`transition-all duration-300 ease-in-out border-b border-slate-700/50 bg-slate-950/80 overflow-hidden ${
+                      isSearchOpen || obSearch
+                        ? "max-h-16 opacity-100 p-2.5 px-4"
+                        : "max-h-0 opacity-0 p-0 border-b-0"
+                    }`}
+                  >
+                    <div className="relative flex items-center w-full gap-2">
+                      <Icon
+                        name="MagnifyingGlass"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+                      />
+                      <input
+                        ref={searchInputRef}
+                        className="w-full bg-slate-900 border border-slate-700/60 rounded-xl pl-9 pr-24 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+                        placeholder="Filter IP, Tag, Protocol..."
+                        value={obSearch}
+                        onChange={(e) => setObSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            setIsSearchOpen(false);
+                          }
+                        }}
+                      />
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        {obSearch && (
+                          <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+                            {filteredOutbounds.length} / {config.outbounds?.length || 0}
+                          </span>
+                        )}
+                        {obSearch && (
+                          <button
+                            onClick={() => setObSearch("")}
+                            className="text-slate-400 hover:text-white p-0.5"
+                            title="Clear search"
+                          >
+                            <Icon name="X" className="text-xs" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
