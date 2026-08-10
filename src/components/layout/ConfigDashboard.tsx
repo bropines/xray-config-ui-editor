@@ -38,14 +38,14 @@ const DashCard = ({
   <div
     className={`bg-slate-800 border border-slate-700/50 rounded-xl flex flex-col hover:border-slate-600 transition-colors shadow-xl overflow-hidden ${className}`}
   >
-    <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0 h-16">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-xl ${color} text-white shadow-lg ring-1 ring-white/10`}>
-          <Icon name={icon} className="text-xl" />
+    <div className="flex flex-wrap sm:flex-nowrap justify-between items-center p-3 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 shrink-0 min-h-16 gap-2">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`p-2 rounded-xl ${color} text-white shadow-lg ring-1 ring-white/10 shrink-0`}>
+          <Icon name={icon} className="text-lg sm:text-xl" />
         </div>
-        <h2 className="text-lg font-bold text-slate-100 tracking-tight">{title}</h2>
+        <h2 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight truncate">{title}</h2>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 shrink-0">
         {actions}
       </div>
     </div>
@@ -787,15 +787,15 @@ export const ConfigDashboard = ({
               color="bg-blue-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex gap-1.5 items-center">
+                <div className="flex gap-1 items-center shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsSearchOpen((prev) => !prev)}
                     icon="MagnifyingGlass"
-                    iconClassName="text-sm"
+                    iconClassName="text-xs sm:text-sm"
                     title="Search Outbounds"
-                    className={`h-9 w-9 p-0 transition-all ${
+                    className={`h-8 w-8 sm:h-9 sm:w-9 p-0 transition-all ${
                       isSearchOpen || obSearch
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
                         : "text-slate-400 hover:text-white"
@@ -815,50 +815,50 @@ export const ConfigDashboard = ({
                       });
                     }}
                     icon="ListChecks"
-                    iconClassName="text-sm"
+                    iconClassName="text-xs sm:text-sm"
                     title="Toggle Multi-select Mode"
-                    className={`h-9 w-9 p-0 transition-all ${
+                    className={`h-8 w-8 sm:h-9 sm:w-9 p-0 transition-all ${
                       isSelectMode || selectedIndices.size > 0
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
                         : "text-slate-400 hover:text-white"
                     }`}
                   />
-                  <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
+                  <div className="flex items-center bg-slate-950/50 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 gap-0.5 sm:gap-1 h-8 sm:h-9">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={onOpenWarpModal}
                       icon="Lightning"
-                      iconClassName="text-sm"
+                      iconClassName="text-xs"
                       title="Generate WARP Outbound"
-                      className="h-9 w-9 p-0 text-amber-500 hover:text-amber-400"
+                      className="h-7 w-7 p-0 text-amber-500 hover:text-amber-400"
                     />
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={onBatchImport}
                       icon="Stack"
-                      iconClassName="text-sm"
+                      iconClassName="text-xs"
                       title="Batch Import/Export"
-                      className="h-9 w-9 p-0"
+                      className="h-7 w-7 p-0 text-slate-400 hover:text-white"
                     />
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={onOpenOutboundJson}
                       icon="Code"
-                      iconClassName="text-sm"
+                      iconClassName="text-xs"
                       title="View JSON"
-                      className="h-9 w-9 p-0"
+                      className="h-7 w-7 p-0 text-slate-400 hover:text-white"
                     />
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={onAddOutbound}
                       icon="Plus"
-                      iconClassName="text-sm"
+                      iconClassName="text-xs"
                       title="Add New Outbound"
-                      className="h-9 w-9 p-0"
+                      className="h-7 w-7 p-0 text-indigo-400 hover:text-white font-bold"
                     />
                   </div>
                 </div>

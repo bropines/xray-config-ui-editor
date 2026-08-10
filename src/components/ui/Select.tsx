@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 
@@ -35,6 +35,7 @@ export function Select<T extends string = string>({
     id,
 }: SelectProps<T>) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isPositioned, setIsPositioned] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -53,10 +54,11 @@ export function Select<T extends string = string>({
                 left: Math.max(8, left),
                 width: minWidth
             });
+            setIsPositioned(true);
         }
     };
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (isOpen) {
             updateCoords();
             const handleScrollOrResize = () => updateCoords();
@@ -66,6 +68,8 @@ export function Select<T extends string = string>({
                 window.removeEventListener('resize', handleScrollOrResize);
                 window.removeEventListener('scroll', handleScrollOrResize, true);
             };
+        } else {
+            setIsPositioned(false);
         }
     }, [isOpen]);
 
@@ -96,6 +100,16 @@ export function Select<T extends string = string>({
         setIsOpen(false);
     };
 
+    const handleToggleOpen = () => {
+        if (disabled) return;
+        if (!isOpen) {
+            updateCoords();
+            setIsOpen(true);
+        } else {
+            setIsOpen(false);
+        }
+    };
+
     const border = error
         ? 'border-rose-500/70'
         : isOpen ? 'border-indigo-500 ring-1 ring-indigo-500/20' : 'border-slate-700';
@@ -109,7 +123,7 @@ export function Select<T extends string = string>({
         );
     });
 
-    const dropdownMenu = isOpen ? (
+    const dropdownMenu = (isOpen && isPositioned) ? (
         <div
             ref={dropdownRef}
             style={{
@@ -195,7 +209,7 @@ export function Select<T extends string = string>({
             <button
                 ref={buttonRef}
                 type="button"
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={handleToggleOpen}
                 disabled={disabled}
                 className={`
                     w-full bg-slate-950 border rounded-lg h-11
