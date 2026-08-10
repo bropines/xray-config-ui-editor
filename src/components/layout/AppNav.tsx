@@ -123,9 +123,9 @@ export const AppNav = ({
     };
 
     return (
-        <nav className="h-14 shrink-0 z-40 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/50 px-2 sm:px-4 shadow-2xl flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        <nav className="h-14 shrink-0 z-40 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/50 px-2 sm:px-4 shadow-2xl grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-full overflow-x-auto no-scrollbar">
             {/* Left: Logo + Status */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center justify-start gap-2 sm:gap-3 shrink-0">
                 <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/20 shrink-0">
                     <Icon name="Planet" weight="fill" className="text-xl" />
                 </div>
@@ -159,8 +159,8 @@ export const AppNav = ({
                 )}
             </div>
 
-            {/* Center: Profile Selector, Profiles, Git Log, Clear, Cloud Sync */}
-            <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0">
+            {/* Center: Profile Selector, Profiles, Git Log, Clear, Cloud Sync (TRULY CENTERED) */}
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 min-w-0">
                 {hasConfig && (
                     <div className="w-28 sm:w-36 md:w-52 shrink-0">
                         <Select
@@ -259,7 +259,7 @@ export const AppNav = ({
             </div>
 
             {/* Right: Load/Download + Combined TG & Xray Docs + About (Very Right End) */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
                 {/* File / Download */}
                 <div className="flex gap-1 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                     <label
