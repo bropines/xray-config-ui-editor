@@ -787,7 +787,7 @@ export const ConfigDashboard = ({
               color="bg-blue-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                   <Button
                     variant="ghost"
                     size="sm"
