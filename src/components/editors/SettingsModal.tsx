@@ -24,6 +24,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
         setActiveTab,
         rawMode,
         setRawMode,
+        rawText,
         outboundTags,
         coreSettings,
         handleRawUpdate,
@@ -53,6 +54,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             title="General Settings"
             local={coreSettings}
             setLocal={handleRawUpdate}
+            rawText={rawText}
             rawMode={rawMode}
             setRawMode={setRawMode}
             errors={[]}

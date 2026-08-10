@@ -63,6 +63,7 @@ export const RuleEditor = ({
 }: any) => {
     // Стейт для просмотра деталей тега по клику
     const [viewTag, setViewTag] = useState<string | null>(null);
+    const [localRawText, setLocalRawText] = useState<string | null>(null);
 
     // Calculate duplicate matchers across all rules (flagging all conflicting rules)
     const duplicateWarnings = React.useMemo(() => {
@@ -119,7 +120,17 @@ export const RuleEditor = ({
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full bg-slate-950 overflow-hidden">
-                <JsonField label="Raw Rule JSON" value={rule} onChange={onChange} className="h-full" schemaMode="rule" />
+                <JsonField 
+                    label="Raw Rule JSON" 
+                    value={rule} 
+                    onChange={(val: any, raw?: string) => {
+                        onChange(val);
+                        if (raw !== undefined) setLocalRawText(raw);
+                    }} 
+                    className="h-full" 
+                    schemaMode="rule" 
+                    rawText={localRawText}
+                />
             </div>
         );
     }

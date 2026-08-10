@@ -39,7 +39,7 @@ interface ModalManagerProps {
 
     sectionModal: SectionModalState;
     onCloseSectionModal: () => void;
-    onSaveSection: (data: any) => void;
+    onSaveSection: (data: any, rawText?: string) => void;
 
     remnawaveModalOpen: boolean;
     onCloseRemnawave: () => void;

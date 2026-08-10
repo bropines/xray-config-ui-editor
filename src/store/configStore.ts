@@ -37,6 +37,7 @@ export interface LocalProfile {
     name: string;
     updatedAt: number;
     config: XrayConfig;
+    rawConfigText?: string;
 }
 
 export interface ConfigHistorySnapshot {
@@ -45,6 +46,7 @@ export interface ConfigHistorySnapshot {
     label: string;
     summary: string;
     config: XrayConfig;
+    rawConfigText?: string;
     additions?: number;
     deletions?: number;
 }
@@ -59,8 +61,9 @@ interface RemnawaveState {
 
 interface ConfigState {
     config: XrayConfig | null;
-    setConfig: (config: XrayConfig | null) => void;
-    loadConfig: (json: unknown, label?: string, isCloud?: boolean) => void;
+    rawConfigText: string | null;
+    setConfig: (config: XrayConfig | null, rawText?: string | null) => void;
+    loadConfig: (json: unknown, label?: string, isCloud?: boolean, rawText?: string) => void;
     coreVersion: string;
     setCoreVersion: (version: string) => void;
     
@@ -105,7 +108,7 @@ interface ConfigState {
     disconnectRemnawave: () => void;
     
     // Standard CRUD Actions
-    updateSection: (section: keyof XrayConfig, data: any) => void;
+    updateSection: (section: keyof XrayConfig, data: any, rawText?: string) => void;
     toggleSection: (section: keyof XrayConfig, defaultValue: any) => void;
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
     updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
@@ -124,6 +127,7 @@ export const useConfigStore = create(
     persist<ConfigState>(
         (set, get) => ({
             config: null,
+            rawConfigText: null,
             coreVersion: 'v1.8.10',
             setCoreVersion: (version: string) => set({ coreVersion: version }),
             
@@ -196,7 +200,8 @@ export const useConfigStore = create(
                     }));
                     const configData = await client.getConfigProfile(uuid);
                     const profile = get().remnawave.profiles.find(p => p.uuid === uuid);
-                    get().loadConfig(configData, `Loaded Profile (${profile?.name || 'Cloud'})`, true);
+                    const rawStr = typeof configData === 'string' ? configData : stringifyJsonc(configData, 2);
+                    get().loadConfig(configData, `Loaded Profile (${profile?.name || 'Cloud'})`, true, rawStr);
                     toast.success("Profile config loaded");
                 } catch (e: any) {
                     set(produce((state) => {
@@ -244,7 +249,8 @@ export const useConfigStore = create(
                     id: 'default',
                     name: 'Default',
                     updatedAt: Date.now(),
-                    config: { inbounds: [], outbounds: [] }
+                    config: { inbounds: [], outbounds: [] },
+                    rawConfigText: stringifyJsonc({ inbounds: [], outbounds: [] }, 2)
                 }
             ],
             activeProfileId: 'default',
@@ -254,7 +260,7 @@ export const useConfigStore = create(
             autoSave: true,
 
             recordSnapshot: (label = "Config Edit") => {
-                const { config, histories, historyLimit, activeProfileId, remnawave } = get();
+                const { config, rawConfigText, histories, historyLimit, activeProfileId, remnawave } = get();
                 if (!config) return null;
 
                 // Determine active history key
@@ -274,8 +280,8 @@ export const useConfigStore = create(
                 let additions = 0;
                 let deletions = 0;
                 try {
-                    const prettyCurrent = JSON.stringify(config, null, 2);
-                    const prettyPrev = prevConfig ? JSON.stringify(prevConfig, null, 2) : '';
+                    const prettyCurrent = rawConfigText || JSON.stringify(config, null, 2);
+                    const prettyPrev = history[0]?.rawConfigText || (prevConfig ? JSON.stringify(prevConfig, null, 2) : '');
                     const changes = diffLines(prettyPrev, prettyCurrent);
                     changes.forEach((c) => {
                         if (c.added) additions += c.count || 1;
@@ -294,6 +300,7 @@ export const useConfigStore = create(
                     label,
                     summary,
                     config: parseJsonc(stringifyJsonc(config)),
+                    rawConfigText: rawConfigText || stringifyJsonc(config, 2),
                     additions,
                     deletions,
                 };
@@ -312,7 +319,8 @@ export const useConfigStore = create(
                 const found = history.find(h => h.id === id);
                 if (found) {
                     const restored = parseJsonc(stringifyJsonc(found.config));
-                    set({ config: restored });
+                    const text = found.rawConfigText || stringifyJsonc(restored, 2);
+                    set({ config: restored, rawConfigText: text });
                     toast.success(`✓ Restored to commit ${id.substring(0, 7)} (${new Date(found.timestamp).toLocaleTimeString()})`);
                 }
             },
@@ -371,16 +379,19 @@ export const useConfigStore = create(
             createProfile: (name, initialConfig) => {
                 const newId = `profile-${Math.random().toString(36).substring(2, 8)}`;
                 const cfg = initialConfig || get().config || { inbounds: [], outbounds: [] };
+                const text = get().rawConfigText || stringifyJsonc(cfg, 2);
                 const newProfile: LocalProfile = {
                     id: newId,
                     name: name.trim() || 'New Profile',
                     updatedAt: Date.now(),
-                    config: parseJsonc(stringifyJsonc(cfg))
+                    config: parseJsonc(stringifyJsonc(cfg)),
+                    rawConfigText: text
                 };
                 set(produce((state) => {
                     state.profiles.push(newProfile);
                     state.activeProfileId = newId;
                     state.config = newProfile.config;
+                    state.rawConfigText = text;
                     state.baselineConfigJson = stringifyJsonc(newProfile.config);
                     state.remnawave.activeProfileUuid = null;
                 }));
@@ -392,9 +403,12 @@ export const useConfigStore = create(
                 const { profiles } = get();
                 const target = profiles.find(p => p.id === id);
                 if (!target) return;
+                const cfg = parseJsonc(stringifyJsonc(target.config));
+                const text = target.rawConfigText || stringifyJsonc(cfg, 2);
                 set(produce((state) => {
                     state.activeProfileId = id;
-                    state.config = parseJsonc(stringifyJsonc(target.config));
+                    state.config = cfg;
+                    state.rawConfigText = text;
                     state.baselineConfigJson = stringifyJsonc(target.config);
                     state.remnawave.activeProfileUuid = null;
                 }));
@@ -423,7 +437,9 @@ export const useConfigStore = create(
                 }
                 const remaining = profiles.filter(p => p.id !== id);
                 const nextActive = activeProfileId === id ? remaining[0].id : activeProfileId;
-                const nextConfig = remaining.find(p => p.id === nextActive)?.config || null;
+                const nextProfile = remaining.find(p => p.id === nextActive);
+                const nextConfig = nextProfile?.config || null;
+                const nextText = nextProfile?.rawConfigText || (nextConfig ? stringifyJsonc(nextConfig, 2) : null);
                 // Remove history for deleted profile
                 const { histories } = get();
                 const newHistories = { ...histories };
@@ -432,6 +448,7 @@ export const useConfigStore = create(
                     profiles: remaining,
                     activeProfileId: nextActive,
                     config: nextConfig ? parseJsonc(stringifyJsonc(nextConfig)) : null,
+                    rawConfigText: nextText,
                     baselineConfigJson: nextConfig ? stringifyJsonc(nextConfig) : null,
                     histories: newHistories
                 });
@@ -439,7 +456,7 @@ export const useConfigStore = create(
             },
 
             saveActiveProfile: () => {
-                const { config, activeProfileId, remnawave } = get();
+                const { config, rawConfigText, activeProfileId, remnawave } = get();
                 if (!config) return;
                 // If a cloud profile is active, do not overwrite the local profile
                 if (remnawave.activeProfileUuid) {
@@ -450,6 +467,7 @@ export const useConfigStore = create(
                     const target = state.profiles.find((p: any) => p.id === activeProfileId);
                     if (target) {
                         target.config = parseJsonc(stringifyJsonc(config));
+                        target.rawConfigText = rawConfigText || stringifyJsonc(config, 2);
                         target.updatedAt = Date.now();
                     }
                     state.baselineConfigJson = stringifyJsonc(config);
@@ -462,73 +480,151 @@ export const useConfigStore = create(
                 const { baselineConfigJson } = get();
                 if (!baselineConfigJson) return;
                 try {
-                    const reverted = JSON.parse(baselineConfigJson);
-                    set({ config: reverted });
+                    const reverted = parseJsonc(baselineConfigJson);
+                    set({ config: reverted, rawConfigText: baselineConfigJson });
                     toast.info("Reverted changes to baseline");
                 } catch (e) {}
             },
 
             markBaseline: () => {
-                const { config } = get();
+                const { config, rawConfigText } = get();
                 if (config) {
-                    set({ baselineConfigJson: JSON.stringify(config) });
+                    set({ baselineConfigJson: rawConfigText || stringifyJsonc(config, 2) });
                 }
             },
 
             // --- Standard CRUD Actions ---
             
-            setConfig: (config) => set({ config }),
+            setConfig: (config, rawText) => set((state) => {
+                let newRawText = rawText;
+                if (newRawText === undefined) {
+                    if (state.rawConfigText && config) {
+                        try {
+                            const parsed = parseJsonc(state.rawConfigText);
+                            if (JSON.stringify(parsed) === JSON.stringify(config)) {
+                                newRawText = state.rawConfigText;
+                            } else {
+                                newRawText = stringifyJsonc(config, 2);
+                            }
+                        } catch {
+                            newRawText = stringifyJsonc(config, 2);
+                        }
+                    } else if (config) {
+                        newRawText = stringifyJsonc(config, 2);
+                    } else {
+                        newRawText = null;
+                    }
+                }
+                return { config, rawConfigText: newRawText };
+            }),
 
-            loadConfig: (json, label, isCloud = false) => {
-                const result = XrayConfigSchema.safeParse(json);
-                const parsedConfig = result.success ? result.data : (json as XrayConfig);
+            loadConfig: (json, label, isCloud = false, rawText) => {
+                let parsedConfig: XrayConfig;
+                let textToSave = rawText;
+                if (typeof json === 'string') {
+                    textToSave = json;
+                    try {
+                        parsedConfig = parseJsonc(json);
+                    } catch {
+                        parsedConfig = json as any;
+                    }
+                } else {
+                    const result = XrayConfigSchema.safeParse(json);
+                    parsedConfig = result.success ? result.data : (json as XrayConfig);
+                    if (!textToSave) {
+                        textToSave = stringifyJsonc(parsedConfig, 2);
+                    }
+                }
+                // @ts-ignore
                 if (!result.success) {
                     console.warn('Validation warnings:', result.error.issues);
                     toast.warning("Configuration loaded with validation warnings. Check console.");
                 }
                 set(produce((state) => {
                     state.config = parsedConfig;
-                    state.baselineConfigJson = stringifyJsonc(parsedConfig);
+                    state.rawConfigText = textToSave || stringifyJsonc(parsedConfig, 2);
+                    state.baselineConfigJson = state.rawConfigText;
                     if (!isCloud) {
                         state.remnawave.activeProfileUuid = null;
                     }
                     const active = state.profiles.find((p: any) => p.id === state.activeProfileId);
                     if (active) {
                         active.config = parseJsonc(stringifyJsonc(parsedConfig));
+                        active.rawConfigText = state.rawConfigText;
                         active.updatedAt = Date.now();
                     }
                 }));
                 get().recordSnapshot(label || "Loaded Config");
             },
 
-            updateSection: (section, data) => set(produce((state) => {
-                if (!state.config) {
-                    state.config = { inbounds: [], outbounds: [] };
-                }
-                if (data !== undefined) {
-                    state.config[section] = data;
-                }
-            })),
-
-            toggleSection: (section, defaultValue) => set(produce((state) => {
-                if (!state.config) return;
-                if (state.config[section]) {
-                    delete state.config[section];
+            updateSection: (section, data, rawText) => set((state) => {
+                let fullObj: any;
+                if (state.rawConfigText) {
+                    try {
+                        fullObj = parseJsonc(state.rawConfigText);
+                    } catch {
+                        fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
+                    }
                 } else {
-                    state.config[section] = defaultValue;
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
                 }
-            })),
 
-            addItem: (section, item) => set(produce((state) => {
-                if (state.config) {
-                    state.config[section] = state.config[section] || [];
-                    state.config[section].push(item);
+                if (rawText) {
+                    try {
+                        const parsedSec = parseJsonc(rawText);
+                        fullObj[section] = parsedSec;
+                        const newText = stringifyJsonc(fullObj, 2);
+                        return { config: fullObj, rawConfigText: newText };
+                    } catch (e) {
+                        console.warn('[updateSection] Error parsing section rawText:', e);
+                    }
                 }
-            })),
 
-            addOutbounds: (items) => set(produce((state) => {
-                if (!state.config) state.config = { inbounds: [], outbounds: [] };
-                const existingTags = new Set(state.config.outbounds?.map((o: any) => o.tag));
+                if (data !== undefined) {
+                    fullObj[section] = data;
+                }
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            toggleSection: (section, defaultValue) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
+                }
+                if (fullObj[section]) {
+                    delete fullObj[section];
+                } else {
+                    fullObj[section] = defaultValue;
+                }
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            addItem: (section, item) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] });
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
+                }
+                fullObj[section] = fullObj[section] || [];
+                fullObj[section].push(item);
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            addOutbounds: (items) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] });
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
+                }
+                if (!fullObj.outbounds) fullObj.outbounds = [];
+                const existingTags = new Set(fullObj.outbounds.map((o: any) => o.tag));
                 
                 const cleanItems = items.map((item) => {
                     let tag = item.tag || `${item.protocol}-${Math.floor(Math.random() * 1000)}`;
@@ -542,63 +638,112 @@ export const useConfigStore = create(
                     return { ...item, tag };
                 });
                 
-                state.config.outbounds.push(...cleanItems);
-            })),
+                fullObj.outbounds.push(...cleanItems);
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
 
-            updateItem: (section, index, item) => set(produce((state) => {
-                if (state.config && state.config[section]) {
-                    state.config[section][index] = item;
+            updateItem: (section, index, item) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
                 }
-            })),
-
-            deleteItem: (section, index) => set(produce((state) => {
-                if (state.config && state.config[section]) {
-                    state.config[section].splice(index, 1);
+                if (fullObj[section]) {
+                    fullObj[section][index] = item;
                 }
-            })),
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
 
-            deleteItems: (section, indices) => set(produce((state) => {
-                if (state.config && state.config[section]) {
-                    const sorted = Array.from(new Set(indices)).sort((a, b) => b - a);
+            deleteItem: (section, index) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
+                }
+                if (fullObj[section]) {
+                    fullObj[section].splice(index, 1);
+                }
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            deleteItems: (section, indices) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
+                }
+                if (fullObj[section]) {
+                    const sorted = Array.from(new Set(indices)).sort((a: any, b: any) => b - a);
                     for (const idx of sorted) {
-                        if (idx >= 0 && idx < state.config[section].length) {
-                            state.config[section].splice(idx, 1);
+                        if (idx >= 0 && idx < fullObj[section].length) {
+                            fullObj[section].splice(idx, 1);
                         }
                     }
                 }
-            })),
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
             
-            moveItem: (section, fromIndex, toIndex) => set(produce((state) => {
-                if (!state.config || !state.config[section]) return;
-                const list = state.config[section];
-                if (toIndex < 0 || toIndex >= list.length) return;
+            moveItem: (section, fromIndex, toIndex) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
+                }
+                if (!fullObj[section]) return state;
+                const list = fullObj[section];
+                if (toIndex < 0 || toIndex >= list.length) return state;
                 
                 const [movedItem] = list.splice(fromIndex, 1);
                 list.splice(toIndex, 0, movedItem);
-            })),
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
 
-            reorderRules: (newRules) => set(produce((state) => {
-                if (state.config) {
-                    if (!state.config.routing) state.config.routing = { rules: [], balancers: [] };
-                    state.config.routing.rules = newRules;
+            reorderRules: (newRules) => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
                 }
-            })),
+                if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                fullObj.routing.rules = newRules;
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
 
-            initDns: () => set(produce((state) => {
-                if (state.config && !state.config.dns) {
-                    state.config.dns = {
+            initDns: () => set((state) => {
+                let fullObj: any;
+                try {
+                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
+                } catch {
+                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
+                }
+                if (!fullObj.dns) {
+                    fullObj.dns = {
                         servers: ["1.1.1.1", "8.8.8.8", "localhost"],
                         queryStrategy: "UseIP",
                         tag: "dns_inbound"
                     };
                 }
-            }))
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            })
         }),
         {
             name: 'xray-config-storage',
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({ 
                 config: state.config,
+                rawConfigText: state.rawConfigText,
                 coreVersion: state.coreVersion,
                 warpWorkerUrl: state.warpWorkerUrl,
                 remnawave: { 

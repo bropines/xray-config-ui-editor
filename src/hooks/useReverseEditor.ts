@@ -26,8 +26,8 @@ export const useReverseEditor = () => {
         updateList(type, n);
     }, [reverse, updateList]);
 
-    const updateReverse = useCallback((newReverse: any) => {
-        updateSection('reverse', newReverse);
+    const updateReverse = useCallback((newReverse: any, rawText?: string) => {
+        updateSection('reverse', newReverse, rawText);
     }, [updateSection]);
 
     return {

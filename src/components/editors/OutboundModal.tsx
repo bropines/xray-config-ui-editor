@@ -20,6 +20,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const {
         local,
         setLocal,
+        rawText,
         updateField,
         handleProtocolChange,
         handleSave,
@@ -63,6 +64,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             title="Outbound Editor"
             local={local}
             setLocal={setLocal}
+            rawText={rawText}
             rawMode={rawMode}
             setRawMode={setRawMode}
             errors={errors}

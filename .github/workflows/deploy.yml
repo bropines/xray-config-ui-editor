@@ -35,9 +35,10 @@ jobs:
       - name: Run Tests
         run: bun test
 
-  # ЭТАП 2: Сборка (только если тесты прошли)
+  # ЭТАП 2: Сборка (только для ветки main или manual dispatch)
   build:
     needs: test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -62,6 +63,7 @@ jobs:
   # ЭТАП 3: Деплой на GitHub Pages
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -82,7 +84,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Extract Release Notes from Changelog
+        run: |
+          node -e "
+            const fs = require('fs');
+            const tag = '${{ github.ref_name }}'.replace(/^v/, '');
+            const content = fs.readFileSync('changelog.md', 'utf8');
+            const tagRegex = new RegExp('##\\\\s*\\\[' + tag.replace(/\\./g, '\\\\.') + '\\\\][\\\\s\\\\S]*?(?=(?:\\\\n##\\\\s*\\\[|$))');
+            let match = content.match(tagRegex);
+            if (!match) {
+              match = content.match(new RegExp('##\\\\s*\\\[' + '[\\\\s\\\\S]*?(?=(?:\\\\n##\\\\s*\\\[|$))'));
+            }
+            if (match) {
+              fs.writeFileSync('RELEASE_NOTES.md', match[0].trim());
+            } else {
+              fs.writeFileSync('RELEASE_NOTES.md', 'Release ' + '${{ github.ref_name }}');
+            }
+          "
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md

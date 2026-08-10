@@ -589,8 +589,8 @@ export const ConfigDashboard = ({
           <JsonField
             label="Full Configuration (Auto-saved)"
             value={config}
-            onChange={(newConfig: any) => {
-              if (newConfig) setConfig(newConfig);
+            onChange={(newConfig: any, rawText?: string) => {
+              if (newConfig) setConfig(newConfig, rawText);
             }}
             className="flex-1 relative min-h-0"
           />

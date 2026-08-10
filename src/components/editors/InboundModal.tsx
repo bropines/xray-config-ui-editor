@@ -11,6 +11,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
     const {
         local,
         setLocal,
+        rawText,
         updateField,
         handleProtocolChange,
         handleSave,
@@ -25,6 +26,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             title="Inbound Editor"
             local={local}
             setLocal={setLocal}
+            rawText={rawText}
             rawMode={rawMode}
             setRawMode={setRawMode}
             errors={errors}

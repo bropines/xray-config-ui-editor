@@ -17,6 +17,7 @@ export const ReverseModal = ({ onClose }: any) => {
     } = useReverseEditor();
 
     const [rawMode, setRawMode] = useState(false);
+    const [localRawText, setLocalRawText] = useState<string | null>(null);
 
     // --- JSON MODE VIEW ---
     if (rawMode) {
@@ -34,9 +35,13 @@ export const ReverseModal = ({ onClose }: any) => {
                     <JsonField
                         label="Reverse Proxy Configuration"
                         value={reverse}
-                        onChange={updateReverse}
+                        onChange={(val: any, raw?: string) => {
+                            updateReverse(val, raw);
+                            if (raw !== undefined) setLocalRawText(raw);
+                        }}
                         className="flex-1"
                         schemaMode="reverse"
+                        rawText={localRawText}
                     />
                 </div>
             </Modal>

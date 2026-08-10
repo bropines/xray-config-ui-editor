@@ -8,6 +8,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     const [inputValue, setInputValue] = useState("");
     const [outboundSearch, setOutboundSearch] = useState("");
     const [lastClickedIdx, setLastClickedIdx] = useState<number | null>(null);
+    const [localRawText, setLocalRawText] = useState<string | null>(null);
 
     if (!balancer) {
         return (
@@ -21,7 +22,17 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full p-4 bg-slate-950">
-                <JsonField label="Raw Balancer JSON" value={balancer} onChange={onChange} schemaMode="balancer" className="h-full"/>
+                <JsonField 
+                    label="Raw Balancer JSON" 
+                    value={balancer} 
+                    onChange={(val: any, raw?: string) => {
+                        onChange(val);
+                        if (raw !== undefined) setLocalRawText(raw);
+                    }} 
+                    schemaMode="balancer" 
+                    className="h-full"
+                    rawText={localRawText}
+                />
             </div>
         );
     }

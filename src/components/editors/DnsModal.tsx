@@ -34,6 +34,8 @@ export const DnsModal = ({ onClose }: any) => {
         updateFakedns
     } = useDnsEditor();
 
+    const [localRawText, setLocalRawText] = useState<string | null>(null);
+
     // --- JSON MODE VIEW ---
     if (rawMode) {
         const compositeConfig = { dns: dns, fakedns: fakedns };
@@ -52,9 +54,13 @@ export const DnsModal = ({ onClose }: any) => {
                     <JsonField
                         label="Combined Configuration"
                         value={compositeConfig}
-                        onChange={handleCompositeUpdate}
+                        onChange={(val: any, raw?: string) => {
+                            handleCompositeUpdate(val, raw);
+                            if (raw !== undefined) setLocalRawText(raw);
+                        }}
                         className="flex-1"
                         schemaMode="full"
+                        rawText={localRawText}
                     />
                 </div>
             </Modal>

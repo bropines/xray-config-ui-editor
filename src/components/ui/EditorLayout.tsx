@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 interface EditorLayoutProps {
     title: string;
     local: any;
-    setLocal: (data: any) => void;
+    setLocal: (data: any, rawText?: string) => void;
     rawMode: boolean;
     setRawMode: (val: boolean) => void;
     errors: any[];
@@ -16,6 +16,7 @@ interface EditorLayoutProps {
     schemaMode: any;
     children: React.ReactNode;
     extraButtons?: React.ReactNode;
+    rawText?: string | null;
 }
 
 export const EditorLayout = ({
@@ -29,7 +30,8 @@ export const EditorLayout = ({
     onClose,
     schemaMode,
     children,
-    extraButtons
+    extraButtons,
+    rawText
 }: EditorLayoutProps) => {
     
     const modalButtons = (
@@ -71,9 +73,10 @@ export const EditorLayout = ({
                     <JsonField 
                         label="Source Configuration" 
                         value={local} 
-                        onChange={setLocal} 
+                        onChange={(val: any, raw?: string) => setLocal(val, raw)} 
                         schemaMode={schemaMode} 
                         className="flex-1" 
+                        rawText={rawText}
                     />
                 </div>
             ) : (

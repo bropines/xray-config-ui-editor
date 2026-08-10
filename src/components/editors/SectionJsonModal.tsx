@@ -6,19 +6,24 @@ interface SectionJsonModalProps {
     title: string;
     data: any;
     onClose: () => void;
-    onSave: (newData: any) => void;
+    onSave: (newData: any, rawText?: string) => void;
     schemaMode: any; // Добавили
 }
 
 export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: SectionJsonModalProps) => {
     const [localData, setLocalData] = useState(data);
+    const [localRawText, setLocalRawText] = useState<string | null>(null);
 
     useEffect(() => {
         setLocalData(data);
+        setLocalRawText(null);
     }, [data]);
 
-    const handleChange = (newData: any) => {
+    const handleChange = (newData: any, rawText?: string) => {
         setLocalData(newData);
+        if (rawText !== undefined) {
+            setLocalRawText(rawText);
+        }
     };
 
     return (
@@ -26,7 +31,7 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
             title={title} 
             onClose={onClose} 
             onSave={() => {
-                onSave(localData);
+                onSave(localData, localRawText || undefined);
                 onClose();
             }}
             className="h-full overflow-hidden"
@@ -37,6 +42,7 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
                 onChange={handleChange} 
                 className="flex-1" 
                 schemaMode={schemaMode}
+                rawText={localRawText}
             />
         </Modal>
     );

@@ -122,7 +122,7 @@ export const useAppLogic = () => {
                         }
                     } else {
                         // Это обычный конфиг (объект)
-                        loadConfig(parsed);
+                        loadConfig(parsed, undefined, false, result);
                         toast.success("Configuration loaded from file");
                     }
                     setRawMode(false);
@@ -130,15 +130,29 @@ export const useAppLogic = () => {
             } catch { toast.error("Invalid JSON file"); }
         };
         reader.readAsText(file);
-    }, [setConfig, addOutbounds]);
+    }, [loadConfig, addOutbounds]);
 
     const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) loadFile(e.target.files[0]);
     }, [loadFile]);
 
     const downloadConfig = useCallback(() => {
+        const { config, rawConfigText } = useConfigStore.getState();
+        let contentToDownload = rawConfigText;
+        if (contentToDownload) {
+            try {
+                const parsed = parseJsonc(contentToDownload);
+                if (JSON.stringify(parsed) !== JSON.stringify(config)) {
+                    contentToDownload = JSON.stringify(config, null, 2);
+                }
+            } catch {
+                contentToDownload = JSON.stringify(config, null, 2);
+            }
+        } else {
+            contentToDownload = JSON.stringify(config, null, 2);
+        }
         const a = document.createElement('a');
-        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(contentToDownload);
         a.download = "config.json";
         a.click();
     }, [config]);
@@ -166,8 +180,8 @@ export const useAppLogic = () => {
         setModal({ type: null, data: null, index: null });
     }, [modal, updateItem, addItem]);
 
-    const handleSaveSection = useCallback((newData: any) => {
-        updateSection(sectionModal.section as any, newData);
+    const handleSaveSection = useCallback((newData: any, rawText?: string) => {
+        updateSection(sectionModal.section as any, newData, rawText);
         setSectionModal(prev => ({ ...prev, open: false }));
     }, [sectionModal.section, updateSection]);
 

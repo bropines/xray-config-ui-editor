@@ -1,22 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
 import { parseJsonc, stringifyJsonc, stripJsoncComments } from "../../utils/jsonc";
+import { useConfigStore } from "../../store/configStore";
 
 interface JsonFieldProps {
     label?: string;
     value: any;
-    onChange: (val: any) => void;
+    onChange: (val: any, rawText?: string) => void;
     className?: string;
     schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse';
+    rawText?: string | null;
 }
 
-export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full' }: JsonFieldProps) => {
+export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full', rawText }: JsonFieldProps) => {
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
     const isLocalEditRef = useRef(false);
 
-    // Synchronize external value -> internal text only when external data is structurally different
+    // Synchronize external value -> internal text while preserving comments
     useEffect(() => {
+        // If this update was triggered by local typing/pasting in this component, do NOT overwrite text!
+        if (isLocalEditRef.current) {
+            isLocalEditRef.current = false;
+            return;
+        }
+
         let displayValue = value;
         if (value && typeof value === 'object' && !Array.isArray(value) && 'i' in value) {
             displayValue = { ...value };
@@ -25,12 +34,24 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             });
             delete (displayValue as any).i;
         }
-        
+
+        // 1. If explicit rawText prop passed and matches structurally, use it
+        if (rawText && rawText.trim() !== "") {
+            try {
+                const parsed = parseJsonc(rawText);
+                if (JSON.stringify(parsed) === JSON.stringify(displayValue)) {
+                    setText(rawText);
+                    return;
+                }
+            } catch (e) {}
+        }
+
+        // 2. If current text in editor matches structurally, keep it (do not wipe user's comments/formatting while typing)
         try {
             if (text.trim() !== "") {
                 const currentObj = parseJsonc(text);
                 if (JSON.stringify(currentObj) === JSON.stringify(displayValue)) {
-                    return; // Retain user's text (with comments, spacing, formatting)!
+                    return;
                 }
             }
         } catch (e) {
@@ -38,16 +59,43 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             return;
         }
 
+        // 3. Check if rawConfigText from store can be used for full config or section
+        if (rawConfigText && rawConfigText.trim() !== "") {
+            try {
+                const fullObj = parseJsonc(rawConfigText);
+                if (schemaMode === 'full') {
+                    if (JSON.stringify(fullObj) === JSON.stringify(displayValue)) {
+                        setText(rawConfigText);
+                        return;
+                    }
+                } else {
+                    let sectionKey = schemaMode;
+                    if (schemaMode === 'inbound') sectionKey = 'inbounds';
+                    if (schemaMode === 'outbound') sectionKey = 'outbounds';
+
+                    if (sectionKey in fullObj) {
+                        const secObj = fullObj[sectionKey];
+                        if (JSON.stringify(secObj) === JSON.stringify(displayValue)) {
+                            const sectionText = stringifyJsonc(secObj, 2);
+                            setText(sectionText);
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // 4. Fallback to standard comment-json stringify
         const newText = stringifyJsonc(displayValue, 2);
         setText(newText);
-    }, [value]);
+    }, [value, rawConfigText, rawText, schemaMode]);
 
     const handleEditorChange = (v: string) => {
         setText(v);
         isLocalEditRef.current = true;
         try {
             if (v.trim() === "") {
-                onChange({ inbounds: [], outbounds: [] });
+                onChange({ inbounds: [], outbounds: [] }, v);
                 setError(false);
             } else {
                 const parsed = parseJsonc(v);
@@ -80,7 +128,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
 
             // Reject if resulting object is invalid (e.g. empty or not matching Xray structure)
             if (sanitized && typeof sanitized === 'object') {
-                onChange(sanitized);
+                onChange(sanitized, v);
                 setError(false);
             }
         }

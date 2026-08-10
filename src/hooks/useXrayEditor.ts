@@ -16,12 +16,24 @@ export const useXrayEditor = <T extends Record<string, any>>({
     validate,
     onProtocolChange
 }: UseXrayEditorOptions<T>) => {
-    const [local, setLocal] = useState<T>(data);
+    const [local, setLocalData] = useState<T>(data);
+    const [rawText, setRawText] = useState<string | null>(null);
     const [rawMode, setRawMode] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
 
+    const setLocal = useCallback((newData: any, newRawText?: string) => {
+        if (typeof newData === 'function') {
+            setLocalData(prev => newData(prev));
+        } else {
+            setLocalData(newData);
+        }
+        if (newRawText !== undefined) {
+            setRawText(newRawText);
+        }
+    }, []);
+
     const updateField = useCallback((path: string | (string | number)[], value: any) => {
-        setLocal(
+        setLocalData(
             produce((draft: any) => {
                 if (Array.isArray(path)) {
                     let curr = draft;
@@ -38,15 +50,17 @@ export const useXrayEditor = <T extends Record<string, any>>({
                 }
             })
         );
+        setRawText(null);
         if (errors.length > 0) setErrors([]);
     }, [errors.length]);
 
     const handleProtocolChange = useCallback((proto: string) => {
         if (onProtocolChange) {
-            setLocal(onProtocolChange(proto));
+            setLocalData(onProtocolChange(proto));
         } else {
             updateField('protocol', proto);
         }
+        setRawText(null);
         setErrors([]);
     }, [onProtocolChange, updateField]);
 
@@ -67,6 +81,8 @@ export const useXrayEditor = <T extends Record<string, any>>({
     return {
         local,
         setLocal,
+        rawText,
+        setRawText,
         updateField,
         handleProtocolChange,
         handleSave,

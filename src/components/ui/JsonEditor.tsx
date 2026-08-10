@@ -376,6 +376,12 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     });
                 }
             } catch (e: any) {
+                // If user is actively typing a comment (line or word ends with single slash), skip noisy syntax error underline over the /
+                const trimmed = doc.trimEnd();
+                if (trimmed.endsWith('/') && !trimmed.endsWith('//') && !trimmed.endsWith('*/')) {
+                    return [];
+                }
+
                 let from = 0;
                 let to = view.state.doc.length;
                 const posMatch = e.message.match(/position (\d+)/i);
@@ -631,12 +637,17 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             className="h-full w-full bg-[#1e1e1e] overflow-hidden flex flex-col font-mono text-[13px] border border-slate-700 rounded-lg shadow-inner"
         >
             <style>{`
-                .cm-editor { height: 100% !important; outline: none !important; }
-                .cm-scroller { font-family: 'JetBrains Mono', monospace !important; }
-                .cm-content { padding-bottom: 100px !important; }
+                .cm-editor { height: 100% !important; outline: none !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
+                .cm-scroller { font-family: 'JetBrains Mono', monospace !important; line-height: 1.5 !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
+                .cm-content { padding-bottom: 100px !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
                 .cm-gutterElement { font-size: 11px; opacity: 0.5; }
                 /* Исправление отображения ошибок */
-                .cm-lintRange-error { background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="3">%3Cpath d="M0 3 L3 0 L6 3" fill="none" stroke="%23f87171" stroke-width="1"/%3E</svg>'); background-position: bottom left; background-repeat: repeat-x; }
+                .cm-lintRange-error { 
+                    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="3">%3Cpath d="M0 3 L3 0 L6 3" fill="none" stroke="%23f87171" stroke-width="1.2"/%3E') !important; 
+                    background-position: bottom left !important; 
+                    background-repeat: repeat-x !important;
+                    padding-bottom: 1px !important;
+                }
             `}</style>
         </div>
     );

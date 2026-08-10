@@ -46,9 +46,9 @@ export const useDnsEditor = () => {
         handleUpdateDns({ ...dns, servers: newServers });
     }, [dns, editingServerIdx, handleUpdateDns]);
 
-    const handleCompositeUpdate = useCallback((newVal: any) => {
+    const handleCompositeUpdate = useCallback((newVal: any, rawText?: string) => {
         if (!newVal) return;
-        if (newVal.dns) updateSection('dns', newVal.dns);
+        if (newVal.dns) updateSection('dns', newVal.dns, rawText);
         if (newVal.fakedns) updateSection('fakedns', newVal.fakedns);
     }, [updateSection]);
 

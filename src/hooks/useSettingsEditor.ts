@@ -5,6 +5,7 @@ export const useSettingsEditor = () => {
     const { config, updateSection, toggleSection, coreVersion, setCoreVersion } = useConfigStore();
     const [activeTab, setActiveTab] = useState<'general' | 'policy' | 'observatory'>('general');
     const [rawMode, setRawMode] = useState(false);
+    const [rawText, setRawText] = useState<string | null>(null);
 
     const outboundTags = useMemo(() => (config?.outbounds || []).map(o => o.tag).filter(t => t), [config?.outbounds]);
 
@@ -17,8 +18,9 @@ export const useSettingsEditor = () => {
         stats: config?.stats
     }), [config]);
 
-    const handleRawUpdate = useCallback((newVal: any) => {
+    const handleRawUpdate = useCallback((newVal: any, raw?: string) => {
         if (!newVal) return;
+        if (raw !== undefined) setRawText(raw);
         if (newVal.log !== undefined) updateSection('log', newVal.log);
         if (newVal.api !== undefined) updateSection('api', newVal.api);
         if (newVal.policy !== undefined) updateSection('policy', newVal.policy);
@@ -28,12 +30,12 @@ export const useSettingsEditor = () => {
     }, [updateSection]);
 
     const downloadCoreJson = useCallback(() => {
-        const blob = new Blob([JSON.stringify(coreSettings, null, 2)], { type: "application/json" });
+        const blob = new Blob([rawText || JSON.stringify(coreSettings, null, 2)], { type: "application/json" });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = "core-settings.json";
         a.click();
-    }, [coreSettings]);
+    }, [coreSettings, rawText]);
 
     return {
         config,
@@ -43,6 +45,7 @@ export const useSettingsEditor = () => {
         setActiveTab,
         rawMode,
         setRawMode,
+        rawText,
         outboundTags,
         coreSettings,
         handleRawUpdate,
