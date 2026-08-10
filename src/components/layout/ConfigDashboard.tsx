@@ -605,7 +605,7 @@ export const ConfigDashboard = ({
               color="bg-emerald-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex items-center bg-slate-950/50 p-1 rounded-lg border border-slate-700/50 gap-1 h-11">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -613,16 +613,16 @@ export const ConfigDashboard = ({
                     icon="Code"
                     iconClassName="text-sm"
                     title="View JSON"
-                    className="h-9 w-9 p-0"
+                    className="h-9 w-9 p-0 text-slate-400 hover:text-white"
                   />
                   <Button
-                    variant="ghost"
+                    variant="primary"
                     size="sm"
                     onClick={onAddInbound}
                     icon="Plus"
                     iconClassName="text-sm"
                     title="Add Inbound"
-                    className="h-9 w-9 p-0"
+                    className="h-9 w-9 p-0 bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-none"
                   />
                 </div>
               }
@@ -684,7 +684,7 @@ export const ConfigDashboard = ({
               color="bg-purple-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex items-center bg-slate-950/50 p-1 rounded-lg border border-slate-700/50 gap-1 h-11">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -692,16 +692,16 @@ export const ConfigDashboard = ({
                     icon="Code"
                     iconClassName="text-sm"
                     title="View JSON"
-                    className="h-9 w-9 p-0"
+                    className="h-9 w-9 p-0 text-slate-400 hover:text-white"
                   />
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     onClick={onEditRouting}
                     icon="PencilSimple"
                     iconClassName="text-sm"
                     title="Edit Routing"
-                    className="h-9 w-9 p-0"
+                    className="h-9 w-9 p-0 text-purple-400 hover:text-white border-purple-500/30 bg-purple-500/10"
                   />
                 </div>
               }
