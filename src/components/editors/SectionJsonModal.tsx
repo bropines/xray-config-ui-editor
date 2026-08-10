@@ -19,9 +19,6 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
 
     const handleChange = (newData: any) => {
         setLocalData(newData);
-        if (newData && typeof newData === 'object') {
-            onSave(newData);
-        }
     };
 
     return (
