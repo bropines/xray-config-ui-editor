@@ -827,54 +827,52 @@ export const ConfigDashboard = ({
               }
               subHeader={
                 <div className="flex flex-col border-b border-slate-700/50 bg-slate-900/60 shrink-0">
-                  {/* Action Toolbar Row (Centered & ~30% Smaller with Labels) */}
-                  <div className="flex items-center justify-center p-2 px-3 border-b border-slate-800/60">
-                    <div className="flex items-center justify-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-700/50">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={onOpenWarpModal}
-                        icon="Lightning"
-                        iconClassName="text-[11px]"
-                        className="h-7 px-2 text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 font-bold rounded-lg leading-none"
-                        title="Generate WARP Outbound"
-                      >
-                        WARP
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={onBatchImport}
-                        icon="Stack"
-                        iconClassName="text-[11px]"
-                        className="h-7 px-2 text-[10px] text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg leading-none"
-                        title="Batch Import/Export"
-                      >
-                        Batch
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={onOpenOutboundJson}
-                        icon="Code"
-                        iconClassName="text-[11px]"
-                        className="h-7 px-2 text-[10px] text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg leading-none"
-                        title="Raw JSON Mode"
-                      >
-                        JSON
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={onAddOutbound}
-                        icon="Plus"
-                        iconClassName="text-[11px]"
-                        className="h-7 px-2.5 text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none rounded-lg leading-none"
-                        title="Add New Outbound"
-                      >
-                        Add
-                      </Button>
-                    </div>
+                  {/* Slim Centered Action Toolbar Row */}
+                  <div className="flex items-center justify-center p-1.5 px-3 border-b border-slate-800/60 gap-1.5">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onOpenWarpModal}
+                      icon="Lightning"
+                      iconClassName="text-[11px]"
+                      className="h-7 px-2.5 text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 font-bold rounded-lg leading-none"
+                      title="Generate WARP Outbound"
+                    >
+                      WARP
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onBatchImport}
+                      icon="Stack"
+                      iconClassName="text-[11px]"
+                      className="h-7 px-2.5 text-[10px] text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg leading-none"
+                      title="Batch Import/Export"
+                    >
+                      Batch
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onOpenOutboundJson}
+                      icon="Code"
+                      iconClassName="text-[11px]"
+                      className="h-7 px-2.5 text-[10px] text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg leading-none"
+                      title="Raw JSON Mode"
+                    >
+                      JSON
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={onAddOutbound}
+                      icon="Plus"
+                      iconClassName="text-[11px]"
+                      className="h-7 px-3 text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none rounded-lg leading-none"
+                      title="Add New Outbound"
+                    >
+                      Add
+                    </Button>
                   </div>
 
                   {/* Search Input Bar */}
