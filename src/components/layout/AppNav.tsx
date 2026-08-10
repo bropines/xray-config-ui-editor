@@ -338,10 +338,10 @@ export const AppNav = ({
                             href="https://boosty.to/pinus"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-9 px-3 flex items-center gap-2 rounded-lg bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
+                            className="h-9 px-3 flex items-center gap-2 rounded-lg bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider group"
                             title="Support Developer (Boosty)"
                         >
-                            <Icon name="Heart" weight="fill" className="text-rose-500 group-hover:text-white" />
+                            <Icon name="Heart" weight="fill" className="text-rose-500 group-hover:text-white transition-all group-hover:scale-110" />
                             <span>Support</span>
                         </a>
                         <div className="w-px h-4 bg-slate-800 mx-1 shrink-0" />
@@ -473,9 +473,9 @@ export const AppNav = ({
                                 href="https://boosty.to/pinus"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5"
+                                className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5 group"
                             >
-                                <Icon name="Heart" weight="fill" className="text-base text-rose-500" />
+                                <Icon name="Heart" weight="fill" className="text-base text-rose-500 group-hover:text-white transition-all group-hover:scale-110" />
                                 <span>Support</span>
                             </a>
                             <a
