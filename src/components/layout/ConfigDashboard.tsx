@@ -871,14 +871,14 @@ export const ConfigDashboard = ({
               subHeader={
                 <div className="flex flex-col border-b border-slate-700/50 bg-slate-900/60 shrink-0">
                   {/* Mobile-Only Action Toolbar Row */}
-                  <div className="sm:hidden flex flex-wrap items-center justify-center p-1.5 px-3 border-b border-slate-800/60 gap-1.5 w-full">
+                  <div className="sm:hidden flex flex-wrap items-center justify-center p-2 px-3 border-b border-slate-800/60 gap-1.5 w-full">
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={onOpenWarpModal}
                       icon="Lightning"
-                      iconClassName="text-[11px]"
-                      className="flex-1 h-7 px-2 text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 font-bold rounded-lg leading-none"
+                      iconClassName="text-xs text-amber-400"
+                      className="flex-1 h-8 px-2.5 text-xs text-amber-400 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 font-bold rounded-xl leading-none transition-all shadow-[0_0_10px_rgba(245,158,11,0.1)]"
                       title="Generate WARP Outbound"
                     >
                       WARP
@@ -888,8 +888,8 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={onBatchImport}
                       icon="Stack"
-                      iconClassName="text-[11px]"
-                      className="flex-1 h-7 px-2 text-[10px] text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg leading-none"
+                      iconClassName="text-xs text-sky-400"
+                      className="flex-1 h-8 px-2.5 text-xs text-sky-400 border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 active:scale-95 font-bold rounded-xl leading-none transition-all shadow-[0_0_10px_rgba(56,189,248,0.1)]"
                       title="Batch Import/Export"
                     >
                       Batch
@@ -899,8 +899,8 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={onOpenOutboundJson}
                       icon="Code"
-                      iconClassName="text-[11px]"
-                      className="flex-1 h-7 px-2 text-[10px] text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg leading-none"
+                      iconClassName="text-xs text-purple-400"
+                      className="flex-1 h-8 px-2.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95 font-bold rounded-xl leading-none transition-all shadow-[0_0_10px_rgba(168,85,247,0.1)]"
                       title="Raw JSON Mode"
                     >
                       JSON
@@ -910,8 +910,8 @@ export const ConfigDashboard = ({
                       size="sm"
                       onClick={onAddOutbound}
                       icon="Plus"
-                      iconClassName="text-[11px]"
-                      className="flex-1 h-7 px-2.5 text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none rounded-lg leading-none"
+                      iconClassName="text-xs text-white"
+                      className="flex-1 h-8 px-3 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black rounded-xl leading-none transition-all shadow-md shadow-blue-500/20 border border-blue-400/30"
                       title="Add New Outbound"
                     >
                       Add
