@@ -788,45 +788,48 @@ export const ConfigDashboard = ({
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
                 <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onOpenWarpModal}
-                    icon="Lightning"
-                    iconClassName="text-sm text-amber-400"
-                    title="Generate WARP Outbound"
-                    className="h-9 w-9 p-0 text-amber-400 hover:bg-slate-800/60"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onBatchImport}
-                    icon="Stack"
-                    iconClassName="text-sm"
-                    title="Batch Import/Export"
-                    className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onOpenOutboundJson}
-                    icon="Code"
-                    iconClassName="text-sm"
-                    title="Raw JSON Mode"
-                    className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onAddOutbound}
-                    icon="Plus"
-                    iconClassName="text-sm text-blue-400"
-                    title="Add Outbound"
-                    className="h-9 w-9 p-0 text-blue-400 hover:bg-slate-800/60"
-                  />
+                  {/* Desktop Only Buttons: WARP, Batch, JSON, Add + Divider */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onOpenWarpModal}
+                      icon="Lightning"
+                      iconClassName="text-sm text-amber-400"
+                      title="Generate WARP Outbound"
+                      className="h-9 w-9 p-0 text-amber-400 hover:bg-slate-800/60"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onBatchImport}
+                      icon="Stack"
+                      iconClassName="text-sm"
+                      title="Batch Import/Export"
+                      className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onOpenOutboundJson}
+                      icon="Code"
+                      iconClassName="text-sm"
+                      title="Raw JSON Mode"
+                      className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onAddOutbound}
+                      icon="Plus"
+                      iconClassName="text-sm text-blue-400"
+                      title="Add Outbound"
+                      className="h-9 w-9 p-0 text-blue-400 hover:bg-slate-800/60"
+                    />
 
-                  {/* Vertical Divider Line */}
-                  <div className="w-px h-5 bg-slate-700/50 mx-0.5" />
+                    {/* Vertical Divider Line */}
+                    <div className="w-px h-5 bg-slate-700/50 mx-0.5" />
+                  </div>
 
                   <Button
                     variant="ghost"
