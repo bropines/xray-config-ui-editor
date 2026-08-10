@@ -159,9 +159,8 @@ export const AppNav = ({
                 )}
             </div>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Independent Selector OUTSIDE container when config is loaded */}
+            {/* Center: Profile Selector, Profiles, Git Log, Clear, Cloud Sync */}
+            <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0">
                 {hasConfig && (
                     <div className="w-28 sm:w-36 md:w-52 shrink-0">
                         <Select
@@ -172,7 +171,6 @@ export const AppNav = ({
                     </div>
                 )}
 
-                {/* Container for Profiles, Git Log & Clear buttons */}
                 {hasConfig && (
                     <div className="flex items-center gap-1 bg-slate-950/50 p-1 rounded-xl border border-slate-800 h-11 shrink-0">
                         {onOpenEditorSettings && (
@@ -215,7 +213,6 @@ export const AppNav = ({
                     </div>
                 )}
 
-                {/* Cloud controls (connected) */}
                 {connected && (
                     <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1 h-11 shrink-0">
                         <button
@@ -247,7 +244,6 @@ export const AppNav = ({
                     </div>
                 )}
 
-                {/* Connect Cloud (disconnected) */}
                 {!connected && (
                     <div className="flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                         <Button
@@ -260,9 +256,10 @@ export const AppNav = ({
                         </Button>
                     </div>
                 )}
+            </div>
 
-                <div className="w-px h-8 bg-slate-800/50 mx-0.5 hidden sm:block shrink-0" />
-
+            {/* Right: Load/Download + Combined TG & Xray Docs + About (Very Right End) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* File / Download */}
                 <div className="flex gap-1 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                     <label
@@ -277,9 +274,34 @@ export const AppNav = ({
                     </Button>
                 </div>
 
+                {/* Combined Telegram & Xray Docs Container */}
+                <div className="hidden lg:flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    <a
+                        href="https://t.me/xcue_dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-9 px-3 flex items-center gap-2 rounded-lg bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
+                        title="Telegram Channel"
+                    >
+                        <Icon name="TelegramLogo" weight="bold" />
+                        <span>Telegram</span>
+                    </a>
+                    <div className="w-px h-4 bg-slate-800 mx-1 shrink-0" />
+                    <a
+                        href="https://xtls.github.io/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-9 px-3 flex items-center gap-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
+                        title="Official Xray Documentation"
+                    >
+                        <Icon name="BookOpen" weight="bold" />
+                        <span>Xray Docs</span>
+                    </a>
+                </div>
+
                 <div className="w-px h-8 bg-slate-800/50 mx-0.5 hidden sm:block shrink-0" />
 
-                {/* About / Repository */}
+                {/* About / Repository at the VERY RIGHT END */}
                 <div className="flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                     <button
                         onClick={onOpenAbout}
@@ -288,33 +310,6 @@ export const AppNav = ({
                     >
                         <Icon name="Info" className="text-base" />
                     </button>
-                </div>
-
-                {/* Telegram Link */}
-                <div className="hidden lg:flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
-                    <a
-                        href="https://t.me/xcue_dev"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="h-9 px-3 sm:px-4 flex items-center gap-2 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
-                        title="Telegram Channel"
-                    >
-                        <Icon name="TelegramLogo" weight="bold" />
-                        <span>Telegram</span>
-                    </a>
-                </div>
-
-                {/* Docs Link */}
-                <div className="hidden lg:flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
-                    <a
-                        href="https://xtls.github.io/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="h-9 px-3 sm:px-4 flex items-center gap-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
-                    >
-                        <Icon name="BookOpen" weight="bold" />
-                        <span>Docs</span>
-                    </a>
                 </div>
             </div>
         </nav>

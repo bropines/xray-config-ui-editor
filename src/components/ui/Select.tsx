@@ -200,7 +200,7 @@ export function Select<T extends string = string>({
                 className={`
                     w-full bg-slate-950 border rounded-lg h-11
                     text-white px-3 text-xs md:text-sm flex items-center justify-between gap-1
-                    transition-all duration-200 text-left min-w-0
+                    transition-colors duration-200 text-left min-w-0
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${border}
                 `}
