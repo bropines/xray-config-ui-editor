@@ -827,57 +827,45 @@ export const ConfigDashboard = ({
               }
               subHeader={
                 <div className="flex flex-col border-b border-slate-700/50 bg-slate-900/60 shrink-0">
-                  {/* Action Toolbar Row */}
-                  <div className="flex items-center justify-between p-2 px-3 border-b border-slate-800/60 gap-2">
-                    <div className="text-[11px] uppercase font-bold text-slate-500 tracking-wider hidden sm:flex items-center gap-1.5">
-                      <Icon name="SlidersHorizontal" className="text-slate-400" />
-                      <span>Outbound Actions</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end">
+                  {/* Action Toolbar Row (Icon-only) */}
+                  <div className="flex items-center justify-end p-2 px-3 border-b border-slate-800/60">
+                    <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1.5 h-11">
                       <Button
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
                         onClick={onOpenWarpModal}
                         icon="Lightning"
-                        iconClassName="text-xs"
-                        className="h-8 px-2.5 text-xs text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 font-bold"
+                        iconClassName="text-base"
                         title="Generate WARP Outbound"
-                      >
-                        WARP
-                      </Button>
+                        className="h-9 w-9 p-0 text-amber-500 hover:text-amber-400 hover:bg-slate-800/60 rounded-lg"
+                      />
                       <Button
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
                         onClick={onBatchImport}
                         icon="Stack"
-                        iconClassName="text-xs"
-                        className="h-8 px-2.5 text-xs text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold"
+                        iconClassName="text-base"
                         title="Batch Import/Export"
-                      >
-                        Batch
-                      </Button>
+                        className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-lg"
+                      />
                       <Button
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
                         onClick={onOpenOutboundJson}
                         icon="Code"
-                        iconClassName="text-xs"
-                        className="h-8 px-2.5 text-xs text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold"
-                        title="JSON Mode"
-                      >
-                        JSON
-                      </Button>
+                        iconClassName="text-base"
+                        title="Raw JSON Mode"
+                        className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-lg"
+                      />
                       <Button
                         variant="primary"
                         size="sm"
                         onClick={onAddOutbound}
                         icon="Plus"
-                        iconClassName="text-xs"
-                        className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none"
+                        iconClassName="text-base"
                         title="Add New Outbound"
-                      >
-                        Add
-                      </Button>
+                        className="h-9 w-9 p-0 bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none rounded-lg"
+                      />
                     </div>
                   </div>
 
