@@ -321,17 +321,28 @@ export const AppNav = ({
                         </Button>
                     </div>
 
-                    {/* Combined Telegram & Xray Docs Container (Desktop) */}
+                    {/* Combined Telegram, Support & Xray Docs Container (Desktop) */}
                     <div className="hidden lg:flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                         <a
                             href="https://t.me/xcue_dev"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-9 px-3 flex items-center gap-2 rounded-lg bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
-                            title="Telegram Channel"
+                            title="Telegram Channel (@xcue_dev)"
                         >
                             <Icon name="TelegramLogo" weight="bold" />
                             <span>Telegram</span>
+                        </a>
+                        <div className="w-px h-4 bg-slate-800 mx-1 shrink-0" />
+                        <a
+                            href="https://boosty.to/pinus"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-9 px-3 flex items-center gap-2 rounded-lg bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
+                            title="Support Developer (Boosty)"
+                        >
+                            <Icon name="Heart" weight="fill" className="text-rose-500 group-hover:text-white" />
+                            <span>Support</span>
                         </a>
                         <div className="w-px h-4 bg-slate-800 mx-1 shrink-0" />
                         <a
@@ -448,24 +459,33 @@ export const AppNav = ({
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80">
                             <a
                                 href="https://t.me/xcue_dev"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-2"
+                                className="p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5"
                             >
                                 <Icon name="TelegramLogo" weight="bold" className="text-base" />
                                 <span>Telegram</span>
                             </a>
                             <a
+                                href="https://boosty.to/pinus"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5"
+                            >
+                                <Icon name="Heart" weight="fill" className="text-base text-rose-500" />
+                                <span>Support</span>
+                            </a>
+                            <a
                                 href="https://xtls.github.io/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-2"
+                                className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5"
                             >
                                 <Icon name="BookOpen" weight="bold" className="text-base" />
-                                <span>Xray Docs</span>
+                                <span>Docs</span>
                             </a>
                         </div>
                     </div>
