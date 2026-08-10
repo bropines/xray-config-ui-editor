@@ -1,7 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Icon } from "./Icon";
 import { toast } from "sonner";
 import { useSmartTagInput } from "../../hooks/useSmartTagInput";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Suggestion {
     code: string;
@@ -22,10 +25,156 @@ interface SmartTagInputProps {
     errorTooltip?: string;
     warnTooltip?: string;
     allowedPattern?: RegExp;
+    cleanRegex?: RegExp;
     actionIcon?: string;
     actionTooltip?: string;
     onActionClick?: () => void;
 }
+
+const SortableChipTag = ({
+    id,
+    tag,
+    isInvalid,
+    isWarn,
+    errorTooltip,
+    warnTooltip,
+    onTagClick,
+    removeTag,
+}: {
+    id: string;
+    tag: string;
+    isInvalid: boolean;
+    isWarn: boolean;
+    errorTooltip: string;
+    warnTooltip: string;
+    onTagClick?: (tag: string) => void;
+    removeTag: (tag: string) => void;
+}) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+    const [holdProgress, setHoldProgress] = useState(0);
+    const holdTimerRef = useRef<any>(null);
+    const intervalRef = useRef<any>(null);
+    const isHoldingRef = useRef(false);
+
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 999 : 'auto',
+        opacity: isDragging ? 0.6 : 1,
+    };
+
+    const startHold = () => {
+        isHoldingRef.current = true;
+        setHoldProgress(0);
+        const startTime = Date.now();
+        const duration = 1500;
+
+        intervalRef.current = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(100, (elapsed / duration) * 100);
+            setHoldProgress(progress);
+            if (progress >= 100) {
+                clearInterval(intervalRef.current);
+            }
+        }, 30);
+
+        holdTimerRef.current = setTimeout(() => {
+            isHoldingRef.current = false;
+        }, duration);
+    };
+
+    const cancelHold = () => {
+        if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        isHoldingRef.current = false;
+        setHoldProgress(0);
+    };
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        startHold();
+        listeners?.onPointerDown?.(e as any);
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        const wasHoldingShort = isHoldingRef.current && holdProgress < 100;
+        cancelHold();
+
+        if (wasHoldingShort) {
+            if (e.ctrlKey || e.metaKey) {
+                if (onTagClick) onTagClick(tag);
+            } else {
+                if (navigator?.clipboard?.writeText) {
+                    navigator.clipboard.writeText(tag)
+                        .then(() => toast.success(`Copied: ${tag}`))
+                        .catch(() => {
+                            try {
+                                const el = document.createElement('textarea');
+                                el.value = tag;
+                                document.body.appendChild(el);
+                                el.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(el);
+                                toast.success(`Copied: ${tag}`);
+                            } catch (err) { toast.error("Copy failed"); }
+                        });
+                } else {
+                    try {
+                        const el = document.createElement('textarea');
+                        el.value = tag;
+                        document.body.appendChild(el);
+                        el.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(el);
+                        toast.success(`Copied: ${tag}`);
+                    } catch (err) { toast.error("Copy failed"); }
+                }
+            }
+        }
+    };
+
+    return (
+        <span
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={cancelHold}
+            onPointerCancel={cancelHold}
+            title={isInvalid ? errorTooltip : isWarn ? warnTooltip : "Hold 1.5s to drag & reorder | Click to copy | Ctrl+Click for details"}
+            className={`relative overflow-hidden px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-all cursor-grab active:cursor-grabbing select-none hover:ring-1 hover:ring-indigo-500 ${
+                isDragging ? 'ring-2 ring-indigo-400 scale-105 shadow-lg bg-indigo-950 border-indigo-500 z-[999]'
+                : isInvalid
+                    ? 'bg-rose-900/40 border-rose-500/70 text-rose-200'
+                    : isWarn
+                        ? 'bg-amber-900/30 border-amber-500/50 text-amber-200'
+                        : 'bg-slate-800 border-slate-700 text-slate-200'
+            }`}
+        >
+            {holdProgress > 0 && holdProgress < 100 && (
+                <span
+                    className="absolute inset-0 bg-indigo-500/40 transition-all pointer-events-none rounded"
+                    style={{ width: `${holdProgress}%` }}
+                />
+            )}
+            {isInvalid && <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-[10px]" />}
+            {isWarn && <Icon name="Warning" weight="fill" className="text-amber-400 text-[10px]" />}
+            <span className="relative z-10">{tag}</span>
+            <button
+                type="button"
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => { e.stopPropagation(); removeTag(tag); }}
+                className={`relative z-10 ${
+                    isInvalid ? 'hover:text-red-300 text-rose-400'
+                        : isWarn ? 'hover:text-amber-100 text-amber-400'
+                            : 'hover:text-red-400 text-slate-400'
+                }`}
+            >
+                <Icon name="x" />
+            </button>
+        </span>
+    );
+};
 
 export const SmartTagInput = ({
     label,
@@ -55,6 +204,18 @@ export const SmartTagInput = ({
         processAndAddTags,
         removeTag
     } = useSmartTagInput(value, onChange, suggestions, prefix, cleanRegex);
+
+    const [showSortMenu, setShowSortMenu] = useState(false);
+    const sortMenuRef = useRef<HTMLDivElement>(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                delay: 1500,
+                tolerance: 5,
+            },
+        })
+    );
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'ArrowDown') {
@@ -112,10 +273,75 @@ export const SmartTagInput = ({
                 setShowSuggest(false);
                 setFocusedIndex(-1);
             }
+            if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+                setShowSortMenu(false);
+            }
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    const handleDragEnd = (event: any) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const itemIds = value.map((t, i) => `${t}-${i}`);
+        const oldIndex = itemIds.indexOf(active.id);
+        const newIndex = itemIds.indexOf(over.id);
+
+        if (oldIndex < 0 || newIndex < 0) return;
+
+        const newValue = [...value];
+        const [moved] = newValue.splice(oldIndex, 1);
+        newValue.splice(newIndex, 0, moved);
+        onChange(newValue);
+        toast.success("Tags reordered");
+    };
+
+    const prefixName = prefix ? prefix.replace(/:$/, '').toUpperCase() : 'PREFIX';
+
+    const sortAlphabetical = () => {
+        const sorted = [...value].sort((a, b) => a.localeCompare(b));
+        onChange(sorted);
+        setShowSortMenu(false);
+        toast.success("Sorted alphabetically (A-Z)");
+    };
+
+    const sortPrefixFirst = () => {
+        const pLower = prefix.toLowerCase();
+        const isPref = (s: string) => {
+            const sl = s.toLowerCase();
+            return sl.startsWith(pLower) || sl.startsWith('geosite:') || sl.startsWith('geoip:');
+        };
+        const sorted = [...value].sort((a, b) => {
+            const aP = isPref(a);
+            const bP = isPref(b);
+            if (aP && !bP) return -1;
+            if (!aP && bP) return 1;
+            return a.localeCompare(b);
+        });
+        onChange(sorted);
+        setShowSortMenu(false);
+        toast.success(`Sorted: ${prefixName} first`);
+    };
+
+    const sortPlainFirst = () => {
+        const pLower = prefix.toLowerCase();
+        const isPref = (s: string) => {
+            const sl = s.toLowerCase();
+            return sl.startsWith(pLower) || sl.startsWith('geosite:') || sl.startsWith('geoip:');
+        };
+        const sorted = [...value].sort((a, b) => {
+            const aP = isPref(a);
+            const bP = isPref(b);
+            if (!aP && bP) return -1;
+            if (aP && !bP) return 1;
+            return a.localeCompare(b);
+        });
+        onChange(sorted);
+        setShowSortMenu(false);
+        toast.success("Sorted: Plain items first");
+    };
 
     const hasInvalid = invalidTags.length > 0;
     const hasWarn = warnTags.length > 0;
@@ -125,6 +351,8 @@ export const SmartTagInput = ({
         : hasWarn
             ? 'border-amber-500/50 focus-within:border-amber-400 focus-within:ring-amber-400/20'
             : 'border-slate-700 focus-within:border-indigo-500 focus-within:ring-indigo-500/50';
+
+    const itemIds = value.map((t, i) => `${t}-${i}`);
 
     return (
         <div className="flex flex-col gap-2" ref={wrapperRef}>
@@ -145,11 +373,56 @@ export const SmartTagInput = ({
                             </span>
                         )}
                     </span>
-                    {isLoading && (
-                        <span className="text-indigo-400 flex items-center gap-1">
-                            <Icon name="spinner" className="animate-spin" /> Loading DB...
-                        </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isLoading && (
+                            <span className="text-indigo-400 flex items-center gap-1">
+                                <Icon name="spinner" className="animate-spin" /> Loading DB...
+                            </span>
+                        )}
+
+                        {value.length > 1 && (
+                            <div className="relative" ref={sortMenuRef}>
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setShowSortMenu(!showSortMenu); }}
+                                    className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-indigo-400 bg-slate-900 border border-slate-800 rounded px-2 py-0.5 transition-colors uppercase tracking-wider"
+                                    title="Sort options"
+                                >
+                                    <Icon name="ArrowsDownUp" className="text-xs text-indigo-400" />
+                                    Sort
+                                </button>
+
+                                {showSortMenu && (
+                                    <div className="absolute right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[100] py-1.5 min-w-[170px] text-xs animate-in fade-in">
+                                        <button
+                                            type="button"
+                                            onClick={sortAlphabetical}
+                                            className="w-full text-left px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-300 flex items-center gap-2 transition-colors"
+                                        >
+                                            <Icon name="SortAscending" className="text-sm text-indigo-400" />
+                                            Alphabetical (A-Z)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={sortPrefixFirst}
+                                            className="w-full text-left px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-300 flex items-center gap-2 transition-colors"
+                                        >
+                                            <Icon name="Tag" className="text-sm text-purple-400" />
+                                            {prefixName ? `${prefixName} first` : 'Prefix first'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={sortPlainFirst}
+                                            className="w-full text-left px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-300 flex items-center gap-2 transition-colors"
+                                        >
+                                            <Icon name="Globe" className="text-sm text-blue-400" />
+                                            Plain items first
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </label>
             )}
 
@@ -160,69 +433,29 @@ export const SmartTagInput = ({
                     className="flex flex-wrap gap-2 flex-1 cursor-text"
                     onClick={() => wrapperRef.current?.querySelector('input')?.focus()}
                 >
-                    {value.map((tag, i) => {
-                        const isInvalid = invalidTags.includes(tag);
-                        const isWarn = !isInvalid && warnTags.includes(tag);
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={itemIds} strategy={rectSortingStrategy}>
+                            {value.map((tag, i) => {
+                                const isInvalid = invalidTags.includes(tag);
+                                const isWarn = !isInvalid && warnTags.includes(tag);
+                                const itemId = `${tag}-${i}`;
 
-                        return (
-                            <span
-                                key={i}
-                                title={isInvalid ? errorTooltip : isWarn ? warnTooltip : "Click to copy, Ctrl+Click to view details"}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (e.ctrlKey || e.metaKey) {
-                                        if (onTagClick) onTagClick(tag);
-                                    } else {
-                                        if (navigator?.clipboard?.writeText) {
-                                            navigator.clipboard.writeText(tag)
-                                                .then(() => toast.success(`Copied: ${tag}`))
-                                                .catch(() => {
-                                                    try {
-                                                        const el = document.createElement('textarea');
-                                                        el.value = tag;
-                                                        document.body.appendChild(el);
-                                                        el.select();
-                                                        document.execCommand('copy');
-                                                        document.body.removeChild(el);
-                                                        toast.success(`Copied: ${tag}`);
-                                                    } catch (e) { toast.error("Copy failed"); }
-                                                });
-                                        } else {
-                                            try {
-                                                const el = document.createElement('textarea');
-                                                el.value = tag;
-                                                document.body.appendChild(el);
-                                                el.select();
-                                                document.execCommand('copy');
-                                                document.body.removeChild(el);
-                                                toast.success(`Copied: ${tag}`);
-                                            } catch (e) { toast.error("Copy failed"); }
-                                        }
-                                    }
-                                }}
-                                className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 border transition-colors cursor-pointer hover:ring-1 hover:ring-indigo-500 ${isInvalid
-                                        ? 'bg-rose-900/40 border-rose-500/70 text-rose-200'
-                                        : isWarn
-                                            ? 'bg-amber-900/30 border-amber-500/50 text-amber-200'
-                                            : 'bg-slate-800 border-slate-700 text-slate-200'
-                                    }`}
-                            >
-                                {isInvalid && <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-[10px]" />}
-                                {isWarn && <Icon name="Warning" weight="fill" className="text-amber-400 text-[10px]" />}
-                                {tag}
-                                <button
-                                    onClick={e => { e.stopPropagation(); removeTag(tag); }}
-                                    className={
-                                        isInvalid ? 'hover:text-red-300 text-rose-400'
-                                            : isWarn ? 'hover:text-amber-100 text-amber-400'
-                                                : 'hover:text-red-400 text-slate-400'
-                                    }
-                                >
-                                    <Icon name="x" />
-                                </button>
-                            </span>
-                        );
-                    })}
+                                return (
+                                    <SortableChipTag
+                                        key={itemId}
+                                        id={itemId}
+                                        tag={tag}
+                                        isInvalid={isInvalid}
+                                        isWarn={isWarn}
+                                        errorTooltip={errorTooltip}
+                                        warnTooltip={warnTooltip}
+                                        onTagClick={onTagClick}
+                                        removeTag={removeTag}
+                                    />
+                                );
+                            })}
+                        </SortableContext>
+                    </DndContext>
 
                     <div className="relative flex-1 min-w-[120px]">
                         <input

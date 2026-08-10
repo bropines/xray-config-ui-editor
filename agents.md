@@ -18,6 +18,13 @@ This guide describes the project-specific conventions and technical stack for th
 - **Styling**: Prefer Vanilla CSS or Tailwind 4 utility classes.
 - **Icons**: Use `@phosphor-icons/react` for consistency.
 
+## 🔖 Releases & Changelog
+- **Version format**: `v{TAG}-{GIT-HASH}` (e.g. `v1.0.0-a1b2c3d`), dynamically embedded into the app header/about modal.
+- **Tag-based deployment**: Pushing a version tag (e.g. `git tag -a v1.0.0 -m "Release v1.0.0"` and `git push origin v1.0.0`) automatically triggers GitHub Actions to:
+  1. Build & deploy the website to GitHub Pages.
+  2. Create a clean GitHub Release (without attaching binary asset files).
+- **Changelog**: All user-facing features and fixes must be recorded in `changelog.md` starting from `[1.0.0]`.
+
 ## 💡 Best Practices
 1. **Never mutate state directly**: Always use `produce` from `immer` within store actions.
 2. **Type Safety**: Ensure all new config parts match the TypeScript interfaces in `configStore.ts`.

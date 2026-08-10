@@ -2,24 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.0] - 2026-06-01
+## [1.0.0] - 2026-08-10
 
 ### Added
-- **Dynamic Schema-Driven UI Components**: Introduced the `SchemaForm` component to generate config forms dynamically from Zod schemas.
-- **Support for Primitive Arrays**: Configured `SchemaField` to render lists (like IP addresses, CIDR, domains) as comma-separated text inputs, parsing them back to typed arrays automatically.
-- **Interactive JSON Schema Autocompletion**: Integrated dynamic runtime transformation of Zod schemas to JSON Schema (via `zod-to-json-schema`), driving autocomplete and validation inside the CodeMirror raw JSON view.
-
-### Changed
-- **Outbound & Inbound Settings**: Migrated General, TUN, Sniffing, and Client configuration views to `SchemaForm`, reducing boilerplate code.
-- **Routing Settings**:
-  - Refactored `RuleEditor.tsx` to render advanced matchers (ports, process names, local IPs) and webhook payloads via `SchemaForm`.
-  - Refactored `BalancerEditor.tsx` to handle balancer attributes and least-load strategies via nested `SchemaForm` configurations.
-- **General Settings**:
-  - Replaced manually written forms for logs (`LogEditor.tsx`), gRPC API (`ApiStatsEditor.tsx`), timeouts and system policies (`PolicyEditor.tsx`), and Observatory monitoring (`ObservatoryEditor.tsx`, `BurstObservatoryEditor.tsx`) with schema-driven forms.
-- **DNS Settings**:
-  - Converted DNS General options, advanced DNS server configurations, and FakeDNS pools to `SchemaForm`, exposing all correct parameters from the Xray-core specification.
-- **Button Sizing**: Compacted helper buttons (keys generator, short ID generator) across the app to `sm` size, keeping dialog footer buttons at standard proportions.
-
-### Removed
-- **Static JSON Schema**: Deleted `src/utils/config.schema.json` in favor of dynamic schema generation, ensuring a single source of truth.
-- **Manual Types**: Removed manually maintained `src/core/types/xray.types.ts` in favor of Zod inferred types.
+- **Telegram Channel Link**: Added a direct button link to the Telegram channel ([@xcue_dev](https://t.me/xcue_dev)) in topbar navigation next to Docs and inside the About modal.
+- **Interactive Chip Drag & Drop**: Enabled long-press (> 1.5s) drag-and-drop reordering for tag chips in `SmartTagInput` (used in Routing domains, IPs, inbounds, protocols, etc.) with animated holding progress indicator.
+- **Tag Sorting Controls**: Added tag sorting menu offering:
+  - 🔤 **Alphabetical (A-Z)**
+  - 🏷️ **Geosite / GeoIP first** (puts `geosite:` or `geoip:` prefixed items first)
+  - 🌐 **Plain items first** (puts plain domain/IP items first)
+- **Dynamic Versioning**: Displaying `v{TAG}-{GIT-HASH}` dynamically in the app About modal via Vite build parameters.
+- **Tag-Based GitHub Release Workflow**: Configured GitHub Actions to automatically deploy to GitHub Pages and publish clean GitHub Releases (without attached binary files) upon pushing tags matching `v*`.
+- **Contributor Notice & Project Vibe**: Added prominent callout section to `README.md` inviting contributors and highlighting the project vibe.

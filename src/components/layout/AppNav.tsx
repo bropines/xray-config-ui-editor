@@ -286,6 +286,17 @@ export const AppNav = ({
                 </button>
 
                 <a
+                    href="https://t.me/xcue_dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden lg:flex items-center gap-2 px-3 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs uppercase tracking-wider shrink-0"
+                    title="Telegram Channel"
+                >
+                    <Icon name="TelegramLogo" weight="bold" />
+                    Telegram
+                </a>
+
+                <a
                     href="https://xtls.github.io/"
                     target="_blank"
                     rel="noopener noreferrer"

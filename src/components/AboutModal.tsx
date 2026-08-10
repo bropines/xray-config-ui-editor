@@ -54,7 +54,9 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                         </div>
                         <div>
                             <div className="font-black text-white text-xl tracking-tight uppercase leading-none">Xray GUI</div>
-                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Version 2.0.0 (Experimental)</div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                Version {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v1.0.0-dev'}
+                            </div>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors">
@@ -72,6 +74,10 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                         <a href="https://boosty.to/pinus" target="_blank" className="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center gap-1.5 hover:border-rose-500/50 transition-all hover:bg-rose-500/5 group">
                             <Icon name="Heart" weight="fill" className="text-2xl text-rose-500 group-hover:scale-110 transition-transform" />
                             <span className="text-[10px] font-bold text-slate-500 group-hover:text-rose-200">Support Dev</span>
+                        </a>
+                        <a href="https://t.me/xcue_dev" target="_blank" rel="noopener noreferrer" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-sky-500/50 transition-all hover:bg-sky-500/5 group">
+                            <Icon name="TelegramLogo" weight="bold" className="text-lg text-sky-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-bold text-slate-400 group-hover:text-sky-200">Telegram Channel (@xcue_dev)</span>
                         </a>
                         <a href="https://xtls.github.io/" target="_blank" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-blue-500/50 transition-all hover:bg-blue-500/5 group">
                             <Icon name="BookOpen" className="text-lg text-slate-400 group-hover:text-white transition-colors" />

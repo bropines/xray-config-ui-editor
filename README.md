@@ -4,6 +4,13 @@
 
 The most advanced, static web-based GUI for **Xray-core**. Manage your configurations with ease, visualize traffic flow, and sync directly with **Remnawave Panel**. No backend required — it runs entirely in your browser.
 
+> [!IMPORTANT]
+> ### 🤝 Contributors Needed!
+> This project is built on **vibecoding** — almost the entire codebase was created using AI tools. The [`AGENTS.md`](AGENTS.md) file contains nearly all necessary instructions for AI agents.
+> If you want to add new features, fix bugs, or improve the UI/UX — feel free to fork the repository and submit a PR! Any contributions are welcome.
+> 
+> 💬 **Telegram Channel**: [https://t.me/xcue_dev](https://t.me/xcue_dev)
+
 ---
 
 ## ✨ Features
@@ -19,7 +26,8 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 
 ---
 
-## 🧱 Issues 
+## 🧱 Issues
+
 - Unfortunately, we cannot be certain that some parameters will not conflict with each other. If you encounter such a combination, please report it in an ISSUE, and we will simply adjust the configurator (or add a WASM validator...).
 
 ---
@@ -27,49 +35,52 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 ## 📸 Screenshots
 
 ### Remnawave Cloud Sync
+
 <img width="413" height="455" alt="msedge_sYTtYMnxge" src="https://github.com/user-attachments/assets/3374f6b7-8605-47f5-bd0e-3bba4e9eeb96" />
 
-*Connect to your panel and manage profiles in real-time.*
+_Connect to your panel and manage profiles in real-time._
 
 ### Routing Manager
+
 <img width="1113" height="859" alt="msedge_jAldcIXP2L" src="https://github.com/user-attachments/assets/00386afe-d97d-42a2-ae56-cad40ec4e66a" />
 
-*Manage complex routing logic with simple Drag-and-Drop.*
+_Manage complex routing logic with simple Drag-and-Drop._
 
 ### Visual Topology
+
 <img width="1112" height="808" alt="msedge_ZkBhtJOeGs" src="https://github.com/user-attachments/assets/be7c017b-e0e7-4ed4-b6e3-125e8929b512" />
 
-*Visualize how traffic moves through your core.*
+_Visualize how traffic moves through your core._
 
 ### GeoFile viewer
 
 <img width="1032" height="927" alt="msedge_WVpvQf2m5D" src="https://github.com/user-attachments/assets/863b26f8-b97a-44b4-9866-3e80ec0a51eb" />
 
-*Allows you to view the contents of any geofile via a link or by uploading it from your PC*
+_Allows you to view the contents of any geofile via a link or by uploading it from your PC_
 
 ### Inbound Editor
 
 <img width="1105" height="795" alt="msedge_oY8cM3aVVx" src="https://github.com/user-attachments/assets/5ddcb432-f024-4038-8019-cad466823550" />
 
-*We tried to add as many options as possible to the UI for our littlest bread lovers...*
+_We tried to add as many options as possible to the UI for our littlest bread lovers..._
 
 ### Outbound editor
 
 <img width="1101" height="791" alt="msedge_ZvODgoqbK4" src="https://github.com/user-attachments/assets/50170d6b-dd8c-45e2-b1cd-cbffd20b62f4" />
 
-*Our implementation of the Outbound parser allows you to import the configuration from Amnezia into the parameters for finalmask in just a few clicks.*
+_Our implementation of the Outbound parser allows you to import the configuration from Amnezia into the parameters for finalmask in just a few clicks._
 
-### JSON editor 
+### JSON editor
 
 <img width="1914" height="981" alt="msedge_piY5rBqkxX" src="https://github.com/user-attachments/assets/b0c559a7-375f-4965-a44e-0141078dd1ff" />
 
-*We have addressed the issue where, for some reason, certain settings are missing from our interface, so you are free to consult the documentation and enter whatever you want in the JSON editor. UI will not override unknown variables*
+_We have addressed the issue where, for some reason, certain settings are missing from our interface, so you are free to consult the documentation and enter whatever you want in the JSON editor. UI will not override unknown variables_
 
 ---
 
 ## ☁️ Remnawave Connection (CORS Setup)
 
-Since this is a **static web application** (hosted on GitHub Pages), your browser will block requests to your Remnawave server unless **CORS** is properly configured. 
+Since this is a **static web application** (hosted on GitHub Pages), your browser will block requests to your Remnawave server unless **CORS** is properly configured.
 
 ### Mandatory Nginx Configuration
 
@@ -101,7 +112,8 @@ if ($request_method = 'OPTIONS') {
     return 204;
 }
 ```
-*Don't forget to reload Nginx:* `nginx -s reload`
+
+_Don't forget to reload Nginx:_ `nginx -s reload`
 
 ---
 
@@ -110,16 +122,19 @@ if ($request_method = 'OPTIONS') {
 This project is built with **React**, **TypeScript**, **Zustand**, and **Bun**.
 
 ### 1. Install dependencies
+
 ```bash
 bun install
 ```
 
 ### 2. Run development server
+
 ```bash
 bun run dev
 ```
 
 ### 3. Build for production
+
 ```bash
 bun run build
 ```
@@ -141,4 +156,5 @@ bun run build
 This tool is for educational and configuration management purposes only. Ensure you comply with your local laws and regulations regarding the use of proxy software.
 
 ---
-*Built with ❤️ for the privacy community.*
+
+_Built with ❤️ for the privacy community._
