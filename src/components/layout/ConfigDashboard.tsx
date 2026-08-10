@@ -787,96 +787,82 @@ export const ConfigDashboard = ({
               color="bg-blue-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* Desktop Action Buttons with Labels */}
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={onOpenWarpModal}
-                      icon="Lightning"
-                      iconClassName="text-xs"
-                      className="h-8 px-2.5 text-xs text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 font-bold rounded-lg"
-                      title="Generate WARP Outbound"
-                    >
-                      WARP
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={onBatchImport}
-                      icon="Stack"
-                      iconClassName="text-xs"
-                      className="h-8 px-2.5 text-xs text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg"
-                      title="Batch Import/Export"
-                    >
-                      Batch
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={onOpenOutboundJson}
-                      icon="Code"
-                      iconClassName="text-xs"
-                      className="h-8 px-2.5 text-xs text-slate-300 border-slate-700/60 bg-slate-800/60 hover:bg-slate-700 font-bold rounded-lg"
-                      title="Raw JSON Mode"
-                    >
-                      JSON
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={onAddOutbound}
-                      icon="Plus"
-                      iconClassName="text-xs"
-                      className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-none rounded-lg"
-                      title="Add New Outbound"
-                    >
-                      Add
-                    </Button>
+                <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onOpenWarpModal}
+                    icon="Lightning"
+                    iconClassName="text-sm text-amber-400"
+                    title="Generate WARP Outbound"
+                    className="h-9 w-9 p-0 text-amber-400 hover:bg-slate-800/60"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onBatchImport}
+                    icon="Stack"
+                    iconClassName="text-sm"
+                    title="Batch Import/Export"
+                    className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onOpenOutboundJson}
+                    icon="Code"
+                    iconClassName="text-sm"
+                    title="Raw JSON Mode"
+                    className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onAddOutbound}
+                    icon="Plus"
+                    iconClassName="text-sm text-blue-400"
+                    title="Add Outbound"
+                    className="h-9 w-9 p-0 text-blue-400 hover:bg-slate-800/60"
+                  />
 
-                    {/* Vertical Divider Line */}
-                    <div className="w-px h-5 bg-slate-700/60 mx-1" />
-                  </div>
+                  {/* Vertical Divider Line */}
+                  <div className="w-px h-5 bg-slate-700/50 mx-0.5" />
 
-                  {/* Utility Capsule: Search & Multi-select */}
-                  <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsSearchOpen((prev) => !prev)}
-                      icon="MagnifyingGlass"
-                      iconClassName="text-sm"
-                      title="Search Outbounds"
-                      className={`h-9 w-9 p-0 transition-all ${
-                        isSearchOpen || obSearch
-                          ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsSelectMode((prev) => {
-                          const next = !prev;
-                          if (!next) {
-                            setSelectedIndices(new Set());
-                            setLastClickedFilteredIdx(null);
-                          }
-                          return next;
-                        });
-                      }}
-                      icon="ListChecks"
-                      iconClassName="text-sm"
-                      title="Toggle Multi-select Mode"
-                      className={`h-9 w-9 p-0 transition-all ${
-                        isSelectMode || selectedIndices.size > 0
-                          ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    />
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsSearchOpen((prev) => !prev)}
+                    icon="MagnifyingGlass"
+                    iconClassName="text-sm"
+                    title="Search Outbounds"
+                    className={`h-9 w-9 p-0 transition-all ${
+                      isSearchOpen || obSearch
+                        ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsSelectMode((prev) => {
+                        const next = !prev;
+                        if (!next) {
+                          setSelectedIndices(new Set());
+                          setLastClickedFilteredIdx(null);
+                        }
+                        return next;
+                      });
+                    }}
+                    icon="ListChecks"
+                    iconClassName="text-sm"
+                    title="Toggle Multi-select Mode"
+                    className={`h-9 w-9 p-0 transition-all ${
+                      isSelectMode || selectedIndices.size > 0
+                        ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  />
                 </div>
               }
               subHeader={
