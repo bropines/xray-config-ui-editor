@@ -3,11 +3,57 @@
 
     <head>
         <meta charset="UTF-8">
-        <!-- Иконка для современных браузеров -->
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="viewport"
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-        <title>Xray Configurator</title>
+        
+        <!-- SEO Primary Meta Tags -->
+        <title>Xray Config UI Editor — Visual Web GUI for Xray-core & Remnawave</title>
+        <meta name="title" content="Xray Config UI Editor — Visual Web GUI for Xray-core & Remnawave">
+        <meta name="description" content="Free static web-based GUI and editor for Xray-core (config.json). Features visual traffic topology, VLESS Reality key generator, smart routing manager, and direct Remnawave Panel sync.">
+        <meta name="keywords" content="xray, xray-core, xray gui, xray config editor, v2ray, vless, reality, remnawave, xray configurator, routing rules, visual topology, vless reality key generator, редактор конфигов xray, генератор xray, визуальный конфигуратор xray">
+        <meta name="robots" content="index, follow">
+        <meta name="author" content="bropines">
+        <link rel="canonical" href="https://bropines.github.io/xray-config-ui-editor/">
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bropines.github.io/xray-config-ui-editor/">
+        <meta property="og:title" content="Xray Config UI Editor — Visual Web GUI for Xray-core & Remnawave">
+        <meta property="og:description" content="Web GUI for Xray-core: Inbounds, Outbounds, Routing, Reality generator, and direct Remnawave Panel integration.">
+        <meta property="og:image" content="https://bropines.github.io/xray-config-ui-editor/favicon.svg">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:url" content="https://bropines.github.io/xray-config-ui-editor/">
+        <meta name="twitter:title" content="Xray Config UI Editor">
+        <meta name="twitter:description" content="Visual Web GUI for Xray-core & Remnawave Panel.">
+        <meta name="twitter:image" content="https://bropines.github.io/xray-config-ui-editor/favicon.svg">
+
+        <!-- Schema.org JSON-LD Structured Data -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "Xray Config UI Editor",
+            "url": "https://bropines.github.io/xray-config-ui-editor/",
+            "description": "Free static web-based GUI for Xray-core configurations with visual topology, VLESS Reality key generator, and Remnawave sync.",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "All",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+            },
+            "author": {
+                "@type": "Person",
+                "name": "bropines"
+            }
+        }
+        </script>
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
         tailwind.config = {
@@ -141,7 +187,29 @@
     </head>
 
     <body>
-        <div id="app"></div>
+        <div id="app">
+            <!-- SEO Fallback Content for Crawlers and Bots (replaced on React mount) -->
+            <noscript>
+                <div style="padding: 2rem; max-width: 800px; margin: 0 auto; color: #fff;">
+                    <h1>Xray Config UI Editor</h1>
+                    <p>Visual web GUI and editor for Xray-core configurations (Inbounds, Outbounds, Routing, Reality, Remnawave). Please enable JavaScript to run this application.</p>
+                </div>
+            </noscript>
+            <div style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+                <h1 class="text-2xl font-bold text-white mb-2">Xray Config UI Editor — Web GUI for Xray-core</h1>
+                <p class="text-slate-300 mb-4">A powerful static web-based interface to create, edit, visualize, and manage Xray-core configurations in your browser.</p>
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">Key Features:</h2>
+                <ul class="list-disc list-inside text-slate-400 space-y-1">
+                    <li>Full Config Management: Inbounds, Outbounds, Routing, DNS, Policy, Reverse, and Stats.</li>
+                    <li>Direct Remnawave Panel sync via API.</li>
+                    <li>Interactive visual traffic flow topology (powered by React Flow).</li>
+                    <li>Built-in VLESS Reality keypair generator (X25519).</li>
+                    <li>Drag &amp; drop routing rule manager.</li>
+                    <li>Dual-mode editing: user-friendly GUI and raw JSON editor with syntax validation.</li>
+                </ul>
+                <p class="text-slate-500 mt-4 text-xs">Loading application...</p>
+            </div>
+        </div>
         <script type="module" src="/src/main.tsx"></script>
     </body>
 

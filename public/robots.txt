@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bropines.github.io/xray-config-ui-editor/sitemap.xml

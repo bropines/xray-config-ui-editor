@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-08-18
+
+### Added
+- **SEO & Search Indexing Optimization**:
+  - Added comprehensive SEO meta tags (title, description, canonical link, Open Graph, Twitter Cards).
+  - Added Schema.org `WebApplication` structured data (`JSON-LD`).
+  - Added crawler fallback and noscript content inside root HTML for fast indexing by Google and Yandex.
+  - Added `robots.txt` and `sitemap.xml` in `public/` for automatic search engine discovery.
+
 ## [1.0.1] - 2026-08-11
 
 ### Fixed
