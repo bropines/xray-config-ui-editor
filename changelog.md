@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-08-18
+
+### Fixed
+- **Remnawave Cloud Profile Loading & Caching**:
+  - Fixed `ReferenceError` in `loadConfig` when parsing loaded profile configuration data.
+  - Added `cache: 'no-cache'` and robust response body parsing in `RemnawaveClient` to prevent browser ETag conditional caching (`304 Not Modified` / `If-None-Match`) failure across origins.
+  - Added explicit console error logging for Remnawave profile actions.
+
 ## [1.0.2] - 2026-08-18
 
 ### Added

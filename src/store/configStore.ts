@@ -207,6 +207,7 @@ export const useConfigStore = create(
                     set(produce((state) => {
                         state.remnawave.activeProfileUuid = prevUuid;
                     }));
+                    console.error("Failed to load Remnawave profile:", e);
                     toast.error("Failed to load profile from cloud");
                 }
             },
@@ -521,6 +522,8 @@ export const useConfigStore = create(
             loadConfig: (json, label, isCloud = false, rawText) => {
                 let parsedConfig: XrayConfig;
                 let textToSave = rawText;
+                let validationWarningIssues: any = null;
+
                 if (typeof json === 'string') {
                     textToSave = json;
                     try {
@@ -530,14 +533,17 @@ export const useConfigStore = create(
                     }
                 } else {
                     const result = XrayConfigSchema.safeParse(json);
+                    if (!result.success) {
+                        validationWarningIssues = result.error.issues;
+                    }
                     parsedConfig = result.success ? result.data : (json as XrayConfig);
                     if (!textToSave) {
                         textToSave = stringifyJsonc(parsedConfig, 2);
                     }
                 }
-                // @ts-ignore
-                if (!result.success) {
-                    console.warn('Validation warnings:', result.error.issues);
+
+                if (validationWarningIssues) {
+                    console.warn('Validation warnings:', validationWarningIssues);
                     toast.warning("Configuration loaded with validation warnings. Check console.");
                 }
                 set(produce((state) => {

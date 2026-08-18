@@ -23,13 +23,22 @@ export class RemnawaveClient {
         }
 
         const res = await fetch(`${this.baseUrl}${endpoint}`, {
+            cache: 'no-cache',
             ...options,
             headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
         });
 
-        if (res.status === 204) return null;
+        if (res.status === 204 || res.status === 304) return null;
 
-        const data = await res.json();
+        const text = await res.text();
+        if (!text || text.trim() === '') return null;
+
+        let data: any;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            throw new Error(`Invalid JSON received from API (${res.status})`);
+        }
 
         if (!res.ok) {
             const errorMsg = data.message || data.error || 'Unknown error';
