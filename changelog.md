@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-08-20
+
+### Fixed
+- **Missing Imports & Runtime References**:
+  - Resolved `ReferenceError` for `ExtendedSection` and `Switch` in `SockoptEditor` and `RuleEditor`.
+  - Resolved `ReferenceError` for `useState` in `DnsModal`.
+- **Routing & Topology Modal Scrolling**:
+  - Restored full scrollability and height constraints in `RoutingModal` rule lists, rule editor forms, and balancers.
+
 ## [1.0.5] - 2026-08-20
 
 ### Added
