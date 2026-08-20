@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.8] - 2026-08-20
+
+### Added
+- **Remnawave HWID & Device Identifier Protocol**:
+  - Implemented canonical Remnawave subscription headers (`x-hwid`, `x-device-os`, `x-ver-os`, `x-device-model`, `x-app-version`) in `ConfigInspectorModal`.
+  - Added Device HWID manager with UUID generation, clipboard copying, and persistent `localStorage` cache.
+  - Added specific error detection and alerts for Remnawave HWID device limits (`x-hwid-max-devices-reached`, `403/429`).
+
 ## [1.0.7] - 2026-08-20
 
 ### Added

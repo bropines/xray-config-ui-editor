@@ -6,6 +6,9 @@ import { Select } from '../ui/Select';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
 import { parseRawSubscriptionText } from '../../utils/link-parser';
+import { generateUUID } from '../../core/generators/crypto';
+
+const HWID_STORAGE_KEY = 'xray_editor_v2_hwid';
 
 const UA_PRESETS = [
     { value: "Happ/1.0.0", label: "Happ (iOS / Android)" },
@@ -28,11 +31,26 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
     const [subUrl, setSubUrl] = useState("");
     const [selectedUa, setSelectedUa] = useState("Happ/1.0.0");
     const [customUa, setCustomUa] = useState("");
+    const [showHwidSettings, setShowHwidSettings] = useState(false);
+    const [hwid, setHwid] = useState(() => {
+        const saved = localStorage.getItem(HWID_STORAGE_KEY);
+        if (saved) return saved;
+        const newId = generateUUID();
+        localStorage.setItem(HWID_STORAGE_KEY, newId);
+        return newId;
+    });
     const [isFetching, setIsFetching] = useState(false);
     const [parsedConfigs, setParsedConfigs] = useState<any[] | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     const effectiveUa = selectedUa === "custom" ? customUa.trim() || "Happ/1.0.0" : selectedUa;
+
+    const handleGenerateNewHwid = () => {
+        const newId = generateUUID();
+        setHwid(newId);
+        localStorage.setItem(HWID_STORAGE_KEY, newId);
+        toast.info("Generated new HWID", { description: newId });
+    };
 
     const handleFetchSub = async () => {
         if (!subUrl.trim()) return;
@@ -41,12 +59,36 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
             const targetUrl = subUrl.trim();
             const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
             
+            const isAndroid = selectedUa.includes("Android") || selectedUa.includes("v2rayNG") || selectedUa.includes("NekoBox");
+            const isWindows = selectedUa.includes("Windows") || selectedUa.includes("ClashMeta") || selectedUa.includes("sing-box");
+            const deviceOs = isAndroid ? "Android" : isWindows ? "Windows" : "iOS";
+            const verOs = isAndroid ? "14" : isWindows ? "11" : "18.3";
+            const deviceModel = isAndroid ? "Pixel 9 Pro" : isWindows ? "PC" : "iPhone 16 Pro Max";
+
             const headers: Record<string, string> = {
-                "x-custom-user-agent": effectiveUa
+                "x-custom-user-agent": effectiveUa,
+                "User-Agent": effectiveUa,
+                "x-hwid": hwid,
+                "x-custom-x-hwid": hwid,
+                "x-device-os": deviceOs,
+                "x-custom-x-device-os": deviceOs,
+                "x-ver-os": verOs,
+                "x-custom-x-ver-os": verOs,
+                "x-device-model": deviceModel,
+                "x-custom-x-device-model": deviceModel,
+                "x-app-version": "1.0.0",
+                "x-custom-x-app-version": "1.0.0"
             };
 
             const response = await fetch(proxyUrl, { headers });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) {
+                if (response.status === 403 || response.status === 429) {
+                    if (response.headers.get('x-hwid-max-devices-reached') === 'true' || response.headers.get('x-hwid-limit') === 'true') {
+                        throw new Error("Remnawave HWID device limit reached for this subscription.");
+                    }
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
             
             const rawText = await response.text();
             let decoded = rawText.trim();
@@ -63,7 +105,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
             }
             
             setInputText(decoded);
-            toast.success("Subscription fetched successfully", { description: `Using UA: ${effectiveUa.split(' ')[0]}` });
+            toast.success("Subscription fetched successfully", { description: `HWID & UA: ${effectiveUa.split('/')[0]}` });
         } catch (error: any) {
             toast.error("Fetch failed", { description: error.message });
         } finally {
@@ -170,25 +212,78 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                 </Button>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-800/60">
-                                <label className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1.5">
-                                    <Icon name="DeviceMobile" className="text-indigo-400" /> Emulated Client (UA):
-                                </label>
-                                <div className="w-full sm:w-64">
-                                    <Select
-                                        value={selectedUa}
-                                        onChange={setSelectedUa}
-                                        options={UA_PRESETS}
-                                    />
+                            <div className="space-y-3 pt-2 border-t border-slate-800/60">
+                                <div className="flex flex-col sm:flex-row items-center gap-3">
+                                    <label className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1.5">
+                                        <Icon name="DeviceMobile" className="text-indigo-400" /> Emulated Client:
+                                    </label>
+                                    <div className="w-full sm:w-64">
+                                        <Select
+                                            value={selectedUa}
+                                            onChange={setSelectedUa}
+                                            options={UA_PRESETS}
+                                        />
+                                    </div>
+                                    {selectedUa === 'custom' && (
+                                        <input
+                                            type="text"
+                                            className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-white outline-none focus:border-indigo-500"
+                                            placeholder="e.g. FoXray/1.4.2 (iPhone; iOS 17.5)"
+                                            value={customUa}
+                                            onChange={e => setCustomUa(e.target.value)}
+                                        />
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowHwidSettings(!showHwidSettings)}
+                                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 ml-auto shrink-0 bg-indigo-950/40 px-2 py-1 rounded-lg border border-indigo-500/30"
+                                    >
+                                        <Icon name="Fingerprint" /> {showHwidSettings ? "Hide HWID" : "Device HWID"}
+                                    </button>
                                 </div>
-                                {selectedUa === 'custom' && (
-                                    <input
-                                        type="text"
-                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-white outline-none focus:border-indigo-500"
-                                        placeholder="e.g. FoXray/1.4.2 (iPhone; iOS 17.5)"
-                                        value={customUa}
-                                        onChange={e => setCustomUa(e.target.value)}
-                                    />
+
+                                {showHwidSettings && (
+                                    <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2 animate-in fade-in">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                                <Icon name="Fingerprint" className="text-purple-400" /> Remnawave Device HWID (x-hwid)
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateNewHwid}
+                                                className="text-[10px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-0.5 rounded border border-purple-500/40 transition-colors"
+                                            >
+                                                <Icon name="ArrowsClockwise" /> New HWID
+                                            </button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-purple-200 outline-none focus:border-purple-500"
+                                                value={hwid}
+                                                onChange={e => {
+                                                    setHwid(e.target.value);
+                                                    localStorage.setItem(HWID_STORAGE_KEY, e.target.value);
+                                                }}
+                                                placeholder="UUID or 10-64 char alphanumeric string"
+                                            />
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                className="!py-1 !px-2.5 !text-[10px]"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(hwid);
+                                                    toast.success("HWID copied to clipboard");
+                                                }}
+                                                icon="Copy"
+                                            >
+                                                Copy
+                                            </Button>
+                                        </div>
+                                        <p className="text-[9px] text-slate-500">
+                                            Remnawave panels bind subscriptions to this device identifier. If you hit a device limit, generate a new HWID or check active devices in panel.
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                         </div>
