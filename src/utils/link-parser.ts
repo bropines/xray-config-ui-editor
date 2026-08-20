@@ -442,6 +442,77 @@ export const parseXrayLink = (link: string): any => {
 };
 
 /**
+ * Universal Subscription & Raw Links Parser
+ * Handles:
+ * 1. Single or Array of JSON Xray Configs
+ * 2. Base64-encoded subscription containing links or JSON
+ * 3. Line-by-line proxy links (vless://, vmess://, ss://, trojan://, etc.)
+ * 4. Wireguard .conf text
+ */
+export const parseRawSubscriptionText = (text: string): any[] => {
+    let clean = (text || "").trim();
+    if (!clean) throw new Error("Input is empty");
+
+    // 1. Try to decode Base64 if not already JSON or plain links
+    if (!clean.startsWith('{') && !clean.startsWith('[') && !clean.includes('://')) {
+        try {
+            const b64 = clean.replace(/\s/g, '');
+            const decoded = decodeBase64Safe(b64);
+            if (decoded && (decoded.includes('://') || decoded.startsWith('{') || decoded.startsWith('['))) {
+                clean = decoded.trim();
+            }
+        } catch {}
+    }
+
+    // 2. Try JSON
+    if (clean.startsWith('{') || clean.startsWith('[')) {
+        try {
+            const data = JSON.parse(clean);
+            if (Array.isArray(data)) {
+                return data.filter(c => c && typeof c === 'object');
+            }
+            if (data && typeof data === 'object') {
+                return [data];
+            }
+        } catch {}
+    }
+
+    // 3. Try Wireguard .conf
+    if (clean.includes('[Interface]') && clean.includes('[Peer]')) {
+        const wg = parseWireguardConfig(clean);
+        if (wg) {
+            const outbounds = wg.multiple && wg.outbounds ? wg.outbounds : [wg];
+            return [{
+                remarks: "WireGuard Configuration",
+                outbounds
+            }];
+        }
+    }
+
+    // 4. Try Line-by-line Links (vless://, vmess://, ss://, trojan://)
+    const lines = clean.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+    const parsedOutbounds: any[] = [];
+
+    for (const line of lines) {
+        if (line.includes('://')) {
+            const ob = parseXrayLink(line);
+            if (ob) {
+                parsedOutbounds.push(ob);
+            }
+        }
+    }
+
+    if (parsedOutbounds.length > 0) {
+        return [{
+            remarks: `Imported Node List (${parsedOutbounds.length} nodes)`,
+            outbounds: parsedOutbounds
+        }];
+    }
+
+    throw new Error("Could not parse as JSON config or valid proxy links");
+};
+
+/**
  * Парсит JSON-подписку (массив полных конфигов или объектов с remarks)
  * Возвращает массив Outbounds
  */
@@ -453,30 +524,23 @@ export const parseJsonSubscription = (jsonText: string): any[] => {
         const processConfig = (conf: any) => {
             if (!conf || typeof conf !== 'object') return;
             
-            // Если в объекте есть outbounds (классический конфиг Xray)
             if (Array.isArray(conf.outbounds)) {
-                // Выгребаем ВСЕ "боевые" прокси (не freedom/dns/blackhole)
                 const proxies = conf.outbounds.filter((o: any) => 
                     !['freedom', 'dns', 'blackhole', 'direct', 'block'].includes(o.protocol)
                 );
 
                 proxies.forEach((proxy: any, idx: number) => {
-                    // Если есть название от родителя (remarks), используем его как базу
                     if (conf.remarks) {
                         const baseTag = conf.remarks.trim();
-                        // Если нода одна - просто название. Если несколько - нумеруем: Название-1, Название-2
                         proxy.tag = proxies.length > 1 ? `${baseTag}-${idx + 1}` : baseTag;
                     }
                     outbounds.push(proxy);
                 });
 
-                // Если боевых нет вообще, но что-то есть в списке, берем на всякий случай первый
                 if (proxies.length === 0 && conf.outbounds.length > 0) {
                     outbounds.push(conf.outbounds[0]);
                 }
-            } 
-            // Если это просто объект прокси
-            else if (conf.protocol && conf.settings) {
+            } else if (conf.protocol && conf.settings) {
                 outbounds.push(conf);
             }
         };
@@ -488,7 +552,7 @@ export const parseJsonSubscription = (jsonText: string): any[] => {
         }
 
         return outbounds;
-    } catch (e) {
+    } catch {
         return [];
     }
 };

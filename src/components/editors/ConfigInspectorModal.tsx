@@ -2,9 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
+import { Select } from '../ui/Select';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
-import { parseJsonc } from '../../utils/jsonc';
+import { parseRawSubscriptionText } from '../../utils/link-parser';
+
+const UA_PRESETS = [
+    { value: "Happ/1.0.0", label: "Happ (iOS / Android)" },
+    { value: "v2rayNG/1.9.13", label: "v2rayNG (Android)" },
+    { value: "Shadowrocket/1982 CFNetwork/1408.0.4 Darwin/22.5.0", label: "Shadowrocket (iOS)" },
+    { value: "ClashMeta/v1.18.0", label: "Clash.Meta / Mihomo" },
+    { value: "sing-box/1.10.0", label: "sing-box" },
+    { value: "FoXray/1.4.2", label: "FoXray" },
+    { value: "NekoBox/1.3.1", label: "NekoBox" },
+    { value: "custom", label: "Custom User-Agent..." },
+];
 
 export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: { 
     onClose: () => void, 
@@ -14,9 +26,13 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
     const { config: currentConfig, addOutbounds, updateSection, addItem } = useConfigStore();
     const [inputText, setInputText] = useState("");
     const [subUrl, setSubUrl] = useState("");
+    const [selectedUa, setSelectedUa] = useState("Happ/1.0.0");
+    const [customUa, setCustomUa] = useState("");
     const [isFetching, setIsFetching] = useState(false);
     const [parsedConfigs, setParsedConfigs] = useState<any[] | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
+
+    const effectiveUa = selectedUa === "custom" ? customUa.trim() || "Happ/1.0.0" : selectedUa;
 
     const handleFetchSub = async () => {
         if (!subUrl.trim()) return;
@@ -26,7 +42,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
             const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
             
             const headers: Record<string, string> = {
-                "x-custom-user-agent": "v2rayNG/1.8.5"
+                "x-custom-user-agent": effectiveUa
             };
 
             const response = await fetch(proxyUrl, { headers });
@@ -39,15 +55,15 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                 try {
                     let b64 = decoded.replace(/\s/g, '');
                     while (b64.length % 4 !== 0) b64 += '=';
-                    decoded = atob(b64);
-                    try { decoded = decodeURIComponent(escape(decoded)); } catch (e) {}
+                    const dec = atob(b64);
+                    try { decoded = decodeURIComponent(escape(dec)); } catch (e) { decoded = dec; }
                 } catch (e) {
                     decoded = rawText.trim();
                 }
             }
             
             setInputText(decoded);
-            toast.success("Subscription fetched successfully");
+            toast.success("Subscription fetched successfully", { description: `Using UA: ${effectiveUa.split(' ')[0]}` });
         } catch (error: any) {
             toast.error("Fetch failed", { description: error.message });
         } finally {
@@ -57,12 +73,26 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
 
     const handleParse = () => {
         try {
-            const data = parseJsonc(inputText);
-            const configs = Array.isArray(data) ? data : [data];
-            if (configs.some(c => !c || typeof c !== 'object')) throw new Error("Invalid format");
+            const configs = parseRawSubscriptionText(inputText);
+            if (!configs || configs.length === 0) throw new Error("No valid configurations found in input");
             setParsedConfigs(configs);
             setSelectedIndex(0);
-            toast.success(`Analyzed ${configs.length} configurations`);
+
+            // Check if returned configuration contains dummy/advisory warning nodes (e.g. 0.0.0.0:1)
+            const firstConfig = configs[0];
+            const isDummyOnly = firstConfig?.outbounds?.every((o: any) => {
+                const addr = o?.settings?.vnext?.[0]?.address || o?.settings?.servers?.[0]?.address;
+                const port = o?.settings?.vnext?.[0]?.port || o?.settings?.servers?.[0]?.port;
+                return addr === '0.0.0.0' && port === 1;
+            });
+
+            if (isDummyOnly) {
+                toast.warning("Warning: Provider returned announcement/dummy nodes", {
+                    description: "Your provider may require a different User-Agent or device authorization."
+                });
+            } else {
+                toast.success(`Analyzed ${configs.length} configuration(s) (${firstConfig?.outbounds?.length || 0} nodes found)`);
+            }
         } catch (e: any) {
             toast.error("Parse failed", { description: e.message });
         }
@@ -121,26 +151,53 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                             </div>
                             <h3 className="text-2xl font-black text-white italic tracking-tight">Configuration Harvester</h3>
                             <p className="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
-                                Paste a single Xray JSON or an array of configurations to start surgical extraction of components.
+                                Paste raw proxy links (VLESS, VMess, SS, Trojan, WG), JSON configs, or fetch directly from a subscription URL.
                             </p>
                         </div>
-                        <div className="flex gap-2 shrink-0">
-                            <input
-                                type="text"
-                                className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-5 text-sm font-mono text-white outline-none focus:border-indigo-500 transition-all shadow-inner"
-                                placeholder="https://example.com/subscription.json"
-                                value={subUrl}
-                                onChange={(e) => setSubUrl(e.target.value)}
-                            />
-                            <Button variant="secondary" className="px-8 rounded-2xl border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 shadow-lg" onClick={handleFetchSub} disabled={!subUrl.trim() || isFetching} icon="CloudArrowDown">
-                                {isFetching ? "Fetching..." : "Fetch Remote"}
-                            </Button>
+
+                        {/* Subscription & User-Agent Section */}
+                        <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 space-y-3 shrink-0">
+                            <div className="flex flex-col md:flex-row gap-2">
+                                <input
+                                    type="text"
+                                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono text-white outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                    placeholder="https://example.com/subscription..."
+                                    value={subUrl}
+                                    onChange={(e) => setSubUrl(e.target.value)}
+                                />
+                                <Button variant="secondary" className="px-6 rounded-xl border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 shadow-lg" onClick={handleFetchSub} disabled={!subUrl.trim() || isFetching} icon="CloudArrowDown">
+                                    {isFetching ? "Fetching..." : "Fetch Remote"}
+                                </Button>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-800/60">
+                                <label className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1.5">
+                                    <Icon name="DeviceMobile" className="text-indigo-400" /> Emulated Client (UA):
+                                </label>
+                                <div className="w-full sm:w-64">
+                                    <Select
+                                        value={selectedUa}
+                                        onChange={setSelectedUa}
+                                        options={UA_PRESETS}
+                                    />
+                                </div>
+                                {selectedUa === 'custom' && (
+                                    <input
+                                        type="text"
+                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-white outline-none focus:border-indigo-500"
+                                        placeholder="e.g. FoXray/1.4.2 (iPhone; iOS 17.5)"
+                                        value={customUa}
+                                        onChange={e => setCustomUa(e.target.value)}
+                                    />
+                                )}
+                            </div>
                         </div>
-                        <div className="relative group flex-1 flex flex-col min-h-[350px]">
+
+                        <div className="relative group flex-1 flex flex-col min-h-[300px]">
                             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
                             <textarea 
                                 className="flex-1 relative w-full bg-slate-950 border border-slate-800 rounded-2xl p-5 text-[12px] font-mono text-indigo-100 focus:border-indigo-500 outline-none resize-none custom-scroll shadow-2xl transition-all"
-                                placeholder='Paste your JSON configuration array here, or fetch from a URL above...'
+                                placeholder="Paste raw proxy links (vless://, vmess://, ss://), JSON configuration, Base64 subscription, or WireGuard conf here..."
                                 value={inputText}
                                 onChange={e => setInputText(e.target.value)}
                             />

@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { parseXrayLink, parseWireguardConfig } from "./link-parser";
+import { parseXrayLink, parseWireguardConfig, parseRawSubscriptionText } from "./link-parser";
 import { generateXrayLink } from "./link-generator";
 
 describe("Link Parser & Generator", () => {
@@ -128,6 +128,23 @@ Endpoint = 89.46.38.91:51820
             expect(result.outbounds).toHaveLength(2);
             expect(result.outbounds[0].streamSettings.sockopt.dialerProxy).toBeDefined();
             expect(result.outbounds[1].tag).toBe(result.outbounds[0].streamSettings.sockopt.dialerProxy);
+        });
+    });
+
+    describe("Raw Subscription & Multi-link parsing", () => {
+        test("should parse multiple vless links with URL-encoded remarks", () => {
+            const multiLinks = `
+vless://6923c575-962e-4208-8dea-f17d45b245d3@0.0.0.0:1?security=&type=tcp&headerType=&path=&host=#%D0%9F%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BD%D0%B5%20%D0%BF%D0%BE%D0%B4%D1%85%D0%BE%D0%B4%D0%B8%D1%82%20%E2%9A%A0%EF%B8%8F
+vless://31cf0a25-eeb5-45fb-9c09-2ce40bebb76f@0.0.0.0:1?security=&type=tcp&headerType=&path=&host=#%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA%20%D0%BD%D1%83%D0%B6%D0%BD%D1%8B%D1%85%20%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B9%3A
+vless://7a216a91-cd18-4034-adf3-c3dec4a85a24@0.0.0.0:1?security=&type=tcp&headerType=&path=&host=#%D0%B2%20%D0%B1%D0%BE%D1%82%D0%B5%20%40blackvpn_bot
+            `.trim();
+
+            const configs = parseRawSubscriptionText(multiLinks);
+            expect(configs).toHaveLength(1);
+            expect(configs[0].outbounds).toHaveLength(3);
+            expect(configs[0].outbounds[0].tag).toBe("Приложение не подходит ⚠️");
+            expect(configs[0].outbounds[1].tag).toBe("Список нужных приложений:");
+            expect(configs[0].outbounds[2].tag).toBe("в боте @blackvpn_bot");
         });
     });
 });
