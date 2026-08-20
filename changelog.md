@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.11] - 2026-08-20
+
+### Security
+- **Dependabot Security Fixes**:
+  - Updated `fast-uri` to `3.1.5` to resolve authority delimiter & introducer host confusion vulnerabilities (GHSA-v2hh-gcrm-f6hx, GHSA-7p8r-x3mc-p8w7).
+  - Updated `postcss` to `8.5.26` and `nanoid` to `3.3.18` to resolve path traversal in source map auto-loading and loop vulnerabilities (GHSA-r28c-9q8g-f849, GHSA-fxqj-rqcc-2cmp, GHSA-28wg-ghj8-5hjv).
+  - Resolved 100% of open Dependabot security advisories (`found 0 vulnerabilities`).
+
 ## [1.0.10] - 2026-08-20
 
 ### Added
