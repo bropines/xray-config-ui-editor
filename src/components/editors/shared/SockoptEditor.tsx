@@ -5,6 +5,8 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
 import { Select } from '../../ui/Select';
+import { Switch } from '../../ui/Switch';
+import { ExtendedSection } from '../../ui/ExtendedSection';
 
 export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
     const local = sockopt || {};

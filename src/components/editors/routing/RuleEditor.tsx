@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm } from '../../ui';
+import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm, ExtendedSection } from '../../ui';
 import { validateRule, lintRule } from '../../../core/validators';
 import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
