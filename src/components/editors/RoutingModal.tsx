@@ -58,6 +58,7 @@ export const RoutingModal = ({ onClose }: any) => {
             title="Routing Manager"
             onClose={handleClose}
             onSave={handleClose}
+            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             extraButtons={
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
                     <button
@@ -71,7 +72,7 @@ export const RoutingModal = ({ onClose }: any) => {
                 </div>
             }
         >
-            <div className="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="mb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
                 {mobileEditMode && (
                     <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">Back</Button>
                 )}
@@ -101,7 +102,7 @@ export const RoutingModal = ({ onClose }: any) => {
             </div>
 
             {hasCriticalErrors && (
-                <div className="mb-4 p-3.5 bg-rose-950/50 border border-rose-500/60 rounded-xl animate-in fade-in">
+                <div className="mb-3 p-3 bg-rose-950/50 border border-rose-500/60 rounded-xl animate-in fade-in shrink-0">
                     <div className="flex items-start gap-2.5">
                         <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-xl shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
@@ -138,13 +139,13 @@ export const RoutingModal = ({ onClose }: any) => {
             )}
 
             <div
-                className="flex flex-col md:flex-row flex-1 min-h-[500px] h-[72vh] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
+                className="flex flex-col md:flex-row flex-1 min-h-0 border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative"
                 style={{ '--sidebar-width': `${sidebarWidth}px` } as any}
             >
                 {activeTab === 'rules' ? (
                     <>
-                        <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
-                            <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50">
+                        <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full min-h-0 shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
+                            <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50 shrink-0">
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Rules</span>
                                     <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddRule} />
@@ -172,7 +173,7 @@ export const RoutingModal = ({ onClose }: any) => {
 
                         <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10 shrink-0" onMouseDown={startResizing} />
 
-                        <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
+                        <div className={`flex-1 flex flex-col h-full min-h-0 bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
                             <RuleEditor
                                 rule={rules[activeRuleIdx!]}
                                 onChange={handleUpdateRule}
@@ -188,8 +189,8 @@ export const RoutingModal = ({ onClose }: any) => {
                     </>
                 ) : (
                     <>
-                        <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
-                            <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50">
+                        <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full min-h-0 shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
+                            <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50 shrink-0">
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
                                     <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddBalancer} />
@@ -214,7 +215,7 @@ export const RoutingModal = ({ onClose }: any) => {
 
                         <div className="hidden md:block w-1 bg-slate-800 hover:bg-indigo-500 cursor-col-resize z-10 shrink-0" onMouseDown={startResizing} />
 
-                        <div className={`flex-1 flex flex-col h-full bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
+                        <div className={`flex-1 flex flex-col h-full min-h-0 bg-slate-900/50 min-w-0 ${mobileEditMode ? 'flex' : 'hidden md:flex'}`}>
                             <BalancerEditor
                                 balancer={balancers[activeBalancerIdx!]}
                                 onChange={handleUpdateBalancer}

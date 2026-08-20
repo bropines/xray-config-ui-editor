@@ -28,7 +28,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
             title="Traffic Topology"
             onClose={onClose}
             onSave={onClose}
-            className="h-full overflow-hidden"
+            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             extraButtons={
                 <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-1 px-2 rounded-lg border border-slate-800">
                     <Switch 
@@ -52,7 +52,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
             }
         >
-            <div className="flex-1 min-h-[500px] h-[72vh] w-full bg-[#0B1120] rounded-xl border border-slate-800 overflow-hidden relative shadow-inner group/flow">
+            <div className="flex-1 min-h-0 h-full w-full bg-[#0B1120] rounded-xl border border-slate-800 overflow-hidden relative shadow-inner group/flow">
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}

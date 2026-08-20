@@ -124,7 +124,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     );
 
     return (
-        <div className="flex-1 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
+        <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full">
             
             <div className="flex justify-end mb-4">
                  <button onClick={() => {
