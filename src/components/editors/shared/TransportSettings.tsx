@@ -452,16 +452,14 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                       'password'
                                   ]
                                 : [
+                                      'target',
                                       'serverName',
                                       'fingerprint',
                                       'password',
                                       'publicKey',
                                       'shortId',
                                       'mldsa65Verify',
-                                      'minClientVer',
-                                      'maxClientVer',
-                                      'maxTimeDiff',
-                                      'mldsa65Seed',
+                                      'spiderX',
                                       'limitFallbackUpload',
                                       'limitFallbackDownload'
                                   ]

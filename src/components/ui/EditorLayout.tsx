@@ -80,7 +80,7 @@ export const EditorLayout = ({
                     />
                 </div>
             ) : (
-                <div className="flex flex-col h-full md:max-h-[60vh] adaptive-height overflow-y-auto custom-scroll p-1 pb-10">
+                <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scroll p-1 pb-6">
                     {children}
                 </div>
             )}

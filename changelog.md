@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2026-08-20
+
+### Added
+- **Inbound REALITY Client Versioning & Controls**:
+  - Enabled visual configuration of `minClientVer` and `maxClientVer` in the Inbound REALITY editor.
+  - Added fields and descriptions for `maxTimeDiff` and `mldsa65Seed` (Post-Quantum ML-DSA-65) in `SchemaForm`.
+
+### Fixed
+- **Modal Viewport & Empty Space Glitch**:
+  - Resolved an issue where desktop modals displayed an empty lower third and restricted scrolling within a narrow 60vh container.
+  - Converted editor content containers (`EditorLayout`, `RoutingModal`, `TopologyModal`) to responsive full-height flex layouts (`flex-1 min-h-0`).
+
 ## [1.0.3] - 2026-08-18
 
 ### Fixed

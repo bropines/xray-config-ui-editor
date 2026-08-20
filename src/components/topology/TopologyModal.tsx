@@ -52,7 +52,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
             }
         >
-            <div className="h-[60vh] adaptive-height w-full bg-[#0B1120] rounded-xl border border-slate-800 overflow-hidden relative shadow-inner group/flow">
+            <div className="flex-1 min-h-[500px] h-[72vh] w-full bg-[#0B1120] rounded-xl border border-slate-800 overflow-hidden relative shadow-inner group/flow">
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}

@@ -114,6 +114,26 @@ const STANDARD_FIELD_CONFIGS: Record<string, { label: string; help: string; plac
         help: 'Specific short ID matching the server list.',
         placeholder: 'e.g. 392562c0'
     },
+    minClientVer: {
+        label: 'Min Client Version',
+        help: 'Minimum required Xray client version (e.g. 1.8.0, 24.9.0, or 0.0.0 for any). Leave empty if not restricting.',
+        placeholder: 'e.g. 1.8.0'
+    },
+    maxClientVer: {
+        label: 'Max Client Version',
+        help: 'Maximum allowed Xray client version (e.g. 1.8.24, 24.9.0, or 0.0.0 for any). Leave empty if not restricting.',
+        placeholder: 'e.g. 0.0.0'
+    },
+    maxTimeDiff: {
+        label: 'Max Time Difference (ms)',
+        help: 'Maximum allowed timestamp difference in milliseconds between client and server (e.g. 60000).',
+        placeholder: 'e.g. 60000'
+    },
+    mldsa65Seed: {
+        label: 'ML-DSA-65 Seed',
+        help: 'Post-quantum signature seed (base64 string) for PQ-REALITY.',
+        placeholder: 'Base64 seed string'
+    },
     // TLS settings
     minVersion: {
         label: 'Min TLS Version',
