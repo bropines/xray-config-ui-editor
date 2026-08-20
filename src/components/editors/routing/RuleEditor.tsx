@@ -445,50 +445,67 @@ export const RuleEditor = ({
                     </div>
                 </div>
 
-                {/* HTTP Attrs & Webhook */}
-                <div className="bg-slate-900/40 p-5 rounded-2xl border border-slate-800/60 space-y-5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] block border-b border-slate-800 pb-3">
-                        Advanced Features
-                    </label>
-                    <div className="grid grid-cols-2 gap-8">
-                        <div className="flex flex-col gap-2 h-full">
-                            <label className="label-xs flex items-center gap-1.5 text-slate-400">
-                                HTTP Attributes (JSON) <Help>{`e.g. {":method": "GET", ":path": "/test"}`}</Help>
+                {/* Extended / Advanced Features */}
+                <ExtendedSection
+                    title="Extended Rule Settings & Webhooks"
+                    description="Custom HTTP attributes, rule tagging for metrics, and webhook dispatch."
+                    hasActiveValues={!!rule.attrs || !!rule.webhook || !!rule.ruleTag}
+                    activeCount={[rule.attrs, rule.webhook, rule.ruleTag].filter(Boolean).length}
+                >
+                    <div className="space-y-4">
+                        <div>
+                            <label className="label-xs text-slate-400 mb-1.5 block">
+                                Rule Tag / Alias <Help>Custom identifier for this rule in stats and metrics.</Help>
                             </label>
-                            <AttrsEditor value={rule.attrs} onChange={(v: any) => update('attrs', v)} />
+                            <input
+                                type="text"
+                                className="input-base font-mono text-xs"
+                                placeholder="e.g. bypass-telegram"
+                                value={rule.ruleTag || ""}
+                                onChange={e => update('ruleTag', e.target.value || undefined)}
+                            />
                         </div>
-                        <div className="flex flex-col gap-2 h-full">
-                            <label className="label-xs flex items-center gap-1.5 text-slate-400">
-                                Webhook Notification <Help>Send HTTP POST notification on match.</Help>
-                            </label>
-                            <div className="flex flex-col gap-4 flex-1">
-                                <SchemaForm
-                                    schema={WebhookObjectSchema}
-                                    value={typeof rule.webhook === 'object' ? rule.webhook : {}}
-                                    onChange={val => update('webhook', val)}
-                                    errors={errorRecord}
-                                    fieldConfigs={{
-                                        url: {
-                                            label: 'Callback URL',
-                                            placeholder: 'https://api.site.com/hook',
-                                            help: 'URL to POST webhook notifications.'
-                                        },
-                                        deduplication: {
-                                            label: 'Deduplication (seconds)',
-                                            placeholder: '10',
-                                            help: 'Deduplication interval in seconds.'
-                                        },
-                                        headers: {
-                                            label: 'Headers',
-                                            placeholder: 'e.g. Authorization: Bearer token',
-                                            help: 'Custom HTTP headers for the webhook request.'
-                                        }
-                                    }}
-                                />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-800/60">
+                            <div className="flex flex-col gap-2 h-full">
+                                <label className="label-xs flex items-center gap-1.5 text-slate-400">
+                                    HTTP Attributes (JSON) <Help>{`e.g. {":method": "GET", ":path": "/test"}`}</Help>
+                                </label>
+                                <AttrsEditor value={rule.attrs} onChange={(v: any) => update('attrs', v)} />
+                            </div>
+                            <div className="flex flex-col gap-2 h-full">
+                                <label className="label-xs flex items-center gap-1.5 text-slate-400">
+                                    Webhook Notification <Help>Send HTTP POST notification on match.</Help>
+                                </label>
+                                <div className="flex flex-col gap-4 flex-1">
+                                    <SchemaForm
+                                        schema={WebhookObjectSchema}
+                                        value={typeof rule.webhook === 'object' ? rule.webhook : {}}
+                                        onChange={val => update('webhook', val)}
+                                        errors={errorRecord}
+                                        fieldConfigs={{
+                                            url: {
+                                                label: 'Callback URL',
+                                                placeholder: 'https://api.site.com/hook',
+                                                help: 'URL to POST webhook notifications.'
+                                            },
+                                            deduplication: {
+                                                label: 'Deduplication (seconds)',
+                                                placeholder: '10',
+                                                help: 'Deduplication interval in seconds.'
+                                            },
+                                            headers: {
+                                                label: 'Headers',
+                                                placeholder: 'e.g. Authorization: Bearer token',
+                                                help: 'Custom HTTP headers for the webhook request.'
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </ExtendedSection>
 
             </div>
 

@@ -31,7 +31,7 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
                 value={outbound}
                 onChange={handleFormChange}
                 errors={errors}
-                excludeKeys={['sendIP', 'streamSettings', 'settings', 'mux']}
+                excludeKeys={['sendIP', 'streamSettings', 'settings', 'mux', 'proxySettings', 'targetStrategy']}
                 fieldConfigs={{
                     protocol: {
                         label: "Protocol",

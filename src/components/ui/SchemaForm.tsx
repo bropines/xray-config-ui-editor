@@ -152,6 +152,61 @@ const STANDARD_FIELD_CONFIGS: Record<string, { label: string; help: string; plac
     rejectUnknownSni: {
         label: 'Reject Unknown SNI',
         help: 'Reject connection attempts with unknown SNI.'
+    },
+    masterKeyLog: {
+        label: 'Master Key Log File (SSLKEYLOGFILE)',
+        help: 'File path to write TLS master keys for Wireshark traffic inspection/debugging.',
+        placeholder: 'e.g. /var/log/xray/sslkey.log'
+    },
+    pinnedPeerCertSha256: {
+        label: 'Pinned Peer Certificate SHA-256',
+        help: 'Base64 SHA-256 hash for strict certificate pinning.',
+        placeholder: 'Base64 hash string'
+    },
+    mldsa65Verify: {
+        label: 'ML-DSA-65 Public Key (PQ-REALITY)',
+        help: 'Post-Quantum signature verification key for client.',
+        placeholder: 'Base64 verify key'
+    },
+    disableSystemRoot: {
+        label: 'Disable System Root CA',
+        help: 'Ignore system root certificates and only trust custom provided certificates.'
+    },
+    enableSessionResumption: {
+        label: 'Enable Session Resumption',
+        help: 'Allow TLS session ticket resumption to speed up re-connections.'
+    },
+    cipherSuites: {
+        label: 'Cipher Suites',
+        help: 'Colon-separated TLS cipher suites.',
+        placeholder: 'e.g. TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384'
+    },
+    // Routing extended
+    ruleTag: {
+        label: 'Rule Tag / Alias',
+        help: 'Unique identifier or label for this rule in stats and metrics.',
+        placeholder: 'e.g. bypass-direct'
+    },
+    // DNS extended
+    clientSubnet: {
+        label: 'EDNS Client Subnet (ECS)',
+        help: 'Client IP or CIDR network forwarded in DNS queries for CDN localization.',
+        placeholder: 'e.g. 1.2.3.4 or 1.2.3.0/24'
+    },
+    fallbackStrategy: {
+        label: 'DNS Fallback Strategy',
+        help: 'Strategy for falling back to secondary DNS servers.',
+        options: ['Disabled', 'Enabled', 'Always']
+    },
+    queryStrategy: {
+        label: 'DNS Query Strategy',
+        help: 'Preference for DNS query domain resolution.',
+        options: ['UseIP', 'UseIPv4', 'UseIPv6']
+    },
+    cacheStrategy: {
+        label: 'DNS Cache Strategy',
+        help: 'Cache strategy for DNS query responses.',
+        options: ['CacheOnQuery', 'CacheOnResolved']
     }
 };
 

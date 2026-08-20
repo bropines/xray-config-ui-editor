@@ -1,10 +1,12 @@
 import React from 'react';
 import { useInboundEditor } from '../../hooks/useInboundEditor';
 import { EditorLayout } from '../ui/EditorLayout';
+import { ExtendedSection } from '../ui/ExtendedSection';
 import { InboundGeneral } from './inbound/InboundGeneral';
 import { InboundClients } from './inbound/InboundClients';
 import { InboundSniffing } from './inbound/InboundSniffing';
 import { InboundTun } from './inbound/InboundTun';
+import { InboundAllocate } from './inbound/InboundAllocate';
 import { TransportSettings } from './shared/TransportSettings';
 
 export const InboundModal = ({ data, onSave, onClose }: any) => {
@@ -73,6 +75,18 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                         onChange={updateField}
                         errors={errors}
                     />
+                </section>
+
+                {/* Extended Settings */}
+                <section className="relative z-0">
+                    <ExtendedSection
+                        title="Extended Inbound Settings"
+                        description="Port hopping/rotation (allocate) and advanced listener options."
+                        hasActiveValues={!!local.allocate}
+                        activeCount={local.allocate ? 1 : 0}
+                    >
+                        <InboundAllocate allocate={local.allocate} onChange={updateField} />
+                    </ExtendedSection>
                 </section>
             </div>
         </EditorLayout>

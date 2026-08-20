@@ -13,6 +13,7 @@ import { Select } from '../../ui/Select';
 import { NumberInput } from '../../ui/NumberInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
 import { SchemaForm } from '../../ui/SchemaForm';
+import { ExtendedSection } from '../../ui/ExtendedSection';
 
 interface TransportProps {
     streamSettings: any;
@@ -449,7 +450,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                       'limitFallbackUpload',
                                       'limitFallbackDownload',
                                       'mldsa65Verify',
-                                      'password'
+                                      'password',
+                                      'masterKeyLog'
                                   ]
                                 : [
                                       'target',
@@ -460,11 +462,38 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                       'shortId',
                                       'mldsa65Verify',
                                       'spiderX',
+                                      'show',
+                                      'mldsa65Seed',
+                                      'maxTimeDiff',
                                       'limitFallbackUpload',
-                                      'limitFallbackDownload'
+                                      'limitFallbackDownload',
+                                      'masterKeyLog'
                                   ]
                         }
                     />
+
+                    {/* REALITY EXTENDED SECTION */}
+                    <ExtendedSection
+                        title="Extended REALITY Settings"
+                        description="Post-quantum signature verification, master key logs, and server debug options."
+                        hasActiveValues={
+                            isClient
+                                ? !!streamSettings.realitySettings?.mldsa65Verify || !!streamSettings.realitySettings?.masterKeyLog
+                                : !!streamSettings.realitySettings?.show || !!streamSettings.realitySettings?.mldsa65Seed || !!streamSettings.realitySettings?.maxTimeDiff || !!streamSettings.realitySettings?.masterKeyLog
+                        }
+                    >
+                        <SchemaForm
+                            schema={RealitySchema}
+                            value={streamSettings.realitySettings || {}}
+                            onChange={val => update(['realitySettings'], val)}
+                            errors={realityErrors}
+                            excludeKeys={
+                                isClient
+                                    ? Object.keys(RealitySchema.shape).filter(k => !['mldsa65Verify', 'masterKeyLog'].includes(k))
+                                    : Object.keys(RealitySchema.shape).filter(k => !['show', 'mldsa65Seed', 'maxTimeDiff', 'masterKeyLog'].includes(k))
+                            }
+                        />
+                    </ExtendedSection>
                 </div>
             )}
 
@@ -495,9 +524,46 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         excludeKeys={[
                             'certificates',
                             'echSockopt',
+                            'pinnedPeerCertSha256',
+                            'masterKeyLog',
+                            'cipherSuites',
+                            'disableSystemRoot',
+                            'enableSessionResumption',
+                            'echServerKeys',
+                            'echConfigList',
+                            'verifyPeerCertByName',
+                            'curvePreferences',
                             ...(isClient ? ['rejectUnknownSni'] : ['allowInsecure', 'fingerprint'])
                         ]}
                     />
+
+                    {/* TLS EXTENDED SECTION */}
+                    <ExtendedSection
+                        title="Extended TLS Settings"
+                        description="Cipher suites, session resumption, certificate pinning, and SSLKEYLOGFILE."
+                        hasActiveValues={
+                            !!streamSettings.tlsSettings?.masterKeyLog ||
+                            !!streamSettings.tlsSettings?.pinnedPeerCertSha256 ||
+                            !!streamSettings.tlsSettings?.cipherSuites ||
+                            !!streamSettings.tlsSettings?.disableSystemRoot ||
+                            !!streamSettings.tlsSettings?.enableSessionResumption ||
+                            (!isClient && !!streamSettings.tlsSettings?.rejectUnknownSni)
+                        }
+                    >
+                        <SchemaForm
+                            schema={TlsSchema}
+                            value={streamSettings.tlsSettings || {}}
+                            onChange={val => update(['tlsSettings'], val)}
+                            errors={tlsErrors}
+                            excludeKeys={
+                                Object.keys(TlsSchema.shape).filter(k => 
+                                    isClient
+                                        ? !['pinnedPeerCertSha256', 'masterKeyLog', 'cipherSuites', 'disableSystemRoot', 'enableSessionResumption'].includes(k)
+                                        : !['rejectUnknownSni', 'masterKeyLog', 'cipherSuites', 'enableSessionResumption', 'disableSystemRoot'].includes(k)
+                                )
+                            }
+                        />
+                    </ExtendedSection>
                 </div>
             )}
 

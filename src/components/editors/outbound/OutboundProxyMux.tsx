@@ -2,19 +2,26 @@ import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
+import { Help } from '../../ui/Help';
+import { ExtendedSection } from '../../ui/ExtendedSection';
 
-export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
-    const availableProxies = allTags.filter(t => t !== outbound.tag);
+export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
+    const availableProxies = allTags.filter((t: string) => t !== outbound.tag);
 
-    const updateProxy = (tag) => {
+    const updateProxy = (tag: string) => {
         if (!tag) {
             onChange('proxySettings', undefined);
         } else {
-            onChange('proxySettings', { tag });
+            onChange('proxySettings', { ...outbound.proxySettings, tag });
         }
     };
 
-    const updateMux = (enabled) => {
+    const updateProxyTransport = (transportLayer: boolean) => {
+        if (!outbound.proxySettings?.tag) return;
+        onChange('proxySettings', { ...outbound.proxySettings, transportLayer });
+    };
+
+    const updateMux = (enabled: boolean) => {
         if (!enabled) {
             onChange('mux', undefined);
         } else {
@@ -22,67 +29,112 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }) => {
         }
     };
 
-    const updateMuxField = (field, val) => {
+    const updateMuxField = (field: string, val: any) => {
         onChange(['mux', field], val);
     };
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            
-            {/* Proxy Chain */}
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <h4 className="label-xs text-slate-400 mb-3">Proxy Chaining (Optional)</h4>
-                <TagSelector 
-                    availableTags={availableProxies}
-                    selected={outbound.proxySettings?.tag || ""}
-                    onChange={v => updateProxy(v)}
-                    placeholder="Direct (None)"
-                />
-            </div>
+    const hasExtendedValues = !!outbound.targetStrategy || !!outbound.proxySettings?.transportLayer;
 
-            {/* Mux */}
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <div className="flex justify-between items-center mb-3">
-                    <h4 className="label-xs text-slate-400">Mux (Multiplexing)</h4>
-                    <Switch
-                        checked={outbound.mux?.enabled || false}
-                        onChange={checked => updateMux(checked)}
+    return (
+        <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Proxy Chain */}
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <h4 className="label-xs text-slate-400">Proxy Chaining (Optional)</h4>
+                    <TagSelector 
+                        availableTags={availableProxies}
+                        selected={outbound.proxySettings?.tag || ""}
+                        onChange={v => updateProxy(v as string)}
+                        placeholder="Direct (None)"
                     />
-                </div>
-                
-                {outbound.mux?.enabled && (
-                    <div className="space-y-3 animate-in fade-in">
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="label-xs">TCP Concurrency</label>
-                                <input type="number" className="input-base" 
-                                    value={outbound.mux.concurrency || 8}
-                                    onChange={e => updateMuxField('concurrency', parseInt(e.target.value))}
-                                />
-                            </div>
-                            <div>
-                                <label className="label-xs">XUDP Concurrency</label>
-                                <input type="number" className="input-base" 
-                                    value={outbound.mux.xudpConcurrency || 8}
-                                    onChange={e => updateMuxField('xudpConcurrency', parseInt(e.target.value))}
-                                />
-                            </div>
+                    {outbound.proxySettings?.tag && (
+                        <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                                Transport Layer Chaining
+                                <Help>When enabled, proxy chaining occurs at the transport layer instead of the application layer.</Help>
+                            </span>
+                            <Switch
+                                checked={outbound.proxySettings?.transportLayer || false}
+                                onChange={updateProxyTransport}
+                            />
                         </div>
-                        
-                        <Select 
-                            label="UDP 443 Strategy (QUIC)"
-                            value={outbound.mux.xudpProxyUDP443 || "reject"}
-                            onChange={val => updateMuxField('xudpProxyUDP443', val)}
-                            options={[
-                                { value: "reject", label: "Reject", description: "Recommended" },
-                                { value: "allow", label: "Allow" },
-                                { value: "skip", label: "Skip" },
-                            ]}
+                    )}
+                </div>
+
+                {/* Mux */}
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <div className="flex justify-between items-center mb-3">
+                        <h4 className="label-xs text-slate-400">Mux (Multiplexing)</h4>
+                        <Switch
+                            checked={outbound.mux?.enabled || false}
+                            onChange={checked => updateMux(checked)}
                         />
                     </div>
-                )}
-                {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">Enable to reduce handshake latency.</p>}
+                    
+                    {outbound.mux?.enabled && (
+                        <div className="space-y-3 animate-in fade-in">
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="label-xs">TCP Concurrency</label>
+                                    <input type="number" className="input-base" 
+                                        value={outbound.mux.concurrency || 8}
+                                        onChange={e => updateMuxField('concurrency', parseInt(e.target.value))}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label-xs">XUDP Concurrency</label>
+                                    <input type="number" className="input-base" 
+                                        value={outbound.mux.xudpConcurrency || 8}
+                                        onChange={e => updateMuxField('xudpConcurrency', parseInt(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+                            
+                            <Select 
+                                label="UDP 443 Strategy (QUIC)"
+                                value={outbound.mux.xudpProxyUDP443 || "reject"}
+                                onChange={val => updateMuxField('xudpProxyUDP443', val)}
+                                options={[
+                                    { value: "reject", label: "Reject", description: "Recommended" },
+                                    { value: "allow", label: "Allow" },
+                                    { value: "skip", label: "Skip" },
+                                ]}
+                            />
+                        </div>
+                    )}
+                    {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">Enable to reduce handshake latency.</p>}
+                </div>
             </div>
+
+            {/* Extended Outbound Options */}
+            <ExtendedSection
+                title="Extended Outbound Settings"
+                description="Target domain resolution strategy and advanced proxy routing."
+                hasActiveValues={hasExtendedValues}
+                activeCount={hasExtendedValues ? 1 : 0}
+            >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Select
+                        label="Target Domain Strategy (targetStrategy)"
+                        hint="Resolution behavior when connecting to target domain via this outbound."
+                        value={outbound.targetStrategy || "AsIs"}
+                        onChange={val => onChange('targetStrategy', val === "AsIs" ? undefined : val)}
+                        options={[
+                            { value: "AsIs", label: "AsIs (Default)", description: "Leave domain as is without prior resolution" },
+                            { value: "UseIP", label: "UseIP", description: "Resolve and connect via IP" },
+                            { value: "UseIPv4", label: "UseIPv4", description: "Resolve and prefer IPv4 only" },
+                            { value: "UseIPv6", label: "UseIPv6", description: "Resolve and prefer IPv6 only" },
+                            { value: "UseIPv4v6", label: "UseIPv4v6", description: "Prefer IPv4, fallback to IPv6" },
+                            { value: "UseIPv6v4", label: "UseIPv6v4", description: "Prefer IPv6, fallback to IPv4" },
+                            { value: "ForceIP", label: "ForceIP", description: "Enforce IP connection (fails if unresolved)" },
+                            { value: "ForceIPv4", label: "ForceIPv4", description: "Enforce IPv4 connection" },
+                            { value: "ForceIPv6", label: "ForceIPv6", description: "Enforce IPv6 connection" },
+                            { value: "ForceIPv4v6", label: "ForceIPv4v6", description: "Enforce IPv4, fallback to IPv6" },
+                            { value: "ForceIPv6v4", label: "ForceIPv6v4", description: "Enforce IPv6, fallback to IPv4" },
+                        ]}
+                    />
+                </div>
+            </ExtendedSection>
         </div>
     );
 };

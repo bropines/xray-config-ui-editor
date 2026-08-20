@@ -160,60 +160,163 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 />
                 </div>
 
-                {/* EXTENDED TCP TIMEOUTS & WINDOWS */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-800/50">
-                    <div className="col-span-full">
-                        <label className="label-xs text-slate-500">Low-level TCP Tuning (Leave empty for OS defaults)</label>
+                {/* EXTENDED SOCKOPT & HAPPY EYEBALLS */}
+                <ExtendedSection
+                    title="Extended Socket & Kernel Options"
+                    description="Happy Eyeballs (RFC 8305 Dual-Stack), TCP window clamping, and penetrate."
+                    hasActiveValues={
+                        !!local.happyEyeballs ||
+                        !!local.penetrate ||
+                        !!local.addressPortStrategy ||
+                        !!local.tcpKeepAliveIdle ||
+                        !!local.tcpKeepAliveInterval ||
+                        !!local.tcpUserTimeout ||
+                        !!local.tcpMaxSeg ||
+                        !!local.tcpCongestion ||
+                        !!local.tcpWindowClamp
+                    }
+                >
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label="Address Port Strategy"
+                                value={local.addressPortStrategy || "none"}
+                                onChange={val => update('addressPortStrategy', val === "none" ? undefined : val)}
+                                options={[
+                                    { value: "none", label: "None (Default)" },
+                                    { value: "same", label: "Same (Reuse)" },
+                                    { value: "different", label: "Different" },
+                                    { value: "random", label: "Random" },
+                                ]}
+                            />
+
+                            <div className="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                                        Penetrate Sockopt
+                                        <Help>Applies upload stream socket options to the downstream connection.</Help>
+                                    </label>
+                                    <p className="text-[10px] text-slate-500">Inherit socket options across streams</p>
+                                </div>
+                                <Switch
+                                    checked={local.penetrate || false}
+                                    onChange={checked => update('penetrate', checked ? true : undefined)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Happy Eyeballs (RFC 8305) */}
+                        <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                                        Happy Eyeballs (RFC 8305 Dual-Stack)
+                                        <Help>Simultaneously attempts IPv4 and IPv6 connections and selects the fastest path.</Help>
+                                    </span>
+                                    <p className="text-[10px] text-slate-500">Fast fallback between IPv4 & IPv6</p>
+                                </div>
+                                <Switch
+                                    checked={!!local.happyEyeballs}
+                                    onChange={checked => update('happyEyeballs', checked ? { tryDelayMs: 250, prioritizeIPv6: true } : undefined)}
+                                />
+                            </div>
+
+                            {local.happyEyeballs && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-slate-800/60 animate-in fade-in">
+                                    <div>
+                                        <label className="label-xs text-[10px]">Try Delay (ms)</label>
+                                        <input
+                                            type="number"
+                                            className="input-base font-mono text-xs"
+                                            placeholder="250"
+                                            value={local.happyEyeballs.tryDelayMs ?? ""}
+                                            onChange={e => update('happyEyeballs', { ...local.happyEyeballs, tryDelayMs: parseInt(e.target.value) || undefined })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="label-xs text-[10px]">Interleave</label>
+                                        <input
+                                            type="number"
+                                            className="input-base font-mono text-xs"
+                                            placeholder="1"
+                                            value={local.happyEyeballs.interleave ?? ""}
+                                            onChange={e => update('happyEyeballs', { ...local.happyEyeballs, interleave: parseInt(e.target.value) || undefined })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="label-xs text-[10px]">Max Concurrent Try</label>
+                                        <input
+                                            type="number"
+                                            className="input-base font-mono text-xs"
+                                            placeholder="2"
+                                            value={local.happyEyeballs.maxConcurrentTry ?? ""}
+                                            onChange={e => update('happyEyeballs', { ...local.happyEyeballs, maxConcurrentTry: parseInt(e.target.value) || undefined })}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col justify-center">
+                                        <label className="label-xs text-[10px] mb-1.5">Prioritize IPv6</label>
+                                        <Switch
+                                            checked={local.happyEyeballs.prioritizeIPv6 ?? true}
+                                            onChange={checked => update('happyEyeballs', { ...local.happyEyeballs, prioritizeIPv6: checked })}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* TCP Low-level tuning */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-slate-800/60">
+                            <div>
+                                <label className="label-xs text-[10px]">TCP Keep-Alive Idle (s)</label>
+                                <input type="number" className="input-base font-mono text-xs"
+                                    placeholder="300"
+                                    value={local.tcpKeepAliveIdle || ""}
+                                    onChange={e => update('tcpKeepAliveIdle', parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <label className="label-xs text-[10px]">TCP Keep-Alive Interval</label>
+                                <input type="number" className="input-base font-mono text-xs"
+                                    placeholder="0"
+                                    value={local.tcpKeepAliveInterval || ""}
+                                    onChange={e => update('tcpKeepAliveInterval', parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <label className="label-xs text-[10px]">TCP User Timeout (ms)</label>
+                                <input type="number" className="input-base font-mono text-xs"
+                                    placeholder="10000"
+                                    value={local.tcpUserTimeout || ""}
+                                    onChange={e => update('tcpUserTimeout', parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <label className="label-xs text-[10px]">TCP Max Segment (MTU)</label>
+                                <input type="number" className="input-base font-mono text-xs"
+                                    placeholder="1440"
+                                    value={local.tcpMaxSeg || ""}
+                                    onChange={e => update('tcpMaxSeg', parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <label className="label-xs text-[10px]">TCP Congestion</label>
+                                <input type="text" className="input-base font-mono text-xs"
+                                    placeholder="bbr, cubic..."
+                                    value={local.tcpCongestion || ""}
+                                    onChange={e => update('tcpCongestion', e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="label-xs text-[10px]">TCP Window Clamp</label>
+                                <input type="number" className="input-base font-mono text-xs"
+                                    placeholder="600"
+                                    value={local.tcpWindowClamp || ""}
+                                    onChange={e => update('tcpWindowClamp', parseInt(e.target.value))}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label className="label-xs text-[10px]">TCP Keep-Alive Idle (s)</label>
-                        <input type="number" className="input-base font-mono text-xs"
-                            placeholder="300"
-                            value={local.tcpKeepAliveIdle || ""}
-                            onChange={e => update('tcpKeepAliveIdle', parseInt(e.target.value))}
-                        />
-                    </div>
-                    <div>
-                        <label className="label-xs text-[10px]">TCP Keep-Alive Interval</label>
-                        <input type="number" className="input-base font-mono text-xs"
-                            placeholder="0"
-                            value={local.tcpKeepAliveInterval || ""}
-                            onChange={e => update('tcpKeepAliveInterval', parseInt(e.target.value))}
-                        />
-                    </div>
-                    <div>
-                        <label className="label-xs text-[10px]">TCP User Timeout (ms)</label>
-                        <input type="number" className="input-base font-mono text-xs"
-                            placeholder="10000"
-                            value={local.tcpUserTimeout || ""}
-                            onChange={e => update('tcpUserTimeout', parseInt(e.target.value))}
-                        />
-                    </div>
-                    <div>
-                        <label className="label-xs text-[10px]">TCP Max Segment (MTU)</label>
-                        <input type="number" className="input-base font-mono text-xs"
-                            placeholder="1440"
-                            value={local.tcpMaxSeg || ""}
-                            onChange={e => update('tcpMaxSeg', parseInt(e.target.value))}
-                        />
-                    </div>
-                    <div>
-                        <label className="label-xs text-[10px]">TCP Congestion</label>
-                        <input type="text" className="input-base font-mono text-xs"
-                            placeholder="bbr, cubic..."
-                            value={local.tcpCongestion || ""}
-                            onChange={e => update('tcpCongestion', e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label className="label-xs text-[10px]">TCP Window Clamp</label>
-                        <input type="number" className="input-base font-mono text-xs"
-                            placeholder="600"
-                            value={local.tcpWindowClamp || ""}
-                            onChange={e => update('tcpWindowClamp', parseInt(e.target.value))}
-                        />
-                    </div>
-                </div>
+                </ExtendedSection>
             </div>
         </div>
     );
