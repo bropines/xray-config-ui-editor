@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.9] - 2026-08-20
+
+### Added
+- **Full Client System Emulation for Remnawave HWID**:
+  - Added OS (`x-device-os`), OS Version (`x-ver-os`), and Device Model (`x-device-model`) inputs to Harvester.
+  - Added **Auto-Detect System** button to instantly populate Windows/iOS/Android/macOS parameters.
+  - Enabled custom HWID pasting from existing clients (e.g. Throne / v2rayTun) to reuse existing device slots and bypass "Too many devices" 1-device limits.
+
 ## [1.0.8] - 2026-08-20
 
 ### Added

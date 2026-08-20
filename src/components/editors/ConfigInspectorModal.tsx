@@ -9,6 +9,9 @@ import { parseRawSubscriptionText } from '../../utils/link-parser';
 import { generateUUID } from '../../core/generators/crypto';
 
 const HWID_STORAGE_KEY = 'xray_editor_v2_hwid';
+const OS_STORAGE_KEY = 'xray_editor_v2_device_os';
+const VER_STORAGE_KEY = 'xray_editor_v2_ver_os';
+const MODEL_STORAGE_KEY = 'xray_editor_v2_device_model';
 
 const UA_PRESETS = [
     { value: "Happ/1.0.0", label: "Happ (iOS / Android)" },
@@ -21,6 +24,36 @@ const UA_PRESETS = [
     { value: "custom", label: "Custom User-Agent..." },
 ];
 
+const autoDetectSystemParams = () => {
+    const ua = navigator.userAgent;
+    let os = "Windows";
+    let ver = "10.0.26220";
+    let model = "PC";
+
+    if (/Windows/i.test(ua)) {
+        os = "Windows";
+        const match = ua.match(/Windows NT ([\d.]+)/);
+        ver = match ? match[1] : "10.0";
+        model = "Windows PC";
+    } else if (/Macintosh|Mac OS X/i.test(ua)) {
+        os = "macOS";
+        const match = ua.match(/Mac OS X ([\d_]+)/);
+        ver = match ? match[1].replace(/_/g, '.') : "14.0";
+        model = "Macintosh";
+    } else if (/Android/i.test(ua)) {
+        os = "Android";
+        const match = ua.match(/Android ([\d.]+)/);
+        ver = match ? match[1] : "14";
+        model = "Android Device";
+    } else if (/iPhone|iPad|iPod/i.test(ua)) {
+        os = "iOS";
+        const match = ua.match(/OS ([\d_]+)/);
+        ver = match ? match[1].replace(/_/g, '.') : "18.3";
+        model = "iPhone";
+    }
+    return { os, ver, model };
+};
+
 export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: { 
     onClose: () => void, 
     setModal: (m: any) => void,
@@ -32,6 +65,8 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
     const [selectedUa, setSelectedUa] = useState("Happ/1.0.0");
     const [customUa, setCustomUa] = useState("");
     const [showHwidSettings, setShowHwidSettings] = useState(false);
+    
+    // Remnawave system parameters
     const [hwid, setHwid] = useState(() => {
         const saved = localStorage.getItem(HWID_STORAGE_KEY);
         if (saved) return saved;
@@ -39,6 +74,10 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
         localStorage.setItem(HWID_STORAGE_KEY, newId);
         return newId;
     });
+    const [deviceOs, setDeviceOs] = useState(() => localStorage.getItem(OS_STORAGE_KEY) || "Windows");
+    const [verOs, setVerOs] = useState(() => localStorage.getItem(VER_STORAGE_KEY) || "10.0.26220");
+    const [deviceModel, setDeviceModel] = useState(() => localStorage.getItem(MODEL_STORAGE_KEY) || "MS-7E06/PRO Z790-P WIFI");
+
     const [isFetching, setIsFetching] = useState(false);
     const [parsedConfigs, setParsedConfigs] = useState<any[] | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -52,30 +91,35 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
         toast.info("Generated new HWID", { description: newId });
     };
 
+    const handleAutoDetect = () => {
+        const detected = autoDetectSystemParams();
+        setDeviceOs(detected.os);
+        setVerOs(detected.ver);
+        setDeviceModel(detected.model);
+        localStorage.setItem(OS_STORAGE_KEY, detected.os);
+        localStorage.setItem(VER_STORAGE_KEY, detected.ver);
+        localStorage.setItem(MODEL_STORAGE_KEY, detected.model);
+        toast.success("Detected system parameters", { description: `${detected.os} ${detected.ver} • ${detected.model}` });
+    };
+
     const handleFetchSub = async () => {
         if (!subUrl.trim()) return;
         setIsFetching(true);
         try {
             const targetUrl = subUrl.trim();
             const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
-            
-            const isAndroid = selectedUa.includes("Android") || selectedUa.includes("v2rayNG") || selectedUa.includes("NekoBox");
-            const isWindows = selectedUa.includes("Windows") || selectedUa.includes("ClashMeta") || selectedUa.includes("sing-box");
-            const deviceOs = isAndroid ? "Android" : isWindows ? "Windows" : "iOS";
-            const verOs = isAndroid ? "14" : isWindows ? "11" : "18.3";
-            const deviceModel = isAndroid ? "Pixel 9 Pro" : isWindows ? "PC" : "iPhone 16 Pro Max";
 
             const headers: Record<string, string> = {
                 "x-custom-user-agent": effectiveUa,
                 "User-Agent": effectiveUa,
-                "x-hwid": hwid,
-                "x-custom-x-hwid": hwid,
-                "x-device-os": deviceOs,
-                "x-custom-x-device-os": deviceOs,
-                "x-ver-os": verOs,
-                "x-custom-x-ver-os": verOs,
-                "x-device-model": deviceModel,
-                "x-custom-x-device-model": deviceModel,
+                "x-hwid": hwid.trim(),
+                "x-custom-x-hwid": hwid.trim(),
+                "x-device-os": deviceOs.trim(),
+                "x-custom-x-device-os": deviceOs.trim(),
+                "x-ver-os": verOs.trim(),
+                "x-custom-x-ver-os": verOs.trim(),
+                "x-device-model": deviceModel.trim(),
+                "x-custom-x-device-model": deviceModel.trim(),
                 "x-app-version": "1.0.0",
                 "x-custom-x-app-version": "1.0.0"
             };
@@ -84,7 +128,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
             if (!response.ok) {
                 if (response.status === 403 || response.status === 429) {
                     if (response.headers.get('x-hwid-max-devices-reached') === 'true' || response.headers.get('x-hwid-limit') === 'true') {
-                        throw new Error("Remnawave HWID device limit reached for this subscription.");
+                        throw new Error("Remnawave HWID device limit reached. Try using the HWID from your already active client (e.g. Throne).");
                     }
                 }
                 throw new Error(`HTTP ${response.status}`);
@@ -105,7 +149,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
             }
             
             setInputText(decoded);
-            toast.success("Subscription fetched successfully", { description: `HWID & UA: ${effectiveUa.split('/')[0]}` });
+            toast.success("Subscription fetched successfully", { description: `HWID: ${hwid.substring(0, 8)}...` });
         } catch (error: any) {
             toast.error("Fetch failed", { description: error.message });
         } finally {
@@ -243,45 +287,103 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                 </div>
 
                                 {showHwidSettings && (
-                                    <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2 animate-in fade-in">
+                                    <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3 animate-in fade-in">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                                                <Icon name="Fingerprint" className="text-purple-400" /> Remnawave Device HWID (x-hwid)
+                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                <Icon name="Fingerprint" className="text-purple-400 text-sm" /> Remnawave Device & System Parameters
                                             </span>
-                                            <button
-                                                type="button"
-                                                onClick={handleGenerateNewHwid}
-                                                className="text-[10px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-0.5 rounded border border-purple-500/40 transition-colors"
-                                            >
-                                                <Icon name="ArrowsClockwise" /> New HWID
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAutoDetect}
+                                                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-950/40 hover:bg-indigo-900/60 px-2 py-0.5 rounded-lg border border-indigo-500/40 transition-colors"
+                                                >
+                                                    <Icon name="Laptop" /> Auto-Detect
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleGenerateNewHwid}
+                                                    className="text-[10px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-0.5 rounded-lg border border-purple-500/40 transition-colors"
+                                                >
+                                                    <Icon name="ArrowsClockwise" /> New HWID
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-purple-200 outline-none focus:border-purple-500"
-                                                value={hwid}
-                                                onChange={e => {
-                                                    setHwid(e.target.value);
-                                                    localStorage.setItem(HWID_STORAGE_KEY, e.target.value);
-                                                }}
-                                                placeholder="UUID or 10-64 char alphanumeric string"
-                                            />
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                className="!py-1 !px-2.5 !text-[10px]"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(hwid);
-                                                    toast.success("HWID copied to clipboard");
-                                                }}
-                                                icon="Copy"
-                                            >
-                                                Copy
-                                            </Button>
+
+                                        {/* HWID Field */}
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-slate-400">Device HWID (x-hwid):</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-purple-200 outline-none focus:border-purple-500"
+                                                    value={hwid}
+                                                    onChange={e => {
+                                                        setHwid(e.target.value);
+                                                        localStorage.setItem(HWID_STORAGE_KEY, e.target.value);
+                                                    }}
+                                                    placeholder="UUID or 10-64 char alphanumeric string"
+                                                />
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="!py-1 !px-2.5 !text-[10px]"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(hwid);
+                                                        toast.success("HWID copied to clipboard");
+                                                    }}
+                                                    icon="Copy"
+                                                >
+                                                    Copy
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <p className="text-[9px] text-slate-500">
-                                            Remnawave panels bind subscriptions to this device identifier. If you hit a device limit, generate a new HWID or check active devices in panel.
+
+                                        {/* OS, Version, Model */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-400">Device OS (x-device-os):</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500"
+                                                    value={deviceOs}
+                                                    onChange={e => {
+                                                        setDeviceOs(e.target.value);
+                                                        localStorage.setItem(OS_STORAGE_KEY, e.target.value);
+                                                    }}
+                                                    placeholder="e.g. Windows, iOS, Android"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-400">OS Version (x-ver-os):</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500"
+                                                    value={verOs}
+                                                    onChange={e => {
+                                                        setVerOs(e.target.value);
+                                                        localStorage.setItem(VER_STORAGE_KEY, e.target.value);
+                                                    }}
+                                                    placeholder="e.g. 10.0.26220 or 18.3"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-400">Device Model (x-device-model):</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500"
+                                                    value={deviceModel}
+                                                    onChange={e => {
+                                                        setDeviceModel(e.target.value);
+                                                        localStorage.setItem(MODEL_STORAGE_KEY, e.target.value);
+                                                    }}
+                                                    placeholder="e.g. MS-7E06 / iPhone 16 Pro"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <p className="text-[9px] text-slate-500 pt-1 leading-relaxed">
+                                            💡 <b>Tip:</b> If your subscription has a strict 1-device limit, copy your existing HWID and OS from your active client (e.g. Throne / v2rayTun) above to fetch your real proxy nodes.
                                         </p>
                                     </div>
                                 )}
