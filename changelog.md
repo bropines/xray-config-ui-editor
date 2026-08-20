@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.10] - 2026-08-20
+
+### Added
+- **Interactive JsonEditor in Configuration Harvester**:
+  - Replaced plain text area with full CodeMirror `JsonEditor` featuring syntax highlighting, line numbers, and JSON formatting.
+  - Added automatic JSON beautification on remote fetch and a dedicated **Beautify JSON** button.
+- **Copy Analyzed Payload & Persistent Source Navigation**:
+  - Added **Copy Analyzed Response** button directly to the Harvester dashboard header to quickly copy raw responses/payloads without re-querying.
+  - Added **Source** button in the sidebar to inspect or edit the original payload without losing state.
+
 ## [1.0.9] - 2026-08-20
 
 ### Added

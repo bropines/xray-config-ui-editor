@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Select } from '../ui/Select';
+import { JsonEditor } from '../ui/JsonEditor';
 import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
 import { parseRawSubscriptionText } from '../../utils/link-parser';
@@ -147,6 +148,14 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                     decoded = rawText.trim();
                 }
             }
+
+            // Auto-beautify JSON if it is valid JSON
+            try {
+                if (decoded.startsWith('{') || decoded.startsWith('[')) {
+                    const parsed = JSON.parse(decoded);
+                    decoded = JSON.stringify(parsed, null, 2);
+                }
+            } catch (e) {}
             
             setInputText(decoded);
             toast.success("Subscription fetched successfully", { description: `HWID: ${hwid.substring(0, 8)}...` });
@@ -154,6 +163,25 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
             toast.error("Fetch failed", { description: error.message });
         } finally {
             setIsFetching(false);
+        }
+    };
+
+    const handleBeautifyInput = () => {
+        if (!inputText.trim()) return;
+        try {
+            const data = JSON.parse(inputText);
+            setInputText(JSON.stringify(data, null, 2));
+            toast.success("JSON beautified");
+        } catch {
+            try {
+                const configs = parseRawSubscriptionText(inputText);
+                if (configs && configs.length > 0) {
+                    setInputText(JSON.stringify(configs.length === 1 ? configs[0] : configs, null, 2));
+                    toast.success("Parsed & beautified as JSON");
+                }
+            } catch {
+                toast.error("Could not beautify: input is not valid JSON");
+            }
         }
     };
 
@@ -230,28 +258,28 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
         <Modal title="Config Harvester & Inspector" onClose={onClose} className="max-w-[95vw] 2xl:max-w-[1600px]" hideSave>
             <div className="h-[80vh] flex flex-col min-h-[600px]">
                 {!parsedConfigs ? (
-                    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-6 py-6">
-                        <div className="text-center space-y-3 shrink-0">
-                            <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto border border-indigo-500/20 shadow-inner">
-                                <Icon name="Briefcase" className="text-4xl text-indigo-400" />
+                    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-4 py-4 min-h-0">
+                        <div className="text-center space-y-2 shrink-0">
+                            <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/20 shadow-inner">
+                                <Icon name="Briefcase" className="text-3xl text-indigo-400" />
                             </div>
-                            <h3 className="text-2xl font-black text-white italic tracking-tight">Configuration Harvester</h3>
-                            <p className="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
+                            <h3 className="text-xl font-black text-white italic tracking-tight">Configuration Harvester</h3>
+                            <p className="text-slate-500 text-xs max-w-md mx-auto leading-relaxed">
                                 Paste raw proxy links (VLESS, VMess, SS, Trojan, WG), JSON configs, or fetch directly from a subscription URL.
                             </p>
                         </div>
 
                         {/* Subscription & User-Agent Section */}
-                        <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 space-y-3 shrink-0">
+                        <div className="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800/80 space-y-3 shrink-0">
                             <div className="flex flex-col md:flex-row gap-2">
                                 <input
                                     type="text"
-                                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono text-white outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm font-mono text-white outline-none focus:border-indigo-500 transition-all shadow-inner"
                                     placeholder="https://example.com/subscription..."
                                     value={subUrl}
                                     onChange={(e) => setSubUrl(e.target.value)}
                                 />
-                                <Button variant="secondary" className="px-6 rounded-xl border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 shadow-lg" onClick={handleFetchSub} disabled={!subUrl.trim() || isFetching} icon="CloudArrowDown">
+                                <Button variant="secondary" className="px-5 rounded-xl border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 shadow-lg" onClick={handleFetchSub} disabled={!subUrl.trim() || isFetching} icon="CloudArrowDown">
                                     {isFetching ? "Fetching..." : "Fetch Remote"}
                                 </Button>
                             </div>
@@ -390,16 +418,54 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                             </div>
                         </div>
 
-                        <div className="relative group flex-1 flex flex-col min-h-[300px]">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                            <textarea 
-                                className="flex-1 relative w-full bg-slate-950 border border-slate-800 rounded-2xl p-5 text-[12px] font-mono text-indigo-100 focus:border-indigo-500 outline-none resize-none custom-scroll shadow-2xl transition-all"
-                                placeholder="Paste raw proxy links (vless://, vmess://, ss://), JSON configuration, Base64 subscription, or WireGuard conf here..."
-                                value={inputText}
-                                onChange={e => setInputText(e.target.value)}
-                            />
+                        {/* JSON & Plaintext Editor Container */}
+                        <div className="flex-1 flex flex-col min-h-[300px] bg-slate-950 border border-slate-800/90 rounded-2xl overflow-hidden shadow-2xl">
+                            <div className="flex justify-between items-center px-4 py-2 bg-slate-900/80 border-b border-slate-800 text-xs shrink-0">
+                                <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                                    <Icon name="Code" className="text-indigo-400" /> Source Payload (JSON / Links / Base64)
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleBeautifyInput}
+                                        disabled={!inputText.trim()}
+                                        className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-950/40 hover:bg-indigo-900/60 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition-colors disabled:opacity-40"
+                                    >
+                                        <Icon name="MagicWand" /> Beautify JSON
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(inputText);
+                                            toast.success("Copied payload to clipboard");
+                                        }}
+                                        disabled={!inputText.trim()}
+                                        className="text-[11px] font-bold text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors disabled:opacity-40"
+                                    >
+                                        <Icon name="Copy" /> Copy
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setInputText("")}
+                                        disabled={!inputText.trim()}
+                                        className="text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-950/30 hover:bg-rose-900/40 px-2 py-1 rounded-lg border border-rose-900/50 transition-colors disabled:opacity-40"
+                                        title="Clear Input"
+                                    >
+                                        <Icon name="Trash" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex-1 min-h-0 relative">
+                                <JsonEditor
+                                    value={inputText}
+                                    onChange={setInputText}
+                                    schemaMode="full"
+                                    mode={inputText.trim().startsWith('{') || inputText.trim().startsWith('[') ? 'json' : 'plaintext'}
+                                />
+                            </div>
                         </div>
-                        <Button className="w-full py-4 shrink-0 text-base font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 rounded-2xl bg-indigo-600 hover:bg-indigo-500 border-none" onClick={handleParse} disabled={!inputText.trim()} icon="Lightning">
+
+                        <Button className="w-full py-3.5 shrink-0 text-sm font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 rounded-2xl bg-indigo-600 hover:bg-indigo-500 border-none" onClick={handleParse} disabled={!inputText.trim()} icon="Lightning">
                             Analyze All Components
                         </Button>
                     </div>
@@ -407,14 +473,34 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                     <div className="flex-1 flex overflow-hidden gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Sidebar: Navigation */}
                         <div className="w-80 shrink-0 flex flex-col bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl">
-                            <div className="p-5 border-b border-slate-800/60 bg-slate-950/40 flex justify-between items-center">
+                            <div className="p-4 border-b border-slate-800/60 bg-slate-950/40 flex justify-between items-center">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Source Index</span>
                                     <span className="text-xs font-bold text-white mt-1">{parsedConfigs.length} Objects Found</span>
                                 </div>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400" onClick={() => setParsedConfigs(null)} title="Clear Data">
-                                    <Icon name="Trash" />
-                                </Button>
+                                <div className="flex items-center gap-1.5">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 px-2 text-[11px] font-bold bg-slate-800/50 hover:bg-slate-700 text-slate-300"
+                                        onClick={() => setParsedConfigs(null)}
+                                        title="Edit or view raw source input"
+                                    >
+                                        <Icon name="ArrowLeft" /> Source
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400"
+                                        onClick={() => {
+                                            setParsedConfigs(null);
+                                            setInputText("");
+                                        }}
+                                        title="Clear All"
+                                    >
+                                        <Icon name="Trash" />
+                                    </Button>
+                                </div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scroll p-3 space-y-2">
                                 {parsedConfigs.map((c, i) => (
@@ -461,7 +547,19 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex gap-2.5">
+                                    <Button
+                                        variant="secondary"
+                                        className="px-4 bg-slate-800 border-slate-700 text-xs font-bold hover:bg-slate-700"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(inputText);
+                                            toast.success("Copied analyzed source payload to clipboard");
+                                        }}
+                                        icon="Copy"
+                                        title="Copy raw response/input that was analyzed"
+                                    >
+                                        Copy Analyzed Response
+                                    </Button>
                                     <Button variant="secondary" className="px-4 bg-slate-800 border-slate-700 text-xs font-bold" onClick={() => openSectionJson('full', 'Source JSON', selectedConfig)} icon="Code">
                                         RAW JSON
                                     </Button>
