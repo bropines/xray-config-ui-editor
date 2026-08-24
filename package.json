@@ -48,7 +48,7 @@
     "dagre": "^0.8.5",
     "diff": "^9.0.0",
     "immer": "^11.1.3",
-    "protobufjs": "^8.0.3",
+    "protobufjs": "^8.7.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "sonner": "^2.0.8",
