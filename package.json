@@ -41,7 +41,7 @@
     "@platformos/lang-jsonc": "^0.0.17",
     "@types/dagre": "^0.7.53",
     "@types/diff": "^7.0.2",
-    "@xyflow/react": "^12.10.0",
+    "@xyflow/react": "^12.11.3",
     "ajv": "^8.20.0",
     "clsx": "^2.1.1",
     "comment-json": "^5.0.0",
