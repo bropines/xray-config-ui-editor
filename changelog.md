@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.12] - 2026-08-24
+
+### Fixed
+- **Resolved QuotaExceededError via IndexedDB Storage Engine**:
+  - Migrated Zustand persist storage from `localStorage` to **IndexedDB** (`idbStorage`), eliminating the ~5MB synchronous browser quota limit when storing large configurations, multiple profiles, and version snapshots.
+  - Added seamless automatic migration from legacy `localStorage` to IndexedDB upon startup, safely freeing occupied quota in the browser.
+  - Fixed state mutation in `setHistoryLimit` to properly prune per-profile history entries in `state.histories`.
+
 ## [1.0.11] - 2026-08-20
 
 ### Security
