@@ -8,6 +8,7 @@ import type { RemnawaveProfile } from '../core/types';
 import { XrayConfigSchema } from '../core/xray/schemas';
 import { diffLines } from 'diff';
 import { parseJsonc, stringifyJsonc } from '../utils/jsonc';
+import { idbStorage } from '../utils/indexedDbStorage';
 
 // Re-export types from core for backward compatibility
 export type {
@@ -371,7 +372,11 @@ export const useConfigStore = create(
                 const clamped = Math.max(10, Math.min(1000, limit));
                 set(produce((state) => {
                     state.historyLimit = clamped;
-                    state.history = state.history.slice(0, clamped);
+                    Object.keys(state.histories).forEach((k) => {
+                        if (Array.isArray(state.histories[k])) {
+                            state.histories[k] = state.histories[k].slice(0, clamped);
+                        }
+                    });
                 }));
             },
 
@@ -746,7 +751,7 @@ export const useConfigStore = create(
         }),
         {
             name: 'xray-config-storage',
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => idbStorage),
             partialize: (state) => ({ 
                 config: state.config,
                 rawConfigText: state.rawConfigText,
