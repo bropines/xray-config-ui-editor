@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm, ExtendedSection } from '../../ui';
-import { validateRule, lintRule } from '../../../core/validators';
 import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
 import { parseJsonc } from '../../../utils/jsonc';
 import { useConfigStore } from '../../../store/configStore';
+import { useRuleEditor } from '../../../hooks/useRuleEditor';
 
 const AttrsEditor = ({ value, onChange }: any) => {
     const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
@@ -67,48 +67,22 @@ export const RuleEditor = ({
     const [localRawText, setLocalRawText] = useState<string | null>(null);
     const rawConfigText = useConfigStore(state => state.rawConfigText);
 
-    // Calculate duplicate matchers across all rules (flagging all conflicting rules)
-    const duplicateWarnings = React.useMemo(() => {
-        if (!allRules || !rule) return [];
-        const currentIdx = rule.originalIndex !== undefined ? rule.originalIndex : allRules.findIndex((r: any) => r === rule);
-        if (currentIdx < 0) return [];
-
-        const itemWarnings: Array<{ matcher: string; otherRuleName: string; otherIndex: number }> = [];
-        const domainToRules = new Map<string, Array<{ index: number; name: string }>>();
-        const ipToRules = new Map<string, Array<{ index: number; name: string }>>();
-
-        allRules.forEach((r: any, i: number) => {
-            const rName = r.ruleTag || r.outboundTag || r.balancerTag || `Rule #${i + 1}`;
-            if (Array.isArray(r.domain)) {
-                r.domain.forEach((d: string) => d && typeof d === 'string' && (domainToRules.has(d.trim().toLowerCase()) ? domainToRules.get(d.trim().toLowerCase())!.push({ index: i, name: rName }) : domainToRules.set(d.trim().toLowerCase(), [{ index: i, name: rName }])));
-            }
-            if (Array.isArray(r.ip)) {
-                r.ip.forEach((ip: string) => ip && typeof ip === 'string' && (ipToRules.has(ip.trim().toLowerCase()) ? ipToRules.get(ip.trim().toLowerCase())!.push({ index: i, name: rName }) : ipToRules.set(ip.trim().toLowerCase(), [{ index: i, name: rName }])));
-            }
-        });
-
-        if (Array.isArray(rule.domain)) {
-            rule.domain.forEach((d: string) => {
-                if (!d || typeof d !== 'string') return;
-                const matches = domainToRules.get(d.trim().toLowerCase()) || [];
-                matches.filter(m => m.index !== currentIdx).forEach(m => {
-                    itemWarnings.push({ matcher: d, otherRuleName: m.name, otherIndex: m.index });
-                });
-            });
-        }
-
-        if (Array.isArray(rule.ip)) {
-            rule.ip.forEach((ip: string) => {
-                if (!ip || typeof ip !== 'string') return;
-                const matches = ipToRules.get(ip.trim().toLowerCase()) || [];
-                matches.filter(m => m.index !== currentIdx).forEach(m => {
-                    itemWarnings.push({ matcher: ip, otherRuleName: m.name, otherIndex: m.index });
-                });
-            });
-        }
-
-        return itemWarnings;
-    }, [rule, allRules]);
+    const {
+        duplicateWarnings,
+        update,
+        handleAutofixMatchers,
+        handleAutofixCase,
+        errors,
+        warnings,
+        hasMissingMatchers,
+        missingTarget,
+        invalidDomains,
+        invalidIPs,
+        warnDomains,
+        warnIPs,
+        currentTarget,
+        errorRecord,
+    } = useRuleEditor(rule, onChange, allRules);
 
     if (!rule) {
         return (
@@ -139,58 +113,6 @@ export const RuleEditor = ({
             </div>
         );
     }
-
-    const update = (field: string, val: any) => {
-        const newRule = { ...rule };
-        if (val === undefined || val === "" || (Array.isArray(val) && val.length === 0)) {
-            delete newRule[field];
-        } else {
-            newRule[field] = val;
-        }
-        if (field === 'outboundTag') delete newRule.balancerTag;
-        if (field === 'balancerTag') delete newRule.outboundTag;
-        onChange(newRule);
-    };
-
-    const handleAutofixMatchers = () => onChange({ ...rule, network: "tcp,udp" });
-    const handleAutofixCase = () => onChange({
-        ...rule,
-        ...(rule.domain ? { domain: rule.domain.map((d: string) => d.toLowerCase()) } : {}),
-        ...(rule.ip ? { ip: rule.ip.map((ip: string) => ip.toLowerCase()) } : {}),
-    });
-
-    const errors = validateRule(rule);
-    const warnings = lintRule(rule);
-
-    const hasMissingMatchers = errors.some((e: any) => e.field === 'matchers');
-    const missingTarget = errors.some((e: any) => e.field === 'target');
-
-    const invalidDomains = errors
-        .filter((e: any) => e.field.startsWith('domain_'))
-        .map((e: any) => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
-        .filter((v): v is string => v !== undefined);
-
-    const invalidIPs = errors
-        .filter((e: any) => e.field.startsWith('ip_'))
-        .map((e: any) => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
-        .filter((v): v is string => v !== undefined);
-
-    const warnDomains = warnings
-        .filter((e: any) => e.field.startsWith('domain_'))
-        .map((e: any) => (rule.domain || [])[parseInt(e.field.replace('domain_', ''), 10)] as string | undefined)
-        .filter((v): v is string => v !== undefined);
-
-    const warnIPs = warnings
-        .filter((e: any) => e.field.startsWith('ip_'))
-        .map((e: any) => (rule.ip || [])[parseInt(e.field.replace('ip_', ''), 10)] as string | undefined)
-        .filter((v): v is string => v !== undefined);
-
-    const currentTarget = rule.balancerTag ? `bal:${rule.balancerTag}` : (rule.outboundTag || "");
-
-    const errorRecord: Record<string, string> = {};
-    errors.forEach((e: any) => {
-        errorRecord[e.field] = e.message;
-    });
 
     return (
         <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full relative">
