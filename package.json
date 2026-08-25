@@ -22,7 +22,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "bun test",
-    "schema:generate": "node scripts/generate-xray-schema.cjs"
+    "schema:generate": "node scripts/generate-xray-schema.cjs",
+    "schema:diff": "node scripts/xray-schema-diff.cjs",
+    "schema:sync": "node scripts/xray-schema-diff.cjs --write-lock"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",

@@ -39,6 +39,9 @@ export type { RadioGroupProps, RadioOption } from './RadioGroup';
 export { Badge } from './Badge';
 export type { BadgeProps, BadgeVariant } from './Badge';
 
+export { ExperimentalBadge } from './ExperimentalBadge';
+export type { ExperimentalBadgeProps } from './ExperimentalBadge';
+
 export { Divider } from './Divider';
 export type { DividerProps } from './Divider';
 

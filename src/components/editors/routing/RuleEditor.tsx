@@ -438,6 +438,11 @@ export const RuleEditor = ({
                                         label: 'Process Name',
                                         help: 'Process name match list.',
                                         placeholder: 'e.g. curl, self/'
+                                    },
+                                    localOS: {
+                                        label: 'Local OS (Experimental)',
+                                        help: 'Matches the OS the Xray process runs on (e.g. windows, linux, darwin). Landed on xray-core main 2026-08-12 (commit a12801c1) — not in a tagged release yet.',
+                                        placeholder: 'e.g. windows, linux'
                                     }
                                 }}
                             />

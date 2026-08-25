@@ -140,20 +140,16 @@
       "description": "Int32Range deserializes from \"1-2\" or 1, so can deserialize from both int and number.\nNegative integers can be passed as sentinel values, but do not parse as ranges.\nValue will be exchanged if From > To, use .Left and .Right to get original value if need.",
       "properties": {
         "Left": {
-          "type": "integer",
-          "description": "Int32Range deserializes from \"1-2\" or 1, so can deserialize from both int and number.\nNegative integers can be passed as sentinel values, but do not parse as ranges.\nValue will be exchanged if From > To, use .Left and .Right to get original value if need."
+          "type": "integer"
         },
         "Right": {
-          "type": "integer",
-          "description": "Int32Range deserializes from \"1-2\" or 1, so can deserialize from both int and number.\nNegative integers can be passed as sentinel values, but do not parse as ranges.\nValue will be exchanged if From > To, use .Left and .Right to get original value if need."
+          "type": "integer"
         },
         "From": {
-          "type": "integer",
-          "description": "Int32Range deserializes from \"1-2\" or 1, so can deserialize from both int and number.\nNegative integers can be passed as sentinel values, but do not parse as ranges.\nValue will be exchanged if From > To, use .Left and .Right to get original value if need."
+          "type": "integer"
         },
         "To": {
-          "type": "integer",
-          "description": "Int32Range deserializes from \"1-2\" or 1, so can deserialize from both int and number.\nNegative integers can be passed as sentinel values, but do not parse as ranges.\nValue will be exchanged if From > To, use .Left and .Right to get original value if need."
+          "type": "integer"
         }
       },
       "additionalProperties": false
@@ -289,43 +285,34 @@
         },
         "clientIp": {
           "type": "string",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "description": "IP Address or Domain Name"
         },
         "tag": {
-          "type": "string",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "string"
         },
         "queryStrategy": {
-          "type": "string",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "string"
         },
         "disableCache": {
-          "type": "boolean",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "boolean"
         },
         "serveStale": {
-          "type": "boolean",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "boolean"
         },
         "serveExpiredTTL": {
-          "type": "integer",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "integer"
         },
         "disableFallback": {
-          "type": "boolean",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "boolean"
         },
         "disableFallbackIfMatch": {
-          "type": "boolean",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "boolean"
         },
         "enableParallelQuery": {
-          "type": "boolean",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "boolean"
         },
         "useSystemHosts": {
-          "type": "boolean",
-          "description": "DNSConfig is a JSON serializable object for dns.Config"
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -434,7 +421,11 @@
           "type": "array",
           "items": {
             "type": "integer"
-          }
+          },
+          "description": "todo: remove legacy"
+        },
+        "remove": {
+          "$ref": "#/definitions/legacy"
         }
       },
       "additionalProperties": false
@@ -936,7 +927,8 @@
           }
         },
         "pingConfig": {
-          "$ref": "#/definitions/healthCheckSettings"
+          "$ref": "#/definitions/healthCheckSettings",
+          "description": "health check settings"
         }
       },
       "additionalProperties": false
@@ -1051,12 +1043,9 @@
       "description": "StrategyConfig represents a strategy config",
       "properties": {
         "type": {
-          "type": "string",
-          "description": "StrategyConfig represents a strategy config"
+          "type": "string"
         },
-        "settings": {
-          "description": "StrategyConfig represents a strategy config"
-        }
+        "settings": {}
       },
       "additionalProperties": false
     },
@@ -1110,27 +1099,17 @@
     "RouterRule": {
       "type": "object",
       "properties": {
-        "ruleTag": { "type": "string" },
-        "type": { "type": "string" },
-        "domain": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "ip": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "port": { "anyOf": [{ "type": "string" }, { "type": "number" }, { "type": "array", "items": { "anyOf": [{ "type": "string" }, { "type": "number" }] } }] },
-        "sourcePort": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
-        "network": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "source": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "user": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "inboundTag": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "protocol": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "attrs": { "type": "object", "additionalProperties": true },
-        "outboundTag": { "type": "string" },
-        "balancerTag": { "type": "string" },
-        "vlessRoute": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
-        "localIP": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "localPort": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
-        "process": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-        "webhook": { "type": "object", "additionalProperties": true }
+        "ruleTag": {
+          "type": "string"
+        },
+        "outboundTag": {
+          "type": "string"
+        },
+        "balancerTag": {
+          "type": "string"
+        }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "WebhookRuleConfig": {
       "type": "object",
@@ -1336,6 +1315,19 @@
             }
           ]
         },
+        "localOS": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
         "webhook": {
           "$ref": "#/definitions/WebhookRuleConfig"
         }
@@ -1354,7 +1346,8 @@
           "type": "array",
           "items": {
             "type": "integer"
-          }
+          },
+          "description": "weight settings"
         },
         "baselines": {
           "type": "array",
@@ -1368,10 +1361,12 @@
               }
             ],
             "description": "Port/Duration range or string representation"
-          }
+          },
+          "description": "ping rtt baselines"
         },
         "expected": {
-          "type": "integer"
+          "type": "integer",
+          "description": "expected nodes count to select"
         },
         "maxRTT": {
           "anyOf": [
@@ -1382,10 +1377,11 @@
               "type": "string"
             }
           ],
-          "description": "Port/Duration range or string representation"
+          "description": "max acceptable rtt, filter away high delay nodes. default 0"
         },
         "tolerance": {
-          "type": "integer"
+          "type": "integer",
+          "description": "acceptable failure rate"
         }
       },
       "additionalProperties": false
@@ -1395,12 +1391,10 @@
       "description": "healthCheckSettings holds settings for health Checker",
       "properties": {
         "destination": {
-          "type": "string",
-          "description": "healthCheckSettings holds settings for health Checker"
+          "type": "string"
         },
         "connectivity": {
-          "type": "string",
-          "description": "healthCheckSettings holds settings for health Checker"
+          "type": "string"
         },
         "interval": {
           "anyOf": [
@@ -1411,11 +1405,10 @@
               "type": "string"
             }
           ],
-          "description": "healthCheckSettings holds settings for health Checker"
+          "description": "Port/Duration range or string representation"
         },
         "sampling": {
-          "type": "integer",
-          "description": "healthCheckSettings holds settings for health Checker"
+          "type": "integer"
         },
         "timeout": {
           "anyOf": [
@@ -1426,11 +1419,10 @@
               "type": "string"
             }
           ],
-          "description": "healthCheckSettings holds settings for health Checker"
+          "description": "Port/Duration range or string representation"
         },
         "httpMethod": {
-          "type": "string",
-          "description": "healthCheckSettings holds settings for health Checker"
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -1943,6 +1935,43 @@
       },
       "additionalProperties": false
     },
+    "XMC": {
+      "type": "object",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/XMCProfile"
+          }
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "XMCProfile": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Resolve the UUID by username, then request the session profile with\nunsigned=false. Client and server must use the same signed profile."
+        },
+        "uuid": {
+          "type": "string"
+        },
+        "texturesValue": {
+          "type": "string"
+        },
+        "texturesSignature": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "Xicmp": {
       "type": "object",
       "properties": {
@@ -2126,7 +2155,8 @@
           "type": "string"
         },
         "transportLayer": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "TransportLayerProxy: For compatibility."
         }
       },
       "additionalProperties": false
@@ -2806,27 +2836,22 @@
       "properties": {
         "address": {
           "type": "string",
-          "description": "TrojanServerTarget is configuration of a single trojan server"
+          "description": "IP Address or Domain Name"
         },
         "port": {
-          "type": "integer",
-          "description": "TrojanServerTarget is configuration of a single trojan server"
+          "type": "integer"
         },
         "level": {
-          "type": "integer",
-          "description": "TrojanServerTarget is configuration of a single trojan server"
+          "type": "integer"
         },
         "email": {
-          "type": "string",
-          "description": "TrojanServerTarget is configuration of a single trojan server"
+          "type": "string"
         },
         "password": {
-          "type": "string",
-          "description": "TrojanServerTarget is configuration of a single trojan server"
+          "type": "string"
         },
         "flow": {
-          "type": "string",
-          "description": "TrojanServerTarget is configuration of a single trojan server"
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -2837,34 +2862,28 @@
       "properties": {
         "address": {
           "type": "string",
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          "description": "IP Address or Domain Name"
         },
         "port": {
-          "type": "integer",
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          "type": "integer"
         },
         "level": {
-          "type": "integer",
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          "type": "integer"
         },
         "email": {
-          "type": "string",
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          "type": "string"
         },
         "password": {
-          "type": "string",
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          "type": "string"
         },
         "flow": {
-          "type": "string",
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          "type": "string"
         },
         "servers": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/TrojanServerTarget"
-          },
-          "description": "TrojanClientConfig is configuration of trojan servers"
+          }
         }
       },
       "additionalProperties": false
@@ -2874,27 +2893,20 @@
       "description": "TrojanInboundFallback is fallback configuration",
       "properties": {
         "name": {
-          "type": "string",
-          "description": "TrojanInboundFallback is fallback configuration"
+          "type": "string"
         },
         "alpn": {
-          "type": "string",
-          "description": "TrojanInboundFallback is fallback configuration"
+          "type": "string"
         },
         "path": {
-          "type": "string",
-          "description": "TrojanInboundFallback is fallback configuration"
+          "type": "string"
         },
         "type": {
-          "type": "string",
-          "description": "TrojanInboundFallback is fallback configuration"
+          "type": "string"
         },
-        "dest": {
-          "description": "TrojanInboundFallback is fallback configuration"
-        },
+        "dest": {},
         "xver": {
-          "type": "integer",
-          "description": "TrojanInboundFallback is fallback configuration"
+          "type": "integer"
         }
       },
       "additionalProperties": false
@@ -2904,20 +2916,16 @@
       "description": "TrojanUserConfig is user configuration",
       "properties": {
         "password": {
-          "type": "string",
-          "description": "TrojanUserConfig is user configuration"
+          "type": "string"
         },
         "level": {
-          "type": "integer",
-          "description": "TrojanUserConfig is user configuration"
+          "type": "integer"
         },
         "email": {
-          "type": "string",
-          "description": "TrojanUserConfig is user configuration"
+          "type": "string"
         },
         "flow": {
-          "type": "string",
-          "description": "TrojanUserConfig is user configuration"
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -2930,22 +2938,19 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/TrojanUserConfig"
-          },
-          "description": "TrojanServerConfig is Inbound configuration"
+          }
         },
         "clients": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/TrojanUserConfig"
-          },
-          "description": "TrojanServerConfig is Inbound configuration"
+          }
         },
         "fallbacks": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/TrojanInboundFallback"
-          },
-          "description": "TrojanServerConfig is Inbound configuration"
+          }
         }
       },
       "additionalProperties": false
@@ -2954,6 +2959,9 @@
       "type": "object",
       "properties": {
         "name": {
+          "type": "string"
+        },
+        "desc": {
           "type": "string"
         },
         "mtu": {
@@ -3287,6 +3295,12 @@
         },
         "domainStrategy": {
           "type": "string"
+        },
+        "remoteDNS": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
@@ -3435,7 +3449,11 @@
       "properties": {
         "transport": {
           "type": "object",
-          "additionalProperties": {}
+          "additionalProperties": {},
+          "description": "Deprecated: Global transport config is no longer used\nleft for returning error"
+        },
+        "env": {
+          "$ref": "#/definitions/EnvConfig"
         },
         "log": {
           "$ref": "#/definitions/LogConfig"

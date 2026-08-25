@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { FormField } from '../../ui/FormField';
+import { ExperimentalBadge } from '../../ui/ExperimentalBadge';
 import { generateWarpAccount } from '../../../core/generators';
 import { useConfigStore } from '../../../store/configStore';
 
@@ -207,6 +208,17 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                 />
                 <FormField label="Workers" help="Number of concurrent workers. Default is CPU core count.">
                     <input type="number" className="input-base h-[42px]" placeholder="Auto" value={settings.workers || ""} onChange={e => update('workers', parseInt(e.target.value) || 0)} />
+                </FormField>
+                <FormField
+                    label={<span className="flex items-center gap-2">Remote DNS <ExperimentalBadge since="main, 25 Aug 2026" commit="c7e569b0" /></span>}
+                    help="DNS server(s) resolved through the WireGuard tunnel itself (not Xray's DNS module) — comma-separated. Useful when the peer's network only resolves internal names."
+                >
+                    <input
+                        className="input-base font-mono"
+                        placeholder="1.1.1.1, 1.0.0.1"
+                        value={(settings.remoteDNS || []).join(', ')}
+                        onChange={e => update('remoteDNS', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+                    />
                 </FormField>
             </div>
         </div>

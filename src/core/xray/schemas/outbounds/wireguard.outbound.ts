@@ -34,4 +34,12 @@ export const WireguardOutboundSettingsSchema = z.object({
   workers: z.number().int().optional(),
   /** Domain resolution strategy for endpoints and proxied traffic */
   domainStrategy: WireguardDomainStrategySchema.optional(),
+  /**
+   * EXPERIMENTAL — not in a tagged Xray-core release yet (landed on main
+   * 2026-08-25, commit c7e569b0, "WireGuard outbound: Add `remoteDNS` &
+   * honor TTL"). DNS server(s) the WireGuard tunnel itself resolves through,
+   * distinct from the outer Xray DNS module — useful when the WG peer's
+   * network has internal-only DNS. json:"remoteDNS" -> []string.
+   */
+  remoteDNS: z.array(z.string()).optional(),
 }).passthrough();
