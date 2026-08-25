@@ -24,7 +24,24 @@ function getDB(): Promise<IDBDatabase> {
                 };
 
                 request.onsuccess = () => {
-                    resolve(request.result);
+                    const db = request.result;
+                    // The cached connection can go stale without us noticing:
+                    // another tab upgrading the DB version, or the browser
+                    // force-closing it (private-mode eviction, etc). Without
+                    // these handlers every subsequent getItem/setItem call
+                    // would silently fail inside its own try/catch and fall
+                    // back to the localStorage quota we migrated away from —
+                    // just later, and with only a console warning to show for it.
+                    db.onversionchange = () => {
+                        console.warn('[Storage] IndexedDB version change detected elsewhere, closing this connection.');
+                        db.close();
+                        dbPromise = null;
+                    };
+                    db.onclose = () => {
+                        console.warn('[Storage] IndexedDB connection closed unexpectedly.');
+                        dbPromise = null;
+                    };
+                    resolve(db);
                 };
 
                 request.onerror = () => {

@@ -28,24 +28,34 @@ export class RemnawaveClient {
             headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
         });
 
-        if (res.status === 204 || res.status === 304) return null;
-
         const text = await res.text();
-        if (!text || text.trim() === '') return null;
 
-        let data: any;
-        try {
-            data = JSON.parse(text);
-        } catch {
-            throw new Error(`Invalid JSON received from API (${res.status})`);
-        }
-
+        // Empty body is only a legitimate "no content" response when the
+        // request actually succeeded. A failed request (5xx/4xx) with an
+        // empty body — e.g. a proxy timeout or a server crash — must still
+        // surface as an error, not be swallowed into `null` and reported as
+        // success by callers like saveToRemnawave().
         if (!res.ok) {
-            const errorMsg = data.message || data.error || 'Unknown error';
+            let errorMsg = res.statusText || 'Unknown error';
+            if (text && text.trim() !== '') {
+                try {
+                    const data = JSON.parse(text);
+                    errorMsg = data.message || data.error || errorMsg;
+                } catch {
+                    // Non-JSON error body (e.g. an HTML error page from a proxy) — fall back to statusText.
+                }
+            }
             throw new Error(`API Error ${res.status}: ${errorMsg}`);
         }
 
-        return data;
+        if (res.status === 204 || res.status === 304) return null;
+        if (!text || text.trim() === '') return null;
+
+        try {
+            return JSON.parse(text);
+        } catch {
+            throw new Error(`Invalid JSON received from API (${res.status})`);
+        }
     }
 
     async login(username: string, password: string): Promise<string> {

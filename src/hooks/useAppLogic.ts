@@ -20,7 +20,8 @@ export const useAppLogic = () => {
         remnawave,
         saveToRemnawave,
         disconnectRemnawave,
-        initDns
+        initDns,
+        hasHydrated
     } = useConfigStore();
 
     // Modal states
@@ -218,6 +219,7 @@ export const useAppLogic = () => {
 
     return {
         config, setConfig, deleteItem, deleteItems, addItem, remnawave, disconnectRemnawave, initDns,
+        hasHydrated,
         modal, setModal,
         sectionModal, setSectionModal,
         remnawaveModalOpen, setRemnawaveModalOpen,
