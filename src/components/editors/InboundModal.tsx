@@ -1,4 +1,5 @@
 import React from 'react';
+import { useConfigStore } from '../../store/configStore';
 import { useInboundEditor } from '../../hooks/useInboundEditor';
 import { EditorLayout } from '../ui/EditorLayout';
 import { ExtendedSection } from '../ui/ExtendedSection';
@@ -10,6 +11,7 @@ import { InboundAllocate } from './inbound/InboundAllocate';
 import { TransportSettings } from './shared/TransportSettings';
 
 export const InboundModal = ({ data, onSave, onClose }: any) => {
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
     const {
         local,
         setLocal,
@@ -35,6 +37,9 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
             onSave={handleSave}
             onClose={onClose}
             schemaMode="inbound"
+            rawConfigText={rawConfigText}
+            onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+            onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
         >
             <div className="space-y-8 pb-8">
                 <section className="relative z-40 animate-in fade-in slide-in-from-top-4 duration-500">

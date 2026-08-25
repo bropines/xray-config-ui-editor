@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Icon, JsonField, Select, SchemaForm } from '../../ui';
 import { validateBalancer } from '../../../core/validators';
 import { BalancerSchema, StrategySettingsSchema } from '../../../core/xray/schemas/routing.schema';
+import { useConfigStore } from '../../../store/configStore';
 
 export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: any) => {
     // Локальный стейт для инпута, чтобы делать подсветку "на лету"
@@ -9,6 +10,7 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     const [outboundSearch, setOutboundSearch] = useState("");
     const [lastClickedIdx, setLastClickedIdx] = useState<number | null>(null);
     const [localRawText, setLocalRawText] = useState<string | null>(null);
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
 
     if (!balancer) {
         return (
@@ -22,16 +24,19 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full p-4 bg-slate-950">
-                <JsonField 
-                    label="Raw Balancer JSON" 
-                    value={balancer} 
+                <JsonField
+                    label="Raw Balancer JSON"
+                    value={balancer}
                     onChange={(val: any, raw?: string) => {
                         onChange(val);
                         if (raw !== undefined) setLocalRawText(raw);
-                    }} 
-                    schemaMode="balancer" 
+                    }}
+                    schemaMode="balancer"
                     className="h-full"
                     rawText={localRawText}
+                    rawConfigText={rawConfigText}
+                    onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+                    onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
                 />
             </div>
         );

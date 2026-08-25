@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { JsonField } from '../ui/JsonField';
 import { useReverseEditor } from '../../hooks/useReverseEditor';
+import { useConfigStore } from '../../store/configStore';
 
 export const ReverseModal = ({ onClose }: any) => {
     const {
@@ -18,6 +19,7 @@ export const ReverseModal = ({ onClose }: any) => {
 
     const [rawMode, setRawMode] = useState(false);
     const [localRawText, setLocalRawText] = useState<string | null>(null);
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
 
     // --- JSON MODE VIEW ---
     if (rawMode) {
@@ -42,6 +44,9 @@ export const ReverseModal = ({ onClose }: any) => {
                         className="flex-1"
                         schemaMode="reverse"
                         rawText={localRawText}
+                        rawConfigText={rawConfigText}
+                        onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+                        onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
                     />
                 </div>
             </Modal>

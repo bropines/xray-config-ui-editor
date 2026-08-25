@@ -16,7 +16,6 @@ import xraySchema from "../../utils/config.schema.json";
 
 
 import { parseJsonc } from "../../utils/jsonc";
-import { useConfigStore } from "../../store/configStore";
 import { toast } from "sonner";
 
 const ajv = new Ajv({ allErrors: true, strict: false });
@@ -274,9 +273,23 @@ interface JsonEditorProps {
     readOnly?: boolean;
     schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse';
     mode?: 'json' | 'plaintext';
+    /**
+     * Ctrl+S handler — called (in addition to onChange, which always fires
+     * first) so the caller can decide what "save" means here: writing to
+     * the active profile, updating local component state, or nothing at
+     * all. JsonEditor itself has no opinion on persistence.
+     */
+    onSaveShortcut?: () => void;
+    /**
+     * Ctrl+Shift+S handler — same idea for "commit a version snapshot".
+     * Return the created snapshot (or null if nothing changed) so the
+     * success/info toast text stays accurate; return undefined to skip
+     * that toast entirely (e.g. when the caller doesn't support commits).
+     */
+    onCommitShortcut?: () => { id: string; additions?: number; deletions?: number } | null | undefined;
 }
 
-export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full', mode = 'json' }: JsonEditorProps) => {
+export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'full', mode = 'json', onSaveShortcut, onCommitShortcut }: JsonEditorProps) => {
     const editorParent = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
 
@@ -564,9 +577,10 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                         const currentDoc = view.state.doc.toString();
                         console.log('[JsonEditor] Ctrl+S pressed -> Syncing memory & UI...');
                         onChange(currentDoc);
-                        const store = useConfigStore.getState();
-                        store.saveActiveProfile();
-                        toast.success("✓ Saved to memory & UI updated", { id: 'ctrl-s-toast' });
+                        if (onSaveShortcut) {
+                            onSaveShortcut();
+                            toast.success("✓ Saved to memory & UI updated", { id: 'ctrl-s-toast' });
+                        }
                         return true;
                     }
                 },
@@ -576,23 +590,28 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                         const currentDoc = view.state.doc.toString();
                         console.log('[JsonEditor] Ctrl+Shift+S pressed -> Creating Git Commit...');
                         onChange(currentDoc);
-                        const store = useConfigStore.getState();
-                        store.saveActiveProfile();
-                        const snapshot = store.recordSnapshot("Manual Commit (Ctrl+Shift+S)");
-                        if (snapshot) {
-                            console.log('[JsonEditor] Created snapshot commit:', snapshot);
-                            toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions} -${snapshot.deletions})`, { id: 'ctrl-shift-s-toast' });
-                        } else {
-                            console.log('[JsonEditor] Already at HEAD');
-                            toast.info("Already at HEAD (no changes to commit)", { id: 'ctrl-shift-s-toast' });
+                        onSaveShortcut?.();
+                        if (onCommitShortcut) {
+                            const snapshot = onCommitShortcut();
+                            if (snapshot) {
+                                console.log('[JsonEditor] Created snapshot commit:', snapshot);
+                                toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions ?? 0} -${snapshot.deletions ?? 0})`, { id: 'ctrl-shift-s-toast' });
+                            } else {
+                                console.log('[JsonEditor] Already at HEAD');
+                                toast.info("Already at HEAD (no changes to commit)", { id: 'ctrl-shift-s-toast' });
+                            }
                         }
                         return true;
                     }
                 }
             ]);
 
+            // Ctrl+S/Ctrl+Shift+S save shortcuts don't make sense in a
+            // read-only view (e.g. a version-history snapshot preview) —
+            // don't wire them there, regardless of whether the caller
+            // passed onSaveShortcut/onCommitShortcut.
             extensions.push(
-                hotkeyKeymap,
+                ...(readOnly ? [] : [hotkeyKeymap]),
                 jsonc(),
                 autocompletion({
                     defaultKeymap: true,

@@ -461,6 +461,8 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                     onChange={setInputText}
                                     schemaMode="full"
                                     mode={inputText.trim().startsWith('{') || inputText.trim().startsWith('[') ? 'json' : 'plaintext'}
+                                    onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+                                    onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
                                 />
                             </div>
                         </div>

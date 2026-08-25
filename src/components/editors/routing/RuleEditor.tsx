@@ -4,6 +4,7 @@ import { validateRule, lintRule } from '../../../core/validators';
 import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
 import { parseJsonc } from '../../../utils/jsonc';
+import { useConfigStore } from '../../../store/configStore';
 
 const AttrsEditor = ({ value, onChange }: any) => {
     const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
@@ -64,6 +65,7 @@ export const RuleEditor = ({
     // Стейт для просмотра деталей тега по клику
     const [viewTag, setViewTag] = useState<string | null>(null);
     const [localRawText, setLocalRawText] = useState<string | null>(null);
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
 
     // Calculate duplicate matchers across all rules (flagging all conflicting rules)
     const duplicateWarnings = React.useMemo(() => {
@@ -120,16 +122,19 @@ export const RuleEditor = ({
     if (rawMode) {
         return (
             <div className="flex-1 w-full h-full bg-slate-950 overflow-hidden">
-                <JsonField 
-                    label="Raw Rule JSON" 
-                    value={rule} 
+                <JsonField
+                    label="Raw Rule JSON"
+                    value={rule}
                     onChange={(val: any, raw?: string) => {
                         onChange(val);
                         if (raw !== undefined) setLocalRawText(raw);
-                    }} 
-                    className="h-full" 
-                    schemaMode="rule" 
+                    }}
+                    className="h-full"
+                    schemaMode="rule"
                     rawText={localRawText}
+                    rawConfigText={rawConfigText}
+                    onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+                    onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
                 />
             </div>
         );

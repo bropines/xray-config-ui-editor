@@ -14,7 +14,7 @@ import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 import { TransportSettings } from './shared/TransportSettings';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
-    const { config, addItem } = useConfigStore();
+    const { config, addItem, rawConfigText } = useConfigStore();
     const allOutboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter((t: any) => t);
 
     const {
@@ -72,6 +72,9 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             onClose={onClose}
             schemaMode="outbound"
             extraButtons={extraButtons}
+            rawConfigText={rawConfigText}
+            onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+            onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
         >
             <div className="space-y-6 pb-10">
                 {/* Импорт из ссылки */}

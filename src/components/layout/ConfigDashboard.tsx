@@ -262,7 +262,9 @@ export const ConfigDashboard = ({
     revertToBaseline,
     baselineConfigJson,
     config: storeConfig,
-    history
+    history,
+    rawConfigText,
+    recordSnapshot
   } = useConfigStore();
 
   const histories = useConfigStore(state => state.histories);
@@ -593,6 +595,9 @@ export const ConfigDashboard = ({
               if (newConfig) setConfig(newConfig, rawText);
             }}
             className="flex-1 relative min-h-0"
+            rawConfigText={rawConfigText}
+            onSaveShortcut={() => saveActiveProfile()}
+            onCommitShortcut={() => recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
           />
         </div>
       ) : (

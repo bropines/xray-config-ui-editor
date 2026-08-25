@@ -16,7 +16,7 @@ import { useSettingsEditor } from '../../hooks/useSettingsEditor';
 import { useConfigStore } from '../../store/configStore';
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
-    const { warpWorkerUrl, setWarpWorkerUrl } = useConfigStore();
+    const { warpWorkerUrl, setWarpWorkerUrl, rawConfigText } = useConfigStore();
     const {
         coreVersion,
         setCoreVersion,
@@ -62,6 +62,9 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             onClose={onClose}
             schemaMode="full"
             extraButtons={extraButtons}
+            rawConfigText={rawConfigText}
+            onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+            onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
         >
             <div className="max-w-3xl mx-auto space-y-6">
                 {activeTab === 'general' && (
