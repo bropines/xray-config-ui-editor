@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 export type ButtonVariant = 'primary' | 'success' | 'danger' | 'secondary' | 'ghost' | 'warning';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -52,7 +53,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             <button
                 ref={ref}
                 disabled={disabled || loading}
-                className={`${base} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+                className={cn(base, sizeStyles[size], variantStyles[variant], className)}
                 {...rest}
             >
                 {loading ? (

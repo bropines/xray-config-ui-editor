@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
     /** Icon name (phosphor) shown on the left */
@@ -48,16 +49,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     <input
                         ref={ref}
                         id={inputId}
-                        className={`
-                            w-full bg-slate-950 border rounded-lg outline-none
-                            text-white placeholder:text-slate-600
-                            focus:ring-1 transition-all
-                            ${sizeClasses[size]}
-                            ${leftIcon ? 'pl-9' : ''}
-                            ${rightIcon ? 'pr-9' : ''}
-                            ${border}
-                            ${className}
-                        `}
+                        className={cn(
+                            'w-full bg-slate-950 border rounded-lg outline-none',
+                            'text-white placeholder:text-slate-600',
+                            'focus:ring-1 transition-all',
+                            sizeClasses[size],
+                            leftIcon && 'pl-9',
+                            rightIcon && 'pr-9',
+                            border,
+                            className,
+                        )}
                         {...rest}
                     />
                     {rightIcon && (

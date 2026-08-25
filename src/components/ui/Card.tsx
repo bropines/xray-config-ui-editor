@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 interface CardProps {
     title?: string;
@@ -11,7 +12,7 @@ interface CardProps {
 
 export const Card = ({ title, icon, children, className = "", headerExtra }: CardProps) => {
     return (
-        <div className={`bg-slate-900/50 p-4 rounded-xl border border-slate-800 transition-all hover:border-slate-700/50 ${className}`}>
+        <div className={cn('bg-slate-900/50 p-4 rounded-xl border border-slate-800 transition-all hover:border-slate-700/50', className)}>
             {(title || icon || headerExtra) && (
                 <div className="flex justify-between items-center mb-4">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">

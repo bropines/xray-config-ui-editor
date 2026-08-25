@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 export type AlertVariant = 'info' | 'warning' | 'error' | 'success';
 
@@ -44,10 +45,10 @@ export const Alert = ({ variant = 'info', title, children, onDismiss, className 
 
     return (
         <div
-            className={`
-                flex gap-3 p-3 rounded-xl border text-sm animate-in fade-in slide-in-from-top-2
-                ${cfg.bg} ${cfg.border} ${cfg.text} ${className}
-            `}
+            className={cn(
+                'flex gap-3 p-3 rounded-xl border text-sm animate-in fade-in slide-in-from-top-2',
+                cfg.bg, cfg.border, cfg.text, className,
+            )}
         >
             <Icon name={icon ?? cfg.icon} weight="fill" className="mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
