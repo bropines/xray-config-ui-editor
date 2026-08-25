@@ -3,51 +3,18 @@ import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { Select } from '../../ui/Select';
+import { useFinalmaskEditor, FINALMASK_LAYER_TYPES as TYPES } from '../../../hooks/useFinalmaskEditor';
 
 export const FinalmaskEditor = ({ finalmask, onChange }) => {
-    const enabled = !!finalmask;
-    
-    const TYPES = [
-        "noise", "header-custom", "header-dns", "header-dtls", "header-srtp", 
-        "header-utp", "header-wechat", "header-wireguard", "mkcp-original", 
-        "mkcp-aes128gcm", "salamander", "sudoku", "xdns", "xicmp"
-    ];
-
-    const getDefaultSettings = (newType: string) => {
-        if (newType === 'noise') return { noise: [{ rand: "40-70", delay: "5-10" }] };
-        if (['salamander', 'mkcp-aes128gcm', 'sudoku'].includes(newType)) return { password: "" };
-        if (['header-dns', 'xdns'].includes(newType)) return { domain: "" };
-        if (newType === 'xicmp') return { listenIp: "0.0.0.0", id: 0 };
-        return {};
-    };
-
-    const addLayer = (netType: 'tcp'|'udp') => {
-        const current = finalmask[netType] || [];
-        onChange({ ...finalmask, [netType]: [...current, { type: "noise", settings: getDefaultSettings("noise") }] });
-    };
-
-    const removeLayer = (netType: 'tcp'|'udp', index: number) => {
-        const current = [...(finalmask[netType] || [])];
-        current.splice(index, 1);
-        onChange({ ...finalmask, [netType]: current });
-    };
-
-    const changeType = (netType: 'tcp'|'udp', index: number, newType: string) => {
-        const current = [...(finalmask[netType] || [])];
-        current[index] = { type: newType, settings: getDefaultSettings(newType) };
-        onChange({ ...finalmask, [netType]: current });
-    };
-
-    const updateSetting = (netType: 'tcp'|'udp', index: number, field: string, val: any) => {
-        const current = [...(finalmask[netType] || [])];
-        current[index] = { ...current[index], settings: { ...current[index].settings, [field]: val } };
-        onChange({ ...finalmask, [netType]: current });
-    };
-
-    const updateQuic = (field: string, val: any) => {
-        const quicParams = { ...(finalmask.quicParams || {}), [field]: val };
-        onChange({ ...finalmask, quicParams });
-    };
+    const {
+        enabled,
+        toggle,
+        addLayer,
+        removeLayer,
+        changeType,
+        updateSetting,
+        updateQuic,
+    } = useFinalmaskEditor(finalmask, onChange);
 
     return (
         <div className="border-t border-slate-800 pt-4 space-y-4">
@@ -55,26 +22,20 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                 <label className="text-xs font-bold text-emerald-400 flex items-center gap-2">
                     <Icon name="Shield" size={14} /> Finalmask Configuration
                 </label>
-                <button 
-                    onClick={() => {
-                        if (enabled) {
-                            onChange(null);
-                        } else {
-                            onChange({ udp: [], tcp: [], quicParams: {} });
-                        }
-                    }}
+                <button
+                    onClick={toggle}
                     className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${enabled ? 'bg-rose-500/10 border-rose-500/50 text-rose-500 hover:bg-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/20'}`}
                 >
                     {enabled ? "REMOVE" : "ADD"}
                 </button>
             </div>
-            
+
             {enabled && (
                 <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/60 space-y-8">
                     {/* UDP & TCP Configurations */}
                     {(['udp', 'tcp'] as const).map(netType => {
                         const layers = finalmask[netType] || [];
-                        
+
                         return (
                             <div key={netType} className="space-y-4">
                                 <div className="flex items-center justify-between border-b border-slate-800/50 pb-2">
@@ -83,7 +44,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                         + Add Layer
                                     </Button>
                                 </div>
-                                
+
                                 {layers.length === 0 ? (
                                     <div className="text-xs text-slate-600 italic">No {netType.toUpperCase()} obfuscation layers.</div>
                                 ) : (
@@ -98,8 +59,8 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                             <Icon name="Trash" size={14} />
                                                         </button>
                                                     </div>
-                                                    
-                                                        <Select 
+
+                                                        <Select
                                                             label="Layer Type"
                                                             value={currentType}
                                                             onChange={val => changeType(netType, index, val)}
@@ -111,7 +72,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                         <div className="space-y-2">
                                                             {layer.settings.noise.map((n: any, i: number) => (
                                                                 <div key={i} className="flex gap-2 items-center bg-slate-950 p-2 rounded border border-slate-800/50">
-                                                                    <Select 
+                                                                    <Select
                                                                         value={n.packet !== undefined ? "hex" : "rand"}
                                                                         onChange={val => {
                                                                             const newNoise = [...layer.settings.noise];
@@ -134,7 +95,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                                         ]}
                                                                         className="w-24 shrink-0"
                                                                     />
-                                                                    
+
                                                                     {n.packet !== undefined ? (
                                                                         <div className="flex-1 relative group/input">
                                                                             <input className="input-base text-[10px] font-mono w-full py-1 h-7 pr-6" placeholder="Hex (supports <b 0x...>)" value={n.packet} onChange={e => {
@@ -220,8 +181,8 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Congestion Control</label>
-                                <Select 
-                                    value={finalmask.quicParams?.congestion || ""} 
+                                <Select
+                                    value={finalmask.quicParams?.congestion || ""}
                                     onChange={val => updateQuic('congestion', val)}
                                     options={[
                                         { value: "", label: "Auto" },

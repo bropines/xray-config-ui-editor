@@ -7,22 +7,12 @@ import { useConfigStore } from '../../../store/configStore';
 import { Select } from '../../ui/Select';
 import { Switch } from '../../ui/Switch';
 import { ExtendedSection } from '../../ui/ExtendedSection';
+import { useSockoptEditor } from '../../../hooks/useSockoptEditor';
 
 export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
-    const local = sockopt || {};
+    const { local, update, add, remove, hasExtendedValues } = useSockoptEditor(sockopt, onChange);
     const config = useConfigStore(state => state.config);
     const outboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean);
-
-    const update = (field: string, val: any) => {
-        // Чистим пустые/NaN значения чтобы не мусорить в JSON
-        if (val === "" || Number.isNaN(val)) {
-            const newObj = { ...local };
-            delete newObj[field];
-            onChange(newObj);
-        } else {
-            onChange({ ...local, [field]: val });
-        }
-    };
 
     if (!sockopt) {
         return (
@@ -31,7 +21,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                     <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
                         <Icon name="Sliders" size={14} /> Socket Options (Sockopt)
                     </label>
-                    <button className="bg-blue-500/10 border border-blue-500/50 text-blue-500 hover:bg-blue-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={() => onChange({})}>
+                    <button className="bg-blue-500/10 border border-blue-500/50 text-blue-500 hover:bg-blue-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={add}>
                         ADD
                     </button>
                 </div>
@@ -45,7 +35,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                 <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
                     <Icon name="Sliders" size={14} /> Socket Options (Sockopt)
                 </label>
-                <button className="bg-rose-500/10 border border-rose-500/50 text-rose-500 hover:bg-rose-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={() => onChange(null)}>
+                <button className="bg-rose-500/10 border border-rose-500/50 text-rose-500 hover:bg-rose-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={remove}>
                     REMOVE
                 </button>
             </div>
@@ -166,17 +156,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                 <ExtendedSection
                     title="Extended Socket & Kernel Options"
                     description="Happy Eyeballs (RFC 8305 Dual-Stack), TCP window clamping, and penetrate."
-                    hasActiveValues={
-                        !!local.happyEyeballs ||
-                        !!local.penetrate ||
-                        !!local.addressPortStrategy ||
-                        !!local.tcpKeepAliveIdle ||
-                        !!local.tcpKeepAliveInterval ||
-                        !!local.tcpUserTimeout ||
-                        !!local.tcpMaxSeg ||
-                        !!local.tcpCongestion ||
-                        !!local.tcpWindowClamp
-                    }
+                    hasActiveValues={hasExtendedValues}
                 >
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

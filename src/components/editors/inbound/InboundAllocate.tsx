@@ -1,29 +1,36 @@
 import React from 'react';
 import { Select, NumberInput, FormField, Help, Switch } from '../../ui';
+import { useField, type FieldPath } from '../../../hooks/useField';
+
+interface AllocateSettings {
+    strategy?: 'always' | 'random';
+    refresh?: number;
+    concurrency?: number;
+}
 
 interface InboundAllocateProps {
-    allocate?: {
-        strategy?: 'always' | 'random';
-        refresh?: number;
-        concurrency?: number;
-    };
-    onChange: (field: string, value: any) => void;
+    allocate?: AllocateSettings;
+    onChange: (path: FieldPath, value: any) => void;
 }
+
+const DEFAULT_ALLOCATE: Required<AllocateSettings> = { strategy: 'always', refresh: 5, concurrency: 3 };
 
 export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onChange }) => {
     const isEnabled = !!allocate;
-    const local = allocate || { strategy: 'always', refresh: 5, concurrency: 3 };
+
+    // `onChange` here is the parent editor's updateField(path, value) (see
+    // InboundModal.tsx) — the same path-based updater useField/useArrayField
+    // bind to elsewhere. This component only receives the `allocate`
+    // sub-object (not the full inbound), so it wraps it under an `allocate`
+    // key to read/write nested paths like ['allocate', 'strategy'] through
+    // that same updater.
+    const local = { allocate: allocate || DEFAULT_ALLOCATE };
+    const strategy = useField<'always' | 'random'>(local, onChange, ['allocate', 'strategy']);
+    const refresh = useField<number | undefined>(local, onChange, ['allocate', 'refresh']);
+    const concurrency = useField<number | undefined>(local, onChange, ['allocate', 'concurrency']);
 
     const toggleAllocate = (enabled: boolean) => {
-        if (!enabled) {
-            onChange('allocate', undefined);
-        } else {
-            onChange('allocate', { strategy: 'always', refresh: 5, concurrency: 3 });
-        }
-    };
-
-    const updateField = (field: string, val: any) => {
-        onChange('allocate', { ...local, [field]: val });
+        onChange('allocate', enabled ? { ...DEFAULT_ALLOCATE } : undefined);
     };
 
     return (
@@ -46,8 +53,8 @@ export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onCh
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 animate-in fade-in">
                     <Select
                         label="Strategy"
-                        value={local.strategy || 'always'}
-                        onChange={val => updateField('strategy', val)}
+                        value={strategy.value || 'always'}
+                        onChange={val => strategy.onChange(val)}
                         options={[
                             { value: 'always', label: 'Always (Fixed List)', description: 'Allocates all random ports continuously' },
                             { value: 'random', label: 'Random Rotation', description: 'Randomly cycles ports on refresh interval' }
@@ -56,16 +63,16 @@ export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onCh
 
                     <FormField label="Refresh (min)" help="Interval in minutes to rotate random ports.">
                         <NumberInput
-                            value={local.refresh ?? 5}
-                            onChange={val => updateField('refresh', val)}
+                            value={refresh.value ?? 5}
+                            onChange={val => refresh.onChange(val)}
                             placeholder="5"
                         />
                     </FormField>
 
                     <FormField label="Concurrency" help="Number of concurrent random ports to listen on.">
                         <NumberInput
-                            value={local.concurrency ?? 3}
-                            onChange={val => updateField('concurrency', val)}
+                            value={concurrency.value ?? 3}
+                            onChange={val => concurrency.onChange(val)}
                             placeholder="3"
                         />
                     </FormField>

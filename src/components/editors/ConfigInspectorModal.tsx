@@ -1,18 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Select } from '../ui/Select';
 import { JsonEditor } from '../ui/JsonEditor';
-import { useConfigStore } from '../../store/configStore';
 import { toast } from 'sonner';
-import { parseRawSubscriptionText } from '../../utils/link-parser';
-import { generateUUID } from '../../core/generators/crypto';
-
-const HWID_STORAGE_KEY = 'xray_editor_v2_hwid';
-const OS_STORAGE_KEY = 'xray_editor_v2_device_os';
-const VER_STORAGE_KEY = 'xray_editor_v2_ver_os';
-const MODEL_STORAGE_KEY = 'xray_editor_v2_device_model';
+import { useConfigInspector } from '../../hooks/useConfigInspector';
 
 const UA_PRESETS = [
     { value: "Happ/1.0.0", label: "Happ (iOS / Android)" },
@@ -25,234 +18,39 @@ const UA_PRESETS = [
     { value: "custom", label: "Custom User-Agent..." },
 ];
 
-const autoDetectSystemParams = () => {
-    const ua = navigator.userAgent;
-    let os = "Windows";
-    let ver = "10.0.26220";
-    let model = "PC";
-
-    if (/Windows/i.test(ua)) {
-        os = "Windows";
-        const match = ua.match(/Windows NT ([\d.]+)/);
-        ver = match ? match[1] : "10.0";
-        model = "Windows PC";
-    } else if (/Macintosh|Mac OS X/i.test(ua)) {
-        os = "macOS";
-        const match = ua.match(/Mac OS X ([\d_]+)/);
-        ver = match ? match[1].replace(/_/g, '.') : "14.0";
-        model = "Macintosh";
-    } else if (/Android/i.test(ua)) {
-        os = "Android";
-        const match = ua.match(/Android ([\d.]+)/);
-        ver = match ? match[1] : "14";
-        model = "Android Device";
-    } else if (/iPhone|iPad|iPod/i.test(ua)) {
-        os = "iOS";
-        const match = ua.match(/OS ([\d_]+)/);
-        ver = match ? match[1].replace(/_/g, '.') : "18.3";
-        model = "iPhone";
-    }
-    return { os, ver, model };
-};
-
-export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: { 
-    onClose: () => void, 
+export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
+    onClose: () => void,
     setModal: (m: any) => void,
-    openSectionJson: (section: string, title: string, data: any) => void 
+    openSectionJson: (section: string, title: string, data: any) => void
 }) => {
-    const { config: currentConfig, addOutbounds, updateSection, addItem } = useConfigStore();
-    const [inputText, setInputText] = useState("");
-    const [subUrl, setSubUrl] = useState("");
-    const [selectedUa, setSelectedUa] = useState("Happ/1.0.0");
-    const [customUa, setCustomUa] = useState("");
-    const [showHwidSettings, setShowHwidSettings] = useState(false);
-    
-    // Remnawave system parameters
-    const [hwid, setHwid] = useState(() => {
-        const saved = localStorage.getItem(HWID_STORAGE_KEY);
-        if (saved) return saved;
-        const newId = generateUUID();
-        localStorage.setItem(HWID_STORAGE_KEY, newId);
-        return newId;
-    });
-    const [deviceOs, setDeviceOs] = useState(() => localStorage.getItem(OS_STORAGE_KEY) || "Windows");
-    const [verOs, setVerOs] = useState(() => localStorage.getItem(VER_STORAGE_KEY) || "10.0.26220");
-    const [deviceModel, setDeviceModel] = useState(() => localStorage.getItem(MODEL_STORAGE_KEY) || "MS-7E06/PRO Z790-P WIFI");
-
-    const [isFetching, setIsFetching] = useState(false);
-    const [parsedConfigs, setParsedConfigs] = useState<any[] | null>(null);
-    const [selectedIndex, setSelectedIndex] = useState(0);
-
-    const effectiveUa = selectedUa === "custom" ? customUa.trim() || "Happ/1.0.0" : selectedUa;
-
-    const handleGenerateNewHwid = () => {
-        const newId = generateUUID();
-        setHwid(newId);
-        localStorage.setItem(HWID_STORAGE_KEY, newId);
-        toast.info("Generated new HWID", { description: newId });
-    };
-
-    const handleAutoDetect = () => {
-        const detected = autoDetectSystemParams();
-        setDeviceOs(detected.os);
-        setVerOs(detected.ver);
-        setDeviceModel(detected.model);
-        localStorage.setItem(OS_STORAGE_KEY, detected.os);
-        localStorage.setItem(VER_STORAGE_KEY, detected.ver);
-        localStorage.setItem(MODEL_STORAGE_KEY, detected.model);
-        toast.success("Detected system parameters", { description: `${detected.os} ${detected.ver} • ${detected.model}` });
-    };
-
-    const handleFetchSub = async () => {
-        if (!subUrl.trim()) return;
-        setIsFetching(true);
-        try {
-            const targetUrl = subUrl.trim();
-            const proxyUrl = `https://crs.bropines.workers.dev/${targetUrl}`;
-
-            const headers: Record<string, string> = {
-                "x-custom-user-agent": effectiveUa,
-                "User-Agent": effectiveUa,
-                "x-hwid": hwid.trim(),
-                "x-custom-x-hwid": hwid.trim(),
-                "x-device-os": deviceOs.trim(),
-                "x-custom-x-device-os": deviceOs.trim(),
-                "x-ver-os": verOs.trim(),
-                "x-custom-x-ver-os": verOs.trim(),
-                "x-device-model": deviceModel.trim(),
-                "x-custom-x-device-model": deviceModel.trim(),
-                "x-app-version": "1.0.0",
-                "x-custom-x-app-version": "1.0.0"
-            };
-
-            const response = await fetch(proxyUrl, { headers });
-            if (!response.ok) {
-                if (response.status === 403 || response.status === 429) {
-                    if (response.headers.get('x-hwid-max-devices-reached') === 'true' || response.headers.get('x-hwid-limit') === 'true') {
-                        throw new Error("Remnawave HWID device limit reached. Try using the HWID from your already active client (e.g. Throne).");
-                    }
-                }
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const rawText = await response.text();
-            let decoded = rawText.trim();
-            
-            if (!decoded.startsWith('{') && !decoded.startsWith('[')) {
-                try {
-                    let b64 = decoded.replace(/\s/g, '');
-                    while (b64.length % 4 !== 0) b64 += '=';
-                    const dec = atob(b64);
-                    try { decoded = decodeURIComponent(escape(dec)); } catch (e) { decoded = dec; }
-                } catch (e) {
-                    decoded = rawText.trim();
-                }
-            }
-
-            // Auto-beautify JSON if it is valid JSON
-            try {
-                if (decoded.startsWith('{') || decoded.startsWith('[')) {
-                    const parsed = JSON.parse(decoded);
-                    decoded = JSON.stringify(parsed, null, 2);
-                }
-            } catch (e) {}
-            
-            setInputText(decoded);
-            toast.success("Subscription fetched successfully", { description: `HWID: ${hwid.substring(0, 8)}...` });
-        } catch (error: any) {
-            toast.error("Fetch failed", { description: error.message });
-        } finally {
-            setIsFetching(false);
-        }
-    };
-
-    const handleBeautifyInput = () => {
-        if (!inputText.trim()) return;
-        try {
-            const data = JSON.parse(inputText);
-            setInputText(JSON.stringify(data, null, 2));
-            toast.success("JSON beautified");
-        } catch {
-            try {
-                const configs = parseRawSubscriptionText(inputText);
-                if (configs && configs.length > 0) {
-                    setInputText(JSON.stringify(configs.length === 1 ? configs[0] : configs, null, 2));
-                    toast.success("Parsed & beautified as JSON");
-                }
-            } catch {
-                toast.error("Could not beautify: input is not valid JSON");
-            }
-        }
-    };
-
-    const handleParse = () => {
-        try {
-            const configs = parseRawSubscriptionText(inputText);
-            if (!configs || configs.length === 0) throw new Error("No valid configurations found in input");
-            setParsedConfigs(configs);
-            setSelectedIndex(0);
-
-            // Check if returned configuration contains dummy/advisory warning nodes (e.g. 0.0.0.0:1)
-            const firstConfig = configs[0];
-            const isDummyOnly = firstConfig?.outbounds?.every((o: any) => {
-                const addr = o?.settings?.vnext?.[0]?.address || o?.settings?.servers?.[0]?.address;
-                const port = o?.settings?.vnext?.[0]?.port || o?.settings?.servers?.[0]?.port;
-                return addr === '0.0.0.0' && port === 1;
-            });
-
-            if (isDummyOnly) {
-                toast.warning("Warning: Provider returned announcement/dummy nodes", {
-                    description: "Your provider may require a different User-Agent or device authorization."
-                });
-            } else {
-                toast.success(`Analyzed ${configs.length} configuration(s) (${firstConfig?.outbounds?.length || 0} nodes found)`);
-            }
-        } catch (e: any) {
-            toast.error("Parse failed", { description: e.message });
-        }
-    };
-
-    const selectedConfig = useMemo(() => {
-        if (!parsedConfigs || !parsedConfigs[selectedIndex]) return null;
-        return parsedConfigs[selectedIndex];
-    }, [parsedConfigs, selectedIndex]);
-
-    const importOutbound = (proxy: any, customTag?: string) => {
-        addOutbounds([{ ...proxy, tag: customTag || proxy.tag }]);
-        toast.success("Node added to outbounds");
-    };
-
-    const openInboundEditor = (ib: any) => {
-        setModal({ type: 'inbound', data: ib, index: null });
-    };
-
-    const openOutboundEditor = (ob: any) => {
-        setModal({ type: 'outbound', data: ob, index: null });
-    };
-
-    const importRoutingItem = (section: 'rules' | 'balancers', item: any) => {
-        const currentRouting = currentConfig?.routing || { rules: [], balancers: [] };
-        const updated = {
-            ...currentRouting,
-            [section]: [item, ...(currentRouting[section] || [])]
-        };
-        updateSection('routing', updated);
-        toast.success(`Imported to your routing (at the top)`);
-    };
-
-    const extractAllFromSelected = () => {
-        if (!selectedConfig) return;
-        const proxies = (selectedConfig.outbounds || []).filter((o: any) => 
-            !['freedom', 'dns', 'blackhole', 'direct', 'block'].includes(o.protocol)
-        );
-        const name = selectedConfig.remarks || "Config";
-        const cleaned = proxies.map((p: any, i: number) => ({
-            ...p,
-            tag: proxies.length > 1 ? `${name}-${i + 1}` : name
-        }));
-        addOutbounds(cleaned);
-        toast.success(`Extracted ${cleaned.length} nodes from ${name}`);
-    };
+    const {
+        inputText, setInputText,
+        subUrl, setSubUrl,
+        selectedUa, setSelectedUa,
+        customUa, setCustomUa,
+        showHwidSettings, setShowHwidSettings,
+        hwid, handleHwidChange,
+        deviceOs, handleDeviceOsChange,
+        verOs, handleVerOsChange,
+        deviceModel, handleDeviceModelChange,
+        isFetching,
+        parsedConfigs, setParsedConfigs,
+        selectedIndex, setSelectedIndex,
+        selectedConfig,
+        handleGenerateNewHwid,
+        handleAutoDetect,
+        handleFetchSub,
+        handleBeautifyInput,
+        handleParse,
+        handleSaveShortcut,
+        handleCommitShortcut,
+        importOutbound,
+        importInbound,
+        openInboundEditor,
+        openOutboundEditor,
+        importRoutingItem,
+        extractAllFromSelected,
+    } = useConfigInspector(setModal);
 
     return (
         <Modal title="Config Harvester & Inspector" onClose={onClose} className="max-w-[95vw] 2xl:max-w-[1600px]" hideSave>
@@ -346,10 +144,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                     type="text"
                                                     className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-purple-200 outline-none focus:border-purple-500"
                                                     value={hwid}
-                                                    onChange={e => {
-                                                        setHwid(e.target.value);
-                                                        localStorage.setItem(HWID_STORAGE_KEY, e.target.value);
-                                                    }}
+                                                    onChange={e => handleHwidChange(e.target.value)}
                                                     placeholder="UUID or 10-64 char alphanumeric string"
                                                 />
                                                 <Button
@@ -375,10 +170,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                     type="text"
                                                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500"
                                                     value={deviceOs}
-                                                    onChange={e => {
-                                                        setDeviceOs(e.target.value);
-                                                        localStorage.setItem(OS_STORAGE_KEY, e.target.value);
-                                                    }}
+                                                    onChange={e => handleDeviceOsChange(e.target.value)}
                                                     placeholder="e.g. Windows, iOS, Android"
                                                 />
                                             </div>
@@ -388,10 +180,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                     type="text"
                                                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500"
                                                     value={verOs}
-                                                    onChange={e => {
-                                                        setVerOs(e.target.value);
-                                                        localStorage.setItem(VER_STORAGE_KEY, e.target.value);
-                                                    }}
+                                                    onChange={e => handleVerOsChange(e.target.value)}
                                                     placeholder="e.g. 10.0.26220 or 18.3"
                                                 />
                                             </div>
@@ -401,10 +190,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                     type="text"
                                                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500"
                                                     value={deviceModel}
-                                                    onChange={e => {
-                                                        setDeviceModel(e.target.value);
-                                                        localStorage.setItem(MODEL_STORAGE_KEY, e.target.value);
-                                                    }}
+                                                    onChange={e => handleDeviceModelChange(e.target.value)}
                                                     placeholder="e.g. MS-7E06 / iPhone 16 Pro"
                                                 />
                                             </div>
@@ -461,8 +247,8 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                     onChange={setInputText}
                                     schemaMode="full"
                                     mode={inputText.trim().startsWith('{') || inputText.trim().startsWith('[') ? 'json' : 'plaintext'}
-                                    onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
-                                    onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
+                                    onSaveShortcut={handleSaveShortcut}
+                                    onCommitShortcut={handleCommitShortcut}
                                 />
                             </div>
                         </div>
@@ -595,7 +381,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                 <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                                                                                                     <button onClick={() => openSectionJson('inbound', `JSON: ${ib.tag}`, ib)} title="Edit JSON" className="p-2 rounded-md bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"><Icon name="Code" weight="bold" /></button>
                                                                                                     <button onClick={() => openInboundEditor(ib)} title="Open GUI Editor" className="p-2 rounded-md bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"><Icon name="PencilSimple" weight="bold" /></button>
-                                                                                                    <button onClick={() => { addItem('inbounds', ib); toast.success("Inbound added"); }} title="Add to Config" className="p-2 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"><Icon name="Plus" weight="bold" /></button>
+                                                                                                    <button onClick={() => importInbound(ib)} title="Add to Config" className="p-2 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"><Icon name="Plus" weight="bold" /></button>
                                                                                                 </div>
                                             </div>
                                         ))}

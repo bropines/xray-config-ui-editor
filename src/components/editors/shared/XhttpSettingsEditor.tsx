@@ -4,6 +4,7 @@ import { Switch } from '../../ui/Switch';
 import { Help } from '../../ui/Help';
 import { SockoptEditor } from './SockoptEditor';
 import { Select } from '../../ui/Select';
+import { useXhttpSettingsEditor } from '../../../hooks/useXhttpSettingsEditor';
 
 interface XhttpSettingsEditorProps {
     xhttpSettings: any;
@@ -17,24 +18,7 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
     const [showXmux, setShowXmux] = useState(false);
     const [showDownload, setShowDownload] = useState(false);
 
-    const update = (path: string[], value: any) => {
-        const newObj = JSON.parse(JSON.stringify(xhttpSettings));
-        let curr = newObj;
-        for (let i = 0; i < path.length - 1; i++) {
-            if (!curr[path[i]]) curr[path[i]] = {};
-            curr = curr[path[i]];
-        }
-        
-        if (value === "" || value === undefined || value === null) {
-            delete curr[path[path.length - 1]];
-        } else {
-            curr[path[path.length - 1]] = value;
-        }
-        onChange(newObj);
-    };
-
-    const extra = xhttpSettings.extra || {};
-    const xmux = extra.xmux || {};
+    const { update, extra, xmux } = useXhttpSettingsEditor(xhttpSettings, onChange);
 
     return (
         <div className={`space-y-4 animate-in fade-in ${isDownload ? 'bg-indigo-950/20 p-4 rounded-xl border border-indigo-500/30' : ''}`}>

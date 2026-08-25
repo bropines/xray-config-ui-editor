@@ -3,6 +3,7 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { DnsServerEditor } from './DnsServerEditor';
 import { useConfigStore } from '../../../store/configStore'; // Если нужно обновлять глобально, но тут мы принимаем пропсы
+import { useArrayField } from '../../../hooks/useField';
 
 // DnD Imports
 import { DndContext, closestCenter } from '@dnd-kit/core';
@@ -54,19 +55,19 @@ const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
 };
 
 export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder }) => {
-    
+    // No path-based updateField here (onReorder replaces the whole servers
+    // array), so we adapt useArrayField the same way DnsFakedns does:
+    // wrap `servers` as a single-key local object and forward to onReorder.
+    const list = useArrayField<any>({ servers }, (_path, value) => onReorder(value), 'servers');
+
     const handleDragEnd = (event) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
         const oldIndex = parseInt(active.id.split('-')[1]);
         const newIndex = parseInt(over.id.split('-')[1]);
-        
-        const newServers = [...servers];
-        const [moved] = newServers.splice(oldIndex, 1);
-        newServers.splice(newIndex, 0, moved);
-        
-        onReorder(newServers);
+
+        list.move(oldIndex, newIndex);
     };
 
     return (

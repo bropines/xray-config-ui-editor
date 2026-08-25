@@ -3,53 +3,41 @@ import { Card } from '../../ui/Card';
 import { FormField } from '../../ui/FormField';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
+import { useField } from '../../../hooks/useField';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
-    const server = outbound.settings?.vnext?.[0] || outbound.settings?.servers?.[0] || {};
-    
-    // Logic to handle different protocol nested structures
-    const updateServerField = (field: string, value: any) => {
-        if (outbound.protocol === 'vmess' || outbound.protocol === 'vless') {
-            const vnext = [...(outbound.settings?.vnext || [{ users: [{ id: '' }] }])];
-            vnext[0] = { ...vnext[0], [field]: field === 'port' ? parseInt(value) || 0 : value };
-            onChange('settings', { ...outbound.settings, vnext });
-        } else {
-            const servers = [...(outbound.settings?.servers || [{}])];
-            servers[0] = { ...servers[0], [field]: field === 'port' ? parseInt(value) || 0 : value };
-            onChange('settings', { ...outbound.settings, servers });
-        }
-    };
-
-    const updateUserId = (id: string) => {
-        if (outbound.protocol === 'vmess' || outbound.protocol === 'vless') {
-            const vnext = [...(outbound.settings?.vnext || [{ users: [{ id: '' }] }])];
-            vnext[0].users[0].id = id;
-            onChange('settings', { ...outbound.settings, vnext });
-        } else if (outbound.protocol === 'trojan' || outbound.protocol === 'shadowsocks' || outbound.protocol === 'shadowsocks-2022') {
-            const servers = [...(outbound.settings?.servers || [{}])];
-            servers[0] = { ...servers[0], password: id };
-            onChange('settings', { ...outbound.settings, servers });
-        }
-    };
-
-    const updateMethod = (method: string) => {
-        if (outbound.protocol === 'shadowsocks' || outbound.protocol === 'shadowsocks-2022') {
-            const servers = [...(outbound.settings?.servers || [{}])];
-            servers[0] = { ...servers[0], method };
-            onChange('settings', { ...outbound.settings, servers });
-        }
-    };
-
-    const getUserId = () => {
-        if (outbound.protocol === 'vmess' || outbound.protocol === 'vless') return server.users?.[0]?.id || "";
-        if (outbound.protocol === 'trojan' || outbound.protocol === 'shadowsocks' || outbound.protocol === 'shadowsocks-2022') return server.password || "";
-        return "";
-    };
-
     const isShadowsocks = outbound.protocol === 'shadowsocks' || outbound.protocol === 'shadowsocks-2022';
     const isBlackhole = outbound.protocol === 'blackhole';
     const isDns = outbound.protocol === 'dns';
     const isFreedom = outbound.protocol === 'freedom';
+    const isVnextProtocol = outbound.protocol === 'vmess' || outbound.protocol === 'vless';
+    // Only these protocols expose a single ID/password field in this UI —
+    // matches the previous getUserId()/updateUserId() behavior, where every
+    // other protocol (socks, http, hysteria, ...) left the field inert.
+    const supportsUserId = isVnextProtocol || outbound.protocol === 'trojan' || isShadowsocks;
+
+    // `outbound` is the editor's `local` state and `onChange` is its
+    // `updateField(path, value)` (see OutboundModal.tsx). The active server
+    // entry lives at settings.vnext[0] for vmess/vless, settings.servers[0]
+    // for every other protocol handled by the "Server Details" card below.
+    const basePath: (string | number)[] = isVnextProtocol ? ['settings', 'vnext', 0] : ['settings', 'servers', 0];
+
+    const address = useField<string>(outbound, onChange, [...basePath, 'address']);
+    const port = useField<number>(outbound, onChange, [...basePath, 'port']);
+    const method = useField<string>(outbound, onChange, [...basePath, 'method']);
+    const uot = useField<boolean>(outbound, onChange, [...basePath, 'uot']);
+    // vmess/vless keep the identifier under users[0].id; trojan/shadowsocks keep it as `password`.
+    const userIdField = useField<string>(
+        outbound,
+        onChange,
+        isVnextProtocol ? [...basePath, 'users', 0, 'id'] : [...basePath, 'password']
+    );
+    const userId = supportsUserId ? userIdField : { value: '', onChange: () => {} };
+
+    const responseType = useField<string>(outbound, onChange, ['settings', 'response', 'type']);
+    const dnsAddress = useField<string>(outbound, onChange, ['settings', 'address']);
+    const dnsPort = useField<number>(outbound, onChange, ['settings', 'port']);
+    const domainStrategy = useField<string>(outbound, onChange, ['settings', 'domainStrategy']);
 
     if (isBlackhole) {
         return (
@@ -59,11 +47,11 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                         The <b>Blackhole</b> outbound drops all outgoing traffic. It is primarily used to block specific domains or IPs (e.g., for ad-blocking or preventing telemetry) by routing them here.
                     </p>
                 </div>
-                <Select 
+                <Select
                     label="Response Type"
                     hint="Determines what the client receives when traffic is blocked."
-                    value={outbound.settings?.response?.type || "none"}
-                    onChange={val => onChange('settings', { ...outbound.settings, response: { type: val } })}
+                    value={responseType.value || "none"}
+                    onChange={val => responseType.onChange(val)}
                     options={[
                         { value: "none", label: "None", description: "Silent Drop" },
                         { value: "http", label: "HTTP", description: "Return 403 Forbidden" },
@@ -84,16 +72,16 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-3">
                         <FormField label="DNS Server Address">
-                            <input className="input-base" 
-                                value={outbound.settings?.address || ""} 
-                                onChange={e => onChange('settings', { ...outbound.settings, address: e.target.value })} 
+                            <input className="input-base"
+                                value={dnsAddress.value || ""}
+                                onChange={e => dnsAddress.onChange(e.target.value)}
                             />
                         </FormField>
                     </div>
                     <FormField label="Port">
-                        <input type="number" className="input-base" 
-                            value={outbound.settings?.port || 53} 
-                            onChange={e => onChange('settings', { ...outbound.settings, port: parseInt(e.target.value) || 53 })} 
+                        <input type="number" className="input-base"
+                            value={dnsPort.value || 53}
+                            onChange={e => dnsPort.onChange(parseInt(e.target.value) || 53)}
                         />
                     </FormField>
                 </div>
@@ -110,11 +98,11 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     </p>
                 </div>
                 <div className="mt-4">
-                        <Select 
+                        <Select
                             label="Domain Strategy"
                             hint="How to resolve domain names when connecting."
-                            value={outbound.settings?.domainStrategy || "AsIs"}
-                            onChange={val => onChange('settings', { ...outbound.settings, domainStrategy: val })}
+                            value={domainStrategy.value || "AsIs"}
+                            onChange={val => domainStrategy.onChange(val)}
                             options={[
                                 { value: "AsIs", label: "As Is", description: "Use system DNS" },
                                 { value: "UseIP", label: "Use IP", description: "Resolve via Xray DNS" },
@@ -132,39 +120,39 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-3">
                     <FormField label="Address (IP or Domain)" error={errors.address}>
-                        <input 
-                            className="input-base" 
+                        <input
+                            className="input-base"
                             placeholder="example.com"
-                            value={server.address || ""} 
-                            onChange={e => updateServerField('address', e.target.value)} 
+                            value={address.value || ""}
+                            onChange={e => address.onChange(e.target.value)}
                         />
                     </FormField>
                 </div>
                 <FormField label="Port" error={errors.port}>
-                    <input 
+                    <input
                         type="number"
-                        className="input-base" 
+                        className="input-base"
                         placeholder="443"
-                        value={server.port || ""} 
-                        onChange={e => updateServerField('port', e.target.value)} 
+                        value={port.value || ""}
+                        onChange={e => port.onChange(parseInt(e.target.value) || 0)}
                     />
                 </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                 <FormField label={isShadowsocks || outbound.protocol === 'trojan' ? "Password" : "UUID / ID"}>
-                    <input 
-                        className="input-base font-mono text-xs" 
-                        value={getUserId()} 
-                        onChange={e => updateUserId(e.target.value)} 
+                    <input
+                        className="input-base font-mono text-xs"
+                        value={userId.value || ""}
+                        onChange={e => userId.onChange(e.target.value)}
                     />
                 </FormField>
 
                 {isShadowsocks && (
-                    <Select 
+                    <Select
                         label="Method"
-                        value={server.method || (outbound.protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
-                        onChange={val => updateMethod(val)}
+                        value={method.value || (outbound.protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
+                        onChange={val => method.onChange(val)}
                         options={outbound.protocol === 'shadowsocks' ? [
                             { value: "aes-256-gcm", label: "aes-256-gcm" },
                             { value: "aes-128-gcm", label: "aes-128-gcm" },
@@ -180,13 +168,9 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
                 {isShadowsocks && (
                     <div className="flex items-center gap-2 pt-6">
-                        <Switch 
-                            checked={server.uot === true}
-                            onChange={checked => {
-                                const servers = [...(outbound.settings?.servers || [{}])];
-                                servers[0] = { ...servers[0], uot: checked };
-                                onChange('settings', { ...outbound.settings, servers });
-                            }}
+                        <Switch
+                            checked={uot.value === true}
+                            onChange={checked => uot.onChange(checked)}
                             label="UDP over TCP (UOT)"
                         />
                     </div>
