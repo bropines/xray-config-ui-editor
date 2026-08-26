@@ -9,7 +9,7 @@ export const Icon = ({ name, className = "", weight = "regular" }: { name: strin
         ? name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')
         : name.charAt(0).toUpperCase() + name.slice(1);
     
-    // @ts-ignore
+    // @ts-expect-error — dynamic string index into the Phosphor namespace import has no index signature
     const IconComponent = PhosphorIcons[componentName];
 
     if (!IconComponent) {

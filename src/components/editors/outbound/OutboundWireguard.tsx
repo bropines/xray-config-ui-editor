@@ -12,8 +12,13 @@ import { useConfigStore } from '../../../store/configStore';
 import { useField, useArrayField } from '../../../hooks/useField';
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {
-    if (outbound.protocol !== 'wireguard') return null;
-
+    // Pre-existing rules-of-hooks violation, caught by the new ESLint config:
+    // this used to `return null` BEFORE the hooks below, so every hook here
+    // would silently stop being called whenever an outbound's protocol was
+    // ever anything other than wireguard — a real risk if this component
+    // stays mounted across a protocol switch (React requires the exact same
+    // hooks, in the exact same order, on every render of the same instance).
+    // Hooks now run unconditionally; the early return moves below them.
     const { warpWorkerUrl } = useConfigStore();
     const settings = outbound.settings || { secretKey: "", address: ["10.0.0.1/24"], peers: [] };
     const [loading, setLoading] = useState(false);
@@ -30,6 +35,8 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
     const workers = useField<number>(outbound, onChange, ['settings', 'workers']);
     const remoteDNS = useField<string[]>(outbound, onChange, ['settings', 'remoteDNS']);
     const peers = useArrayField<any>(outbound, onChange, ['settings', 'peers']);
+
+    if (outbound.protocol !== 'wireguard') return null;
 
     const handleGenerateWarp = async () => {
         setLoading(true);

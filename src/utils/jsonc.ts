@@ -22,7 +22,7 @@ export function parseJsonc<T = any>(input: string): T {
         const cleanComments = input.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
             return group1 ? group1 : "";
         });
-        const cleanTrailingCommas = cleanComments.replace(/,(\s*[\}\]])/g, '$1');
+        const cleanTrailingCommas = cleanComments.replace(/,(\s*[}\]])/g, '$1');
         return JSON.parse(cleanTrailingCommas);
     }
 }
@@ -47,5 +47,5 @@ export function stripJsoncComments(input: string): string {
     const cleanComments = input.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
         return group1 ? group1 : "";
     });
-    return cleanComments.replace(/,(\s*[\}\]])/g, '$1');
+    return cleanComments.replace(/,(\s*[}\]])/g, '$1');
 }

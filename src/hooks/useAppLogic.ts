@@ -176,8 +176,12 @@ export const useAppLogic = () => {
 
     const handleSaveModal = useCallback((data: any, rawText?: string | null) => {
         const { type, index } = modal;
-        if (type === 'inbound') index !== null ? updateItem('inbounds', index, data, rawText) : addItem('inbounds', data);
-        if (type === 'outbound') index !== null ? updateItem('outbounds', index, data, rawText) : addItem('outbounds', data);
+        if (type === 'inbound') {
+            if (index !== null) updateItem('inbounds', index, data, rawText); else addItem('inbounds', data);
+        }
+        if (type === 'outbound') {
+            if (index !== null) updateItem('outbounds', index, data, rawText); else addItem('outbounds', data);
+        }
         setModal({ type: null, data: null, index: null });
     }, [modal, updateItem, addItem]);
 

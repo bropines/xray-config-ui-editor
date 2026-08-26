@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO_API_URL = 'https://api.github.com/repos/XTLS/Xray-core/contents/infra/conf';
-const RAW_URL_PREFIX = 'https://raw.githubusercontent.com/XTLS/Xray-core/main/infra/conf/';
 
 const OUTPUT_SCHEMA_PATH = path.join(__dirname, '../src/utils/config.schema.json');
 const OUTPUT_TYPES_PATH = path.join(__dirname, '../src/core/xray-config.d.ts');
@@ -169,7 +168,7 @@ async function run() {
             // Captures an optional block of `//` comment lines immediately preceding
             // each field, so every field can carry its OWN human-readable text
             // instead of inheriting the struct's doc comment (see bug below).
-            const fieldRegex = /(?:((?:[ \t]*\/\/[^\n]*\n)+))?[ \t]*(\w+)\s+([\w\*\[\]\.\{\}]+)(?:\s+`json:"([^"]+)"`)?/gm;
+            const fieldRegex = /(?:((?:[ \t]*\/\/[^\n]*\n)+))?[ \t]*(\w+)\s+([\w*[\].{}]+)(?:\s+`json:"([^"]+)"`)?/gm;
             let fieldMatch;
             const fields = [];
             while ((fieldMatch = fieldRegex.exec(structBody)) !== null) {
@@ -220,7 +219,6 @@ async function run() {
     Object.keys(structs).forEach(name => {
         const s = structs[name];
         const properties = {};
-        const required = [];
 
         s.fields.forEach(f => {
             const jsonKey = f.jsonKey || f.name;

@@ -29,7 +29,7 @@ export const useSmartTagInput = (
 
     const processAndAddTags = useCallback((rawInput: string) => {
         const rawTags = rawInput.split(/[\n,\s]+/);
-        let newTags = [...value];
+        const newTags = [...value];
         let added = false;
 
         rawTags.forEach(rawTag => {
