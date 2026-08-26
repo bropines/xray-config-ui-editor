@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { execSync } from 'child_process'
 
 let gitHash = 'dev'
@@ -16,7 +17,7 @@ const appVersion = `v${gitTag}-${gitHash}`
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   base: '/xray-config-ui-editor/', 
   define: {
     __APP_VERSION__: JSON.stringify(appVersion)
