@@ -100,7 +100,10 @@ export const RuleEditor = ({
                     label="Raw Rule JSON"
                     value={rule}
                     onChange={(val: any, raw?: string) => {
-                        onChange(val);
+                        // Pass raw through so the store can splice this rule's
+                        // literal text (comments included) into routing.rules
+                        // instead of a freshly-serialized, comment-free object.
+                        onChange(val, raw);
                         if (raw !== undefined) setLocalRawText(raw);
                     }}
                     className="h-full"

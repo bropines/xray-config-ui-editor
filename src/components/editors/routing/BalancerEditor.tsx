@@ -28,7 +28,10 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags, rawMode }: an
                     label="Raw Balancer JSON"
                     value={balancer}
                     onChange={(val: any, raw?: string) => {
-                        onChange(val);
+                        // Pass raw through so the store can splice this
+                        // balancer's literal text (comments included) instead
+                        // of a freshly-serialized, comment-free object.
+                        onChange(val, raw);
                         if (raw !== undefined) setLocalRawText(raw);
                     }}
                     schemaMode="balancer"

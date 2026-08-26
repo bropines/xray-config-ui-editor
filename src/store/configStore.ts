@@ -113,13 +113,15 @@ interface ConfigState {
     updateSection: (section: keyof XrayConfig, data: any, rawText?: string) => void;
     toggleSection: (section: keyof XrayConfig, defaultValue: any) => void;
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
-    updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
+    updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any, rawText?: string | null) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
     deleteItems: (section: 'inbounds' | 'outbounds', indices: number[]) => void;
     moveItem: (section: 'inbounds' | 'outbounds', fromIndex: number, toIndex: number) => void;
     addOutbounds: (items: any[]) => void;
     
     reorderRules: (newRules: RoutingRule[]) => void;
+    updateRoutingRule: (index: number, rule: RoutingRule, rawText?: string | null) => void;
+    updateBalancer: (index: number, balancer: any, rawText?: string | null) => void;
     initDns: () => void;
 
     // Hydration status — the persist store's storage backend (IndexedDB) is
@@ -696,10 +698,23 @@ export const useConfigStore = create(
                 return { config: fullObj, rawConfigText: newText };
             }),
 
-            updateItem: (section, index, item) => set((state) => {
+            updateItem: (section, index, item, rawText) => set((state) => {
                 const fullObj = resolveMutableConfig(state);
                 if (fullObj[section]) {
-                    fullObj[section][index] = item;
+                    // Prefer the item's own literal raw JSONC text (comments
+                    // and all) when the caller has one still in sync with
+                    // `item` — see useXrayEditor's handleSave. Falls back to
+                    // the plain object on parse failure, same as updateSection.
+                    if (rawText) {
+                        try {
+                            fullObj[section][index] = parseJsonc(rawText);
+                        } catch (e) {
+                            console.warn('[updateItem] Error parsing item rawText, falling back to plain object:', e);
+                            fullObj[section][index] = item;
+                        }
+                    } else {
+                        fullObj[section][index] = item;
+                    }
                 }
                 const newText = stringifyJsonc(fullObj, 2);
                 return { config: fullObj, rawConfigText: newText };
@@ -744,6 +759,49 @@ export const useConfigStore = create(
                 const fullObj = resolveMutableConfig(state);
                 if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
                 fullObj.routing.rules = newRules;
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            // Single-rule/balancer update that, unlike reorderRules/updateSection,
+            // preserves that one item's own raw JSONC text (comments included)
+            // when the caller has one still in sync — see RuleEditor/BalancerEditor's
+            // raw mode and updateItem's identical rationale. reorderRules always
+            // rebuilds the whole rules array as a plain JS array (via [...rules]
+            // in useRoutingEditor), which silently drops any comments the parsed
+            // rules array carried; this action mutates just the one index instead.
+            updateRoutingRule: (index, rule, rawText) => set((state) => {
+                const fullObj = resolveMutableConfig(state);
+                if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                if (!fullObj.routing.rules) fullObj.routing.rules = [];
+                if (rawText) {
+                    try {
+                        fullObj.routing.rules[index] = parseJsonc(rawText);
+                    } catch (e) {
+                        console.warn('[updateRoutingRule] Error parsing rule rawText, falling back to plain object:', e);
+                        fullObj.routing.rules[index] = rule;
+                    }
+                } else {
+                    fullObj.routing.rules[index] = rule;
+                }
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            updateBalancer: (index, balancer, rawText) => set((state) => {
+                const fullObj = resolveMutableConfig(state);
+                if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                if (!fullObj.routing.balancers) fullObj.routing.balancers = [];
+                if (rawText) {
+                    try {
+                        fullObj.routing.balancers[index] = parseJsonc(rawText);
+                    } catch (e) {
+                        console.warn('[updateBalancer] Error parsing balancer rawText, falling back to plain object:', e);
+                        fullObj.routing.balancers[index] = balancer;
+                    }
+                } else {
+                    fullObj.routing.balancers[index] = balancer;
+                }
                 const newText = stringifyJsonc(fullObj, 2);
                 return { config: fullObj, rawConfigText: newText };
             }),

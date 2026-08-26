@@ -174,10 +174,10 @@ export const useAppLogic = () => {
         if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
     }, [loadFile]);
 
-    const handleSaveModal = useCallback((data: any) => {
+    const handleSaveModal = useCallback((data: any, rawText?: string | null) => {
         const { type, index } = modal;
-        if (type === 'inbound') index !== null ? updateItem('inbounds', index, data) : addItem('inbounds', data);
-        if (type === 'outbound') index !== null ? updateItem('outbounds', index, data) : addItem('outbounds', data);
+        if (type === 'inbound') index !== null ? updateItem('inbounds', index, data, rawText) : addItem('inbounds', data);
+        if (type === 'outbound') index !== null ? updateItem('outbounds', index, data, rawText) : addItem('outbounds', data);
         setModal({ type: null, data: null, index: null });
     }, [modal, updateItem, addItem]);
 

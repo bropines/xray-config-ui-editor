@@ -3,7 +3,7 @@ import { validateInbound } from '../core/validators';
 import { createDefaultInbound } from '../utils/protocol-factories';
 import type { Inbound } from '../store/configStore';
 
-export const useInboundEditor = (data: Inbound, onSave: (data: Inbound) => void) => {
+export const useInboundEditor = (data: Inbound, onSave: (data: Inbound, rawText?: string | null) => void) => {
     return useXrayEditor<Inbound>({
         data: data || createDefaultInbound(),
         onSave,

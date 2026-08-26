@@ -9,7 +9,15 @@ export function parseJsonc<T = any>(input: string): T {
     }
 
     try {
-        return commentJsonParse(input, null, true) as T;
+        // The 3rd arg to comment-json's parse is `removesComments` — passing
+        // `true` here (as this used to) means "strip all comments while
+        // parsing", the exact opposite of what parseJsonc is documented and
+        // relied upon to do everywhere it's called (updateSection et al. in
+        // configStore.ts, JsonField's comment-preserving reconciliation).
+        // Every comment a user ever wrote in their raw config was being
+        // silently discarded on the very first parse, before any of the
+        // "preserve comments" logic downstream ever got a chance to run.
+        return commentJsonParse(input, null, false) as T;
     } catch (e) {
         const cleanComments = input.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
             return group1 ? group1 : "";

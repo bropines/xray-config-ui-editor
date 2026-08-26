@@ -7,7 +7,7 @@ import type { Outbound } from '../store/configStore';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-export const useOutboundEditor = (data: Outbound, onSave: (data: Outbound) => void, index: number | null) => {
+export const useOutboundEditor = (data: Outbound, onSave: (data: Outbound, rawText?: string | null) => void, index: number | null) => {
     const { config } = useConfigStore();
 
     const validate = useCallback((local: Outbound) => {
@@ -18,7 +18,7 @@ export const useOutboundEditor = (data: Outbound, onSave: (data: Outbound) => vo
 
     const editor = useXrayEditor<Outbound>({
         data: data || createDefaultOutbound(),
-        onSave: (local) => {
+        onSave: (local, rawText) => {
             // Проверка дубликатов перед окончательным сохранением
             const duplicateTag = checkOutboundDuplication(local, config?.outbounds || [], index);
             if (duplicateTag) {
@@ -26,7 +26,7 @@ export const useOutboundEditor = (data: Outbound, onSave: (data: Outbound) => vo
                     return;
                 }
             }
-            onSave(local);
+            onSave(local, rawText);
         },
         validate,
         onProtocolChange: (proto) => createDefaultOutbound(proto)
