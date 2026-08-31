@@ -10,6 +10,7 @@ import { FinalmaskEditor } from './FinalmaskEditor';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { NumberInput } from '../../ui/NumberInput';
+import { DurationInput } from '../../ui/DurationInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { ExtendedSection } from '../../ui/ExtendedSection';
@@ -330,19 +331,27 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <>
                                 <div><label className="label-xs">User Agent</label><input className="input-base font-mono" placeholder="custom user agent" value={grpcUserAgent.value || ""} onChange={e => grpcUserAgent.onChange(e.target.value)} /></div>
                                 <div>
-                                    <label className="label-xs">Idle Timeout (s)</label>
-                                    <NumberInput
+                                    <label className="label-xs">Idle Timeout</label>
+                                    <DurationInput
                                         placeholder="60"
                                         value={grpcIdleTimeout.value}
                                         onChange={val => grpcIdleTimeout.onChange(val)}
+                                        defaultUnit="s"
+                                        mode="number"
+                                        baseUnit="s"
+                                        unitOptions={['ms', 's', 'm', 'h']}
                                     />
                                 </div>
                                 <div>
-                                    <label className="label-xs">Health Check Timeout (s)</label>
-                                    <NumberInput
+                                    <label className="label-xs">Health Check Timeout</label>
+                                    <DurationInput
                                         placeholder="20"
                                         value={grpcHealthCheckTimeout.value}
                                         onChange={val => grpcHealthCheckTimeout.onChange(val)}
+                                        defaultUnit="s"
+                                        mode="number"
+                                        baseUnit="s"
+                                        unitOptions={['ms', 's', 'm', 'h']}
                                     />
                                 </div>
                                 <div>

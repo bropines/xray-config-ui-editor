@@ -4,6 +4,7 @@ import { Switch } from '../../ui/Switch';
 import { Help } from '../../ui/Help';
 import { SockoptEditor } from './SockoptEditor';
 import { Select } from '../../ui/Select';
+import { DurationInput } from '../../ui/DurationInput';
 import { useXhttpSettingsEditor } from '../../../hooks/useXhttpSettingsEditor';
 
 interface XhttpSettingsEditorProps {
@@ -116,10 +117,15 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                                         onChange={e => update(['extra', 'scMaxEachPostBytes'], e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="label-xs text-[10px]">Min Post Interval (ms)</label>
-                                    <input className="input-base text-xs font-mono" placeholder="30"
-                                        value={extra.scMinPostsIntervalMs || ""} 
-                                        onChange={e => update(['extra', 'scMinPostsIntervalMs'], e.target.value)} />
+                                    <label className="label-xs text-[10px]">Min Post Interval</label>
+                                    <DurationInput placeholder="30"
+                                        value={extra.scMinPostsIntervalMs} 
+                                        onChange={val => update(['extra', 'scMinPostsIntervalMs'], val)}
+                                        defaultUnit="ms"
+                                        mode="number"
+                                        baseUnit="ms"
+                                        unitOptions={['ms', 's', 'm', 'h']}
+                                    />
                                 </div>
                                 <div>
                                     <label className="label-xs text-[10px]">Max Buffered Posts</label>
@@ -173,10 +179,15 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                                             onChange={e => update(['extra', 'xmux', 'hMaxReusableSecs'], e.target.value)} />
                                     </div>
                                     <div>
-                                        <label className="label-xs flex items-center">Keep-Alive (s) <Help>0 for auto. -1 to disable.</Help></label>
-                                        <input type="number" className="input-base font-mono" placeholder="0"
-                                            value={xmux.hKeepAlivePeriod || ""} 
-                                            onChange={e => update(['extra', 'xmux', 'hKeepAlivePeriod'], parseInt(e.target.value))} />
+                                        <label className="label-xs flex items-center">Keep-Alive <Help>0 for auto. -1 to disable.</Help></label>
+                                        <DurationInput placeholder="0"
+                                            value={xmux.hKeepAlivePeriod} 
+                                            onChange={val => update(['extra', 'xmux', 'hKeepAlivePeriod'], val)}
+                                            defaultUnit="s"
+                                            mode="number"
+                                            baseUnit="s"
+                                            unitOptions={['ms', 's', 'm', 'h']}
+                                        />
                                     </div>
                                 </div>
                             )}

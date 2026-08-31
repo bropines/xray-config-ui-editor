@@ -105,7 +105,7 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
                             help: 'If enabled, always query even if other servers already matched.'
                         },
                         timeoutMs: {
-                            label: 'Timeout (ms)',
+                            label: 'Timeout',
                             help: 'Per-server query timeout in milliseconds.',
                             placeholder: 'e.g. 5000'
                         },
@@ -128,7 +128,7 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
                             help: 'Serve stale/expired cache entries from this server.'
                         },
                         serveExpiredTTL: {
-                            label: 'Serve Expired TTL (sec)',
+                            label: 'Serve Expired TTL',
                             help: 'Extended TTL for stale cache entries in seconds.',
                             placeholder: 'e.g. 86400'
                         },

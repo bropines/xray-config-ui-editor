@@ -22,6 +22,9 @@ export type { InputProps } from './Input';
 export { NumberInput } from './NumberInput';
 export type { NumberInputProps } from './NumberInput';
 
+export { DurationInput, parseDuration } from './DurationInput';
+export type { DurationInputProps, TimeUnit } from './DurationInput';
+
 export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
 

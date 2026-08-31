@@ -57,10 +57,10 @@ export const PolicyEditor = ({ policy, onChange, onToggle }: any) => {
                                 onChange({ ...localPolicy, levels: lvls });
                             }}
                             fieldConfigs={{
-                                handshake: { label: 'Handshake Timeout (sec)', help: 'Handshake timeout. Default: 4.', placeholder: '4' },
-                                connIdle: { label: 'Connection Idle (sec)', help: 'Connection idle timeout. Default: 300.', placeholder: '300' },
-                                uplinkOnly: { label: 'Uplink Only (sec)', help: 'Time to wait after downlink closes.', placeholder: '2' },
-                                downlinkOnly: { label: 'Downlink Only (sec)', help: 'Time to wait after uplink closes.', placeholder: '5' },
+                                handshake: { label: 'Handshake Timeout', help: 'Handshake timeout. Default: 4s.', placeholder: '4' },
+                                connIdle: { label: 'Connection Idle Timeout', help: 'Connection idle timeout. Default: 300s.', placeholder: '300' },
+                                uplinkOnly: { label: 'Uplink Only Timeout', help: 'Time to wait after downlink closes. Default: 2s.', placeholder: '2' },
+                                downlinkOnly: { label: 'Downlink Only Timeout', help: 'Time to wait after uplink closes. Default: 5s.', placeholder: '5' },
                                 statsUserUplink: { label: 'User Uplink Stats', help: 'Enable per-user uplink traffic statistics.' },
                                 statsUserDownlink: { label: 'User Downlink Stats', help: 'Enable per-user downlink traffic statistics.' },
                                 statsUserOnline: { label: 'User Online Count Stats', help: 'Enable per-user online count statistics.' },

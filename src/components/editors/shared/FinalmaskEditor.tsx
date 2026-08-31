@@ -3,6 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { Select } from '../../ui/Select';
+import { DurationInput } from '../../ui/DurationInput';
 import { useFinalmaskEditor, FINALMASK_LAYER_TYPES as TYPES } from '../../../hooks/useFinalmaskEditor';
 
 export const FinalmaskEditor = ({ finalmask, onChange }) => {
@@ -172,12 +173,28 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                         </span>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Max Idle Timeout (s)</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/50" placeholder="e.g. 30" value={finalmask.quicParams?.max_idle_timeout || ""} onChange={e => updateQuic('max_idle_timeout', e.target.value)} />
+                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Max Idle Timeout</label>
+                                <DurationInput
+                                    placeholder="30"
+                                    value={finalmask.quicParams?.max_idle_timeout}
+                                    onChange={val => updateQuic('max_idle_timeout', val)}
+                                    defaultUnit="s"
+                                    mode="number"
+                                    baseUnit="s"
+                                    unitOptions={['ms', 's', 'm', 'h']}
+                                />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Handshake Timeout (s)</label>
-                                <input className="input-base text-xs font-mono bg-slate-950/50" placeholder="e.g. 20" value={finalmask.quicParams?.handshake_timeout || ""} onChange={e => updateQuic('handshake_timeout', e.target.value)} />
+                                <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Handshake Timeout</label>
+                                <DurationInput
+                                    placeholder="20"
+                                    value={finalmask.quicParams?.handshake_timeout}
+                                    onChange={val => updateQuic('handshake_timeout', val)}
+                                    defaultUnit="s"
+                                    mode="number"
+                                    baseUnit="s"
+                                    unitOptions={['ms', 's', 'm', 'h']}
+                                />
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">Congestion Control</label>

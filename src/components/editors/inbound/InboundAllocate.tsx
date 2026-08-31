@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select, NumberInput, FormField, Help, Switch } from '../../ui';
+import { Select, NumberInput, DurationInput, FormField, Help, Switch } from '../../ui';
 import { useField, type FieldPath } from '../../../hooks/useField';
 
 interface AllocateSettings {
@@ -61,11 +61,15 @@ export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onCh
                         ]}
                     />
 
-                    <FormField label="Refresh (min)" help="Interval in minutes to rotate random ports.">
-                        <NumberInput
+                    <FormField label="Refresh Interval" help="Interval to rotate random ports.">
+                        <DurationInput
                             value={refresh.value ?? 5}
                             onChange={val => refresh.onChange(val)}
                             placeholder="5"
+                            defaultUnit="m"
+                            mode="number"
+                            baseUnit="m"
+                            unitOptions={['ms', 's', 'm', 'h']}
                         />
                     </FormField>
 

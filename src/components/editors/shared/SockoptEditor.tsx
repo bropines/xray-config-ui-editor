@@ -6,6 +6,7 @@ import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
 import { Select } from '../../ui/Select';
 import { Switch } from '../../ui/Switch';
+import { DurationInput } from '../../ui/DurationInput';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useSockoptEditor } from '../../../hooks/useSockoptEditor';
 
@@ -249,27 +250,39 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                         {/* TCP Low-level tuning */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-slate-800/60">
                             <div>
-                                <label className="label-xs text-[10px]">TCP Keep-Alive Idle (s)</label>
-                                <input type="number" className="input-base font-mono text-xs"
+                                <label className="label-xs text-[10px]">TCP Keep-Alive Idle</label>
+                                <DurationInput
                                     placeholder="300"
-                                    value={local.tcpKeepAliveIdle || ""}
-                                    onChange={e => update('tcpKeepAliveIdle', parseInt(e.target.value))}
+                                    value={local.tcpKeepAliveIdle}
+                                    onChange={val => update('tcpKeepAliveIdle', val)}
+                                    defaultUnit="s"
+                                    mode="number"
+                                    baseUnit="s"
+                                    unitOptions={['ms', 's', 'm', 'h']}
                                 />
                             </div>
                             <div>
                                 <label className="label-xs text-[10px]">TCP Keep-Alive Interval</label>
-                                <input type="number" className="input-base font-mono text-xs"
+                                <DurationInput
                                     placeholder="0"
-                                    value={local.tcpKeepAliveInterval || ""}
-                                    onChange={e => update('tcpKeepAliveInterval', parseInt(e.target.value))}
+                                    value={local.tcpKeepAliveInterval}
+                                    onChange={val => update('tcpKeepAliveInterval', val)}
+                                    defaultUnit="s"
+                                    mode="number"
+                                    baseUnit="s"
+                                    unitOptions={['ms', 's', 'm', 'h']}
                                 />
                             </div>
                             <div>
-                                <label className="label-xs text-[10px]">TCP User Timeout (ms)</label>
-                                <input type="number" className="input-base font-mono text-xs"
+                                <label className="label-xs text-[10px]">TCP User Timeout</label>
+                                <DurationInput
                                     placeholder="10000"
-                                    value={local.tcpUserTimeout || ""}
-                                    onChange={e => update('tcpUserTimeout', parseInt(e.target.value))}
+                                    value={local.tcpUserTimeout}
+                                    onChange={val => update('tcpUserTimeout', val)}
+                                    defaultUnit="ms"
+                                    mode="number"
+                                    baseUnit="ms"
+                                    unitOptions={['ms', 's', 'm', 'h']}
                                 />
                             </div>
                             <div>

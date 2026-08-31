@@ -90,12 +90,12 @@ export const CostObjectSchema = z.object({
 export const StrategySettingsSchema = z.object({
   /** Expected RTT in milliseconds */
   expected: z.number().optional(),
-  /** Maximum acceptable RTT in milliseconds */
-  maxRTT: z.number().optional(),
+  /** Maximum acceptable RTT (e.g. "1s", "500ms" or milliseconds) */
+  maxRTT: z.union([z.string(), z.number()]).optional(),
   /** Tolerance for RTT difference */
   tolerance: z.number().optional(),
-  /** Baseline RTT values */
-  baselines: z.array(z.number()).optional(),
+  /** Baseline RTT values (e.g. "1s", "500ms" or milliseconds) */
+  baselines: z.array(z.union([z.string(), z.number()])).optional(),
   /** Cost adjustments for specific outbounds */
   costs: z.array(CostObjectSchema).optional(),
 }).passthrough();
