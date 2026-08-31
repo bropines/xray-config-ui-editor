@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] - 2026-08-31
+
+### Added
+- **DurationInput & Time Unit Dropdown (`ms`, `s`, `m`, `h`)**:
+  - Added new `DurationInput` component with numeric input, stepper controls, and a time unit selector dropdown (`ms`, `s`, `m`, `h`).
+  - Implemented smart parsing to automatically detect pasted or typed units (e.g. `500ms`, `2m`, `10s`).
+  - Integrated `DurationInput` across all configuration forms via `SchemaField` / `SchemaForm` and custom editors:
+    - **Observatory**: `probeInterval`
+    - **Burst Observatory**: `interval`, `timeout`
+    - **Balancer (LeastLoad)**: `maxRTT`, `baselines`
+    - **Policy Level 0**: `handshake`, `connIdle`, `uplinkOnly`, `downlinkOnly`
+    - **DNS / DNS Server**: `timeoutMs`, `serveExpiredTTL`
+    - **Inbound Allocate**: `refresh`
+    - **Transport Sockopt**: `tcpKeepAliveIdle`, `tcpKeepAliveInterval`, `tcpUserTimeout`
+    - **Transport XHTTP**: `scMinPostsIntervalMs`, `hKeepAlivePeriod`
+    - **Transport gRPC**: `idle_timeout`, `health_check_timeout`
+    - **Transport Finalmask (QUIC)**: `max_idle_timeout`, `handshake_timeout`
+    - **Transport Reality**: `maxTimeDiff`
+    - **Routing Webhook**: `deduplication`
+
+### Fixed
+- **Input Character Restriction in Duration Fields**:
+  - Resolved browser-level `<input type="number">` restrictions that blocked typing letters (`s`, `m`, `ms`, `h`).
+  - Updated Zod schemas in `routing.schema.ts` and `observatory.schema.ts` to accept duration string and number unions.
+
 ## [1.0.12] - 2026-08-24
 
 ### Fixed
