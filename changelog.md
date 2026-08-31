@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.15] - 2026-08-31
+
+### Added
+- **Prefix-Aware Outbound Selector in Observatory & Burst Observatory**:
+  - Reusable `OutboundSelector` component with full prefix matching (`subjectSelector` / `selector`), visual exact vs prefix match indicators (`GitMerge`), and real-time pending match highlighting (`Eye`).
+  - Integrated `OutboundSelector` into **ObservatoryEditor** and **BurstObservatoryEditor** in General Settings.
+  - Refactored **BalancerEditor** to use the shared `OutboundSelector` component for unified node and prefix selection UX across routing and settings.
+  - Added unit test suite covering prefix, exact, and pending match evaluation logic.
+
 ## [1.0.14] - 2026-08-31
 
 ### Added

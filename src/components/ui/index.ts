@@ -64,3 +64,5 @@ export { JsonField } from './JsonField';
 export { SchemaField } from './SchemaField';
 export { SchemaForm } from './SchemaForm';
 export { ExtendedSection } from './ExtendedSection';
+export { OutboundSelector } from './OutboundSelector';
+export type { OutboundSelectorProps, MatchResult } from './OutboundSelector';

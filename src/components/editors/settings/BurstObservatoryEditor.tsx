@@ -1,8 +1,8 @@
 import React from 'react';
-import { Switch, Card, TagSelector, SchemaForm } from '../../ui';
+import { Switch, Card, OutboundSelector, SchemaForm } from '../../ui';
 import { PingConfigSchema } from '../../../core/xray/schemas/observatory.schema';
 
-export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, outboundTags }: any) => {
+export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, outboundTags = [] }: any) => {
     const enabled = !!burstObservatory;
     const localObs = burstObservatory || { 
         subjectSelector: [], 
@@ -69,17 +69,18 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                     />
                     
                     <div className="mt-4 pt-4 border-t border-slate-800/50">
-                        <TagSelector 
+                        <OutboundSelector 
                             label="Subject Selector (Outbounds to Watch)"
+                            help="Select outbound tags or enter prefix filters (e.g. 'vless-', 'proxy-') for burst stealth health checks."
                             availableTags={outboundTags}
                             selected={localObs.subjectSelector || []}
                             onChange={v => update('subjectSelector', v)}
-                            multi={true}
-                            placeholder="Prefix matching..."
+                            placeholder="e.g. 'vless-', 'node-', 'direct'..."
+                            colorScheme="indigo"
                         />
                     </div>
                 </div>
             )}
         </Card>
     );
-};
+};

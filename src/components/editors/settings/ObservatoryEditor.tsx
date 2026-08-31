@@ -1,8 +1,8 @@
 import React from 'react';
-import { Switch, Card, TagSelector, SchemaForm } from '../../ui';
+import { Switch, Card, OutboundSelector, SchemaForm } from '../../ui';
 import { ObservatorySchema } from '../../../core/xray/schemas/observatory.schema';
 
-export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTags }: any) => {
+export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTags = [] }: any) => {
     const enabled = !!observatory;
     const localObs = observatory || { 
         subjectSelector: [], 
@@ -57,21 +57,18 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
                     />
                     
                     <div className="mt-4 pt-4 border-t border-slate-800/50">
-                        <TagSelector 
+                        <OutboundSelector 
                             label="Subject Selector (Outbounds to Watch)"
+                            help="Select outbound tags or enter prefix filters (e.g. 'vless-', 'proxy-') to monitor health status. Required for leastPing balancers."
                             availableTags={outboundTags}
                             selected={localObs.subjectSelector || []}
                             onChange={v => update('subjectSelector', v)}
-                            multi={true}
-                            placeholder="Prefix matching..."
+                            placeholder="e.g. 'vless-', 'node-', 'direct'..."
+                            colorScheme="indigo"
                         />
-                        <p className="text-[10px] text-slate-500 mt-2">
-                            Select Outbound tags (or prefixes) that will be monitored by Observatory. 
-                            Needed for <code>leastPing</code> balancers.
-                        </p>
                     </div>
                 </div>
             )}
         </Card>
     );
-};
+};
