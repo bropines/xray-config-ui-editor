@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.13] - 2026-08-31
+## [1.0.14] - 2026-08-31
 
 ### Added
 - **DurationInput & Time Unit Dropdown (`ms`, `s`, `m`, `h`)**:
