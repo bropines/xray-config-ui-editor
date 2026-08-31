@@ -5,9 +5,9 @@ import { Select } from './Select';
 import { Switch } from './Switch';
 import { SmartTagInput } from './SmartTagInput';
 import { NumberInput } from './NumberInput';
+import { DurationInput, type TimeUnit } from './DurationInput';
 import { Icon } from './Icon';
-import { generateRealityShortIds } from '../../core/generators';
-import { generateX25519Keys } from '../../utils/crypto';
+import { generateRealityShortIds, generateX25519Keys } from '../../core/generators';
 import { toast } from 'sonner';
 
 // Helper to inspect the Zod type at runtime
@@ -75,7 +75,34 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     return { type: 'unknown' };
 }
 
-interface SchemaFieldProps {
+export const DURATION_FIELD_SPECS: Record<string, { defaultUnit: TimeUnit; mode: 'string' | 'number'; baseUnit?: TimeUnit }> = {
+    probeInterval: { defaultUnit: 'm', mode: 'string' },
+    interval: { defaultUnit: 'm', mode: 'string' },
+    timeout: { defaultUnit: 's', mode: 'string' },
+    maxRTT: { defaultUnit: 's', mode: 'string' },
+    handshake: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    connIdle: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    uplinkOnly: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    downlinkOnly: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    timeoutMs: { defaultUnit: 'ms', mode: 'number', baseUnit: 'ms' },
+    serveExpiredTTL: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    refresh: { defaultUnit: 'm', mode: 'number', baseUnit: 'm' },
+    tcpKeepAliveIdle: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    tcpKeepAliveInterval: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    tcpUserTimeout: { defaultUnit: 'ms', mode: 'number', baseUnit: 'ms' },
+    scMinPostsIntervalMs: { defaultUnit: 'ms', mode: 'number', baseUnit: 'ms' },
+    hKeepAlivePeriod: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    maxTimeDiff: { defaultUnit: 'ms', mode: 'number', baseUnit: 'ms' },
+    deduplication: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    idle_timeout: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    health_check_timeout: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    max_idle_timeout: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    handshake_timeout: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    keepAlive: { defaultUnit: 's', mode: 'number', baseUnit: 's' },
+    tti: { defaultUnit: 'ms', mode: 'number', baseUnit: 'ms' }
+};
+
+export interface SchemaFieldProps {
     name: string;
     schema: z.ZodTypeAny | undefined;
     value: any;
@@ -85,6 +112,11 @@ interface SchemaFieldProps {
     help?: string;
     placeholder?: string;
     options?: string[];
+    type?: 'string' | 'number' | 'boolean' | 'enum' | 'duration' | 'array';
+    unitOptions?: TimeUnit[];
+    defaultUnit?: TimeUnit;
+    durationMode?: 'string' | 'number';
+    baseUnit?: TimeUnit;
 }
 
 export const SchemaField = ({
@@ -96,16 +128,47 @@ export const SchemaField = ({
     label,
     help,
     placeholder,
-    options
+    options,
+    type,
+    unitOptions,
+    defaultUnit,
+    durationMode,
+    baseUnit
 }: SchemaFieldProps) => {
     const [genPublicKey, setGenPublicKey] = React.useState<string | null>(null);
+    
+    // Check if explicitly configured as duration or recognized by field name
+    const isDuration = type === 'duration' || name in DURATION_FIELD_SPECS || !!durationMode;
+    const fieldLabel = label ?? name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+    if (isDuration) {
+        const spec = DURATION_FIELD_SPECS[name];
+        const effectiveMode = durationMode ?? spec?.mode ?? 'string';
+        const effectiveDefaultUnit = defaultUnit ?? spec?.defaultUnit ?? 's';
+        const effectiveBaseUnit = baseUnit ?? spec?.baseUnit ?? 's';
+        const effectiveUnitOptions = unitOptions ?? ['ms', 's', 'm', 'h'];
+
+        return (
+            <FormField label={fieldLabel} help={help} error={error}>
+                <DurationInput
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    mode={effectiveMode}
+                    defaultUnit={effectiveDefaultUnit}
+                    baseUnit={effectiveBaseUnit}
+                    unitOptions={effectiveUnitOptions}
+                />
+            </FormField>
+        );
+    }
+
     // If schema is not provided, fallback to string type
     const details = schema ? getSchemaTypeAndDetails(schema) : { type: 'string' as const };
     if (options && options.length > 0) {
         details.type = 'enum';
         details.options = options;
     }
-    const fieldLabel = label ?? name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
 
     switch (details.type) {
         case 'boolean':

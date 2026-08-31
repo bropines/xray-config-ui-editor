@@ -46,8 +46,8 @@ export const saveCachedData = async (key: string, data: any, meta: any, rawBuffe
 };
 
 // Кеш в памяти
-let memCache: { geosite: any[], geoip: any[] } = { geosite: [], geoip: [] };
-let fetchPromises: { geosite?: Promise<any[]>, geoip?: Promise<any[]> } = {};
+const memCache: { geosite: any[], geoip: any[] } = { geosite: [], geoip: [] };
+const fetchPromises: { geosite?: Promise<any[]>, geoip?: Promise<any[]> } = {};
 
 export const getDefaultGeoList = (type: 'geosite' | 'geoip'): Promise<any[]> => {
     if (memCache[type] && memCache[type].length > 0) {
@@ -56,7 +56,13 @@ export const getDefaultGeoList = (type: 'geosite' | 'geoip'): Promise<any[]> => 
     
     if (fetchPromises[type]) return fetchPromises[type]!;
 
-    const promise = new Promise<any[]>(async (resolve) => {
+    // An async Promise executor is a real footgun (not just a lint nit): if
+    // anything in here throws before resolve() is called, that rejection
+    // isn't wired to the outer Promise at all — it becomes an unhandled
+    // rejection and `promise` just hangs forever. Wrapping the body in an
+    // IIFE and forwarding its rejection to `reject` fixes that without
+    // changing any of the resolve-call-sites below.
+    const promise = new Promise<any[]>((resolve, reject) => { (async () => {
         const geositeUrl = "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat";
         const geoipUrl = "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat";
         const url = type === 'geosite' ? geositeUrl : geoipUrl;
@@ -97,7 +103,7 @@ export const getDefaultGeoList = (type: 'geosite' | 'geoip'): Promise<any[]> => 
         
         worker.addEventListener('message', handleMessage);
         worker.postMessage({ type, cachedMeta: cache?.meta });
-    });
+    })().catch(reject); });
 
     fetchPromises[type] = promise;
     return promise;

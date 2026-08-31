@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 interface UseXrayEditorOptions<T> {
     data: T;
-    onSave: (data: T) => void;
+    onSave: (data: T, rawText?: string | null) => void;
     validate: (data: T) => ValidationError[];
     onProtocolChange?: (proto: string) => T;
 }
@@ -71,8 +71,13 @@ export const useXrayEditor = <T extends Record<string, any>>({
             toast.error("Please fix validation errors before saving");
             return;
         }
-        onSave(local);
-    }, [local, onSave, validate]);
+        // `rawText` is only non-null when it's still in sync with `local` —
+        // any field-level edit (updateField/handleProtocolChange) clears it
+        // immediately. Pass it through so the caller can splice the user's
+        // literal raw-JSON text (comments and all) back into the config
+        // instead of a freshly-serialized, comment-free `local` object.
+        onSave(local, rawText);
+    }, [local, rawText, onSave, validate]);
 
     const getError = useCallback((field: string) => 
         errors.find(e => e.field === field)?.message

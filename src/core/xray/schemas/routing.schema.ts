@@ -58,6 +58,15 @@ export const RoutingRuleSchema = z.object({
   attrs: z.record(z.string(), z.string()).optional(),
   /** Process name match list */
   process: z.array(z.string()).optional(),
+  /**
+   * EXPERIMENTAL — not in a tagged Xray-core release yet (landed on main
+   * 2026-08-12, commit a12801c1, "Routing: Add `localOS` that directly
+   * matches `runtime.GOOS`"). Matches the OS the Xray process itself is
+   * running on (e.g. "windows", "linux", "darwin") — useful for routing
+   * rules shared across configs deployed on mixed-OS nodes.
+   * json:"localOS" -> []string.
+   */
+  localOS: z.array(z.string()).optional(),
 
   // --- Actions ---
   /** Target outbound tag */
@@ -81,12 +90,12 @@ export const CostObjectSchema = z.object({
 export const StrategySettingsSchema = z.object({
   /** Expected RTT in milliseconds */
   expected: z.number().optional(),
-  /** Maximum acceptable RTT in milliseconds */
-  maxRTT: z.number().optional(),
+  /** Maximum acceptable RTT (e.g. "1s", "500ms" or milliseconds) */
+  maxRTT: z.union([z.string(), z.number()]).optional(),
   /** Tolerance for RTT difference */
   tolerance: z.number().optional(),
-  /** Baseline RTT values */
-  baselines: z.array(z.number()).optional(),
+  /** Baseline RTT values (e.g. "1s", "500ms" or milliseconds) */
+  baselines: z.array(z.union([z.string(), z.number()])).optional(),
   /** Cost adjustments for specific outbounds */
   costs: z.array(CostObjectSchema).optional(),
 }).passthrough();

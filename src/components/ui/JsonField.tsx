@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
 import { parseJsonc, stringifyJsonc, stripJsoncComments } from "../../utils/jsonc";
-import { useConfigStore } from "../../store/configStore";
 
 interface JsonFieldProps {
     label?: string;
@@ -10,10 +9,22 @@ interface JsonFieldProps {
     className?: string;
     schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse';
     rawText?: string | null;
+    /**
+     * The full config document's current raw JSONC text (store's
+     * `rawConfigText`), used only to preserve comments/formatting when this
+     * field's value happens to structurally match a slice of it. Optional —
+     * pass it from a caller that already has store access; JsonField itself
+     * has none (see the plan: ui/ primitives stay store-free).
+     */
+    rawConfigText?: string | null;
+    /** Forwarded to JsonEditor — see its own doc comment. */
+    onSaveShortcut?: () => void;
+    onCommitShortcut?: () => { id: string; additions?: number; deletions?: number } | null | undefined;
+    /** Forwarded to JsonEditor. Previously accepted but silently dropped here — the prop wasn't declared, so callers passing it (e.g. VersionHistoryModal's snapshot preview) got an editable field despite asking for read-only. */
+    readOnly?: boolean;
 }
 
-export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full', rawText }: JsonFieldProps) => {
-    const rawConfigText = useConfigStore(state => state.rawConfigText);
+export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full', rawText, rawConfigText, onSaveShortcut, onCommitShortcut, readOnly = false }: JsonFieldProps) => {
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
     const isLocalEditRef = useRef(false);
@@ -150,10 +161,13 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
             
             <div className={`flex-1 min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#282c34] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
                 <div className="absolute inset-0">
-                    <JsonEditor 
-                        value={text} 
-                        onChange={handleEditorChange} 
-                        schemaMode={schemaMode} 
+                    <JsonEditor
+                        value={text}
+                        onChange={handleEditorChange}
+                        schemaMode={schemaMode}
+                        onSaveShortcut={onSaveShortcut}
+                        onCommitShortcut={onCommitShortcut}
+                        readOnly={readOnly}
                     />
                 </div>
             </div>

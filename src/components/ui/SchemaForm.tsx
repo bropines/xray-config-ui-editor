@@ -1,9 +1,22 @@
 import React from 'react';
 import { z } from 'zod';
 import { SchemaField, getSchemaTypeAndDetails } from './SchemaField';
+import type { TimeUnit } from './DurationInput';
+
+export interface FieldConfig {
+    label?: string;
+    help?: string;
+    placeholder?: string;
+    options?: string[];
+    type?: 'string' | 'number' | 'boolean' | 'enum' | 'duration' | 'array';
+    unitOptions?: TimeUnit[];
+    defaultUnit?: TimeUnit;
+    durationMode?: 'string' | 'number';
+    baseUnit?: TimeUnit;
+}
 
 // Standard field configurations for premium user experience
-const STANDARD_FIELD_CONFIGS: Record<string, { label: string; help: string; placeholder?: string; options?: string[] }> = {
+const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
     tag: {
         label: 'Tag / Alias',
         help: 'Unique identifier for routing and logs.',
@@ -57,12 +70,157 @@ const STANDARD_FIELD_CONFIGS: Record<string, { label: string; help: string; plac
     refresh: {
         label: 'Refresh Interval',
         help: 'Interval in minutes to refresh port allocation.',
-        placeholder: 'e.g. 5'
+        placeholder: 'e.g. 5',
+        type: 'duration',
+        defaultUnit: 'm',
+        durationMode: 'number',
+        baseUnit: 'm'
     },
     concurrency: {
         label: 'Concurrency',
         help: 'Number of concurrent ports to allocate.',
         placeholder: 'e.g. 3'
+    },
+    // Duration / Interval / Timeout settings
+    probeInterval: {
+        label: 'Probe Interval',
+        help: 'Probe interval (e.g. "10s", "1m", "2h").',
+        placeholder: '1m',
+        type: 'duration',
+        defaultUnit: 'm',
+        durationMode: 'string'
+    },
+    interval: {
+        label: 'Interval',
+        help: 'Average probe interval per outbound. Min 10s.',
+        placeholder: '1m',
+        type: 'duration',
+        defaultUnit: 'm',
+        durationMode: 'string'
+    },
+    timeout: {
+        label: 'Timeout',
+        help: 'Probe timeout.',
+        placeholder: '5s',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'string'
+    },
+    maxRTT: {
+        label: 'Max RTT',
+        help: 'Maximum acceptable RTT (e.g. "1s", "500ms").',
+        placeholder: '1s',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'string'
+    },
+    handshake: {
+        label: 'Handshake Timeout',
+        help: 'Handshake timeout. Default: 4s.',
+        placeholder: '4',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    connIdle: {
+        label: 'Connection Idle Timeout',
+        help: 'Connection idle timeout. Default: 300s.',
+        placeholder: '300',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    uplinkOnly: {
+        label: 'Uplink Only Timeout',
+        help: 'Time to wait after downlink closes. Default: 2s.',
+        placeholder: '2',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    downlinkOnly: {
+        label: 'Downlink Only Timeout',
+        help: 'Time to wait after uplink closes. Default: 5s.',
+        placeholder: '5',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    timeoutMs: {
+        label: 'Query Timeout',
+        help: 'Per-server query timeout.',
+        placeholder: '5000',
+        type: 'duration',
+        defaultUnit: 'ms',
+        durationMode: 'number',
+        baseUnit: 'ms'
+    },
+    serveExpiredTTL: {
+        label: 'Serve Expired TTL',
+        help: 'Extended TTL for stale cache entries.',
+        placeholder: '86400',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    deduplication: {
+        label: 'Deduplication Interval',
+        help: 'Deduplication interval in seconds.',
+        placeholder: '10',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    tcpKeepAliveIdle: {
+        label: 'TCP Keep-Alive Idle',
+        help: 'TCP keep-alive idle time.',
+        placeholder: '300',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    tcpKeepAliveInterval: {
+        label: 'TCP Keep-Alive Interval',
+        help: 'TCP keep-alive interval.',
+        placeholder: '0',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
+    },
+    tcpUserTimeout: {
+        label: 'TCP User Timeout',
+        help: 'TCP user timeout.',
+        placeholder: '10000',
+        type: 'duration',
+        defaultUnit: 'ms',
+        durationMode: 'number',
+        baseUnit: 'ms'
+    },
+    scMinPostsIntervalMs: {
+        label: 'Min Post Interval',
+        help: 'Min interval between POSTs.',
+        placeholder: '30',
+        type: 'duration',
+        defaultUnit: 'ms',
+        durationMode: 'number',
+        baseUnit: 'ms'
+    },
+    hKeepAlivePeriod: {
+        label: 'Keep-Alive Period',
+        help: 'H2/H3 keep-alive period in seconds.',
+        placeholder: '45',
+        type: 'duration',
+        defaultUnit: 's',
+        durationMode: 'number',
+        baseUnit: 's'
     },
     // Reality Settings
     show: {
@@ -125,9 +283,13 @@ const STANDARD_FIELD_CONFIGS: Record<string, { label: string; help: string; plac
         placeholder: 'e.g. 0.0.0'
     },
     maxTimeDiff: {
-        label: 'Max Time Difference (ms)',
-        help: 'Maximum allowed timestamp difference in milliseconds between client and server (e.g. 60000).',
-        placeholder: 'e.g. 60000'
+        label: 'Max Time Difference',
+        help: 'Maximum allowed timestamp difference between client and server.',
+        placeholder: '60000',
+        type: 'duration',
+        defaultUnit: 'ms',
+        durationMode: 'number',
+        baseUnit: 'ms'
     },
     mldsa65Seed: {
         label: 'ML-DSA-65 Seed',
@@ -215,7 +377,7 @@ interface SchemaFormProps {
     value: any;
     onChange: (newValue: any) => void;
     errors?: Record<string, string | undefined>;
-    fieldConfigs?: Record<string, { label?: string; help?: string; placeholder?: string; options?: string[] }>;
+    fieldConfigs?: Record<string, FieldConfig>;
     excludeKeys?: string[];
 }
 
@@ -276,6 +438,11 @@ export const SchemaForm = ({
                                     error={errors[key]}
                                     label={label}
                                     help={help}
+                                    type={customConfig.type ?? standardConfig.type}
+                                    unitOptions={customConfig.unitOptions ?? standardConfig.unitOptions}
+                                    defaultUnit={customConfig.defaultUnit ?? standardConfig.defaultUnit}
+                                    durationMode={customConfig.durationMode ?? standardConfig.durationMode}
+                                    baseUnit={customConfig.baseUnit ?? standardConfig.baseUnit}
                                 />
                             </div>
                         );
@@ -309,6 +476,11 @@ export const SchemaForm = ({
                                     help={help}
                                     placeholder={placeholder}
                                     options={options}
+                                    type={customConfig.type ?? standardConfig.type}
+                                    unitOptions={customConfig.unitOptions ?? standardConfig.unitOptions}
+                                    defaultUnit={customConfig.defaultUnit ?? standardConfig.defaultUnit}
+                                    durationMode={customConfig.durationMode ?? standardConfig.durationMode}
+                                    baseUnit={customConfig.baseUnit ?? standardConfig.baseUnit}
                                 />
                             </div>
                         );

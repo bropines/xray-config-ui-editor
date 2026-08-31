@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 export interface CheckboxProps {
     checked: boolean;
@@ -31,7 +32,7 @@ export const Checkbox = ({
     return (
         <label
             htmlFor={checkboxId}
-            className={`flex items-start gap-3 cursor-pointer group select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+            className={cn('flex items-start gap-3 cursor-pointer group select-none', disabled && 'opacity-50 cursor-not-allowed', className)}
         >
             {/* Custom checkbox box */}
             <div className="relative mt-0.5 shrink-0">
@@ -47,12 +48,12 @@ export const Checkbox = ({
                     className="sr-only"
                 />
                 <div
-                    className={`
-                        w-4.5 h-4.5 w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150
-                        ${checked || indeterminate
+                    className={cn(
+                        'w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150',
+                        checked || indeterminate
                             ? 'bg-indigo-600 border-indigo-600'
-                            : 'bg-slate-900 border-slate-600 group-hover:border-indigo-500'}
-                    `}
+                            : 'bg-slate-900 border-slate-600 group-hover:border-indigo-500',
+                    )}
                 >
                     {indeterminate ? (
                         <span className="w-2.5 h-0.5 bg-white rounded-full" />

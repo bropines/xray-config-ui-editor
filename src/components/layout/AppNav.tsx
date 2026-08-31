@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon } from '../ui';
 import { Button } from '../ui';
 import { Select } from '../ui/Select';
-import { useConfigStore } from '../../store/configStore';
+import { useAppNavLogic } from '../../hooks/useAppNavLogic';
 
 interface AppNavProps {
     /** Whether Remnawave panel is connected */
@@ -48,79 +48,11 @@ export const AppNav = ({
     onClearConfig,
     onOpenHistory,
 }: AppNavProps) => {
-    const {
-        profiles,
-        activeProfileId,
-        switchProfile,
-        createProfile,
-        remnawave,
-        loadRemnawaveProfile,
-        config
-    } = useConfigStore();
-
-    // Compute selector options for cloud + local profiles
-    const selectorOptions = React.useMemo(() => {
-        const opts: Array<{ value: string; label: string; description?: string }> = [];
-
-        // Remnawave Cloud Profiles (if connected)
-        if (remnawave.connected && remnawave.profiles?.length > 0) {
-            remnawave.profiles.forEach((rp) => {
-                opts.push({
-                    value: `cloud:${rp.uuid}`,
-                    label: `☁ ${rp.name || 'Unnamed Cloud Profile'}`,
-                    description: `Remnawave Cloud Config (${rp.uuid.substring(0, 8)})`
-                });
-            });
-        }
-
-        // Local Config Profiles
-        profiles.forEach((p) => {
-            const isCurrent = p.id === activeProfileId && !remnawave.activeProfileUuid;
-            const inCount = isCurrent ? (config?.inbounds?.length || 0) : (p.config?.inbounds?.length || 0);
-            const outCount = isCurrent ? (config?.outbounds?.length || 0) : (p.config?.outbounds?.length || 0);
-            const name = p.name === 'Default Profile' ? 'Default' : p.name;
-
-            opts.push({
-                value: `local:${p.id}`,
-                label: remnawave.connected ? `💻 Local: ${name}` : name,
-                description: `${inCount} inbounds, ${outCount} outbounds`
-            });
-        });
-
-        // Action to create new local profile
-        opts.push({
-            value: `action:new_local`,
-            label: `+ New Local Profile`,
-            description: `Create a new local profile`
-        });
-
-        return opts;
-    }, [remnawave.connected, remnawave.profiles, profiles, activeProfileId, remnawave.activeProfileUuid, config]);
-
-    // Active option value
-    const currentOptionValue = React.useMemo(() => {
-        if (remnawave.connected && remnawave.activeProfileUuid) {
-            return `cloud:${remnawave.activeProfileUuid}`;
-        }
-        const activeExists = profiles.some(p => p.id === activeProfileId);
-        const fallbackId = activeExists ? activeProfileId : (profiles[0]?.id || 'default');
-        return `local:${fallbackId}`;
-    }, [remnawave.connected, remnawave.activeProfileUuid, activeProfileId, profiles]);
-
-    const handleSelectChange = (val: string) => {
-        if (val.startsWith('cloud:')) {
-            const uuid = val.replace('cloud:', '');
-            loadRemnawaveProfile(uuid);
-        } else if (val.startsWith('local:')) {
-            const id = val.replace('local:', '');
-            switchProfile(id);
-        } else if (val === 'action:new_local') {
-            const name = prompt("Enter new local profile name:");
-            if (name && name.trim()) {
-                createProfile(name.trim());
-            }
-        }
-    };
+    // Profile-selector store access, options-building and dispatch handler
+    // (switchProfile / createProfile / loadRemnawaveProfile) live in the hook —
+    // both the desktop toolbar Select below and the mobile drawer Select share
+    // this same handleSelectChange reference rather than each hand-rolling it.
+    const { selectorOptions, currentOptionValue, handleSelectChange } = useAppNavLogic();
 
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 

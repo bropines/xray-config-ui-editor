@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 interface NumberInputProps {
     value: number | undefined | '';
@@ -35,7 +36,7 @@ export const NumberInput = ({
     const displayValue = value !== undefined && value !== null ? value : '';
 
     return (
-        <div className={`relative flex items-center w-full ${className}`}>
+        <div className={cn('relative flex items-center w-full', className)}>
             <input
                 type="number"
                 className="input-base pr-12 font-mono"

@@ -109,7 +109,9 @@ export interface DNSOutboundConfig {
     userLevel?: number;
     rules?: DNSOutboundRuleConfig[];
     nonIPQuery?: string;
+    /** todo: remove legacy */
     blockTypes?: number[];
+    remove?: legacy;
 }
 
 export interface DokodemoConfig {
@@ -260,6 +262,7 @@ export interface ObservatoryConfig {
 
 export interface BurstObservatoryConfig {
     subjectSelector?: string[];
+    /** health check settings */
     pingConfig?: healthCheckSettings;
 }
 
@@ -351,6 +354,7 @@ export interface RawFieldRule {
     localIP?: string | string[];
     localPort?: number | string;
     process?: string | string[];
+    localOS?: string | string[];
     webhook?: WebhookRuleConfig;
 }
 
@@ -358,10 +362,15 @@ export interface strategyEmptyConfig {
 }
 
 export interface strategyLeastLoadConfig {
+    /** weight settings */
     costs?: number[];
+    /** ping rtt baselines */
     baselines?: (number | string)[];
+    /** expected nodes count to select */
     expected?: number;
+    /** max acceptable rtt, filter away high delay nodes. default 0 */
     maxRTT?: number | string;
+    /** acceptable failure rate */
     tolerance?: number;
 }
 
@@ -543,6 +552,20 @@ export interface Xdns {
     resolvers?: string[];
 }
 
+export interface XMC {
+    hostname?: string;
+    profiles?: XMCProfile[];
+    password?: string;
+}
+
+export interface XMCProfile {
+    /** Resolve the UUID by username, then request the session profile with unsigned=false. Client and server must use the same signed profile. */
+    username?: string;
+    uuid?: string;
+    texturesValue?: string;
+    texturesSignature?: string;
+}
+
 export interface Xicmp {
     dgram?: boolean;
     ips?: string[];
@@ -606,6 +629,7 @@ export interface StreamConfig {
 
 export interface ProxyConfig {
     tag?: string;
+    /** TransportLayerProxy: For compatibility. */
     transportLayer?: boolean;
 }
 
@@ -884,6 +908,7 @@ export interface TrojanServerConfig {
 
 export interface TunConfig {
     name?: string;
+    desc?: string;
     mtu?: number;
     gateway?: string[];
     dns?: string[];
@@ -993,6 +1018,7 @@ export interface WireGuardConfig {
     mtu?: number;
     reserved?: number[];
     domainStrategy?: string;
+    remoteDNS?: string[];
 }
 
 export interface SniffingConfig {
@@ -1036,7 +1062,9 @@ export interface StatsConfig {
 }
 
 export interface Config {
+    /** Deprecated: Global transport config is no longer used left for returning error */
     transport?: Record<string, any>;
+    env?: EnvConfig;
     log?: LogConfig;
     routing?: RouterConfig;
     dns?: DNSConfig;

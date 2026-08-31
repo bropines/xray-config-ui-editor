@@ -29,6 +29,7 @@ export const App = () => {
         onOpenEditorSettings, onCloseEditorSettings,
         rawMode, setRawMode,
         isDragging,
+        hasHydrated,
         obSearch, setObSearch,
         pushStage, setPushStage,
         handleRealPush,
@@ -48,6 +49,21 @@ export const App = () => {
     } = useAppLogic();
 
     const closeModal = () => setModal({ type: null, data: null, index: null });
+
+    // The persisted store reads from IndexedDB asynchronously. Render nothing
+    // interactive until that resolves — otherwise a preset pick / import
+    // that happens in this window can be silently overwritten once the
+    // async rehydration lands (see configStore's onRehydrateStorage).
+    if (!hasHydrated) {
+        return (
+            <div className="h-dvh flex items-center justify-center bg-slate-950 text-slate-400 font-sans">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 rounded-full border-2 border-slate-700 border-t-indigo-500 animate-spin" />
+                    <span className="text-sm">Loading your workspace…</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

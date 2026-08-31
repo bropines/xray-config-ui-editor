@@ -17,6 +17,10 @@ interface EditorLayoutProps {
     children: React.ReactNode;
     extraButtons?: React.ReactNode;
     rawText?: string | null;
+    /** Forwarded to JsonField — see its own doc comment. */
+    rawConfigText?: string | null;
+    onSaveShortcut?: () => void;
+    onCommitShortcut?: () => { id: string; additions?: number; deletions?: number } | null | undefined;
 }
 
 export const EditorLayout = ({
@@ -31,7 +35,10 @@ export const EditorLayout = ({
     schemaMode,
     children,
     extraButtons,
-    rawText
+    rawText,
+    rawConfigText,
+    onSaveShortcut,
+    onCommitShortcut
 }: EditorLayoutProps) => {
     
     const modalButtons = (
@@ -70,13 +77,16 @@ export const EditorLayout = ({
 
             {rawMode ? (
                 <div className="flex-1 min-h-0 h-full flex flex-col">
-                    <JsonField 
-                        label="Source Configuration" 
-                        value={local} 
-                        onChange={(val: any, raw?: string) => setLocal(val, raw)} 
-                        schemaMode={schemaMode} 
-                        className="flex-1" 
+                    <JsonField
+                        label="Source Configuration"
+                        value={local}
+                        onChange={(val: any, raw?: string) => setLocal(val, raw)}
+                        schemaMode={schemaMode}
+                        className="flex-1"
                         rawText={rawText}
+                        rawConfigText={rawConfigText}
+                        onSaveShortcut={onSaveShortcut}
+                        onCommitShortcut={onCommitShortcut}
                     />
                 </div>
             ) : (

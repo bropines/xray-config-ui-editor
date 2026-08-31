@@ -4,7 +4,7 @@ import { getCriticalRuleErrors } from '../core/validators';
 import { createDefaultRoutingRule, createDefaultBalancer } from '../utils/protocol-factories';
 
 export const useRoutingEditor = (onClose: () => void) => {
-    const { config, updateSection, reorderRules } = useConfigStore();
+    const { config, updateSection, reorderRules, updateRoutingRule, updateBalancer } = useConfigStore();
     const rules = config?.routing?.rules || [];
     const balancers = config?.routing?.balancers || [];
     
@@ -92,26 +92,22 @@ export const useRoutingEditor = (onClose: () => void) => {
         }
     }, [rules, reorderRules, activeRuleIdx]);
 
-    const handleUpdateRule = useCallback((updatedRule: any) => {
+    const handleUpdateRule = useCallback((updatedRule: any, rawText?: string | null) => {
         if (activeRuleIdx === null) return;
         const cleanRule = { ...updatedRule };
         delete cleanRule.originalIndex;
-        const n = [...rules];
-        n[activeRuleIdx] = cleanRule;
-        reorderRules(n);
-    }, [rules, activeRuleIdx, reorderRules]);
+        updateRoutingRule(activeRuleIdx, cleanRule, rawText);
+    }, [activeRuleIdx, updateRoutingRule]);
 
     const handleAddBalancer = useCallback(() => {
         const nb = createDefaultBalancer();
         updateSection('routing', { ...config?.routing, balancers: [...balancers, nb] });
     }, [config?.routing, balancers, updateSection]);
 
-    const handleUpdateBalancer = useCallback((val: any) => {
+    const handleUpdateBalancer = useCallback((val: any, rawText?: string | null) => {
         if (activeBalancerIdx === null) return;
-        const n = [...balancers];
-        n[activeBalancerIdx] = val;
-        updateSection('routing', { ...config?.routing, balancers: n });
-    }, [balancers, activeBalancerIdx, config?.routing, updateSection]);
+        updateBalancer(activeBalancerIdx, val, rawText);
+    }, [activeBalancerIdx, updateBalancer]);
 
     const handleDeleteBalancer = useCallback((idx: number) => {
         const n = [...balancers];

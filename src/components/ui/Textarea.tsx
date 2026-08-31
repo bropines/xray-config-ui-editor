@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../utils/cn';
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
@@ -27,14 +28,14 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                 <textarea
                     ref={ref}
                     id={textareaId}
-                    className={`
-                        w-full bg-slate-950 border rounded-lg outline-none resize-y min-h-[80px]
-                        text-white placeholder:text-slate-600 text-sm py-2 px-3
-                        focus:ring-1 transition-all custom-scroll
-                        ${monospace ? 'font-mono text-xs' : ''}
-                        ${border}
-                        ${className}
-                    `}
+                    className={cn(
+                        'w-full bg-slate-950 border rounded-lg outline-none resize-y min-h-[80px]',
+                        'text-white placeholder:text-slate-600 text-sm py-2 px-3',
+                        'focus:ring-1 transition-all custom-scroll',
+                        monospace && 'font-mono text-xs',
+                        border,
+                        className,
+                    )}
                     {...rest}
                 />
                 {error && (

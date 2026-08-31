@@ -2,7 +2,6 @@ import React from "react";
 import { Icon } from "../ui";
 import { Button } from "../ui";
 import { JsonField } from "../ui";
-import { toast } from "sonner";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -11,9 +10,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { XrayConfig } from "../../core/types";
-import { useConfigStore } from "../../store/configStore";
 import { Select } from "../ui/Select";
 import { CommitModal } from "../git/CommitModal";
+import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
 
 // Re-usable column Card for the dashboard
 interface DashCardProps {
@@ -255,177 +254,37 @@ export const ConfigDashboard = ({
   onOpenEditorSettings,
 }: ConfigDashboardProps) => {
   const {
-    profiles,
-    activeProfileId,
-    switchProfile,
+    isModified,
+    history,
+    rawConfigText,
     saveActiveProfile,
     revertToBaseline,
-    baselineConfigJson,
-    config: storeConfig,
-    history
-  } = useConfigStore();
+    recordSnapshot,
+    commitModalOpen,
+    setCommitModalOpen,
+    handleCommit,
+  } = useConfigDashboardGit();
 
-  const histories = useConfigStore(state => state.histories);
-  const remnawave = useConfigStore(state => state.remnawave);
-
-  const isModified = React.useMemo(() => {
-    if (!storeConfig) return false;
-    const activeKey = remnawave.activeProfileUuid ? `rw:${remnawave.activeProfileUuid}` : activeProfileId;
-    const currentHistory = histories[activeKey] || [];
-
-    if (currentHistory.length > 0) {
-      try {
-        return JSON.stringify(storeConfig) !== JSON.stringify(currentHistory[0].config);
-      } catch (e) {
-        return false;
-      }
-    }
-
-    const activeProfile = profiles.find(p => p.id === activeProfileId);
-    const baseline = baselineConfigJson || (activeProfile?.config ? JSON.stringify(activeProfile.config) : null);
-    if (!baseline) return false;
-    try {
-      return JSON.stringify(storeConfig) !== baseline;
-    } catch (e) {
-      return false;
-    }
-  }, [baselineConfigJson, storeConfig, profiles, activeProfileId, histories, remnawave.activeProfileUuid]);
-
-  const [commitModalOpen, setCommitModalOpen] = React.useState(false);
-  const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
-  const [lastClickedFilteredIdx, setLastClickedFilteredIdx] = React.useState<number | null>(null);
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
-  const [isSelectMode, setIsSelectMode] = React.useState(false);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-
-  const showCheckboxes = isSelectMode || selectedIndices.size > 0;
-
-  React.useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchOpen]);
-
-  React.useEffect(() => {
-    if (obSearch && !isSearchOpen) {
-      setIsSearchOpen(true);
-    }
-  }, [obSearch]);
-
-  const handleItemClick = (
-    e: React.MouseEvent,
-    filteredIdx: number,
-    originalIdx: number,
-    ob: any
-  ) => {
-    if (e.ctrlKey || e.metaKey) {
-      setSelectedIndices((prev) => {
-        const next = new Set(prev);
-        if (next.has(originalIdx)) {
-          next.delete(originalIdx);
-        } else {
-          next.add(originalIdx);
-        }
-        return next;
-      });
-      setLastClickedFilteredIdx(filteredIdx);
-      return;
-    }
-
-    if (e.shiftKey) {
-      const start = lastClickedFilteredIdx !== null ? lastClickedFilteredIdx : 0;
-      const end = filteredIdx;
-      const min = Math.min(start, end);
-      const max = Math.max(start, end);
-
-      const next = new Set(selectedIndices);
-      for (let i = min; i <= max; i++) {
-        if (filteredOutbounds[i]) {
-          next.add(filteredOutbounds[i].originalIndex);
-        }
-      }
-      setSelectedIndices(next);
-      setLastClickedFilteredIdx(filteredIdx);
-      return;
-    }
-
-    if (isSelectMode || selectedIndices.size > 0) {
-      setSelectedIndices((prev) => {
-        const next = new Set(prev);
-        if (next.has(originalIdx)) {
-          next.delete(originalIdx);
-        } else {
-          next.add(originalIdx);
-        }
-        return next;
-      });
-      setLastClickedFilteredIdx(filteredIdx);
-      return;
-    }
-
-    // Default action when multi-select is OFF and no modifier keys pressed: open Edit modal
-    onEditOutbound(ob, originalIdx);
-  };
-
-  const handleSelectAll = () => {
-    const all = new Set(filteredOutbounds.map((item) => item.originalIndex));
-    setSelectedIndices(all);
-  };
-
-  const handleClearSelection = () => {
-    setSelectedIndices(new Set());
-    setLastClickedFilteredIdx(null);
-  };
-
-  const handleDeleteSelected = () => {
-    if (selectedIndices.size === 0) return;
-    const indicesToDelete = Array.from(selectedIndices);
-    const count = indicesToDelete.length;
-    if (confirm(`Delete ${count} selected outbound${count > 1 ? "s" : ""}?`)) {
-      if (onDeleteOutbounds) {
-        onDeleteOutbounds(indicesToDelete);
-      } else {
-        const sorted = indicesToDelete.sort((a, b) => b - a);
-        sorted.forEach((idx) => onDeleteOutbound(idx));
-      }
-      setSelectedIndices(new Set());
-      setLastClickedFilteredIdx(null);
-      toast.success(`Deleted ${count} outbound${count > 1 ? "s" : ""}`);
-    }
-  };
-
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedIndices.size === 0) return;
-
-      const activeEl = document.activeElement;
-      const isEditingText =
-        activeEl &&
-        (activeEl.tagName === "INPUT" ||
-          activeEl.tagName === "TEXTAREA" ||
-          (activeEl as HTMLElement).isContentEditable);
-
-      if (isEditingText) return;
-
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault();
-        handleDeleteSelected();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndices, filteredOutbounds, onDeleteOutbounds]);
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIdx = parseInt(active.id.replace("ob-", ""));
-    const newIdx = parseInt(over.id.replace("ob-", ""));
-
-    onMoveOutbound(oldIdx, newIdx);
-  };
+  const {
+    selectedIndices,
+    isSearchOpen,
+    setIsSearchOpen,
+    showCheckboxes,
+    searchInputRef,
+    handleItemClick,
+    handleSelectAll,
+    handleClearSelection,
+    handleDeleteSelected,
+    handleDragEnd,
+    toggleSelectMode,
+  } = useOutboundSelection(
+    filteredOutbounds,
+    obSearch,
+    onEditOutbound,
+    onDeleteOutbound,
+    onDeleteOutbounds,
+    onMoveOutbound
+  );
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
@@ -508,23 +367,7 @@ export const ConfigDashboard = ({
               <div className="flex items-center rounded-lg bg-emerald-950/60 border border-emerald-500/50 overflow-hidden shadow-sm">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    if (e.shiftKey) {
-                      setCommitModalOpen(true);
-                      return;
-                    }
-                    const inbounds = storeConfig?.inbounds?.length || 0;
-                    const outbounds = storeConfig?.outbounds?.length || 0;
-                    const rules = storeConfig?.routing?.rules?.length || 0;
-                    const msg = `Save (${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules)`;
-                    const snapshot = useConfigStore.getState().recordSnapshot(msg);
-                    saveActiveProfile();
-                    if (snapshot) {
-                      toast.success(`✓ Committed: ${snapshot.id.substring(0, 7)}`);
-                    } else {
-                      toast.info(`Already at HEAD (no changes to commit)`);
-                    }
-                  }}
+                  onClick={handleCommit}
                   className="px-2.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold text-emerald-300 hover:text-white hover:bg-emerald-900 transition-colors flex items-center gap-1 active:scale-95"
                   title="Instant Commit (Ctrl+S). Shift+click for custom message"
                 >
@@ -593,6 +436,9 @@ export const ConfigDashboard = ({
               if (newConfig) setConfig(newConfig, rawText);
             }}
             className="flex-1 relative min-h-0"
+            rawConfigText={rawConfigText}
+            onSaveShortcut={() => saveActiveProfile()}
+            onCommitShortcut={() => recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
           />
         </div>
       ) : (
@@ -847,21 +693,12 @@ export const ConfigDashboard = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      setIsSelectMode((prev) => {
-                        const next = !prev;
-                        if (!next) {
-                          setSelectedIndices(new Set());
-                          setLastClickedFilteredIdx(null);
-                        }
-                        return next;
-                      });
-                    }}
+                    onClick={toggleSelectMode}
                     icon="ListChecks"
                     iconClassName="text-sm"
                     title="Toggle Multi-select Mode"
                     className={`h-9 w-9 p-0 transition-all ${
-                      isSelectMode || selectedIndices.size > 0
+                      showCheckboxes
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
                         : "text-slate-400 hover:text-white"
                     }`}

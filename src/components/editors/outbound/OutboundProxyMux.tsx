@@ -4,10 +4,22 @@ import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { Help } from '../../ui/Help';
 import { ExtendedSection } from '../../ui/ExtendedSection';
+import { useField } from '../../../hooks/useField';
 
 export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
     const availableProxies = allTags.filter((t: string) => t !== outbound.tag);
 
+    // `outbound` is the editor's `local` state and `onChange` is its
+    // `updateField(path, value)` (see OutboundModal.tsx).
+    const transportLayer = useField<boolean>(outbound, onChange, ['proxySettings', 'transportLayer']);
+    const concurrency = useField<number>(outbound, onChange, ['mux', 'concurrency']);
+    const xudpConcurrency = useField<number>(outbound, onChange, ['mux', 'xudpConcurrency']);
+    const xudpProxyUDP443 = useField<string>(outbound, onChange, ['mux', 'xudpProxyUDP443']);
+    const targetStrategy = useField<string | undefined>(outbound, onChange, ['targetStrategy']);
+
+    // Setting the proxy tag replaces the whole `proxySettings` object (and
+    // clearing it drops `transportLayer` too), so this stays a dedicated
+    // writer rather than a single-leaf useField binding.
     const updateProxy = (tag: string) => {
         if (!tag) {
             onChange('proxySettings', undefined);
@@ -16,21 +28,14 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
         }
     };
 
-    const updateProxyTransport = (transportLayer: boolean) => {
-        if (!outbound.proxySettings?.tag) return;
-        onChange('proxySettings', { ...outbound.proxySettings, transportLayer });
-    };
-
+    // Enabling seeds a full set of mux defaults; disabling drops the whole
+    // `mux` object rather than just flipping `enabled` to false.
     const updateMux = (enabled: boolean) => {
         if (!enabled) {
             onChange('mux', undefined);
         } else {
             onChange('mux', { enabled: true, concurrency: 8, xudpConcurrency: 8, xudpProxyUDP443: "reject" });
         }
-    };
-
-    const updateMuxField = (field: string, val: any) => {
-        onChange(['mux', field], val);
     };
 
     const hasExtendedValues = !!outbound.targetStrategy || !!outbound.proxySettings?.transportLayer;
@@ -41,7 +46,7 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
                 {/* Proxy Chain */}
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3">
                     <h4 className="label-xs text-slate-400">Proxy Chaining (Optional)</h4>
-                    <TagSelector 
+                    <TagSelector
                         availableTags={availableProxies}
                         selected={outbound.proxySettings?.tag || ""}
                         onChange={v => updateProxy(v as string)}
@@ -54,8 +59,8 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
                                 <Help>When enabled, proxy chaining occurs at the transport layer instead of the application layer.</Help>
                             </span>
                             <Switch
-                                checked={outbound.proxySettings?.transportLayer || false}
-                                onChange={updateProxyTransport}
+                                checked={transportLayer.value || false}
+                                onChange={checked => transportLayer.onChange(checked)}
                             />
                         </div>
                     )}
@@ -70,30 +75,30 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
                             onChange={checked => updateMux(checked)}
                         />
                     </div>
-                    
+
                     {outbound.mux?.enabled && (
                         <div className="space-y-3 animate-in fade-in">
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <label className="label-xs">TCP Concurrency</label>
-                                    <input type="number" className="input-base" 
-                                        value={outbound.mux.concurrency || 8}
-                                        onChange={e => updateMuxField('concurrency', parseInt(e.target.value))}
+                                    <input type="number" className="input-base"
+                                        value={concurrency.value || 8}
+                                        onChange={e => concurrency.onChange(parseInt(e.target.value))}
                                     />
                                 </div>
                                 <div>
                                     <label className="label-xs">XUDP Concurrency</label>
-                                    <input type="number" className="input-base" 
-                                        value={outbound.mux.xudpConcurrency || 8}
-                                        onChange={e => updateMuxField('xudpConcurrency', parseInt(e.target.value))}
+                                    <input type="number" className="input-base"
+                                        value={xudpConcurrency.value || 8}
+                                        onChange={e => xudpConcurrency.onChange(parseInt(e.target.value))}
                                     />
                                 </div>
                             </div>
-                            
-                            <Select 
+
+                            <Select
                                 label="UDP 443 Strategy (QUIC)"
-                                value={outbound.mux.xudpProxyUDP443 || "reject"}
-                                onChange={val => updateMuxField('xudpProxyUDP443', val)}
+                                value={xudpProxyUDP443.value || "reject"}
+                                onChange={val => xudpProxyUDP443.onChange(val)}
                                 options={[
                                     { value: "reject", label: "Reject", description: "Recommended" },
                                     { value: "allow", label: "Allow" },
@@ -117,8 +122,8 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
                     <Select
                         label="Target Domain Strategy (targetStrategy)"
                         hint="Resolution behavior when connecting to target domain via this outbound."
-                        value={outbound.targetStrategy || "AsIs"}
-                        onChange={val => onChange('targetStrategy', val === "AsIs" ? undefined : val)}
+                        value={targetStrategy.value || "AsIs"}
+                        onChange={val => targetStrategy.onChange(val === "AsIs" ? undefined : val)}
                         options={[
                             { value: "AsIs", label: "AsIs (Default)", description: "Leave domain as is without prior resolution" },
                             { value: "UseIP", label: "UseIP", description: "Resolve and connect via IP" },

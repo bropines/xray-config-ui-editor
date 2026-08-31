@@ -44,6 +44,13 @@ export const generateRealityKeyPair = (): { privateKey: string; publicKey: strin
 };
 
 /**
+ * Alias kept for call sites that historically imported this name from the
+ * now-removed `utils/crypto.ts` duplicate. Functionally identical to
+ * generateRealityKeyPair — same X25519 keypair, same encoding.
+ */
+export const generateX25519Keys = generateRealityKeyPair;
+
+/**
  * Generates a random Reality spiderX path.
  * Usually a / followed by 4-8 random chars.
  */

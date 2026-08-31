@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { RemnawaveClient } from '../core/api/remnawave-client';
 import { validateBalancer } from '../core/validators';
+import { runFullDiagnostics } from '../core/diagnostics';
 import { toast } from 'sonner';
 import type { RemnawaveProfile } from '../core/types';
 import { XrayConfigSchema } from '../core/xray/schemas';
@@ -112,17 +113,52 @@ interface ConfigState {
     updateSection: (section: keyof XrayConfig, data: any, rawText?: string) => void;
     toggleSection: (section: keyof XrayConfig, defaultValue: any) => void;
     addItem: (section: 'inbounds' | 'outbounds', item: any) => void;
-    updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any) => void;
+    updateItem: (section: 'inbounds' | 'outbounds', index: number, item: any, rawText?: string | null) => void;
     deleteItem: (section: 'inbounds' | 'outbounds', index: number) => void;
     deleteItems: (section: 'inbounds' | 'outbounds', indices: number[]) => void;
     moveItem: (section: 'inbounds' | 'outbounds', fromIndex: number, toIndex: number) => void;
     addOutbounds: (items: any[]) => void;
     
     reorderRules: (newRules: RoutingRule[]) => void;
+    updateRoutingRule: (index: number, rule: RoutingRule, rawText?: string | null) => void;
+    updateBalancer: (index: number, balancer: any, rawText?: string | null) => void;
     initDns: () => void;
+
+    // Hydration status — the persist store's storage backend (IndexedDB) is
+    // async, so `config`/`profiles`/`remnawave` hold their initial defaults
+    // until this flips to true. Consumers that read/write on mount must wait
+    // for it (see useStoreHydrated in ../hooks) to avoid racing the async
+    // rehydration and having their write clobbered once it resolves.
+    hasHydrated: boolean;
+    setHasHydrated: (value: boolean) => void;
 }
 
 // --- Implementation ---
+
+// The CRUD actions below all need a mutable plain-object view of the config to
+// splice/push/reorder against, preferring the JSONC raw text (so comments
+// survive) and falling back to the typed `config`. Previously each action
+// duplicated this try/catch and, on a parse failure, silently discarded
+// whatever raw-text edits (including comments) caused it — with no
+// indication to the user why their change vanished. Centralized here so the
+// warning fires consistently and the parse logic has one home.
+function resolveMutableConfig(
+    state: { rawConfigText: string | null; config: XrayConfig | null },
+    fallbackDefault: any = {}
+): any {
+    if (state.rawConfigText) {
+        try {
+            return parseJsonc(state.rawConfigText);
+        } catch (e) {
+            console.warn('[configStore] Failed to parse rawConfigText, falling back to last known-good config:', e);
+            toast.warning('Raw JSON edits were discarded', {
+                description: 'The raw config text had a syntax error, so this action fell back to the last valid config.',
+            });
+            return state.config ? parseJsonc(stringifyJsonc(state.config)) : fallbackDefault;
+        }
+    }
+    return state.config ? parseJsonc(stringifyJsonc(state.config)) : fallbackDefault;
+}
 
 export const useConfigStore = create(
     persist<ConfigState>(
@@ -225,10 +261,25 @@ export const useConfigStore = create(
                 // --- КРИТИЧЕСКАЯ ВАЛИДАЦИЯ БАЛАНСИРОВЩИКОВ ПЕРЕД ПУШЕМ ---
                 const balancers = config.routing?.balancers || [];
                 const invalidBalancer = balancers.find(b => validateBalancer(b).length > 0);
-                
+
                 if (invalidBalancer) {
                     toast.error("Push Blocked!", {
                         description: `Balancer "${invalidBalancer.tag}" has no target outbounds. Node will crash if you push this.`,
+                        duration: 6000
+                    });
+                    return;
+                }
+
+                // --- FULL CONFIG DIAGNOSTICS (dangling routing targets, missing REALITY
+                // keys/certs, incompatible Mux+Vision, etc.) — same checks the Diagnostics
+                // panel shows, but here they actually gate the push instead of being
+                // display-only. A cloud push is the one action where "it saved fine" must
+                // mean "the node will actually start", so critical findings block it. ---
+                const criticalIssues = runFullDiagnostics(config).filter(d => d.severity === 'critical');
+                const firstIssue = criticalIssues[0];
+                if (firstIssue) {
+                    toast.error("Push Blocked!", {
+                        description: `${criticalIssues.length} critical issue(s) found: ${firstIssue.message}${criticalIssues.length > 1 ? ` (+${criticalIssues.length - 1} more — see Diagnostics)` : ''}`,
                         duration: 6000
                     });
                     return;
@@ -241,7 +292,9 @@ export const useConfigStore = create(
                     await client.updateConfigProfile(activeProfileUuid, config);
                     toast.success("Cloud Profile Updated!");
                 } catch (e: any) {
-                    toast.error("Failed to push config to cloud");
+                    toast.error("Failed to push config to cloud", {
+                        description: e?.message || 'Unknown error',
+                    });
                 }
             },
 
@@ -260,6 +313,9 @@ export const useConfigStore = create(
             histories: {},
             historyLimit: 50,
             autoSave: true,
+
+            hasHydrated: false,
+            setHasHydrated: (value) => set({ hasHydrated: value }),
 
             recordSnapshot: (label = "Config Edit") => {
                 const { config, rawConfigText, histories, historyLimit, activeProfileId, remnawave } = get();
@@ -479,7 +535,19 @@ export const useConfigStore = create(
                     state.baselineConfigJson = stringifyJsonc(config);
                 }));
                 get().recordSnapshot("Profile Saved");
-                toast.success("Local Profile Saved!");
+
+                // Local save is never blocked (the user might be mid-edit), but a
+                // config with critical issues (dangling routing targets, missing
+                // REALITY keys, etc.) saving silently as "success" is how those go
+                // unnoticed until someone tries to push/deploy it. Surface it here too.
+                const criticalCount = runFullDiagnostics(config).filter(d => d.severity === 'critical').length;
+                if (criticalCount > 0) {
+                    toast.warning("Local Profile Saved (with issues)", {
+                        description: `${criticalCount} critical diagnostic issue(s) remain — open Diagnostics before pushing this config.`,
+                    });
+                } else {
+                    toast.success("Local Profile Saved!");
+                }
             },
 
             revertToBaseline: () => {
@@ -569,16 +637,7 @@ export const useConfigStore = create(
             },
 
             updateSection: (section, data, rawText) => set((state) => {
-                let fullObj: any;
-                if (state.rawConfigText) {
-                    try {
-                        fullObj = parseJsonc(state.rawConfigText);
-                    } catch {
-                        fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
-                    }
-                } else {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
-                }
+                const fullObj = resolveMutableConfig(state, { inbounds: [], outbounds: [] });
 
                 if (rawText) {
                     try {
@@ -599,12 +658,7 @@ export const useConfigStore = create(
             }),
 
             toggleSection: (section, defaultValue) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
-                }
+                const fullObj = resolveMutableConfig(state);
                 if (fullObj[section]) {
                     delete fullObj[section];
                 } else {
@@ -615,12 +669,7 @@ export const useConfigStore = create(
             }),
 
             addItem: (section, item) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] });
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
-                }
+                const fullObj = resolveMutableConfig(state, { inbounds: [], outbounds: [] });
                 fullObj[section] = fullObj[section] || [];
                 fullObj[section].push(item);
                 const newText = stringifyJsonc(fullObj, 2);
@@ -628,12 +677,7 @@ export const useConfigStore = create(
             }),
 
             addOutbounds: (items) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] });
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : { inbounds: [], outbounds: [] };
-                }
+                const fullObj = resolveMutableConfig(state, { inbounds: [], outbounds: [] });
                 if (!fullObj.outbounds) fullObj.outbounds = [];
                 const existingTags = new Set(fullObj.outbounds.map((o: any) => o.tag));
                 
@@ -654,27 +698,30 @@ export const useConfigStore = create(
                 return { config: fullObj, rawConfigText: newText };
             }),
 
-            updateItem: (section, index, item) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
-                }
+            updateItem: (section, index, item, rawText) => set((state) => {
+                const fullObj = resolveMutableConfig(state);
                 if (fullObj[section]) {
-                    fullObj[section][index] = item;
+                    // Prefer the item's own literal raw JSONC text (comments
+                    // and all) when the caller has one still in sync with
+                    // `item` — see useXrayEditor's handleSave. Falls back to
+                    // the plain object on parse failure, same as updateSection.
+                    if (rawText) {
+                        try {
+                            fullObj[section][index] = parseJsonc(rawText);
+                        } catch (e) {
+                            console.warn('[updateItem] Error parsing item rawText, falling back to plain object:', e);
+                            fullObj[section][index] = item;
+                        }
+                    } else {
+                        fullObj[section][index] = item;
+                    }
                 }
                 const newText = stringifyJsonc(fullObj, 2);
                 return { config: fullObj, rawConfigText: newText };
             }),
 
             deleteItem: (section, index) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
-                }
+                const fullObj = resolveMutableConfig(state);
                 if (fullObj[section]) {
                     fullObj[section].splice(index, 1);
                 }
@@ -683,12 +730,7 @@ export const useConfigStore = create(
             }),
 
             deleteItems: (section, indices) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
-                }
+                const fullObj = resolveMutableConfig(state);
                 if (fullObj[section]) {
                     const sorted = Array.from(new Set(indices)).sort((a: any, b: any) => b - a);
                     for (const idx of sorted) {
@@ -702,12 +744,7 @@ export const useConfigStore = create(
             }),
             
             moveItem: (section, fromIndex, toIndex) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
-                }
+                const fullObj = resolveMutableConfig(state);
                 if (!fullObj[section]) return state;
                 const list = fullObj[section];
                 if (toIndex < 0 || toIndex >= list.length) return state;
@@ -719,25 +756,58 @@ export const useConfigStore = create(
             }),
 
             reorderRules: (newRules) => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
-                }
+                const fullObj = resolveMutableConfig(state);
                 if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
                 fullObj.routing.rules = newRules;
                 const newText = stringifyJsonc(fullObj, 2);
                 return { config: fullObj, rawConfigText: newText };
             }),
 
-            initDns: () => set((state) => {
-                let fullObj: any;
-                try {
-                    fullObj = state.rawConfigText ? parseJsonc(state.rawConfigText) : (state.config ? parseJsonc(stringifyJsonc(state.config)) : {});
-                } catch {
-                    fullObj = state.config ? parseJsonc(stringifyJsonc(state.config)) : {};
+            // Single-rule/balancer update that, unlike reorderRules/updateSection,
+            // preserves that one item's own raw JSONC text (comments included)
+            // when the caller has one still in sync — see RuleEditor/BalancerEditor's
+            // raw mode and updateItem's identical rationale. reorderRules always
+            // rebuilds the whole rules array as a plain JS array (via [...rules]
+            // in useRoutingEditor), which silently drops any comments the parsed
+            // rules array carried; this action mutates just the one index instead.
+            updateRoutingRule: (index, rule, rawText) => set((state) => {
+                const fullObj = resolveMutableConfig(state);
+                if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                if (!fullObj.routing.rules) fullObj.routing.rules = [];
+                if (rawText) {
+                    try {
+                        fullObj.routing.rules[index] = parseJsonc(rawText);
+                    } catch (e) {
+                        console.warn('[updateRoutingRule] Error parsing rule rawText, falling back to plain object:', e);
+                        fullObj.routing.rules[index] = rule;
+                    }
+                } else {
+                    fullObj.routing.rules[index] = rule;
                 }
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            updateBalancer: (index, balancer, rawText) => set((state) => {
+                const fullObj = resolveMutableConfig(state);
+                if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                if (!fullObj.routing.balancers) fullObj.routing.balancers = [];
+                if (rawText) {
+                    try {
+                        fullObj.routing.balancers[index] = parseJsonc(rawText);
+                    } catch (e) {
+                        console.warn('[updateBalancer] Error parsing balancer rawText, falling back to plain object:', e);
+                        fullObj.routing.balancers[index] = balancer;
+                    }
+                } else {
+                    fullObj.routing.balancers[index] = balancer;
+                }
+                const newText = stringifyJsonc(fullObj, 2);
+                return { config: fullObj, rawConfigText: newText };
+            }),
+
+            initDns: () => set((state) => {
+                const fullObj = resolveMutableConfig(state);
                 if (!fullObj.dns) {
                     fullObj.dns = {
                         servers: ["1.1.1.1", "8.8.8.8", "localhost"],
@@ -770,6 +840,16 @@ export const useConfigStore = create(
                 historyLimit: state.historyLimit,
                 autoSave: state.autoSave
             }),
+            // IndexedDB read is async: state before this fires is the
+            // hardcoded default (config: null, profiles: [default], ...).
+            // Flip hasHydrated once the read settles, success or failure —
+            // on failure we stay on defaults deliberately rather than hang.
+            onRehydrateStorage: () => (state, error) => {
+                if (error) {
+                    console.error('Failed to rehydrate config store from IndexedDB:', error);
+                }
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

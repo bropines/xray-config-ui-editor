@@ -12,7 +12,7 @@ export const ObservatorySchema = z.object({
   /** URL used for probing outbound connectivity */
   probeUrl: z.string().optional(),
   /** Probe interval (e.g. "10s", "2h45m"). Supports: ns, us, ms, s, m, h */
-  probeInterval: z.string().optional(),
+  probeInterval: z.union([z.string(), z.number()]).optional(),
   /** true = concurrent probing all matched outbounds, false = sequential */
   enableConcurrency: z.boolean().optional(),
 }).passthrough();
@@ -24,11 +24,11 @@ export const PingConfigSchema = z.object({
   /** URL for local connectivity check. Empty = disabled */
   connectivity: z.string().optional(),
   /** Average probe interval per outbound. Min "10s". Default: "1m" */
-  interval: z.string().optional(),
+  interval: z.union([z.string(), z.number()]).optional(),
   /** Number of recent probe results to keep. Default: 10 */
   sampling: z.number().int().optional(),
   /** Probe timeout. Default: "5s" */
-  timeout: z.string().optional(),
+  timeout: z.union([z.string(), z.number()]).optional(),
   /** HTTP method for probing. Default: "HEAD" */
   httpMethod: z.string().optional(),
 }).passthrough();

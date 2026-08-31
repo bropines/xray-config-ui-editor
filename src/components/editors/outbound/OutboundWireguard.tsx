@@ -6,36 +6,37 @@ import { toast } from 'sonner';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { FormField } from '../../ui/FormField';
+import { ExperimentalBadge } from '../../ui/ExperimentalBadge';
 import { generateWarpAccount } from '../../../core/generators';
 import { useConfigStore } from '../../../store/configStore';
+import { useField, useArrayField } from '../../../hooks/useField';
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {
-    if (outbound.protocol !== 'wireguard') return null;
-
+    // Pre-existing rules-of-hooks violation, caught by the new ESLint config:
+    // this used to `return null` BEFORE the hooks below, so every hook here
+    // would silently stop being called whenever an outbound's protocol was
+    // ever anything other than wireguard — a real risk if this component
+    // stays mounted across a protocol switch (React requires the exact same
+    // hooks, in the exact same order, on every render of the same instance).
+    // Hooks now run unconditionally; the early return moves below them.
     const { warpWorkerUrl } = useConfigStore();
     const settings = outbound.settings || { secretKey: "", address: ["10.0.0.1/24"], peers: [] };
     const [loading, setLoading] = useState(false);
 
-    const update = (field: string, value: any) => {
-        onChange('settings', { ...settings, [field]: value });
-    };
+    // `outbound` is the editor's `local` state and `onChange` is its
+    // `updateField(path, value)` (see OutboundModal.tsx). Every leaf below
+    // binds directly to its settings path so the JSX can be restyled freely.
+    const secretKey = useField<string>(outbound, onChange, ['settings', 'secretKey']);
+    const address = useField<string[]>(outbound, onChange, ['settings', 'address']);
+    const mtu = useField<number>(outbound, onChange, ['settings', 'mtu']);
+    const reserved = useField<number[]>(outbound, onChange, ['settings', 'reserved']);
+    const noKernelTun = useField<boolean>(outbound, onChange, ['settings', 'noKernelTun']);
+    const domainStrategy = useField<string>(outbound, onChange, ['settings', 'domainStrategy']);
+    const workers = useField<number>(outbound, onChange, ['settings', 'workers']);
+    const remoteDNS = useField<string[]>(outbound, onChange, ['settings', 'remoteDNS']);
+    const peers = useArrayField<any>(outbound, onChange, ['settings', 'peers']);
 
-    const addPeer = () => {
-        const peers = settings.peers || [];
-        update('peers', [...peers, { endpoint: "", publicKey: "", keepAlive: 0 }]);
-    };
-
-    const updatePeer = (idx: number, field: string, val: any) => {
-        const peers = [...(settings.peers || [])];
-        peers[idx] = { ...peers[idx], [field]: val };
-        update('peers', peers);
-    };
-
-    const removePeer = (idx: number) => {
-        const peers = [...(settings.peers || [])];
-        peers.splice(idx, 1);
-        update('peers', peers);
-    };
+    if (outbound.protocol !== 'wireguard') return null;
 
     const handleGenerateWarp = async () => {
         setLoading(true);
@@ -72,25 +73,25 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     {loading ? "Generating..." : "Generate WARP"}
                 </Button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField label="Secret Key" error={errors.secretKey}>
-                    <input className={`input-base font-mono text-rose-300 ${errors.secretKey ? 'border-rose-500 bg-rose-500/10' : ''}`} value={settings.secretKey || ""} onChange={e => update('secretKey', e.target.value)} placeholder="Private Key" />
+                    <input className={`input-base font-mono text-rose-300 ${errors.secretKey ? 'border-rose-500 bg-rose-500/10' : ''}`} value={secretKey.value || ""} onChange={e => secretKey.onChange(e.target.value)} placeholder="Private Key" />
                 </FormField>
                 <FormField label="Local Address (CIDR)">
-                    <input className="input-base font-mono" value={(settings.address || []).join(', ')} onChange={e => update('address', e.target.value.split(',').map((s: string) => s.trim()))} placeholder="10.0.0.1/24, fd00::1/64" />
+                    <input className="input-base font-mono" value={(address.value || []).join(', ')} onChange={e => address.onChange(e.target.value.split(',').map((s: string) => s.trim()))} placeholder="10.0.0.1/24, fd00::1/64" />
                 </FormField>
             </div>
 
             {/* Advanced WG Settings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
                 <FormField label="MTU" help="Maximum Transmission Unit. Default is 1280 for WARP.">
-                    <input type="number" className="input-base" placeholder="1280" value={settings.mtu || ""} onChange={e => update('mtu', parseInt(e.target.value) || 0)} />
+                    <input type="number" className="input-base" placeholder="1280" value={mtu.value || ""} onChange={e => mtu.onChange(parseInt(e.target.value) || 0)} />
                 </FormField>
                 <FormField label="Reserved (CSV)" help="[n,n,n] — header byte substitution. Use [0,0,0] for standard WARP.">
-                    <input className="input-base font-mono" 
-                        placeholder="0, 0, 0" 
-                        value={(settings.reserved || []).map((v: any) => isNaN(v) ? 0 : v).join(', ')} 
+                    <input className="input-base font-mono"
+                        placeholder="0, 0, 0"
+                        value={(reserved.value || []).map((v: any) => isNaN(v) ? 0 : v).join(', ')}
                         onChange={e => {
                             const raw = e.target.value.replace(/[^0-9,]/g, '');
                             const vals = raw.split(',')
@@ -99,14 +100,14 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                                 .map(s => parseInt(s))
                                 .filter(n => !isNaN(n))
                                 .slice(0, 3);
-                            update('reserved', vals);
-                        }} 
+                            reserved.onChange(vals);
+                        }}
                     />
                 </FormField>
                 <div className="flex flex-col justify-center pt-5">
                     <Switch
-                        checked={settings.noKernelTun || false}
-                        onChange={checked => update('noKernelTun', checked)}
+                        checked={noKernelTun.value || false}
+                        onChange={checked => noKernelTun.onChange(checked)}
                         label="No Kernel TUN"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">Enabled: use gVisor (no root). Disabled: system (faster).</p>
@@ -116,7 +117,7 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
             <div>
                 <div className="flex justify-between items-center mb-3">
                     <h4 className="text-xs uppercase text-slate-500 font-bold">Peers</h4>
-                    <Button variant="ghost" onClick={addPeer} className="px-2 py-1 text-xs" icon="Plus">Add Peer</Button>
+                    <Button variant="ghost" onClick={() => peers.add({ endpoint: "", publicKey: "", keepAlive: 0 })} className="px-2 py-1 text-xs" icon="Plus">Add Peer</Button>
                 </div>
                 {errors.peers && (
                     <div className="mb-3 p-3 bg-rose-900/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-center gap-2">
@@ -124,63 +125,63 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     </div>
                 )}
                 <div className="space-y-4">
-                    {(settings.peers || []).map((peer: any, i: number) => {
+                    {peers.items.map((peer: any, i: number) => {
                         const epErr = errors[`peer_${i}_endpoint`] as string | undefined;
                         const pkErr = errors[`peer_${i}_publicKey`] as string | undefined;
                         return (
                             <div key={i} className="bg-slate-950 p-4 rounded-xl border border-slate-700/50 flex flex-col gap-4 relative group">
-                                <button onClick={() => removePeer(i)} className="absolute top-3 right-3 text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => peers.remove(i)} className="absolute top-3 right-3 text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Icon name="Trash" />
                                 </button>
-                                
+
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pr-6">
                                     <FormField label="Endpoint" error={epErr}>
-                                        <input className={`input-base font-mono ${epErr ? 'border-rose-500' : ''}`} value={peer.endpoint || ""} onChange={e => updatePeer(i, 'endpoint', e.target.value)} placeholder="engage.cloudflareclient.com:2408" />
+                                        <input className={`input-base font-mono ${epErr ? 'border-rose-500' : ''}`} value={peer.endpoint || ""} onChange={e => peers.update(i, { endpoint: e.target.value })} placeholder="engage.cloudflareclient.com:2408" />
                                     </FormField>
                                     <FormField label="Public Key" error={pkErr}>
-                                        <input className={`input-base font-mono text-emerald-300 ${pkErr ? 'border-rose-500' : ''}`} value={peer.publicKey || ""} onChange={e => updatePeer(i, 'publicKey', e.target.value)} placeholder="Public Key" />
+                                        <input className={`input-base font-mono text-emerald-300 ${pkErr ? 'border-rose-500' : ''}`} value={peer.publicKey || ""} onChange={e => peers.update(i, { publicKey: e.target.value })} placeholder="Public Key" />
                                     </FormField>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                                     <div className="col-span-1 lg:col-span-3">
                                         <FormField label="Pre-shared Key">
-                                            <input className="input-base font-mono" value={peer.preSharedKey || ""} onChange={e => updatePeer(i, 'preSharedKey', e.target.value)} placeholder="Optional" />
+                                            <input className="input-base font-mono" value={peer.preSharedKey || ""} onChange={e => peers.update(i, { preSharedKey: e.target.value })} placeholder="Optional" />
                                         </FormField>
                                     </div>
                                     <div className="col-span-1 lg:col-span-2">
                                         <FormField label="Keep-alive (s)">
-                                            <input type="number" className="input-base font-mono" value={peer.keepAlive || 0} onChange={e => updatePeer(i, 'keepAlive', parseInt(e.target.value) || 0)} />
+                                            <input type="number" className="input-base font-mono" value={peer.keepAlive || 0} onChange={e => peers.update(i, { keepAlive: parseInt(e.target.value) || 0 })} />
                                         </FormField>
                                     </div>
                                     <div className="col-span-1 lg:col-span-7">
                                         <div className="flex flex-col gap-1.5 h-full">
                                             <div className="flex justify-between items-center h-[18px]">
                                                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Allowed IPs</label>
-                                                <button 
+                                                <button
                                                     onClick={() => {
                                                         const isExcluding = peer.allowedIPs?.length > 2;
                                                         const newList = isExcluding ? ["0.0.0.0/0", "::/0"] : [
-                                                            "0.0.0.0/5", "8.0.0.0/7", "11.0.0.0/8", "12.0.0.0/6", "16.0.0.0/4", "32.0.0.0/3", 
-                                                            "64.0.0.0/2", "128.0.0.0/3", "160.0.0.0/5", "168.0.0.0/6", "172.0.0.0/12", 
-                                                            "172.32.0.0/11", "172.64.0.0/10", "172.128.0.0/9", "173.0.0.0/8", "174.0.0.0/7", 
-                                                            "176.0.0.0/4", "192.0.0.0/9", "192.64.0.0/10", "192.128.0.0/11", "192.160.0.0/13", 
-                                                            "192.169.0.0/16", "192.170.0.0/15", "192.172.0.0/14", "192.176.0.0/12", 
-                                                            "192.192.0.0/10", "193.0.0.0/8", "194.0.0.0/7", "196.0.0.0/6", "200.0.0.0/5", 
+                                                            "0.0.0.0/5", "8.0.0.0/7", "11.0.0.0/8", "12.0.0.0/6", "16.0.0.0/4", "32.0.0.0/3",
+                                                            "64.0.0.0/2", "128.0.0.0/3", "160.0.0.0/5", "168.0.0.0/6", "172.0.0.0/12",
+                                                            "172.32.0.0/11", "172.64.0.0/10", "172.128.0.0/9", "173.0.0.0/8", "174.0.0.0/7",
+                                                            "176.0.0.0/4", "192.0.0.0/9", "192.64.0.0/10", "192.128.0.0/11", "192.160.0.0/13",
+                                                            "192.169.0.0/16", "192.170.0.0/15", "192.172.0.0/14", "192.176.0.0/12",
+                                                            "192.192.0.0/10", "193.0.0.0/8", "194.0.0.0/7", "196.0.0.0/6", "200.0.0.0/5",
                                                             "208.0.0.0/4", "::/0"
                                                         ];
-                                                        updatePeer(i, 'allowedIPs', newList);
+                                                        peers.update(i, { allowedIPs: newList });
                                                     }}
                                                     className={`text-[9px] font-bold px-2 py-0.5 rounded transition-colors uppercase ${peer.allowedIPs?.length > 2 ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                                                 >
                                                     {peer.allowedIPs?.length > 2 ? 'Restore 0.0.0.0/0' : 'Exclude Local'}
                                                 </button>
                                             </div>
-                                            <textarea 
-                                                className="input-base font-mono text-xs h-full min-h-[42px] custom-scroll resize-y" 
-                                                value={(peer.allowedIPs || []).join(', ')} 
-                                                onChange={e => updatePeer(i, 'allowedIPs', e.target.value.split(',').map(s => s.trim()))} 
-                                                placeholder="0.0.0.0/0, ::/0" 
+                                            <textarea
+                                                className="input-base font-mono text-xs h-full min-h-[42px] custom-scroll resize-y"
+                                                value={(peer.allowedIPs || []).join(', ')}
+                                                onChange={e => peers.update(i, { allowedIPs: e.target.value.split(',').map(s => s.trim()) })}
+                                                placeholder="0.0.0.0/0, ::/0"
                                             />
                                         </div>
                                     </div>
@@ -188,17 +189,17 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                             </div>
                         );
                     })}
-                    {(settings.peers || []).length === 0 && <div className="text-sm text-slate-500 text-center py-6 italic border border-dashed border-slate-700 rounded-xl">No peers added</div>}
+                    {peers.items.length === 0 && <div className="text-sm text-slate-500 text-center py-6 italic border border-dashed border-slate-700 rounded-xl">No peers added</div>}
                 </div>
             </div>
 
             {/* General WG Engine Settings */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4">
-                <Select 
+                <Select
                     label="Domain Strategy"
                     hint="ForceIP: query DNS locally and use IP. UseIP: resolve IP through system."
-                    value={settings.domainStrategy || "AsIs"}
-                    onChange={val => update('domainStrategy', val)}
+                    value={domainStrategy.value || "AsIs"}
+                    onChange={val => domainStrategy.onChange(val)}
                     options={[
                         { value: 'AsIs', label: 'AsIs (Default)' },
                         { value: 'UseIP', label: 'UseIP' },
@@ -206,7 +207,18 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     ]}
                 />
                 <FormField label="Workers" help="Number of concurrent workers. Default is CPU core count.">
-                    <input type="number" className="input-base h-[42px]" placeholder="Auto" value={settings.workers || ""} onChange={e => update('workers', parseInt(e.target.value) || 0)} />
+                    <input type="number" className="input-base h-[42px]" placeholder="Auto" value={workers.value || ""} onChange={e => workers.onChange(parseInt(e.target.value) || 0)} />
+                </FormField>
+                <FormField
+                    label={<span className="flex items-center gap-2">Remote DNS <ExperimentalBadge since="main, 25 Aug 2026" commit="c7e569b0" /></span>}
+                    help="DNS server(s) resolved through the WireGuard tunnel itself (not Xray's DNS module) — comma-separated. Useful when the peer's network only resolves internal names."
+                >
+                    <input
+                        className="input-base font-mono"
+                        placeholder="1.1.1.1, 1.0.0.1"
+                        value={(remoteDNS.value || []).join(', ')}
+                        onChange={e => remoteDNS.onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+                    />
                 </FormField>
             </div>
         </div>

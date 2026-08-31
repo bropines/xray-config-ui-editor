@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { JsonField } from '../ui/JsonField';
+import { useConfigStore } from '../../store/configStore';
 
 // Sub-components
 import { DnsGeneral } from './dns/DnsGeneral';
@@ -35,6 +36,7 @@ export const DnsModal = ({ onClose }: any) => {
     } = useDnsEditor();
 
     const [localRawText, setLocalRawText] = useState<string | null>(null);
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
 
     // --- JSON MODE VIEW ---
     if (rawMode) {
@@ -61,6 +63,9 @@ export const DnsModal = ({ onClose }: any) => {
                         className="flex-1"
                         schemaMode="full"
                         rawText={localRawText}
+                        rawConfigText={rawConfigText}
+                        onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+                        onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
                     />
                 </div>
             </Modal>

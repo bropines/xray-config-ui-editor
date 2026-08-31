@@ -78,9 +78,9 @@ export const DnsGeneral = ({ dns, onChange }: any) => {
                             help: 'Serve stale/expired cache entries when upstream is slow or unresponsive.'
                         },
                         serveExpiredTTL: {
-                            label: 'Serve Expired TTL (sec)',
+                            label: 'Serve Expired TTL',
                             placeholder: 'e.g. 86400',
-                            help: 'Extended TTL in seconds for serving stale cache entries.'
+                            help: 'Extended TTL for serving stale cache entries.'
                         },
                         disableFallback: {
                             label: 'Disable Fallback',

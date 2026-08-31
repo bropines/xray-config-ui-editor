@@ -250,11 +250,9 @@ const handleFetchSub = async () => {
                 
                 {mode === 'import' && text.trim() && (
                     <Button className="w-full" onClick={() => {
-                        let obs: any[] = [];
-                        
                         // Сначала пробуем построчный парсинг ссылок
                         const lines = text.split(/\n/).filter(l => l.trim());
-                        obs = lines.map(l => parseXrayLink(l.trim())).filter(Boolean);
+                        let obs: any[] = lines.map(l => parseXrayLink(l.trim())).filter(Boolean);
                         
                         // Если ничего не вышло, пробуем распарсить весь текст как JSON-подписку
                         if (obs.length === 0) {

@@ -1,5 +1,5 @@
 import type { Inbound, Outbound, RoutingRule, Balancer } from '../types';
-import { generateUUID } from '../../utils/crypto';
+import { generateUUID } from './crypto';
 
 export const createDefaultInbound = (protocol = 'vless'): Inbound => {
     const tag = `in-${Math.floor(Math.random() * 1000)}`;

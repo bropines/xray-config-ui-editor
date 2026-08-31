@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
-import { generateX25519Keys } from '../../../utils/crypto';
-import { generateRealitySpiderX, generateRealityShortIds } from '../../../core/generators';
+import { generateRealitySpiderX, generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
 import { SockoptEditor } from './SockoptEditor';
 import { TagSelector } from '../../ui/TagSelector';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
@@ -11,9 +10,12 @@ import { FinalmaskEditor } from './FinalmaskEditor';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { NumberInput } from '../../ui/NumberInput';
+import { DurationInput } from '../../ui/DurationInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { ExtendedSection } from '../../ui/ExtendedSection';
+import { useField } from '../../../hooks/useField';
+import type { FieldPath } from '../../../hooks/useField';
 
 interface TransportProps {
     streamSettings: any;
@@ -23,13 +25,15 @@ interface TransportProps {
     protocol?: string;
 }
 
-export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
-    const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
-
-    // Map array/object errors to fields
+// Pure derivation, no component state involved — pulled out of the render
+// body so TransportSettings itself only has to call it and use the result.
+// `errors` arrives either as a flat/keyed map or as an array of
+// {field, message} entries (see callers); either way we only care about the
+// two nested slices (reality/tls) that SchemaForm needs per-field errors for.
+function parseTransportErrors(errors: TransportProps['errors']) {
     const parsedErrors: Record<string, string | undefined> = {};
     if (Array.isArray(errors)) {
-        errors.forEach((err: any) => {
+        (errors as any[]).forEach((err: any) => {
             if (err.field) {
                 parsedErrors[err.field] = err.message;
             }
@@ -51,19 +55,81 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
         }
     });
 
-    const update = (path: string[], value: any) => {
+    return { realityErrors, tlsErrors };
+}
+
+export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
+    const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
+
+    const { realityErrors, tlsErrors } = parseTransportErrors(errors);
+
+    // `streamSettings` is this editor's `local` state and `update` below is
+    // its `updateField(path, value)` — same shape as useXrayEditor's, just
+    // scoped to this one sub-object. useField binds directly on top of it, so
+    // every path below is the ONE place the wiring to streamSettings lives;
+    // the JSX under it can be restyled freely (see InboundClients.tsx for the
+    // same pattern against the full editor state).
+    const update = (path: FieldPath, value: any) => {
+        const pathArr = Array.isArray(path) ? path : [path];
         const newObj = JSON.parse(JSON.stringify(streamSettings));
         let curr = newObj;
-        for (let i = 0; i < path.length - 1; i++) {
-            if (!curr[path[i]]) curr[path[i]] = {};
-            curr = curr[path[i]];
+        for (let i = 0; i < pathArr.length - 1; i++) {
+            if (!curr[pathArr[i]]) curr[pathArr[i]] = {};
+            curr = curr[pathArr[i]];
         }
-        curr[path[path.length - 1]] = value;
+        curr[pathArr[pathArr.length - 1]] = value;
         onChange(newObj);
     };
 
-    const net = streamSettings.network || "tcp";
-    const sec = streamSettings.security || "none";
+    const network = useField<string>(streamSettings, update, ['network']);
+    const security = useField<string>(streamSettings, update, ['security']);
+
+    const httpupgradePath = useField<string>(streamSettings, update, ['httpupgradeSettings', 'path']);
+    const httpupgradeHost = useField<string>(streamSettings, update, ['httpupgradeSettings', 'host']);
+
+    const tcpAcceptProxyProtocol = useField<boolean>(streamSettings, update, ['tcpSettings', 'acceptProxyProtocol']);
+    const tcpHeaderType = useField<string>(streamSettings, update, ['tcpSettings', 'header', 'type']);
+    const tcpHeaderPath = useField<string[]>(streamSettings, update, ['tcpSettings', 'header', 'request', 'path']);
+    const tcpHeaderHost = useField<string[]>(streamSettings, update, ['tcpSettings', 'header', 'request', 'headers', 'Host']);
+
+    const wsAcceptProxyProtocol = useField<boolean>(streamSettings, update, ['wsSettings', 'acceptProxyProtocol']);
+    const wsPath = useField<string>(streamSettings, update, ['wsSettings', 'path']);
+    const wsHost = useField<string>(streamSettings, update, ['wsSettings', 'headers', 'Host']);
+    const wsHeartbeatPeriod = useField<number | undefined>(streamSettings, update, ['wsSettings', 'heartbeatPeriod']);
+
+    const grpcMultiMode = useField<boolean>(streamSettings, update, ['grpcSettings', 'multiMode']);
+    const grpcPermitWithoutStream = useField<boolean>(streamSettings, update, ['grpcSettings', 'permit_without_stream']);
+    const grpcServiceName = useField<string>(streamSettings, update, ['grpcSettings', 'serviceName']);
+    const grpcAuthority = useField<string>(streamSettings, update, ['grpcSettings', 'authority']);
+    const grpcUserAgent = useField<string>(streamSettings, update, ['grpcSettings', 'user_agent']);
+    const grpcIdleTimeout = useField<number | undefined>(streamSettings, update, ['grpcSettings', 'idle_timeout']);
+    const grpcHealthCheckTimeout = useField<number | undefined>(streamSettings, update, ['grpcSettings', 'health_check_timeout']);
+    const grpcInitialWindowsSize = useField<number | undefined>(streamSettings, update, ['grpcSettings', 'initial_windows_size']);
+
+    const kcpCongestion = useField<boolean>(streamSettings, update, ['kcpSettings', 'congestion']);
+    const kcpHeaderType = useField<string>(streamSettings, update, ['kcpSettings', 'header', 'type']);
+    const kcpSeed = useField<string>(streamSettings, update, ['kcpSettings', 'seed']);
+    const kcpMtu = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'mtu']);
+    const kcpTti = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'tti']);
+    const kcpUplinkCapacity = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'uplinkCapacity']);
+    const kcpDownlinkCapacity = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'downlinkCapacity']);
+    const kcpReadBufferSize = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'readBufferSize']);
+    const kcpWriteBufferSize = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'writeBufferSize']);
+
+    const quicSecurity = useField<string>(streamSettings, update, ['quicSettings', 'security']);
+    const quicHeaderType = useField<string>(streamSettings, update, ['quicSettings', 'header', 'type']);
+    const quicKey = useField<string>(streamSettings, update, ['quicSettings', 'key']);
+
+    const realitySettings = useField<any>(streamSettings, update, ['realitySettings']);
+    const tlsSettings = useField<any>(streamSettings, update, ['tlsSettings']);
+    // certificates is always written as a single-element array (server cert +
+    // key), so it's bound as one leaf field rather than useArrayField's
+    // CRUD-list semantics (which would preserve any extra elements instead of
+    // collapsing to one, changing behavior for hand-edited multi-cert JSON).
+    const tlsCertificates = useField<any[]>(streamSettings, update, ['tlsSettings', 'certificates']);
+
+    const net = network.value || "tcp";
+    const sec = security.value || "none";
 
     const handleGenKeys = () => {
         const keys = generateX25519Keys();
@@ -89,11 +155,11 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
             {/* --- MAIN SELECTORS --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select 
+                    <Select
                         label="Network"
                         hint="Transport protocol used to deliver data."
-                        value={net} 
-                        onChange={val => update(['network'], val)}
+                        value={net}
+                        onChange={val => network.onChange(val)}
                         options={[
                             { value: "tcp", label: "TCP", description: "Standard reliable stream" },
                             { value: "ws", label: "WebSocket", description: "Standard web transport" },
@@ -107,11 +173,11 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             { value: "httpupgrade", label: "HTTP Upgrade", description: "Modern WebSocket alternative" },
                         ]}
                     />
-                    <Select 
+                    <Select
                         label="Security"
                         hint="Encryption layer (TLS/Reality)."
-                        value={sec} 
-                        onChange={val => update(['security'], val)}
+                        value={sec}
+                        onChange={val => security.onChange(val)}
                         options={[
                             { value: "none", label: "NONE", description: "Plaintext (unsafe)" },
                             { value: "tls", label: "TLS", description: "Standard SSL/TLS encryption" },
@@ -142,8 +208,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     <div className="col-span-full flex items-center gap-2">
                         <span className="text-xs font-bold text-blue-400">HTTP Upgrade Configuration</span>
                     </div>
-                    <div><label className="label-xs">Path</label><input className="input-base font-mono" placeholder="/" value={streamSettings.httpupgradeSettings?.path || ""} onChange={e => update(['httpupgradeSettings', 'path'], e.target.value)} /></div>
-                    <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="example.com" value={streamSettings.httpupgradeSettings?.host || ""} onChange={e => update(['httpupgradeSettings', 'host'], e.target.value)} /></div>
+                    <div><label className="label-xs">Path</label><input className="input-base font-mono" placeholder="/" value={httpupgradePath.value || ""} onChange={e => httpupgradePath.onChange(e.target.value)} /></div>
+                    <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="example.com" value={httpupgradeHost.value || ""} onChange={e => httpupgradeHost.onChange(e.target.value)} /></div>
                 </div>
             )}
 
@@ -157,34 +223,34 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     {!isClient && (
                         <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
                             <Switch
-                                checked={streamSettings.tcpSettings?.acceptProxyProtocol || false}
-                                onChange={checked => update(['tcpSettings', 'acceptProxyProtocol'], checked)}
+                                checked={tcpAcceptProxyProtocol.value || false}
+                                onChange={checked => tcpAcceptProxyProtocol.onChange(checked)}
                                 label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>}
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select 
+                        <Select
                             label="Header Type (Obfuscation)"
-                            value={streamSettings.tcpSettings?.header?.type || "none"}
-                            onChange={val => update(['tcpSettings', 'header', 'type'], val)}
+                            value={tcpHeaderType.value || "none"}
+                            onChange={val => tcpHeaderType.onChange(val)}
                             options={[
                                 { value: "none", label: "None", description: "No obfuscation" },
                                 { value: "http", label: "HTTP", description: "Simulate HTTP request" },
                             ]}
                         />
 
-                        {streamSettings.tcpSettings?.header?.type === 'http' && (
+                        {tcpHeaderType.value === 'http' && (
                             <div className="col-span-full space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
                                 <label className="label-xs text-yellow-500">HTTP Request (Legacy Obfuscation)</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <input className="input-base text-xs font-mono" placeholder="Path (e.g. /)"
-                                        value={streamSettings.tcpSettings?.header?.request?.path?.[0] || "/"}
-                                        onChange={e => update(['tcpSettings', 'header', 'request', 'path'], [e.target.value])} />
+                                        value={tcpHeaderPath.value?.[0] || "/"}
+                                        onChange={e => tcpHeaderPath.onChange([e.target.value])} />
                                     <input className="input-base text-xs font-mono" placeholder="Host (e.g. bing.com)"
-                                        value={streamSettings.tcpSettings?.header?.request?.headers?.Host?.[0] || ""}
-                                        onChange={e => update(['tcpSettings', 'header', 'request', 'headers', 'Host'], [e.target.value])} />
+                                        value={tcpHeaderHost.value?.[0] || ""}
+                                        onChange={e => tcpHeaderHost.onChange([e.target.value])} />
                                 </div>
                             </div>
                         )}
@@ -215,22 +281,22 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     {!isClient && (
                         <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
                             <Switch
-                                checked={streamSettings.wsSettings?.acceptProxyProtocol || false}
-                                onChange={checked => update(['wsSettings', 'acceptProxyProtocol'], checked)}
+                                checked={wsAcceptProxyProtocol.value || false}
+                                onChange={checked => wsAcceptProxyProtocol.onChange(checked)}
                                 label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>}
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label className="label-xs">Path</label><input className="input-base font-mono" value={streamSettings.wsSettings?.path || "/"} onChange={e => update(['wsSettings', 'path'], e.target.value)} /></div>
-                        <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="host.com" value={streamSettings.wsSettings?.headers?.Host || ""} onChange={e => update(['wsSettings', 'headers', 'Host'], e.target.value)} /></div>
+                        <div><label className="label-xs">Path</label><input className="input-base font-mono" value={wsPath.value || "/"} onChange={e => wsPath.onChange(e.target.value)} /></div>
+                        <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="host.com" value={wsHost.value || ""} onChange={e => wsHost.onChange(e.target.value)} /></div>
                         <div>
                             <label className="label-xs">Heartbeat Period (s)</label>
                             <NumberInput
                                 placeholder="10"
-                                value={streamSettings.wsSettings?.heartbeatPeriod}
-                                onChange={val => update(['wsSettings', 'heartbeatPeriod'], val)}
+                                value={wsHeartbeatPeriod.value}
+                                onChange={val => wsHeartbeatPeriod.onChange(val)}
                             />
                         </div>
                     </div>
@@ -246,46 +312,54 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     {isClient && (
                         <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Switch
-                                checked={streamSettings.grpcSettings?.multiMode || false}
-                                onChange={checked => update(['grpcSettings', 'multiMode'], checked)}
+                                checked={grpcMultiMode.value || false}
+                                onChange={checked => grpcMultiMode.onChange(checked)}
                                 label="Enable Multi Mode"
                             />
                             <Switch
-                                checked={streamSettings.grpcSettings?.permit_without_stream || false}
-                                onChange={checked => update(['grpcSettings', 'permit_without_stream'], checked)}
+                                checked={grpcPermitWithoutStream.value || false}
+                                onChange={checked => grpcPermitWithoutStream.onChange(checked)}
                                 label="Permit Without Stream"
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="col-span-full"><label className="label-xs">Service Name</label><input className="input-base font-mono" placeholder="GunService" value={streamSettings.grpcSettings?.serviceName || ""} onChange={e => update(['grpcSettings', 'serviceName'], e.target.value)} /></div>
-                        <div><label className="label-xs">Authority</label><input className="input-base font-mono" placeholder="grpc.example.com" value={streamSettings.grpcSettings?.authority || ""} onChange={e => update(['grpcSettings', 'authority'], e.target.value)} /></div>
+                        <div className="col-span-full"><label className="label-xs">Service Name</label><input className="input-base font-mono" placeholder="GunService" value={grpcServiceName.value || ""} onChange={e => grpcServiceName.onChange(e.target.value)} /></div>
+                        <div><label className="label-xs">Authority</label><input className="input-base font-mono" placeholder="grpc.example.com" value={grpcAuthority.value || ""} onChange={e => grpcAuthority.onChange(e.target.value)} /></div>
                         {isClient && (
                             <>
-                                <div><label className="label-xs">User Agent</label><input className="input-base font-mono" placeholder="custom user agent" value={streamSettings.grpcSettings?.user_agent || ""} onChange={e => update(['grpcSettings', 'user_agent'], e.target.value)} /></div>
+                                <div><label className="label-xs">User Agent</label><input className="input-base font-mono" placeholder="custom user agent" value={grpcUserAgent.value || ""} onChange={e => grpcUserAgent.onChange(e.target.value)} /></div>
                                 <div>
-                                    <label className="label-xs">Idle Timeout (s)</label>
-                                    <NumberInput
+                                    <label className="label-xs">Idle Timeout</label>
+                                    <DurationInput
                                         placeholder="60"
-                                        value={streamSettings.grpcSettings?.idle_timeout}
-                                        onChange={val => update(['grpcSettings', 'idle_timeout'], val)}
+                                        value={grpcIdleTimeout.value}
+                                        onChange={val => grpcIdleTimeout.onChange(val)}
+                                        defaultUnit="s"
+                                        mode="number"
+                                        baseUnit="s"
+                                        unitOptions={['ms', 's', 'm', 'h']}
                                     />
                                 </div>
                                 <div>
-                                    <label className="label-xs">Health Check Timeout (s)</label>
-                                    <NumberInput
+                                    <label className="label-xs">Health Check Timeout</label>
+                                    <DurationInput
                                         placeholder="20"
-                                        value={streamSettings.grpcSettings?.health_check_timeout}
-                                        onChange={val => update(['grpcSettings', 'health_check_timeout'], val)}
+                                        value={grpcHealthCheckTimeout.value}
+                                        onChange={val => grpcHealthCheckTimeout.onChange(val)}
+                                        defaultUnit="s"
+                                        mode="number"
+                                        baseUnit="s"
+                                        unitOptions={['ms', 's', 'm', 'h']}
                                     />
                                 </div>
                                 <div>
                                     <label className="label-xs">Initial Windows Size</label>
                                     <NumberInput
                                         placeholder="0"
-                                        value={streamSettings.grpcSettings?.initial_windows_size}
-                                        onChange={val => update(['grpcSettings', 'initial_windows_size'], val)}
+                                        value={grpcInitialWindowsSize.value}
+                                        onChange={val => grpcInitialWindowsSize.onChange(val)}
                                     />
                                 </div>
                             </>
@@ -302,17 +376,17 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                     <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
                         <Switch
-                            checked={streamSettings.kcpSettings?.congestion || false}
-                            onChange={checked => update(['kcpSettings', 'congestion'], checked)}
+                            checked={kcpCongestion.value || false}
+                            onChange={checked => kcpCongestion.onChange(checked)}
                             label="Enable Congestion Control"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select 
+                        <Select
                             label="Header Type"
-                            value={streamSettings.kcpSettings?.header?.type || "none"}
-                            onChange={val => update(['kcpSettings', 'header', 'type'], val)}
+                            value={kcpHeaderType.value || "none"}
+                            onChange={val => kcpHeaderType.onChange(val)}
                             options={[
                                 { value: "none", label: "None" },
                                 { value: "srtp", label: "SRTP", description: "Video call simulation" },
@@ -322,53 +396,53 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                 { value: "wireguard", label: "WireGuard", description: "WireGuard simulation" },
                             ]}
                         />
-                        <div><label className="label-xs">Seed</label><input className="input-base font-mono" placeholder="password" value={streamSettings.kcpSettings?.seed || ""} onChange={e => update(['kcpSettings', 'seed'], e.target.value)} /></div>
+                        <div><label className="label-xs">Seed</label><input className="input-base font-mono" placeholder="password" value={kcpSeed.value || ""} onChange={e => kcpSeed.onChange(e.target.value)} /></div>
                         <div>
                             <label className="label-xs">MTU</label>
                             <NumberInput
                                 placeholder="1350"
-                                value={streamSettings.kcpSettings?.mtu}
-                                onChange={val => update(['kcpSettings', 'mtu'], val)}
+                                value={kcpMtu.value}
+                                onChange={val => kcpMtu.onChange(val)}
                             />
                         </div>
                         <div>
                             <label className="label-xs">TTI (ms)</label>
                             <NumberInput
                                 placeholder="50"
-                                value={streamSettings.kcpSettings?.tti}
-                                onChange={val => update(['kcpSettings', 'tti'], val)}
+                                value={kcpTti.value}
+                                onChange={val => kcpTti.onChange(val)}
                             />
                         </div>
                         <div>
                             <label className="label-xs">Uplink Capacity (MB/s)</label>
                             <NumberInput
                                 placeholder="5"
-                                value={streamSettings.kcpSettings?.uplinkCapacity}
-                                onChange={val => update(['kcpSettings', 'uplinkCapacity'], val)}
+                                value={kcpUplinkCapacity.value}
+                                onChange={val => kcpUplinkCapacity.onChange(val)}
                             />
                         </div>
                         <div>
                             <label className="label-xs">Downlink Capacity (MB/s)</label>
                             <NumberInput
                                 placeholder="20"
-                                value={streamSettings.kcpSettings?.downlinkCapacity}
-                                onChange={val => update(['kcpSettings', 'downlinkCapacity'], val)}
+                                value={kcpDownlinkCapacity.value}
+                                onChange={val => kcpDownlinkCapacity.onChange(val)}
                             />
                         </div>
                         <div>
                             <label className="label-xs">Read Buffer Size (MB)</label>
                             <NumberInput
                                 placeholder="2"
-                                value={streamSettings.kcpSettings?.readBufferSize}
-                                onChange={val => update(['kcpSettings', 'readBufferSize'], val)}
+                                value={kcpReadBufferSize.value}
+                                onChange={val => kcpReadBufferSize.onChange(val)}
                             />
                         </div>
                         <div>
                             <label className="label-xs">Write Buffer Size (MB)</label>
                             <NumberInput
                                 placeholder="2"
-                                value={streamSettings.kcpSettings?.writeBufferSize}
-                                onChange={val => update(['kcpSettings', 'writeBufferSize'], val)}
+                                value={kcpWriteBufferSize.value}
+                                onChange={val => kcpWriteBufferSize.onChange(val)}
                             />
                         </div>
                     </div>
@@ -382,20 +456,20 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select 
+                        <Select
                             label="Security"
-                            value={streamSettings.quicSettings?.security || "none"}
-                            onChange={val => update(['quicSettings', 'security'], val)}
+                            value={quicSecurity.value || "none"}
+                            onChange={val => quicSecurity.onChange(val)}
                             options={[
                                 { value: "none", label: "None" },
                                 { value: "aes-128-gcm", label: "AES-128-GCM" },
                                 { value: "chacha20-poly1305", label: "ChaCha20" },
                             ]}
                         />
-                        <Select 
+                        <Select
                             label="Header Type"
-                            value={streamSettings.quicSettings?.header?.type || "none"}
-                            onChange={val => update(['quicSettings', 'header', 'type'], val)}
+                            value={quicHeaderType.value || "none"}
+                            onChange={val => quicHeaderType.onChange(val)}
                             options={[
                                 { value: "none", label: "None" },
                                 { value: "srtp", label: "SRTP" },
@@ -405,7 +479,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                 { value: "wireguard", label: "WireGuard" },
                             ]}
                         />
-                        <div className="col-span-full"><label className="label-xs">Key</label><input className="input-base font-mono" placeholder="key" value={streamSettings.quicSettings?.key || ""} onChange={e => update(['quicSettings', 'key'], e.target.value)} /></div>
+                        <div className="col-span-full"><label className="label-xs">Key</label><input className="input-base font-mono" placeholder="key" value={quicKey.value || ""} onChange={e => quicKey.onChange(e.target.value)} /></div>
                     </div>
                 </div>
             )}
@@ -430,8 +504,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                     <SchemaForm
                         schema={RealitySchema}
-                        value={streamSettings.realitySettings || {}}
-                        onChange={val => update(['realitySettings'], val)}
+                        value={realitySettings.value || {}}
+                        onChange={val => realitySettings.onChange(val)}
                         errors={realityErrors}
                         excludeKeys={
                             isClient
@@ -478,14 +552,14 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         description="Post-quantum signature verification, master key logs, and server debug options."
                         hasActiveValues={
                             isClient
-                                ? !!streamSettings.realitySettings?.mldsa65Verify || !!streamSettings.realitySettings?.masterKeyLog
-                                : !!streamSettings.realitySettings?.show || !!streamSettings.realitySettings?.mldsa65Seed || !!streamSettings.realitySettings?.maxTimeDiff || !!streamSettings.realitySettings?.masterKeyLog
+                                ? !!realitySettings.value?.mldsa65Verify || !!realitySettings.value?.masterKeyLog
+                                : !!realitySettings.value?.show || !!realitySettings.value?.mldsa65Seed || !!realitySettings.value?.maxTimeDiff || !!realitySettings.value?.masterKeyLog
                         }
                     >
                         <SchemaForm
                             schema={RealitySchema}
-                            value={streamSettings.realitySettings || {}}
-                            onChange={val => update(['realitySettings'], val)}
+                            value={realitySettings.value || {}}
+                            onChange={val => realitySettings.onChange(val)}
                             errors={realityErrors}
                             excludeKeys={
                                 isClient
@@ -507,19 +581,19 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <label className="label-xs font-bold text-slate-400">Certificates (Paths)</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <input className="input-base text-xs font-mono" placeholder="Certificate file path (e.g. /path/to/fullchain.crt)"
-                                    value={streamSettings.tlsSettings?.certificates?.[0]?.certificateFile || ""}
-                                    onChange={e => update(['tlsSettings', 'certificates'], [{ ...streamSettings.tlsSettings?.certificates?.[0], certificateFile: e.target.value }])} />
+                                    value={tlsCertificates.value?.[0]?.certificateFile || ""}
+                                    onChange={e => tlsCertificates.onChange([{ ...tlsCertificates.value?.[0], certificateFile: e.target.value }])} />
                                 <input className="input-base text-xs font-mono" placeholder="Private key file path (e.g. /path/to/private.key)"
-                                    value={streamSettings.tlsSettings?.certificates?.[0]?.keyFile || ""}
-                                    onChange={e => update(['tlsSettings', 'certificates'], [{ ...streamSettings.tlsSettings?.certificates?.[0], keyFile: e.target.value }])} />
+                                    value={tlsCertificates.value?.[0]?.keyFile || ""}
+                                    onChange={e => tlsCertificates.onChange([{ ...tlsCertificates.value?.[0], keyFile: e.target.value }])} />
                             </div>
                         </div>
                     )}
 
                     <SchemaForm
                         schema={TlsSchema}
-                        value={streamSettings.tlsSettings || {}}
-                        onChange={val => update(['tlsSettings'], val)}
+                        value={tlsSettings.value || {}}
+                        onChange={val => tlsSettings.onChange(val)}
                         errors={tlsErrors}
                         excludeKeys={[
                             'certificates',
@@ -542,21 +616,21 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         title="Extended TLS Settings"
                         description="Cipher suites, session resumption, certificate pinning, and SSLKEYLOGFILE."
                         hasActiveValues={
-                            !!streamSettings.tlsSettings?.masterKeyLog ||
-                            !!streamSettings.tlsSettings?.pinnedPeerCertSha256 ||
-                            !!streamSettings.tlsSettings?.cipherSuites ||
-                            !!streamSettings.tlsSettings?.disableSystemRoot ||
-                            !!streamSettings.tlsSettings?.enableSessionResumption ||
-                            (!isClient && !!streamSettings.tlsSettings?.rejectUnknownSni)
+                            !!tlsSettings.value?.masterKeyLog ||
+                            !!tlsSettings.value?.pinnedPeerCertSha256 ||
+                            !!tlsSettings.value?.cipherSuites ||
+                            !!tlsSettings.value?.disableSystemRoot ||
+                            !!tlsSettings.value?.enableSessionResumption ||
+                            (!isClient && !!tlsSettings.value?.rejectUnknownSni)
                         }
                     >
                         <SchemaForm
                             schema={TlsSchema}
-                            value={streamSettings.tlsSettings || {}}
-                            onChange={val => update(['tlsSettings'], val)}
+                            value={tlsSettings.value || {}}
+                            onChange={val => tlsSettings.onChange(val)}
                             errors={tlsErrors}
                             excludeKeys={
-                                Object.keys(TlsSchema.shape).filter(k => 
+                                Object.keys(TlsSchema.shape).filter(k =>
                                     isClient
                                         ? !['pinnedPeerCertSha256', 'masterKeyLog', 'cipherSuites', 'disableSystemRoot', 'enableSessionResumption'].includes(k)
                                         : !['rejectUnknownSni', 'masterKeyLog', 'cipherSuites', 'enableSessionResumption', 'disableSystemRoot'].includes(k)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { JsonField } from '../ui/JsonField';
+import { useConfigStore } from '../../store/configStore';
 
 interface SectionJsonModalProps {
     title: string;
@@ -13,6 +14,7 @@ interface SectionJsonModalProps {
 export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: SectionJsonModalProps) => {
     const [localData, setLocalData] = useState(data);
     const [localRawText, setLocalRawText] = useState<string | null>(null);
+    const rawConfigText = useConfigStore(state => state.rawConfigText);
 
     useEffect(() => {
         setLocalData(data);
@@ -36,13 +38,16 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
             }}
             className="h-full overflow-hidden"
         >
-            <JsonField 
-                label="Partial Configuration" 
-                value={localData} 
-                onChange={handleChange} 
-                className="flex-1" 
+            <JsonField
+                label="Partial Configuration"
+                value={localData}
+                onChange={handleChange}
+                className="flex-1"
                 schemaMode={schemaMode}
                 rawText={localRawText}
+                rawConfigText={rawConfigText}
+                onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
+                onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
             />
         </Modal>
     );

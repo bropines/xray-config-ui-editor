@@ -22,6 +22,9 @@ export type { InputProps } from './Input';
 export { NumberInput } from './NumberInput';
 export type { NumberInputProps } from './NumberInput';
 
+export { DurationInput, parseDuration } from './DurationInput';
+export type { DurationInputProps, TimeUnit } from './DurationInput';
+
 export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
 
@@ -38,6 +41,9 @@ export type { RadioGroupProps, RadioOption } from './RadioGroup';
 
 export { Badge } from './Badge';
 export type { BadgeProps, BadgeVariant } from './Badge';
+
+export { ExperimentalBadge } from './ExperimentalBadge';
+export type { ExperimentalBadgeProps } from './ExperimentalBadge';
 
 export { Divider } from './Divider';
 export type { DividerProps } from './Divider';

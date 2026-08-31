@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Button, SmartTagInput, SchemaForm } from '../../ui';
 import { getDefaultGeoList } from '../../../utils/geo-data';
 import { DnsServerObjectSchema } from '../../../core/xray/schemas/dns.schema';
+import { useField } from '../../../hooks/useField';
+import type { FieldPath } from '../../../hooks/useField';
 
 export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     const isString = typeof server === 'string';
@@ -29,9 +31,14 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
         }
     }, [isString]);
 
-    const update = (field: string, val: any) => {
-        setLocal(prev => ({ ...prev, [field]: val }));
+    const update = (field: FieldPath, val: any) => {
+        setLocal(prev => ({ ...prev, [field as string]: val }));
     };
+
+    // `local`/`update` here play the same role as `local`/`updateField` from
+    // useXrayEditor — useField binds directly on top, same as everywhere else.
+    const domains = useField<string[]>(local, update, 'domains');
+    const expectIPs = useField<string[]>(local, update, 'expectIPs');
 
     const convertToAdvanced = () => {
         onChange({ address: server, domains: [], expectIPs: [] });
@@ -98,7 +105,7 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
                             help: 'If enabled, always query even if other servers already matched.'
                         },
                         timeoutMs: {
-                            label: 'Timeout (ms)',
+                            label: 'Timeout',
                             help: 'Per-server query timeout in milliseconds.',
                             placeholder: 'e.g. 5000'
                         },
@@ -121,7 +128,7 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
                             help: 'Serve stale/expired cache entries from this server.'
                         },
                         serveExpiredTTL: {
-                            label: 'Serve Expired TTL (sec)',
+                            label: 'Serve Expired TTL',
                             help: 'Extended TTL for stale cache entries in seconds.',
                             placeholder: 'e.g. 86400'
                         },
@@ -134,24 +141,24 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
                 />
 
                 <div className="pt-4 border-t border-slate-800">
-                    <SmartTagInput 
-                        label="Domains (Routing)" 
-                        prefix="geosite:" 
-                        placeholder="geosite:cn, google.com..." 
-                        value={local.domains || []} 
-                        onChange={v => update('domains', v)}
+                    <SmartTagInput
+                        label="Domains (Routing)"
+                        prefix="geosite:"
+                        placeholder="geosite:cn, google.com..."
+                        value={domains.value || []}
+                        onChange={domains.onChange}
                         suggestions={geoSites}
                         isLoading={loadingGeo}
                     />
                 </div>
 
                 <div>
-                    <SmartTagInput 
-                        label="Expect IPs (Optional)" 
-                        prefix="geoip:" 
-                        placeholder="geoip:cn..." 
-                        value={local.expectIPs || []} 
-                        onChange={v => update('expectIPs', v)}
+                    <SmartTagInput
+                        label="Expect IPs (Optional)"
+                        prefix="geoip:"
+                        placeholder="geoip:cn..."
+                        value={expectIPs.value || []}
+                        onChange={expectIPs.onChange}
                         suggestions={geoIps}
                         isLoading={loadingGeo}
                     />

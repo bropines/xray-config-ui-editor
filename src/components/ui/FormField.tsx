@@ -2,7 +2,8 @@ import React from 'react';
 import { Help } from './Help';
 
 interface FormFieldProps {
-    label: string;
+    /** Usually a string, but accepts a node so a label can carry an inline badge (e.g. <ExperimentalBadge />). */
+    label: React.ReactNode;
     help?: string;
     error?: string;
     children: React.ReactNode;

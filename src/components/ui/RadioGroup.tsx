@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../utils/cn';
 
 export interface RadioOption<T extends string = string> {
     value: T;
@@ -29,24 +30,24 @@ export function RadioGroup<T extends string = string>({
 }: RadioGroupProps<T>) {
     if (variant === 'pills') {
         return (
-            <div className={`flex flex-col gap-1.5 ${className}`}>
+            <div className={cn('flex flex-col gap-1.5', className)}>
                 {label && (
                     <span className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">{label}</span>
                 )}
-                <div className={`flex gap-1.5 flex-wrap ${direction === 'horizontal' ? '' : 'flex-col'}`}>
+                <div className={cn('flex gap-1.5 flex-wrap', direction !== 'horizontal' && 'flex-col')}>
                     {options.map((opt) => (
                         <button
                             key={opt.value}
                             type="button"
                             disabled={opt.disabled}
                             onClick={() => onChange(opt.value)}
-                            className={`
-                                px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
-                                disabled:opacity-50 disabled:cursor-not-allowed
-                                ${value === opt.value
+                            className={cn(
+                                'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                                'disabled:opacity-50 disabled:cursor-not-allowed',
+                                value === opt.value
                                     ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'}
-                            `}
+                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200',
+                            )}
                         >
                             {opt.label}
                         </button>
@@ -57,15 +58,15 @@ export function RadioGroup<T extends string = string>({
     }
 
     return (
-        <div className={`flex flex-col gap-1.5 ${className}`}>
+        <div className={cn('flex flex-col gap-1.5', className)}>
             {label && (
                 <span className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">{label}</span>
             )}
-            <div className={`flex gap-3 ${direction === 'vertical' ? 'flex-col' : 'flex-row flex-wrap'}`}>
+            <div className={cn('flex gap-3', direction === 'vertical' ? 'flex-col' : 'flex-row flex-wrap')}>
                 {options.map((opt) => (
                     <label
                         key={opt.value}
-                        className={`flex items-start gap-2.5 cursor-pointer group ${opt.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={cn('flex items-start gap-2.5 cursor-pointer group', opt.disabled && 'opacity-50 cursor-not-allowed')}
                     >
                         <div className="relative mt-0.5 shrink-0">
                             <input
@@ -78,12 +79,12 @@ export function RadioGroup<T extends string = string>({
                                 className="sr-only"
                             />
                             <div
-                                className={`
-                                    w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all
-                                    ${value === opt.value
+                                className={cn(
+                                    'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all',
+                                    value === opt.value
                                         ? 'border-indigo-500 bg-indigo-600'
-                                        : 'border-slate-600 bg-slate-900 group-hover:border-indigo-500'}
-                                `}
+                                        : 'border-slate-600 bg-slate-900 group-hover:border-indigo-500',
+                                )}
                             >
                                 {value === opt.value && (
                                     <div className="w-1.5 h-1.5 rounded-full bg-white" />

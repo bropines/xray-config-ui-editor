@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO_API_URL = 'https://api.github.com/repos/XTLS/Xray-core/contents/infra/conf';
-const RAW_URL_PREFIX = 'https://raw.githubusercontent.com/XTLS/Xray-core/main/infra/conf/';
 
 const OUTPUT_SCHEMA_PATH = path.join(__dirname, '../src/utils/config.schema.json');
 const OUTPUT_TYPES_PATH = path.join(__dirname, '../src/core/xray-config.d.ts');
@@ -166,19 +165,34 @@ async function run() {
                 .filter(Boolean)
                 .join('\n');
 
-            const fieldRegex = /^\s*(\w+)\s+([\w\*\[\]\.\{\}]+)(?:\s+`json:"([^"]+)"`)?/gm;
+            // Captures an optional block of `//` comment lines immediately preceding
+            // each field, so every field can carry its OWN human-readable text
+            // instead of inheriting the struct's doc comment (see bug below).
+            const fieldRegex = /(?:((?:[ \t]*\/\/[^\n]*\n)+))?[ \t]*(\w+)\s+([\w*[\].{}]+)(?:\s+`json:"([^"]+)"`)?/gm;
             let fieldMatch;
             const fields = [];
             while ((fieldMatch = fieldRegex.exec(structBody)) !== null) {
-                const fieldName = fieldMatch[1];
-                const fieldType = fieldMatch[2];
+                const fieldComments = fieldMatch[1] || '';
+                const fieldName = fieldMatch[2];
+                const fieldType = fieldMatch[3];
                 // Extract json name and ignore modifiers like omitempty
-                const jsonTag = fieldMatch[3] ? fieldMatch[3].split(',')[0] : null;
+                const jsonTag = fieldMatch[4] ? fieldMatch[4].split(',')[0] : null;
+
+                const fieldDescription = fieldComments.split('\n')
+                    .map(line => line.replace(/^\s*\/\/\s*/, '').trim())
+                    .filter(Boolean)
+                    .join('\n');
 
                 fields.push({
                     name: fieldName,
                     type: fieldType,
-                    jsonKey: jsonTag
+                    jsonKey: jsonTag,
+                    // Per-FIELD description, not the struct's. Previously this
+                    // didn't exist and every property in the struct was stamped
+                    // with the struct-level doc comment instead — e.g. every
+                    // field of WireGuardConfig would show WireGuardConfig's own
+                    // comment as "its" description.
+                    description: fieldDescription || undefined,
                 });
             }
 
@@ -205,15 +219,16 @@ async function run() {
     Object.keys(structs).forEach(name => {
         const s = structs[name];
         const properties = {};
-        const required = [];
 
         s.fields.forEach(f => {
             const jsonKey = f.jsonKey || f.name;
             if (jsonKey === '-') return; // skip ignored fields
 
             const propSchema = mapGoTypeToSchema(f.type);
-            if (s.description) {
-                propSchema.description = s.description;
+            // Use the FIELD's own doc comment, not the struct's — see the
+            // fieldRegex comment above for why this distinction matters.
+            if (f.description) {
+                propSchema.description = f.description;
             }
             properties[jsonKey] = propSchema;
         });
@@ -320,7 +335,10 @@ async function run() {
             if (name === 'DNSConfig' && jsonKey === 'hosts') {
                 tsType = 'Record<string, string | string[] | HostAddress>';
             }
-            
+
+            if (f.description) {
+                tsContent += `    /** ${f.description.split('\n').join(' ')} */\n`;
+            }
             tsContent += `    ${jsonKey}?: ${tsType};\n`;
         });
         tsContent += `}\n\n`;

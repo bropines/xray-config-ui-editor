@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { cn } from '../../utils/cn';
 
 export type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 
@@ -40,13 +41,13 @@ export const Badge = ({
     return (
         <span
             onClick={onClick}
-            className={`
-                inline-flex items-center font-mono rounded border transition-colors
-                ${sizeClass}
-                ${variantStyles[variant]}
-                ${onClick ? 'cursor-pointer hover:brightness-110' : ''}
-                ${className}
-            `}
+            className={cn(
+                'inline-flex items-center font-mono rounded border transition-colors',
+                sizeClass,
+                variantStyles[variant],
+                onClick && 'cursor-pointer hover:brightness-110',
+                className,
+            )}
         >
             {icon && <Icon name={icon} className="shrink-0" />}
             {children}
