@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-import { Help } from '../../ui/Help';
 import { toast } from 'sonner';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
@@ -54,9 +53,9 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                 }]
             });
             toast.success("WARP account generated successfully");
-        } catch (e) {
+        } catch (e: any) {
             toast.error("Failed to generate WARP account", {
-                description: "CORS error or proxy is down. Check your settings."
+                description: e?.message || "CORS error or proxy is down. Check your settings."
             });
         } finally {
             setLoading(false);

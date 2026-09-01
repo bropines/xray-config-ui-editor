@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.15] - 2026-08-31
+## [1.0.16] - 2026-09-01
+
+### Fixed
+- **Cloudflare WARP Generator Resilience & Endpoints Cleanup**:
+  - Removed deprecated and blocked 3rd-party WARP registration endpoints (`warp-vercel-murex`, `warp-vercel-chi`, `warp.sub-aggregator`, `warp-generator.workers.dev`).
+  - Set `xcui.bropines.workers.dev` as the default reliable registration worker.
+  - Implemented automatic retry mechanism with exponential backoff for handling Cloudflare API rate limits (Error 1015 / HTTP 429).
+  - Improved user-facing error messages in WireGuard and WARP generation wizards.
+
 
 ### Added
 - **Prefix-Aware Outbound Selector in Observatory & Burst Observatory**:

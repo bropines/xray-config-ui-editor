@@ -1,5 +1,3 @@
-import nacl from 'tweetnacl';
-
 export interface WarpAccount {
     id: string;
     token: string;
@@ -13,118 +11,93 @@ export interface WarpAccount {
 }
 
 /**
- * Default fallback workers/proxies from warp-generator.github.io
- * Prioritizing known working ones based on user feedback.
+ * Default Cloudflare WARP registration worker.
  */
 const DEFAULT_WARP_ENDPOINTS = [
-    'https://warp-vercel-murex.vercel.app/api/warp-data',
     'https://xcui.bropines.workers.dev/',
-    'https://warp-vercel-chi.vercel.app/api/warp-data',
-    'https://warp.sub-aggregator.workers.dev',
-    'https://www.warp-generator.workers.dev',
 ];
 
 /**
  * Registers a new WARP device and returns account credentials.
- * Supports both "Smart Workers" (that return full JSON) and "CORS Proxies".
+ * Supports custom Cloudflare Workers and includes automatic retry with backoff on rate limits.
  */
 export async function generateWarpAccount(customWorkerUrl?: string): Promise<WarpAccount> {
-    const endpoints = customWorkerUrl ? [customWorkerUrl] : DEFAULT_WARP_ENDPOINTS;
+    const endpoints = customWorkerUrl?.trim() ? [customWorkerUrl.trim()] : DEFAULT_WARP_ENDPOINTS;
     let lastError: any;
 
     for (const url of endpoints) {
-        try {
-            // Smart method detection: Vercel/Bropines usually need GET, others might need POST
-            const isVercel = url.includes('vercel.app');
-            const isBropines = url.includes('bropines');
-            const method = (isVercel || isBropines) ? 'GET' : 'POST';
-            
-            const response = await fetch(url, {
-                method,
-                signal: AbortSignal.timeout(15000)
-            });
+        const maxRetries = 3;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // By default use GET for standard workers, fallback to POST if needed
+                let method = 'GET';
+                if (url.includes('warp-generator') || url.includes('sub-aggregator')) {
+                    method = 'POST';
+                }
 
-            if (response.status === 429) {
-                throw new Error("Rate limited (429). Please try another profile or wait.");
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    signal: AbortSignal.timeout(12000),
+                });
+
+                const responseText = await response.text();
+                let rawData: any;
+                try {
+                    rawData = JSON.parse(responseText);
+                } catch {
+                    rawData = null;
+                }
+
+                // Check for Cloudflare rate limits (HTTP 429 or CF 1015 error in 500 response)
+                const isRateLimit =
+                    response.status === 429 ||
+                    (response.status === 500 && (responseText.includes('429') || responseText.includes('1015')));
+
+                if (isRateLimit) {
+                    if (attempt < maxRetries) {
+                        // Exponential backoff
+                        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+                        continue;
+                    }
+                    throw new Error('Cloudflare WARP API rate limited (Error 1015/429). Please wait a few seconds and try again.');
+                }
+
+                if (!response.ok) {
+                    const message = rawData?.message || rawData?.error || responseText.substring(0, 50);
+                    throw new Error(`Worker returned ${response.status}: ${message}`);
+                }
+
+                const data = rawData?.result || (rawData?.success === true ? rawData : rawData);
+
+                if (data && data.privKey && data.peer_pub) {
+                    return {
+                        id: data.id || '',
+                        token: data.token || '',
+                        privateKey: data.privKey,
+                        publicKey: data.publicKey || '',
+                        peerPublicKey: data.peer_pub,
+                        endpoint: data.peer_endpoint || 'engage.cloudflareclient.com:2408',
+                        ipv4: data.client_ipv4,
+                        ipv6: data.client_ipv6,
+                        reserved: data.reserved || [0, 0, 0],
+                    };
+                }
+
+                throw new Error('Invalid worker response format. Missing keys in response.');
+            } catch (e: any) {
+                console.warn(`[WARP Generator] Attempt ${attempt}/${maxRetries} failed for ${url}:`, e.message);
+                lastError = e;
+
+                if (attempt < maxRetries) {
+                    await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+                }
             }
-
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Worker returned ${response.status}: ${errText.substring(0, 30)}`);
-            }
-
-            const rawData = await response.json();
-            
-            // Handle different response formats:
-            // 1. { success: true, privKey, ... }
-            // 2. { privKey, ... }
-            const data = rawData.success === true ? rawData : rawData;
-
-            if (data.privKey && data.peer_pub) {
-                return {
-                    id: data.id || "",
-                    token: data.token || "",
-                    privateKey: data.privKey,
-                    publicKey: "",
-                    peerPublicKey: data.peer_pub,
-                    endpoint: data.peer_endpoint || "engage.cloudflareclient.com:2408",
-                    ipv4: data.client_ipv4,
-                    ipv6: data.client_ipv6,
-                    reserved: data.reserved || [0, 0, 0]
-                };
-            }
-            
-            throw new Error("Invalid worker response format");
-            
-        } catch (e: any) {
-            console.warn(`Endpoint failed ${url}:`, e.message);
-            lastError = e;
-            
-            // If it's a 429, don't immediately give up on the whole process, 
-            // but the loop will move to the next endpoint.
         }
     }
 
-    throw lastError || new Error("All registration endpoints are currently offline.");
+    throw lastError || new Error('WARP registration failed. Please try again.');
 }
 
-/**
- * Full 3-step registration flow using a CORS proxy.
- */
-async function performFullRegistrationFlow(proxyUrl: string): Promise<WarpAccount> {
-    const keyPair = nacl.box.keyPair();
-    const privateKey = btoa(String.fromCharCode(...keyPair.secretKey));
-    const publicKey = btoa(String.fromCharCode(...keyPair.publicKey));
-
-    // Step 1: Reg
-    const regResponse = await cloudflareApi(proxyUrl, 'POST', 'reg', {
-        install_id: "",
-        tos: new Date().toISOString(),
-        key: publicKey,
-        fcm_token: "",
-        type: "ios",
-        locale: "en_US"
-    });
-
-    const id = regResponse.result.id;
-    const token = regResponse.result.token;
-
-    // Step 2: Enable WARP
-    const warpResponse = await cloudflareApi(proxyUrl, 'PATCH', `reg/${id}`, { warp_enabled: true }, token);
-    
-    const config = warpResponse.result.config;
-    const peer = config.peers[0];
-    const reserved = config.interface.reserved || [0, 0, 0];
-
-    return {
-        id,
-        token,
-        privateKey,
-        publicKey,
-        peerPublicKey: peer.public_key,
-        endpoint: peer.endpoint.host,
-        ipv4: config.interface.addresses.v4,
-        ipv6: config.interface.addresses.v6,
-        reserved
-    };
-}
