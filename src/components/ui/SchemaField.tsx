@@ -51,6 +51,24 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     }
     if (current instanceof z.ZodUnion || typeName === 'ZodUnion') {
         const options = (current as any)._def.options || [];
+        
+        // 1. Check if any union branch is an enum with defined options
+        for (const opt of options) {
+            const details = getSchemaTypeAndDetails(opt);
+            if (details.type === 'enum' && details.options && details.options.length > 0) {
+                return details;
+            }
+        }
+
+        // 2. Check if all union branches are literals (e.g. z.literal(0) | z.literal(1))
+        const literalValues = options
+            .filter((opt: any) => opt instanceof z.ZodLiteral || opt._def?.typeName === 'ZodLiteral')
+            .map((opt: any) => String(opt._def?.value ?? (opt as any).value));
+        if (literalValues.length > 0 && literalValues.length === options.length) {
+            return { type: 'enum', options: literalValues };
+        }
+
+        // 3. Check for string fallback
         const hasString = options.some((opt: any) => {
             let u = opt;
             while (

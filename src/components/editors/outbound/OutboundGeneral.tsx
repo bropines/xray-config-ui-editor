@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../../ui/Card';
 import { SchemaForm } from '../../ui/SchemaForm';
-import { OutboundSchema } from '../../../core/xray/schemas';
+import { OutboundSchema, OutboundProtocolSchema } from '../../../core/xray/schemas';
 
 export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors = {} }: any) => {
     const handleFormChange = (newOutbound: any) => {
@@ -35,7 +35,8 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
                 fieldConfigs={{
                     protocol: {
                         label: "Protocol",
-                        help: "Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria, etc."
+                        help: "Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria, etc.",
+                        options: OutboundProtocolSchema.options as unknown as string[]
                     },
                     tag: {
                         label: "Tag",

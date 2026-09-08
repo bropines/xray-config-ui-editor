@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.17] - 2026-09-08
+
+### Fixed
+- **Inbound & Outbound Protocol Selector Dropdown**:
+  - Fixed an issue in `SchemaField` where `ZodUnion` schemas containing both `ZodEnum` and `ZodString` (such as `protocol: z.union([InboundProtocolSchema, z.string()])`) degraded to plain text inputs.
+  - Enhanced `getSchemaTypeAndDetails` to extract and prioritize enum options and literal values from union members.
+  - Explicitly passed `InboundProtocolSchema.options` and `OutboundProtocolSchema.options` in `InboundGeneral` and `OutboundGeneral` for full protocol dropdown selection.
+  - Added unit test suite covering `getSchemaTypeAndDetails` with union and enum schemas.
+
 ## [1.0.16] - 2026-09-01
 
 ### Fixed

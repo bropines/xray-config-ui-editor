@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../../ui/Card';
 import { SchemaForm } from '../../ui/SchemaForm';
-import { InboundSchema } from '../../../core/xray/schemas';
+import { InboundSchema, InboundProtocolSchema } from '../../../core/xray/schemas';
 
 export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {} }: any) => {
     const isTun = inbound.protocol === 'tun';
@@ -42,7 +42,8 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
                 fieldConfigs={{
                     protocol: {
                         label: "Protocol",
-                        help: "Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks."
+                        help: "Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.",
+                        options: InboundProtocolSchema.options as unknown as string[]
                     },
                     listen: {
                         label: "Listen IP",
