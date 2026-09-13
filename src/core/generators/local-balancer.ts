@@ -498,6 +498,158 @@ export const buildLocalBalancerTemplate = (
     return config;
 };
 
+export interface ParsedLocalBalancer {
+    /** Whether the input carries its own proxies or expects injected ones. */
+    kind: 'config' | 'template';
+    options: Partial<LocalBalancerOptions>;
+    inject?: InjectOptions;
+    /** What could not be read back, so the UI can say so instead of guessing. */
+    notes: string[];
+}
+
+/**
+ * Read a config or template produced by this builder (or hand-written in the
+ * same shape) back into the options that would produce it.
+ *
+ * This is what makes an existing balancer editable: without it, changing one
+ * probe interval on a live template means retyping every field, and the risk
+ * of a mismatch between the balancer selector, the probe selector and the
+ * injector prefix comes straight back.
+ *
+ * Unreadable parts are reported in `notes` rather than silently defaulted,
+ * because a default that looks like a read value is the dangerous outcome.
+ */
+export const parseLocalBalancer = (input: any): ParsedLocalBalancer => {
+    const notes: string[] = [];
+    if (!input || typeof input !== 'object') {
+        throw new Error('Not a JSON object');
+    }
+
+    const routing = input.routing || {};
+    const rules: any[] = Array.isArray(routing.rules) ? routing.rules : [];
+    const balancer = Array.isArray(routing.balancers) ? routing.balancers[0] : undefined;
+    const injector = input.remnawave;
+    const injectEntry = Array.isArray(injector?.injectHosts) ? injector.injectHosts[0] : undefined;
+    const kind: 'config' | 'template' = injector ? 'template' : 'config';
+
+    const proxies = (input.outbounds || []).filter(
+        (o: any) => o && o.tag !== 'direct' && o.tag !== 'block' && o.protocol !== 'freedom' && o.protocol !== 'blackhole'
+    );
+
+    const proxyTagPrefix =
+        injectEntry?.tagPrefix ||
+        balancer?.selector?.[0] ||
+        proxies[0]?.tag ||
+        DEFAULT_LOCAL_BALANCER_OPTIONS.proxyTagPrefix;
+
+    // `fb-0` style numbering is visible in the tags themselves; a bare prefix
+    // on the first proxy is the numbered style.
+    let tagStyle: LocalBalancerOptions['tagStyle'] = DEFAULT_LOCAL_BALANCER_OPTIONS.tagStyle;
+    if (proxies.length > 0) {
+        if (proxies[0].tag === `${proxyTagPrefix}0`) tagStyle = 'zeroIndexed';
+        else if (proxies[0].tag !== proxyTagPrefix) tagStyle = 'labelled';
+    }
+
+    const options: Partial<LocalBalancerOptions> = { proxyTagPrefix, tagStyle };
+
+    if (balancer) {
+        options.balancerTag = balancer.tag;
+        if (balancer.strategy?.type) options.strategy = balancer.strategy.type;
+        options.strategySettings = { ...(balancer.strategy?.settings || {}) };
+        if (typeof balancer.fallbackTag === 'string') {
+            options.fallbackTag = balancer.fallbackTag === proxies[0]?.tag ? 'first' : balancer.fallbackTag;
+        } else {
+            options.fallbackTag = 'none';
+        }
+    } else {
+        // A template can route its catch-all straight to one injected outbound
+        // instead of balancing across several. That is a different thing from
+        // what this builder writes, so say so rather than quietly adding a
+        // balancer on the next save.
+        const catchAllTarget = rules.at(-1)?.outboundTag;
+        notes.push(catchAllTarget
+            ? `This one routes to "${catchAllTarget}" directly, with no balancer — saving from here adds one`
+            : 'No balancer found — options were read from the rest of it');
+    }
+
+    // --- probe ---
+    if (input.burstObservatory?.pingConfig) {
+        const ping = input.burstObservatory.pingConfig;
+        options.probe = 'burst';
+        if (ping.interval) options.probeInterval = ping.interval;
+        if (ping.timeout) options.probeTimeout = ping.timeout;
+        if (typeof ping.sampling === 'number') options.probeSampling = ping.sampling;
+        if (ping.destination) options.probeURL = ping.destination;
+    } else if (input.observatory) {
+        options.probe = 'observatory';
+        if (input.observatory.probeInterval) options.probeInterval = input.observatory.probeInterval;
+        if (input.observatory.probeURL) options.probeURL = input.observatory.probeURL;
+    } else {
+        options.probe = 'none';
+    }
+
+    // --- local listeners ---
+    const inbounds: any[] = Array.isArray(input.inbounds) ? input.inbounds : [];
+    const socks = inbounds.find(i => i.protocol === 'socks');
+    const http = inbounds.find(i => i.protocol === 'http');
+    options.socksPort = socks ? socks.port : null;
+    options.httpPort = http ? http.port : null;
+    const listen = socks?.listen || http?.listen;
+    if (listen) options.listen = listen;
+    options.sniffing = !!(socks?.sniffing?.enabled || http?.sniffing?.enabled);
+    if (inbounds.some(i => i.protocol !== 'socks' && i.protocol !== 'http')) {
+        notes.push('Inbounds other than SOCKS/HTTP were dropped — the builder only writes those two');
+    }
+
+    // --- bypass & DNS ---
+    const bypassRule = rules.find(r => Array.isArray(r?.domain) && r.outboundTag === 'direct');
+    options.bypassDomains = bypassRule ? [...bypassRule.domain] : [];
+    options.bypassBittorrent = rules.some(
+        r => Array.isArray(r?.protocol) && r.protocol.includes('bittorrent') && r.outboundTag === 'direct'
+    );
+
+    const dnsServers: any[] = Array.isArray(input.dns?.servers) ? input.dns.servers : [];
+    options.dns = dnsServers.length > 0;
+    const localEntry = dnsServers.find(srv => typeof srv === 'object' && srv?.address === 'localhost');
+    options.dnsUpstream = dnsServers.filter(srv => typeof srv === 'string');
+    if (localEntry && Array.isArray(localEntry.domains)) {
+        const bypassSet = new Set(options.bypassDomains);
+        const domains: string[] = localEntry.domains;
+        options.dnsExtraDomains = domains.filter(d => !bypassSet.has(d));
+        // The builder always writes the bypass list first and the extras after
+        // it. Matching sets, different order — worth saying, since saving will
+        // rewrite the list in that order.
+        const lastBypassAt = domains.reduce((acc, d, i) => (bypassSet.has(d) ? i : acc), -1);
+        const firstExtraAt = domains.findIndex(d => !bypassSet.has(d));
+        if (firstExtraAt !== -1 && firstExtraAt < lastBypassAt) {
+            notes.push('Extra DNS domains will be rewritten after the bypass list (same set, different order)');
+        }
+    } else {
+        options.dnsExtraDomains = [];
+    }
+    if (dnsServers.some(srv => typeof srv === 'object' && srv?.address !== 'localhost')) {
+        notes.push('Custom DNS server entries were dropped — the builder writes one localhost entry plus plain upstreams');
+    }
+
+    if (input.routing?.domainMatcher) options.domainMatcher = input.routing.domainMatcher;
+    if (input.routing?.domainStrategy) options.domainStrategy = input.routing.domainStrategy;
+    if (typeof input.remarks === 'string') options.remarks = input.remarks;
+
+    const inject: InjectOptions | undefined = injectEntry
+        ? {
+            selector: injectEntry.selector || DEFAULT_INJECT_OPTIONS.selector,
+            selectFrom: injectEntry.selectFrom || DEFAULT_INJECT_OPTIONS.selectFrom,
+            addVirtualHostAsOutbound: !!injector.addVirtualHostAsOutbound,
+        }
+        : undefined;
+
+    if (injector && !injectEntry) {
+        notes.push('The template has a remnawave block with no injectHosts entry');
+    }
+
+    return { kind, options, inject, notes };
+};
+
 /**
  * Build one config per group — the array shape a JSON subscription is served
  * in, each entry carrying its group name as `remarks`.

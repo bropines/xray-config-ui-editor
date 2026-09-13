@@ -2,6 +2,7 @@ import { describe, it, expect } from 'bun:test';
 import {
     buildLocalBalancerConfig,
     buildLocalBalancerTemplate,
+    parseLocalBalancer,
     buildLocalBalancerSubscription,
     groupNodesByLabel,
     proxyTagFor,
@@ -281,5 +282,58 @@ describe('buildLocalBalancerTemplate — what the panel renders per subscriber',
 
     it('leaves out remarks, which belong to a rendered config not a template', () => {
         expect(buildLocalBalancerTemplate({ remarks: 'ignored' }).remarks).toBeUndefined();
+    });
+});
+
+
+describe('parseLocalBalancer — reading an existing balancer back into options', () => {
+    it('round-trips a template through parse -> build unchanged', () => {
+        const original = buildLocalBalancerTemplate(
+            { proxyTagPrefix: 'fb-', tagStyle: 'zeroIndexed', balancerTag: 'bal-fb', fallbackTag: 'first',
+              strategySettings: { baselines: ['450ms', '600ms'], expected: 1, maxRTT: '1s', tolerance: 0 },
+              probeInterval: '60s', probeSampling: 1, dnsExtraDomains: ['domain:example.io'] },
+            { selector: { type: 'tagRegex', pattern: '^NL' }, selectFrom: 'ALL', addVirtualHostAsOutbound: true }
+        );
+
+        const parsed = parseLocalBalancer(original);
+        expect(parsed.kind).toBe('template');
+        const rebuilt = buildLocalBalancerTemplate(parsed.options, parsed.inject);
+        expect(rebuilt).toEqual(original);
+    });
+
+    it('round-trips a client config too', () => {
+        const { config } = buildLocalBalancerConfig([node('a'), node('b')], {
+            probe: 'observatory', socksPort: 1080, httpPort: null, listen: '0.0.0.0', remarks: '🇫🇮 Finland',
+        });
+        const parsed = parseLocalBalancer(config);
+        expect(parsed.kind).toBe('config');
+        const rebuilt = buildLocalBalancerConfig([node('a'), node('b')], parsed.options).config;
+        expect(rebuilt).toEqual(config);
+    });
+
+    it('reads the pieces a person would want to see before editing', () => {
+        const { options, inject } = parseLocalBalancer(buildLocalBalancerTemplate({ probe: 'none' }));
+        expect(options.balancerTag).toBe('entry-balancer');
+        expect(options.proxyTagPrefix).toBe('proxy');
+        expect(options.probe).toBe('none');
+        expect(options.socksPort).toBe(10808);
+        expect(options.bypassBittorrent).toBe(true);
+        expect(inject?.selectFrom).toBe('HIDDEN');
+    });
+
+    it('flags what it had to drop instead of pretending it read it', () => {
+        const odd = {
+            inbounds: [{ protocol: 'dokodemo-door', port: 12345 }],
+            outbounds: [{ tag: 'direct', protocol: 'freedom' }],
+            dns: { servers: [{ address: '8.8.8.8', domains: ['geosite:x'] }] },
+            routing: { rules: [] },
+        };
+        const { notes } = parseLocalBalancer(odd);
+        expect(notes.join(' ')).toContain('SOCKS/HTTP');
+        expect(notes.join(' ')).toContain('DNS');
+    });
+
+    it('refuses input that is not an object', () => {
+        expect(() => parseLocalBalancer('nope' as any)).toThrow('Not a JSON object');
     });
 });

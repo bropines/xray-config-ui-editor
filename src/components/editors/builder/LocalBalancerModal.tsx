@@ -128,6 +128,18 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                         From config
                                     </Button>
                                 </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="DownloadSimple"
+                                        className="flex-1 text-[11px]"
+                                        onClick={b.loadFromCurrentConfig}
+                                        title="Read the open config's balancer, probe and bypass settings back into the controls"
+                                    >
+                                        Read settings from the open config
+                                    </Button>
+                                </div>
                             </>
                         ) : (
                             <>
@@ -550,6 +562,18 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                             .map((t: any) => ({ value: t.uuid, label: `Update: ${t.name}` })),
                                     ]}
                                 />
+                                {b.templateTargetUuid && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        icon="DownloadSimple"
+                                        className="text-[11px]"
+                                        onClick={() => b.loadTemplateIntoBuilder(b.templateTargetUuid)}
+                                        title="Read this template back into the controls above, so it can be edited and saved"
+                                    >
+                                        Load this template into the builder
+                                    </Button>
+                                )}
                                 {!b.templateTargetUuid && (
                                     <Input
                                         label="New template name"
@@ -577,7 +601,93 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                             </Section>
                         )}
 
+                        {isTemplate && (
+                            <Section title="Publish to subscribers">
+                                <p className="text-[10px] text-slate-500 -mt-1">
+                                    The nodes become hidden hosts sharing one tag; a visible host with
+                                    that same tag carries the template. Subscribers see the one entry
+                                    and their client gets the balanced config.
+                                </p>
+                                <Input
+                                    label="Pool tag"
+                                    value={b.poolTag}
+                                    onChange={(e: any) => b.setPoolTag(e.target.value)}
+                                    placeholder="NLMAIN"
+                                    hint={b.normalisedPoolTag && b.normalisedPoolTag !== b.poolTag.trim()
+                                        ? `Will be sent as ${b.normalisedPoolTag}`
+                                        : 'Uppercase letters, digits, _ and :'}
+                                />
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    icon="EyeSlash"
+                                    className="text-[11px]"
+                                    onClick={b.tagSelectedHostsAsPool}
+                                    disabled={b.panelSelection.size === 0 || !b.normalisedPoolTag}
+                                    title="Mark the hosts ticked in the panel list as hidden and give them this tag"
+                                >
+                                    Mark {b.panelSelection.size || ''} selected host(s) as the pool
+                                </Button>
+
+                                <div className="border-t border-slate-800 pt-3 flex flex-col gap-3">
+                                    <span className="label-xs">Entry host</span>
+                                    <Input
+                                        label="Remark"
+                                        value={b.entryRemark}
+                                        onChange={(e: any) => b.setEntryRemark(e.target.value)}
+                                        placeholder="🇳🇱 ⚡ Нидерланды"
+                                    />
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="col-span-2">
+                                            <Input
+                                                label="Address"
+                                                value={b.entryAddress}
+                                                onChange={(e: any) => b.setEntryAddress(e.target.value)}
+                                                placeholder="nl.example.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <span className="label-xs">Port</span>
+                                            <NumberInput
+                                                value={b.entryPort}
+                                                onChange={v => b.setEntryPort(v)}
+                                                min={1}
+                                                max={65535}
+                                            />
+                                        </div>
+                                    </div>
+                                    <Select
+                                        label="Bind to inbound"
+                                        value={b.entryInboundUuid}
+                                        onChange={v => b.setEntryInboundUuid(v)}
+                                        options={[
+                                            { value: '', label: b.panelInboundOptions.length ? 'Pick an inbound…' : 'Load the panel hosts first' },
+                                            ...b.panelInboundOptions.map((i: any) => ({ value: i.uuid, label: i.label })),
+                                        ]}
+                                    />
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        icon="Plus"
+                                        className="text-[11px]"
+                                        onClick={b.createEntryHost}
+                                        disabled={!b.templateTargetUuid}
+                                        title={b.templateTargetUuid
+                                            ? 'Create the visible host and attach this template to it'
+                                            : 'Save the template first — the host needs something to point at'}
+                                    >
+                                        Create entry host with this template
+                                    </Button>
+                                </div>
+                            </Section>
+                        )}
+
                         <Section title="Bypass & DNS">
+                            {b.bypassCustom.length > 0 && (
+                                <Badge variant="info" size="sm" icon="Info">
+                                    +{b.bypassCustom.length} domain(s) loaded from the existing config are kept
+                                </Badge>
+                            )}
                             <Switch checked={b.bypassRussian} onChange={b.setBypassRussian} label="Russian sites direct" />
                             <Switch checked={b.bypassLeakChecks} onChange={b.setBypassLeakChecks} label="IP/DNS leak checkers direct" />
                             <Switch

@@ -100,6 +100,31 @@ export class RemnawaveClient {
         return Array.isArray(list) ? list : [];
     }
 
+    /**
+     * Create a host. `inbound` binds it to a config-profile inbound; the
+     * optional `xrayJsonTemplateUuid` is what turns a host into the entry
+     * point of a whole generated config.
+     *
+     * A tag is sent under both `tag` and `tags` on purpose: older panels take
+     * a single string, newer ones an array, and each silently drops the field
+     * it does not know. Sending both keeps this working across versions.
+     */
+    async createHost(payload: Record<string, unknown>): Promise<any> {
+        const data = await this.request('/api/hosts', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+        return data?.response || null;
+    }
+
+    async updateHost(payload: Record<string, unknown> & { uuid: string }): Promise<any> {
+        const data = await this.request('/api/hosts', {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+        return data?.response || null;
+    }
+
     // ─── Subscription templates ──────────────────────────────────────────
     // An XRAY_JSON template is the config the panel renders for a subscriber,
     // with hosts injected into it. A host points at one via its

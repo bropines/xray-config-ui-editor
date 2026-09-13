@@ -183,9 +183,14 @@ interface ConfigState {
     panelCatalog: PanelCatalogState;
     fetchPanelCatalog: () => Promise<void>;
 
+    // --- Panel hosts (write) ---
+    createPanelHost: (payload: Record<string, unknown>) => Promise<any | null>;
+    updatePanelHosts: (updates: Array<Record<string, unknown> & { uuid: string }>) => Promise<number>;
+
     // --- Subscription templates, session-only ---
     panelTemplates: PanelTemplatesState;
     fetchSubscriptionTemplates: () => Promise<void>;
+    loadSubscriptionTemplate: (uuid: string) => Promise<any | null>;
     saveSubscriptionTemplate: (input: {
         mode: 'create' | 'update';
         uuid?: string;
@@ -321,6 +326,56 @@ export const useConfigStore = create(
                 }
             },
 
+            createPanelHost: async (payload) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return null;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    const host = await client.createHost(payload);
+                    await get().fetchPanelCatalog();
+                    toast.success(`Host "${payload.remark}" created`);
+                    return host;
+                } catch (e: any) {
+                    toast.error("Failed to create the host", { description: e?.message || 'Unknown error' });
+                    return null;
+                }
+            },
+
+            updatePanelHosts: async (updates) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return 0;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+
+                let done = 0;
+                const failures: string[] = [];
+                // Sequential on purpose: these are writes to someone's live
+                // panel, and a partial failure should stop with a clear count
+                // rather than race a dozen requests.
+                for (const update of updates) {
+                    try {
+                        await client.updateHost(update);
+                        done++;
+                    } catch (e: any) {
+                        failures.push(e?.message || 'Unknown error');
+                    }
+                }
+                await get().fetchPanelCatalog();
+                if (failures.length > 0) {
+                    toast.error(`${failures.length} host update(s) failed`, { description: failures[0] });
+                } else {
+                    toast.success(`Updated ${done} host(s)`);
+                }
+                return done;
+            },
+
             // --- Subscription templates ---
             panelTemplates: { items: [], loading: false, error: null },
 
@@ -347,6 +402,22 @@ export const useConfigStore = create(
                         state.panelTemplates.error = message;
                     }));
                     toast.error("Failed to load subscription templates", { description: message });
+                }
+            },
+
+            loadSubscriptionTemplate: async (uuid) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return null;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    return await client.getSubscriptionTemplate(uuid);
+                } catch (e: any) {
+                    toast.error("Failed to load the template", { description: e?.message || 'Unknown error' });
+                    return null;
                 }
             },
 

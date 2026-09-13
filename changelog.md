@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.21] - 2026-09-14
+
+### Added
+- **Create panel hosts from the app.** The builder can now finish the job it used to hand back as a JSON file: mark the selected panel hosts as the hidden pool behind one tag, then create the visible entry host bound to a config-profile inbound with the Xray JSON template attached. That is the whole chain — nodes as hidden hosts sharing a tag, one visible host carrying the same tag plus the template, subscribers getting the balanced config — done from the browser.
+  - Tags are normalised to what the panel accepts (uppercase letters, digits, `_`, `:`) and sent as both `tag` and `tags`, since panel versions differ on which one they read.
+- **Open an existing balancer and edit it.** `parseLocalBalancer()` reads a template or client config back into the builder's controls: tag prefix, balancer tag and strategy, fallback, probe, local ports, bypass lists, DNS, and the injector block. Load a template from the panel, change a field, save it back — no retyping, and no risk of the balancer selector, the probe selector and the injector prefix drifting apart.
+  - Bypass domains that belong to neither preset list are preserved as a custom set rather than dropped.
+  - Anything that cannot be represented is reported instead of silently defaulted — a template routing to a single outbound rather than a balancer, DNS entries the builder does not write, inbounds other than SOCKS/HTTP.
+  - Round-trips cleanly against real panel templates; the two that do not are reported with the reason.
+
 ## [1.0.20] - 2026-09-13
 
 ### Added

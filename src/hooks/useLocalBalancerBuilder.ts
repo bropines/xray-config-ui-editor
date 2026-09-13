@@ -8,6 +8,7 @@ import { buildClientOutbound, clientOutboundBlocker } from '../core/generators/c
 import {
     buildLocalBalancerConfig,
     buildLocalBalancerTemplate,
+    parseLocalBalancer,
     DEFAULT_INJECT_OPTIONS,
     groupNodesByLabel,
     isProxyOutbound,
@@ -86,6 +87,9 @@ export const useLocalBalancerBuilder = () => {
     const panelTemplates = useConfigStore(state => state.panelTemplates);
     const fetchSubscriptionTemplates = useConfigStore(state => state.fetchSubscriptionTemplates);
     const saveSubscriptionTemplate = useConfigStore(state => state.saveSubscriptionTemplate);
+    const loadSubscriptionTemplate = useConfigStore(state => state.loadSubscriptionTemplate);
+    const createPanelHost = useConfigStore(state => state.createPanelHost);
+    const updatePanelHosts = useConfigStore(state => state.updatePanelHosts);
 
     const [input, setInput] = useState('');
     const [nodes, setNodes] = useState<BuilderNode[]>([]);
@@ -97,6 +101,9 @@ export const useLocalBalancerBuilder = () => {
     });
     const [bypassRussian, setBypassRussian] = useState(true);
     const [bypassLeakChecks, setBypassLeakChecks] = useState(true);
+    /** Bypass entries that belong to neither preset list — kept so loading an
+     *  existing balancer never silently drops someone's own domains. */
+    const [bypassCustom, setBypassCustom] = useState<string[]>([]);
     const [dnsExtraText, setDnsExtraText] = useState('');
     const [previewIndex, setPreviewIndex] = useState(0);
     const [source, setSource] = useState<'paste' | 'panel'>('paste');
@@ -315,7 +322,8 @@ export const useLocalBalancerBuilder = () => {
     const bypassDomains = useMemo(() => [
         ...(bypassRussian ? RUSSIAN_DOMAINS : []),
         ...(bypassLeakChecks ? LEAK_CHECK_DOMAINS : []),
-    ], [bypassRussian, bypassLeakChecks]);
+        ...bypassCustom,
+    ], [bypassRussian, bypassLeakChecks, bypassCustom]);
 
     const dnsExtraDomains = useMemo(
         () => dnsExtraText.split(/[\s,]+/).map(d => d.trim()).filter(Boolean),
@@ -409,6 +417,70 @@ export const useLocalBalancerBuilder = () => {
         toast.success(`Injector points at ${values.length} host(s)`);
     }, [panelSelection]);
 
+    /**
+     * Apply a parsed balancer to the builder's controls. The bypass list is
+     * split back into the two preset toggles plus whatever else it contained,
+     * so a list this app did not write survives a load/save round trip.
+     */
+    const applyParsed = useCallback((parsed: ReturnType<typeof parseLocalBalancer>) => {
+        const domains = parsed.options.bypassDomains || [];
+        const hasAll = (list: string[]) => list.length > 0 && list.every(d => domains.includes(d));
+        const ru = hasAll(RUSSIAN_DOMAINS);
+        const leak = hasAll(LEAK_CHECK_DOMAINS);
+        const known = new Set([
+            ...(ru ? RUSSIAN_DOMAINS : []),
+            ...(leak ? LEAK_CHECK_DOMAINS : []),
+        ]);
+
+        setBypassRussian(ru);
+        setBypassLeakChecks(leak);
+        setBypassCustom(domains.filter(d => !known.has(d)));
+        setDnsExtraText((parsed.options.dnsExtraDomains || []).join(', '));
+        setOptions(prev => ({ ...prev, ...parsed.options }));
+        if (parsed.inject) setInject(parsed.inject);
+        setPresetKey('custom');
+
+        if (parsed.notes.length > 0) {
+            toast.warning('Loaded with caveats', { description: parsed.notes[0], duration: 8000 });
+        }
+    }, []);
+
+    /** Open an existing panel template in the builder for editing. */
+    const loadTemplateIntoBuilder = useCallback(async (uuid: string) => {
+        if (!uuid) return;
+        const full = await loadSubscriptionTemplate(uuid);
+        const body = full?.templateJson;
+        if (!body) {
+            toast.error('That template has no JSON body yet');
+            return;
+        }
+        try {
+            applyParsed(parseLocalBalancer(body));
+            setOutputMode('template');
+            setTemplateTargetUuid(uuid);
+            setTemplateName(full.name || '');
+            toast.success(`Loaded "${full.name}" into the builder`);
+        } catch (e: any) {
+            toast.error('Could not read that template', { description: e?.message });
+        }
+    }, [loadSubscriptionTemplate, applyParsed]);
+
+    /** Read the config currently open in the editor back into the controls. */
+    const loadFromCurrentConfig = useCallback(() => {
+        if (!config) {
+            toast.error('No config open in the editor');
+            return;
+        }
+        try {
+            const parsed = parseLocalBalancer(config);
+            applyParsed(parsed);
+            setOutputMode(parsed.kind === 'template' ? 'template' : 'config');
+            toast.success('Loaded the open config into the builder');
+        } catch (e: any) {
+            toast.error('Could not read the open config', { description: e?.message });
+        }
+    }, [config, applyParsed]);
+
     const saveTemplate = useCallback(async () => {
         const name = templateName.trim();
         if (!templateTargetUuid && !name) {
@@ -421,6 +493,87 @@ export const useLocalBalancerBuilder = () => {
                 : { mode: 'create', name, templateJson: template }
         );
     }, [templateName, templateTargetUuid, template, saveSubscriptionTemplate]);
+
+    // --- Publishing hosts -------------------------------------------------
+    // A generated template only reaches subscribers once hosts point at it:
+    // the nodes become hidden hosts sharing one tag, and one visible host
+    // carries that same tag plus the template. These actions do exactly that
+    // and nothing implicit — each is a button.
+
+    const [poolTag, setPoolTag] = useState('');
+    const [entryRemark, setEntryRemark] = useState('');
+    const [entryAddress, setEntryAddress] = useState('');
+    const [entryPort, setEntryPort] = useState<number | undefined>(443);
+    const [entryInboundUuid, setEntryInboundUuid] = useState('');
+
+    /** Inbounds the panel knows about, for choosing what an entry host binds to. */
+    const panelInboundOptions = useMemo(() => Object.values(panelCatalog.inbounds).map((entry: any) => ({
+        uuid: entry.uuid,
+        profileUuid: entry.profileUuid,
+        label: `${entry.profileName} · ${entry.tag}`,
+    })), [panelCatalog.inbounds]);
+
+    const normalisedPoolTag = useMemo(
+        // Panel tags are uppercase letters, digits, underscores and colons.
+        () => poolTag.trim().toUpperCase().replace(/[^A-Z0-9_:]/g, ''),
+        [poolTag]
+    );
+
+    /** Mark the ticked hosts as the hidden pool behind one tag. */
+    const tagSelectedHostsAsPool = useCallback(async () => {
+        if (!normalisedPoolTag) {
+            toast.error('Enter a pool tag first');
+            return;
+        }
+        if (panelSelection.size === 0) {
+            toast.error('Select the hosts that should form the pool');
+            return;
+        }
+        await updatePanelHosts([...panelSelection].map(uuid => ({
+            uuid,
+            isHidden: true,
+            tag: normalisedPoolTag,
+            tags: [normalisedPoolTag],
+        })));
+    }, [normalisedPoolTag, panelSelection, updatePanelHosts]);
+
+    /** Create the visible host that hands the template to subscribers. */
+    const createEntryHost = useCallback(async () => {
+        if (!normalisedPoolTag) {
+            toast.error('Enter the pool tag — the entry host must share it with the nodes');
+            return;
+        }
+        if (!entryRemark.trim() || !entryAddress.trim() || !entryPort) {
+            toast.error('Fill in the remark, address and port');
+            return;
+        }
+        if (!entryInboundUuid) {
+            toast.error('Pick the inbound this host binds to');
+            return;
+        }
+        if (!templateTargetUuid) {
+            toast.error('Save or pick the template first', {
+                description: 'The entry host needs a template to point at.',
+            });
+            return;
+        }
+        const inbound = panelInboundOptions.find(i => i.uuid === entryInboundUuid);
+        if (!inbound?.profileUuid) {
+            toast.error('That inbound has no config profile attached');
+            return;
+        }
+
+        await createPanelHost({
+            inbound: { configProfileUuid: inbound.profileUuid, configProfileInboundUuid: inbound.uuid },
+            remark: entryRemark.trim(),
+            address: entryAddress.trim(),
+            port: entryPort,
+            isHidden: false,
+            tag: normalisedPoolTag,
+            tags: [normalisedPoolTag],
+            xrayJsonTemplateUuid: templateTargetUuid,
+        });
+    }, [normalisedPoolTag, entryRemark, entryAddress, entryPort, entryInboundUuid, templateTargetUuid, panelInboundOptions, createPanelHost]);
 
     const download = useCallback(() => {
         if (!outputJson) return;
@@ -469,6 +622,19 @@ export const useLocalBalancerBuilder = () => {
         bypassRussian, setBypassRussian,
         bypassLeakChecks, setBypassLeakChecks,
         dnsExtraText, setDnsExtraText,
+
+        // loading an existing balancer
+        loadTemplateIntoBuilder, loadFromCurrentConfig,
+        bypassCustom,
+
+        // publishing hosts
+        poolTag, setPoolTag, normalisedPoolTag,
+        entryRemark, setEntryRemark,
+        entryAddress, setEntryAddress,
+        entryPort, setEntryPort,
+        entryInboundUuid, setEntryInboundUuid,
+        panelInboundOptions,
+        tagSelectedHostsAsPool, createEntryHost,
 
         // template mode
         outputMode, setOutputMode,
