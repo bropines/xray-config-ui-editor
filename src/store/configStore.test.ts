@@ -140,3 +140,39 @@ describe('configStore — updateRoutingRule / updateBalancer raw-text comment pr
         expect(rawConfigText).toContain('primary pool');
     });
 });
+
+
+describe('configStore — createProfile with an explicit config', () => {
+    beforeEach(() => {
+        resetStoreWithConfig(BASE_CONFIG_TEXT);
+    });
+
+    // Regression: the new profile used to inherit the *currently open*
+    // config's rawConfigText. Since switchProfile prefers rawConfigText over
+    // config, and every CRUD action re-parses it, opening the new profile
+    // silently brought the old config back — which is exactly what the
+    // generated client configs from the Local Balancer builder hit.
+    it('stores raw text derived from the config it was given, not from the open one', () => {
+        const generated: any = {
+            inbounds: [{ tag: 'socks', port: 10808 }],
+            outbounds: [{ tag: 'proxy', protocol: 'vless' }],
+        };
+        useConfigStore.getState().createProfile('Generated', generated);
+
+        const { profiles, activeProfileId, rawConfigText } = useConfigStore.getState();
+        const created = profiles.find(p => p.id === activeProfileId)!;
+
+        expect(created.name).toBe('Generated');
+        expect(created.rawConfigText).toContain('"proxy"');
+        expect(created.rawConfigText).not.toContain('keep-me');
+        expect(rawConfigText).not.toContain('keep-me');
+        expect(JSON.parse(created.rawConfigText!)).toEqual(generated);
+    });
+
+    it('still snapshots the currently open config when no config is supplied', () => {
+        useConfigStore.getState().createProfile('From current');
+        const { profiles, activeProfileId } = useConfigStore.getState();
+        const created = profiles.find(p => p.id === activeProfileId)!;
+        expect(created.rawConfigText).toContain('keep-me');
+    });
+});

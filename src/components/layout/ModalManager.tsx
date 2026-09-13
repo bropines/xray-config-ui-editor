@@ -17,6 +17,7 @@ import { ConfigInspectorModal } from '../editors/ConfigInspectorModal';
 import { GitHistoryModal } from '../git/GitHistoryModal';
 import { EditorSettingsModal } from '../editors/EditorSettingsModal';
 import { SnippetsModal } from '../editors/snippets/SnippetsModal';
+import { LocalBalancerModal } from '../editors/builder/LocalBalancerModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -76,6 +77,9 @@ interface ModalManagerProps {
     onOpenSnippets?: () => void;
     onCloseSnippets?: () => void;
 
+    builderModalOpen?: boolean;
+    onCloseBuilder?: () => void;
+
     setModal: (m: any) => void;
     openSectionJson: (section: string, title: string, data: any) => void;
 }
@@ -115,6 +119,8 @@ export const ModalManager = ({
     snippetsModalOpen,
     onOpenSnippets,
     onCloseSnippets,
+    builderModalOpen,
+    onCloseBuilder,
     setModal,
     openSectionJson,
 }: ModalManagerProps) => (
@@ -141,6 +147,7 @@ export const ModalManager = ({
             <EditorSettingsModal onClose={onCloseEditorSettings} onOpenHistory={onOpenHistory} />
         )}
         {snippetsModalOpen && onCloseSnippets && <SnippetsModal onClose={onCloseSnippets} />}
+        {builderModalOpen && onCloseBuilder && <LocalBalancerModal onClose={onCloseBuilder} />}
 
         {sectionModal.open && (
             <SectionJsonModal

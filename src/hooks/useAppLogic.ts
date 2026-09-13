@@ -39,6 +39,7 @@ export const useAppLogic = () => {
     const [historyModalOpen, setHistoryModalOpen] = useState(false);
     const [editorSettingsOpen, setEditorSettingsOpen] = useState(false);
     const [snippetsModalOpen, setSnippetsModalOpen] = useState(false);
+    const [builderModalOpen, setBuilderModalOpen] = useState(false);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -251,6 +252,9 @@ export const useAppLogic = () => {
         snippetsModalOpen, setSnippetsModalOpen,
         onOpenSnippets: () => setSnippetsModalOpen(true),
         onCloseSnippets: () => setSnippetsModalOpen(false),
+        builderModalOpen, setBuilderModalOpen,
+        onOpenBuilder: () => setBuilderModalOpen(true),
+        onCloseBuilder: () => setBuilderModalOpen(false),
         snippetDefs,
         rawMode, setRawMode,
         isDragging,

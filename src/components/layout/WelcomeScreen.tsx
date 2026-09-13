@@ -7,6 +7,7 @@ interface WelcomeScreenProps {
     onSelectPreset: (config: any) => void;
     onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onOpenRemnawave: () => void;
+    onOpenBuilder?: () => void;
 }
 
 /**
@@ -18,6 +19,7 @@ export const WelcomeScreen = ({
     onSelectPreset,
     onFileUpload,
     onOpenRemnawave,
+    onOpenBuilder,
 }: WelcomeScreenProps) => (
     <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scroll">
         <div className="text-center mb-10">
@@ -62,6 +64,15 @@ export const WelcomeScreen = ({
                 >
                     <Icon name="Cloud" /> Remnawave Panel
                 </button>
+                {onOpenBuilder && (
+                    <button
+                        onClick={onOpenBuilder}
+                        className="text-sm text-slate-400 cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors bg-slate-900 border border-slate-800 px-4 py-2 rounded-full"
+                        title="Build a client config with a local balancer from a set of nodes"
+                    >
+                        <Icon name="Scales" /> Local Balancer
+                    </button>
+                )}
             </div>
         </div>
     </div>

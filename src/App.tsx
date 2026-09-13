@@ -28,6 +28,7 @@ export const App = () => {
         editorSettingsOpen, setEditorSettingsOpen,
         onOpenEditorSettings, onCloseEditorSettings,
         snippetsModalOpen, onOpenSnippets, onCloseSnippets,
+        builderModalOpen, onOpenBuilder, onCloseBuilder,
         snippetDefs,
         rawMode, setRawMode,
         isDragging,
@@ -108,6 +109,7 @@ export const App = () => {
                         onSelectPreset={(cfg) => setConfig(cfg)}
                         onFileUpload={handleFileUpload}
                         onOpenRemnawave={() => setRemnawaveModalOpen(true)}
+                        onOpenBuilder={onOpenBuilder}
                     />
                 ) : (
                     <ConfigDashboard
@@ -143,6 +145,7 @@ export const App = () => {
                         onOpenConfigInspector={() => setConfigInspectorOpen(true)}
                         onOpenEditorSettings={onOpenEditorSettings}
                         onOpenSnippets={onOpenSnippets}
+                        onOpenBuilder={onOpenBuilder}
                         snippetDefs={snippetDefs}
                     />
                 )}
@@ -179,6 +182,8 @@ export const App = () => {
                 snippetsModalOpen={snippetsModalOpen}
                 onOpenSnippets={onOpenSnippets}
                 onCloseSnippets={onCloseSnippets}
+                builderModalOpen={builderModalOpen}
+                onCloseBuilder={onCloseBuilder}
                 setModal={setModal}
                 openSectionJson={openSectionJson}
             />

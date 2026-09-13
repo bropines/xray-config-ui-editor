@@ -236,6 +236,7 @@ interface ConfigDashboardProps {
   onOpenHistory?: () => void;
   onOpenEditorSettings?: () => void;
   onOpenSnippets?: () => void;
+  onOpenBuilder?: () => void;
   /** Panel snippets + local templates, for resolving references on the card. */
   snippetDefs?: SnippetDefinition[];
 }
@@ -274,6 +275,7 @@ export const ConfigDashboard = ({
   onOpenHistory,
   onOpenEditorSettings,
   onOpenSnippets,
+  onOpenBuilder,
   snippetDefs = [],
 }: ConfigDashboardProps) => {
   const {
@@ -398,6 +400,17 @@ export const ConfigDashboard = ({
                 icon="BracketsCurly"
               >
                 Snippets{snippetRefCount > 0 ? ` (${snippetRefCount})` : ""}
+              </Button>
+            )}
+            {onOpenBuilder && (
+              <Button
+                className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                variant="secondary"
+                onClick={onOpenBuilder}
+                icon="Scales"
+                title="Build a client config with a local balancer from a set of nodes"
+              >
+                Local Balancer
               </Button>
             )}
           </div>
@@ -649,12 +662,22 @@ export const ConfigDashboard = ({
                     }
 
                     const hasName = !!rule.ruleTag;
+                    // Every matcher the rule actually carries. `network`,
+                    // `source` and `user` used to be left out, so the common
+                    // catch-all-by-network rule ({ network: "tcp,udp" } into a
+                    // balancer) was labelled "match all" — which reads as "no
+                    // conditions at all" and hid the one condition it had.
                     const conditions: string[] = [];
                     if (rule.domain) conditions.push(`${rule.domain.length} dom`);
                     if (rule.ip) conditions.push(`${rule.ip.length} ip`);
                     if (rule.port) conditions.push("port");
+                    if (rule.sourcePort) conditions.push("src port");
                     if (rule.protocol) conditions.push("proto");
+                    if (rule.network) conditions.push(String(rule.network));
                     if (rule.inboundTag) conditions.push("inbound");
+                    if (rule.source) conditions.push("src ip");
+                    if (rule.user) conditions.push("user");
+                    if (rule.attrs) conditions.push("attrs");
                     if (conditions.length === 0) conditions.push("match all");
                     
                     const isBalancer = !!rule.balancerTag;

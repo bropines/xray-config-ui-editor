@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.19] - 2026-09-13
+
+### Added
+- **Local Balancer Builder** (`Core Modules -> Local Balancer`, also on the welcome screen): builds the client config people otherwise hand-write — local SOCKS/HTTP inbounds, several proxy outbounds, a balancer that picks the fastest of them, a probe that measures them, and a bypass list that keeps local traffic off the tunnel.
+  - Input is forgiving: `vless://` / `vmess://` / `ss://` / `trojan://` links, a base64 subscription, a JSON subscription, or the outbounds already open in the editor.
+  - **One config per location**: nodes are grouped by label with trailing numbering ignored, so a subscription of "… #1 / … #2" becomes one balanced config per place — the array shape a JSON subscription is served in.
+  - Two presets: **Simple** (`proxy` / `proxy-2`, one balancer, 10s burst probe) and **Fleet** (`fb-0` / `fb-1`, fallback to the first node, leastLoad baselines, 60s probe) — or set every field by hand.
+  - The parts that have to agree are derived, not typed: proxy tag prefix, balancer `selector`, probe `subjectSelector`, the catch-all rule's `balancerTag`, and the bypass list that has to appear in both `routing.rules` and the DNS entry.
+  - A single node deliberately produces no balancer and no probe — traffic falls through to the first outbound instead of carrying moving parts that have nothing to choose between.
+  - Output can be loaded straight into the editor, saved as local profiles, downloaded, or copied.
+- **Bypass domain presets** (`src/core/presets/bypass-domains.ts`): Russian services and IP/DNS-leak checkers as two separately switchable lists.
+
+### Fixed
+- **`createProfile` attached the wrong raw text**: a profile created from a supplied config inherited the *currently open* config's `rawConfigText`, and since `switchProfile` (and every CRUD action) prefers that text, opening the new profile silently restored the old config.
+- **Routing card said "match all" for rules that match something**: the dashboard summary ignored `network`, `source`, `user` and `attrs`, so the usual catch-all-by-network rule (`network: "tcp,udp"` into a balancer) was labelled as having no conditions at all.
+
 ## [1.0.18] - 2026-09-13
 
 ### Added

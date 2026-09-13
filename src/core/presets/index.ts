@@ -1,3 +1,5 @@
+export { RUSSIAN_DOMAINS, LEAK_CHECK_DOMAINS, DEFAULT_BYPASS_DOMAINS } from './bypass-domains';
+
 import { generateUUID, generateRealityKeyPair } from '../generators/crypto';
 import type { XrayConfig } from '../types';
 

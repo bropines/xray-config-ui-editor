@@ -500,7 +500,15 @@ export const useConfigStore = create(
             createProfile: (name, initialConfig) => {
                 const newId = `profile-${Math.random().toString(36).substring(2, 8)}`;
                 const cfg = initialConfig || get().config || { inbounds: [], outbounds: [] };
-                const text = get().rawConfigText || stringifyJsonc(cfg, 2);
+                // When the caller supplies a config, its raw text has to come
+                // from *that* config. Falling back to the store's current
+                // rawConfigText attached the previously open config's literal
+                // text to the new profile, and since switchProfile prefers
+                // rawConfigText over config, opening the profile brought the
+                // old config back.
+                const text = initialConfig
+                    ? stringifyJsonc(cfg, 2)
+                    : (get().rawConfigText || stringifyJsonc(cfg, 2));
                 const newProfile: LocalProfile = {
                     id: newId,
                     name: name.trim() || 'New Profile',
