@@ -5,6 +5,8 @@ import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schem
 import { parseJsonc } from '../../../utils/jsonc';
 import { useConfigStore } from '../../../store/configStore';
 import { useRuleEditor } from '../../../hooks/useRuleEditor';
+import { isSnippetRef } from '../../../core/snippets';
+import { SnippetRefEditor } from './SnippetRefEditor';
 
 const AttrsEditor = ({ value, onChange }: any) => {
     const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
@@ -60,7 +62,10 @@ export const RuleEditor = ({
     geoData,
     rawMode,
     allRules = [],
-    onSelectRule
+    onSelectRule,
+    snippets = [],
+    onOpenSnippets,
+    onInlineSnippet
 }: any) => {
     // Стейт для просмотра деталей тега по клику
     const [viewTag, setViewTag] = useState<string | null>(null);
@@ -90,6 +95,21 @@ export const RuleEditor = ({
                 <Icon name="ArrowsSplit" className="text-6xl mb-4 opacity-10" />
                 <p>Select a rule to configure routing logic</p>
             </div>
+        );
+    }
+
+    // A Remnawave snippet reference has no rule fields to edit — show what it
+    // resolves to instead of an empty rule form. See core/snippets.
+    if (isSnippetRef(rule) && !rawMode) {
+        return (
+            <SnippetRefEditor
+                key={rule.snippet}
+                rule={rule}
+                onChange={onChange}
+                snippets={snippets}
+                onOpenSnippets={onOpenSnippets}
+                onInlineCopy={onInlineSnippet}
+            />
         );
     }
 

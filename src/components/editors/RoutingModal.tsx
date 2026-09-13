@@ -14,7 +14,7 @@ import { useRoutingEditor } from '../../hooks/useRoutingEditor';
 import { useGeoData } from '../../hooks/useGeoData';
 import { useSidebarResizer } from '../../hooks/useSidebarResizer';
 
-export const RoutingModal = ({ onClose }: any) => {
+export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
     const { config, updateSection } = useConfigStore();
     
     const {
@@ -47,7 +47,10 @@ export const RoutingModal = ({ onClose }: any) => {
         handleUpdateRule,
         handleAddBalancer,
         handleUpdateBalancer,
-        handleDeleteBalancer
+        handleDeleteBalancer,
+        snippets,
+        handleInlineSnippet,
+        handleInlineBalancerSnippet
     } = useRoutingEditor(onClose);
 
     const { geoSites, geoIps, loadingGeo } = useGeoData();
@@ -162,6 +165,8 @@ export const RoutingModal = ({ onClose }: any) => {
                             </div>
                             <RuleList
                                 rules={filteredRules}
+                                snippets={snippets}
+                                onOpenSnippets={onOpenSnippets}
                                 activeIndex={activeRuleIdx}
                                 onSelect={(idx: number) => handleSelectRule(filteredRules[idx].originalIndex)}
                                 onDelete={(idx: number) => handleDeleteRule(filteredRules[idx].originalIndex)}
@@ -184,6 +189,9 @@ export const RoutingModal = ({ onClose }: any) => {
                                 rawMode={rawMode}
                                 allRules={rules}
                                 onSelectRule={handleSelectRule}
+                                snippets={snippets}
+                                onOpenSnippets={onOpenSnippets}
+                                onInlineSnippet={handleInlineSnippet}
                             />
                         </div>
                     </>
@@ -207,6 +215,7 @@ export const RoutingModal = ({ onClose }: any) => {
                             </div>
                             <BalancerList
                                 balancers={filteredBalancers}
+                                snippets={snippets}
                                 activeIndex={activeBalancerIdx}
                                 onSelect={(idx: number) => { setActiveBalancerIdx(filteredBalancers[idx].originalIndex); setMobileEditMode(true); }}
                                 onDelete={(idx: number) => handleDeleteBalancer(filteredBalancers[idx].originalIndex)}
@@ -221,6 +230,9 @@ export const RoutingModal = ({ onClose }: any) => {
                                 onChange={handleUpdateBalancer}
                                 outboundTags={outboundTags}
                                 rawMode={rawMode}
+                                snippets={snippets}
+                                onOpenSnippets={onOpenSnippets}
+                                onInlineSnippet={handleInlineBalancerSnippet}
                             />
                         </div>
                     </>

@@ -10,6 +10,9 @@ export * from './validators';
 // Diagnostics
 export * from './diagnostics';
 
+// Snippets / templates
+export * from './snippets';
+
 // Presets
 export * from './presets';
 

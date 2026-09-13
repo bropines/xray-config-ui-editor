@@ -27,6 +27,8 @@ import {
     WireguardOutboundSettingsSchema
 } from '../xray/schemas';
 
+import { isSnippetRef } from '../snippets';
+
 const { isIP, isFQDN, isPort, isUUID } = validator;
 
 export interface ValidationError {
@@ -135,6 +137,12 @@ export const validateInbound = (data: any): ValidationError[] => {
 
 export const validateOutbound = (data: any): ValidationError[] => {
     const errors: ValidationError[] = [];
+
+    // A Remnawave snippet reference ({ "snippet": "NAME" }) is a placeholder
+    // the panel replaces with real outbounds before a node ever sees it — it
+    // has no tag and no protocol of its own, and linting it as an outbound
+    // would report errors the user cannot fix here. See core/snippets.
+    if (isSnippetRef(data)) return errors;
 
     if (!data.tag) errors.push({ field: 'tag', message: 'Tag is required' });
 
@@ -294,6 +302,11 @@ export const validateWireguard = (data: any): ValidationError[] => {
 };
 
 export const validateBalancer = (balancer: any): string[] => {
+    // Remnawave profiles commonly reference a snippet from routing.balancers.
+    // Such an entry has neither tag nor selector of its own, and reporting it
+    // as an invalid balancer used to block the cloud push outright (see
+    // configStore.saveToRemnawave). See core/snippets.
+    if (isSnippetRef(balancer)) return [];
     if (balancer.tag === 'TORRENT') return [];
     const errors: string[] = [];
     if (!balancer.tag) errors.push('Balancer tag is missing');
@@ -305,6 +318,14 @@ export const validateBalancer = (balancer: any): string[] => {
 
 export const getCriticalRuleErrors = (rule: any): ValidationError[] => {
     const errs: ValidationError[] = [];
+
+    // Same reasoning as validateOutbound: a snippet reference is a
+    // placeholder, not a rule. Before this check it tripped both critical
+    // rule errors ("no matchers", "no destination") at once, which painted
+    // every imported Remnawave profile red and blocked the Routing modal
+    // from closing. See core/snippets.
+    if (isSnippetRef(rule)) return errs;
+
     const hasMatcher =
         rule.domain || rule.ip || rule.port || rule.sourcePort ||
         rule.network || rule.source || rule.user || rule.inboundTag ||

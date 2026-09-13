@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.18] - 2026-09-13
+
+### Added
+- **Remnawave Snippets & Local Templates**:
+  - A config imported from Remnawave keeps its `{ "snippet": "NAME" }` references instead of showing them as empty, "will crash Xray" rules. References are recognised in `routing.rules`, `routing.balancers` and `outbounds` (`src/core/snippets`), rendered with their own style in the Routing Manager (rules and balancers), the Routing/Outbounds dashboard cards and the Topology graph, and skipped by rule/outbound/balancer validation.
+  - New **Snippets & Templates** module (Core Modules -> Snippets): browse the panel's snippet library (`GET /api/snippets`), read what each reference expands to, and create, edit, delete or sync snippets in the panel (`POST`/`PATCH`/`DELETE /api/snippets`, `POST /api/snippets/actions/sync`).
+  - **Local templates**: the same reusable blocks stored in the browser, for configs that have no panel behind them. Capture the current routing rules into a template, push a template to the panel, or copy a panel snippet down to a local one.
+  - Insert a snippet into the open config either as a **reference** (stays managed by the panel) or as an **inline copy** (one-off, link intentionally dropped, behind a confirm).
+  - Selecting a reference in the Routing Manager opens a dedicated pane showing its resolved body, with an autocompleted field for pointing it at a different snippet.
+  - Panel snippets are fetched automatically on connect and on profile load, and cached (with local templates) in IndexedDB so an imported profile stays readable offline.
+
+### Fixed
+- **Snippet-aware diagnostics**: a rule targeting an outbound or balancer that only exists inside a snippet is no longer reported as a dangling target, and an unresolved reference is surfaced as a warning (never critical, so it cannot block a cloud push).
+- **Cloud push blocked by balancer snippets**: a `{ "snippet": "NAME" }` entry in `routing.balancers` was validated as a balancer with no tag and no selector, which made `saveToRemnawave` refuse to push the profile at all.
+- **REALITY inbound false critical**: diagnostics required the legacy `dest` field, so every inbound using the current `target` spelling (what Xray-core and Remnawave write today) reported "REALITY Inbound requires dest and privateKey" — and that critical blocked the cloud push. Both spellings are now accepted.
+
 ## [1.0.17] - 2026-09-08
 
 ### Fixed

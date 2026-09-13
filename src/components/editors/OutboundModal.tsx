@@ -6,6 +6,8 @@ import { generateXrayLink } from '../../utils/link-generator';
 import { useOutboundEditor } from '../../hooks/useOutboundEditor';
 import { EditorLayout } from '../ui/EditorLayout';
 
+import { Icon } from '../ui/Icon';
+import { getSnippetRefName } from '../../core/snippets';
 import { OutboundImport } from './outbound/OutboundImport';
 import { OutboundGeneral } from './outbound/OutboundGeneral';
 import { OutboundServer } from './outbound/OutboundServer';
@@ -77,6 +79,29 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
         >
             <div className="space-y-6 pb-10">
+                {/* A snippet reference occupies an outbound slot but has no
+                    protocol, address or transport of its own — the panel
+                    replaces it with real outbounds. Showing the outbound form
+                    for one would invite edits that quietly turn the reference
+                    into an ordinary (and broken) outbound, so show what it is
+                    instead. Raw JSON mode is still available in the header for
+                    anyone who really wants to hand-edit it. */}
+                {getSnippetRefName(local) && (
+                    <div className="rounded-xl border border-fuchsia-500/30 bg-fuchsia-950/20 p-4 flex items-start gap-3">
+                        <Icon name="BracketsCurly" weight="bold" className="text-fuchsia-300 text-xl shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                            <p className="text-fuchsia-100 font-bold text-sm">
+                                Snippet reference: {getSnippetRefName(local)}
+                            </p>
+                            <p className="text-[11px] text-fuchsia-200/70 mt-1">
+                                Remnawave replaces this entry with the snippet's outbounds before the
+                                config reaches a node. Edit the body in Snippets — filling in the
+                                fields below would turn the reference into an ordinary outbound.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Импорт из ссылки */}
                 <div className="relative z-50">
                     <OutboundImport onImport={handleImport} />

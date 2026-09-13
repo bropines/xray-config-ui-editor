@@ -1,5 +1,12 @@
 import type { XrayConfig } from '../types';
 import type { ValidationError } from '../validators';
+import {
+    collectSnippetRefs,
+    indexSnippets,
+    isSnippetRef,
+    snippetProvidedOutboundTags,
+    type SnippetDefinition,
+} from '../snippets';
 
 export type DiagnosticSeverity = 'critical' | 'warning' | 'info';
 
@@ -12,7 +19,17 @@ export interface Diagnostic {
     suggestion?: string;
 }
 
-export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
+/**
+ * @param snippets Known snippet/template definitions (panel + local). Passing
+ * them lets diagnostics see the outbounds a `{ "snippet": "NAME" }` reference
+ * will contribute once Remnawave expands it, so rules pointing at those tags
+ * are not reported as dangling. Omit it and references are simply treated as
+ * opaque — never as errors.
+ */
+export const runFullDiagnostics = (
+    config: XrayConfig | null,
+    snippets: SnippetDefinition[] = []
+): Diagnostic[] => {
     const diagnostics: Diagnostic[] = [];
 
     if (!config) return diagnostics;
@@ -28,9 +45,22 @@ export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
 
     // Tags that may exist in external systems (e.g. Remnawave)
     const KNOWN_EXTERNAL_TAGS = new Set(['TORRENT', 'DIRECT', 'REJECT', 'BLOCK', 'DNS']);
-    const allTargetTags = new Set([...allOutboundTags, ...allBalancerTags, ...KNOWN_EXTERNAL_TAGS]);
+
+    // Outbounds that only materialise once the panel expands the config's
+    // snippet references. Without these a perfectly valid profile reports
+    // "Rule targets unknown outbound" for every snippet-provided node.
+    const snippetDefs = indexSnippets(snippets);
+    const snippetTags = snippetProvidedOutboundTags(config, snippetDefs);
+
+    const allTargetTags = new Set([
+        ...allOutboundTags,
+        ...allBalancerTags,
+        ...KNOWN_EXTERNAL_TAGS,
+        ...snippetTags,
+    ]);
 
     const checkOutbound = (o: any, i: number) => {
+        if (isSnippetRef(o)) return;
         const stream = o.streamSettings || {};
         const net = stream.network || 'tcp';
         const sec = stream.security || 'none';
@@ -99,10 +129,15 @@ export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
 
         if (sec === 'reality') {
             const r = stream.realitySettings || {};
-            if (!r.dest || !r.privateKey) {
+            // Xray-core names the fallback destination `target`; `dest` is the
+            // legacy alias and both are accepted (see reality.schema.ts).
+            // Requiring `dest` alone reported every current REALITY inbound as
+            // critical, which in turn blocked the cloud push in
+            // configStore.saveToRemnawave.
+            if ((!r.target && !r.dest) || !r.privateKey) {
                 diagnostics.push({
                     section: 'inbounds', itemIndex: i, field: 'realitySettings',
-                    severity: 'critical', message: 'REALITY Inbound requires "dest" and "privateKey".',
+                    severity: 'critical', message: 'REALITY Inbound requires "target" (or legacy "dest") and "privateKey".',
                     suggestion: 'Configure a fallback destination and generate a private key.',
                 });
             }
@@ -126,6 +161,7 @@ export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
     const seenIPs = new Map<string, { index: number; name: string }>();
 
     rules.forEach((rule: any, i: number) => {
+        if (isSnippetRef(rule)) return;
         const ruleName = rule.ruleTag || rule.outboundTag || rule.balancerTag || `Rule #${i + 1}`;
 
         if (rule.outboundTag && !allTargetTags.has(rule.outboundTag)) {
@@ -182,6 +218,30 @@ export const runFullDiagnostics = (config: XrayConfig | null): Diagnostic[] => {
                 }
             });
         }
+    });
+
+    // Snippet references we could not resolve. Severity depends on whether a
+    // library was supplied at all: with an empty library this is "we have not
+    // fetched your snippets yet" (info), with a populated one it is a name
+    // that genuinely is not there (warning). Never critical — the panel, not
+    // this editor, is what expands them, and a false critical would block the
+    // push in configStore.saveToRemnawave.
+    const seenUnresolved = new Set<string>();
+    collectSnippetRefs(config).forEach(ref => {
+        if (snippetDefs.has(ref.name) || seenUnresolved.has(ref.name)) return;
+        seenUnresolved.add(ref.name);
+        diagnostics.push({
+            section: ref.section === 'rules' ? 'routing' : 'outbounds',
+            itemIndex: ref.index,
+            field: 'snippet',
+            severity: snippets.length > 0 ? 'warning' : 'info',
+            message: snippets.length > 0
+                ? `Snippet "${ref.name}" is not in your snippet library — the panel may not be able to expand it.`
+                : `Snippet "${ref.name}" is resolved by Remnawave; its contents are not loaded here yet.`,
+            suggestion: snippets.length > 0
+                ? 'Open Snippets to refresh the library, or check the name against the panel.'
+                : 'Open Snippets and refresh to load snippet bodies from the panel.',
+        });
     });
 
     return diagnostics;

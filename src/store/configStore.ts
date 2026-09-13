@@ -6,6 +6,13 @@ import { validateBalancer } from '../core/validators';
 import { runFullDiagnostics } from '../core/diagnostics';
 import { toast } from 'sonner';
 import type { RemnawaveProfile } from '../core/types';
+import {
+    makeSnippetRef,
+    validateSnippetBody,
+    validateSnippetName,
+    type SnippetDefinition,
+    type SnippetSection,
+} from '../core/snippets';
 import { XrayConfigSchema } from '../core/xray/schemas';
 import { diffLines } from 'diff';
 import { parseJsonc, stringifyJsonc } from '../utils/jsonc';
@@ -59,6 +66,28 @@ interface RemnawaveState {
     connected: boolean;
     activeProfileUuid: string | null;
     profiles: RemnawaveProfile[];
+}
+
+/**
+ * Snippet / template library.
+ *
+ * `panel` mirrors Remnawave's own snippets (GET /api/snippets) — the bodies
+ * behind the `{ "snippet": "NAME" }` references an imported config carries.
+ * `local` holds this browser's own templates: same shape, no panel required,
+ * so the feature also works on a plain local config.
+ *
+ * Both are persisted: the panel copy doubles as an offline cache so an
+ * imported profile stays readable without a live connection.
+ */
+interface SnippetLibraryState {
+    panel: SnippetDefinition[];
+    local: SnippetDefinition[];
+    /** Epoch ms of the last successful panel fetch. */
+    fetchedAt: number | null;
+    loading: boolean;
+    /** null = never asked, false = panel predates the snippets API (404). */
+    supported: boolean | null;
+    error: string | null;
 }
 
 interface ConfigState {
@@ -124,6 +153,19 @@ interface ConfigState {
     updateBalancer: (index: number, balancer: any, rawText?: string | null) => void;
     initDns: () => void;
 
+    // --- Snippets & templates ---
+    snippetLibrary: SnippetLibraryState;
+    /** Every known definition, panel entries shadowing same-named local ones. */
+    getSnippetDefs: () => SnippetDefinition[];
+    fetchSnippets: (options?: { silent?: boolean }) => Promise<void>;
+    saveLocalTemplate: (template: { name: string; snippet: any[]; description?: string; previousName?: string }) => boolean;
+    deleteLocalTemplate: (name: string) => void;
+    pushSnippetToPanel: (name: string, snippet: any[]) => Promise<boolean>;
+    deletePanelSnippet: (name: string) => Promise<void>;
+    syncPanelSnippet: (name: string) => Promise<void>;
+    insertSnippetRef: (name: string, section: SnippetSection) => void;
+    insertSnippetBody: (name: string, section: SnippetSection) => void;
+
     // Hydration status — the persist store's storage backend (IndexedDB) is
     // async, so `config`/`profiles`/`remnawave` hold their initial defaults
     // until this flips to true. Consumers that read/write on mount must wait
@@ -171,6 +213,16 @@ export const useConfigStore = create(
             warpWorkerUrl: '',
             setWarpWorkerUrl: (url: string) => set({ warpWorkerUrl: url }),
 
+            // --- Snippet / template library ---
+            snippetLibrary: {
+                panel: [],
+                local: [],
+                fetchedAt: null,
+                loading: false,
+                supported: null,
+                error: null,
+            },
+
             // --- Remnawave Connection ---
             remnawave: {
                 url: '',
@@ -200,6 +252,7 @@ export const useConfigStore = create(
                 }));
                 toast.success("Linked to Remnawave via Token");
                 get().fetchRemnawaveProfiles().catch(() => {});
+                get().fetchSnippets({ silent: true }).catch(() => {});
             },
 
             fetchRemnawaveProfiles: async () => {
@@ -240,6 +293,12 @@ export const useConfigStore = create(
                     const rawStr = typeof configData === 'string' ? configData : stringifyJsonc(configData, 2);
                     get().loadConfig(configData, `Loaded Profile (${profile?.name || 'Cloud'})`, true, rawStr);
                     toast.success("Profile config loaded");
+
+                    // A panel profile may reference snippets the config does
+                    // not contain. Pull their bodies in the background so the
+                    // Routing editor can show what each reference expands to
+                    // instead of an opaque placeholder.
+                    get().fetchSnippets({ silent: true }).catch(() => {});
                 } catch (e: any) {
                     set(produce((state) => {
                         state.remnawave.activeProfileUuid = prevUuid;
@@ -275,7 +334,7 @@ export const useConfigStore = create(
                 // panel shows, but here they actually gate the push instead of being
                 // display-only. A cloud push is the one action where "it saved fine" must
                 // mean "the node will actually start", so critical findings block it. ---
-                const criticalIssues = runFullDiagnostics(config).filter(d => d.severity === 'critical');
+                const criticalIssues = runFullDiagnostics(config, get().getSnippetDefs()).filter(d => d.severity === 'critical');
                 const firstIssue = criticalIssues[0];
                 if (firstIssue) {
                     toast.error("Push Blocked!", {
@@ -806,6 +865,244 @@ export const useConfigStore = create(
                 return { config: fullObj, rawConfigText: newText };
             }),
 
+            // --- Snippets & templates -------------------------------
+            // Panel snippets are owned by Remnawave: this editor reads them,
+            // and only ever writes one back on an explicit user action.
+            // Local templates are owned here and never leave the browser
+            // unless the user pushes one to the panel.
+
+            getSnippetDefs: () => {
+                const { panel, local } = get().snippetLibrary;
+                // Panel entries come last so that, on a name collision, the
+                // panel's body wins - it is the one Remnawave will actually
+                // splice into the config (see indexSnippets: later wins).
+                return [...local, ...panel];
+            },
+
+            fetchSnippets: async (options) => {
+                const silent = options?.silent === true;
+                const { url, token, connected } = get().remnawave;
+                const { supported } = get().snippetLibrary;
+
+                if (!connected || !url || !token) {
+                    if (!silent) toast.error("Connect to Remnawave first");
+                    return;
+                }
+                // A panel that answered 404 once will keep doing so; don't
+                // re-probe it on every profile load.
+                if (silent && supported === false) return;
+
+                set(produce((state: any) => {
+                    state.snippetLibrary.loading = true;
+                    state.snippetLibrary.error = null;
+                }));
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+
+                try {
+                    const list = await client.getSnippets();
+                    set(produce((state: any) => {
+                        state.snippetLibrary.panel = list;
+                        state.snippetLibrary.fetchedAt = Date.now();
+                        state.snippetLibrary.loading = false;
+                        state.snippetLibrary.supported = true;
+                        state.snippetLibrary.error = null;
+                    }));
+                    if (!silent) toast.success(`Loaded ${list.length} snippet(s) from the panel`);
+                } catch (e: any) {
+                    const message = e?.message || 'Unknown error';
+                    const unsupported = message.includes('404');
+                    set(produce((state: any) => {
+                        state.snippetLibrary.loading = false;
+                        if (unsupported) state.snippetLibrary.supported = false;
+                        state.snippetLibrary.error = message;
+                    }));
+                    if (!silent) {
+                        toast.error(unsupported
+                            ? "This panel has no snippets API"
+                            : "Failed to load snippets", { description: message });
+                    }
+                }
+            },
+
+            saveLocalTemplate: ({ name, snippet, description, previousName }) => {
+                const trimmed = (name || '').trim();
+                const nameError = validateSnippetName(trimmed);
+                if (nameError) {
+                    toast.error("Invalid template name", { description: nameError });
+                    return false;
+                }
+                const bodyError = validateSnippetBody(snippet);
+                if (bodyError) {
+                    toast.error("Invalid template body", { description: bodyError });
+                    return false;
+                }
+
+                const existing = get().snippetLibrary.local;
+                const collides = existing.some(t => t.name === trimmed && t.name !== previousName);
+                if (collides) {
+                    toast.error("A template with this name already exists");
+                    return false;
+                }
+
+                set(produce((state: any) => {
+                    const list: SnippetDefinition[] = state.snippetLibrary.local;
+                    const entry: SnippetDefinition = {
+                        name: trimmed,
+                        snippet,
+                        source: 'local',
+                        updatedAt: Date.now(),
+                        ...(description ? { description } : {}),
+                    };
+                    const idx = list.findIndex(t => t.name === (previousName || trimmed));
+                    if (idx >= 0) list[idx] = entry;
+                    else list.push(entry);
+                }));
+                toast.success(`Template "${trimmed}" saved`);
+                return true;
+            },
+
+            deleteLocalTemplate: (name) => {
+                set(produce((state: any) => {
+                    state.snippetLibrary.local = state.snippetLibrary.local.filter(
+                        (t: SnippetDefinition) => t.name !== name
+                    );
+                }));
+                toast.info(`Template "${name}" deleted`);
+            },
+
+            pushSnippetToPanel: async (name, snippet) => {
+                const trimmed = (name || '').trim();
+                const nameError = validateSnippetName(trimmed);
+                if (nameError) {
+                    toast.error("Invalid snippet name", { description: nameError });
+                    return false;
+                }
+                const bodyError = validateSnippetBody(snippet);
+                if (bodyError) {
+                    toast.error("Invalid snippet body", { description: bodyError });
+                    return false;
+                }
+
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return false;
+                }
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                const exists = get().snippetLibrary.panel.some(entry => entry.name === trimmed);
+
+                try {
+                    if (exists) await client.updateSnippet(trimmed, snippet);
+                    else await client.createSnippet(trimmed, snippet);
+                    await get().fetchSnippets({ silent: true });
+                    toast.success(exists
+                        ? `Snippet "${trimmed}" updated in the panel`
+                        : `Snippet "${trimmed}" created in the panel`);
+                    return true;
+                } catch (e: any) {
+                    toast.error("Failed to save snippet to the panel", {
+                        description: e?.message || 'Unknown error',
+                    });
+                    return false;
+                }
+            },
+
+            deletePanelSnippet: async (name) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    await client.deleteSnippet(name);
+                    await get().fetchSnippets({ silent: true });
+                    toast.success(`Snippet "${name}" deleted from the panel`);
+                } catch (e: any) {
+                    toast.error("Failed to delete snippet", { description: e?.message || 'Unknown error' });
+                }
+            },
+
+            syncPanelSnippet: async (name) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    await client.syncSnippet(name);
+                    toast.success(`Snippet "${name}" synced`, {
+                        description: 'Panel is re-applying it to every profile that references it.',
+                    });
+                } catch (e: any) {
+                    toast.error("Failed to sync snippet", { description: e?.message || 'Unknown error' });
+                }
+            },
+
+            insertSnippetRef: (name, section) => {
+                const trimmed = (name || '').trim();
+                if (!trimmed) return;
+                set((state) => {
+                    const fullObj = resolveMutableConfig(state);
+                    if (section === 'rules') {
+                        if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                        if (!Array.isArray(fullObj.routing.rules)) fullObj.routing.rules = [];
+                        // Rules match top-down, so a new reference goes first
+                        // and the user drags it into place - the same
+                        // placement the Config Inspector's import uses.
+                        fullObj.routing.rules.unshift(makeSnippetRef(trimmed));
+                    } else if (section === 'balancers') {
+                        if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                        if (!Array.isArray(fullObj.routing.balancers)) fullObj.routing.balancers = [];
+                        fullObj.routing.balancers.push(makeSnippetRef(trimmed));
+                    } else {
+                        if (!Array.isArray(fullObj.outbounds)) fullObj.outbounds = [];
+                        fullObj.outbounds.push(makeSnippetRef(trimmed));
+                    }
+                    return { config: fullObj, rawConfigText: stringifyJsonc(fullObj, 2) };
+                });
+                toast.success(`Snippet reference "${trimmed}" added`, {
+                    description: section === 'rules'
+                        ? 'Placed at the top of the rules list - drag it into position.'
+                        : `Appended to ${section}.`,
+                });
+            },
+
+            insertSnippetBody: (name, section) => {
+                const def = get().getSnippetDefs().find(d => d.name === name);
+                if (!def || !Array.isArray(def.snippet) || def.snippet.length === 0) {
+                    toast.error(`Snippet "${name}" has no loaded body to insert`);
+                    return;
+                }
+                const entries = JSON.parse(JSON.stringify(def.snippet));
+                set((state) => {
+                    const fullObj = resolveMutableConfig(state);
+                    if (section === 'rules') {
+                        if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                        if (!Array.isArray(fullObj.routing.rules)) fullObj.routing.rules = [];
+                        fullObj.routing.rules.unshift(...entries);
+                    } else if (section === 'balancers') {
+                        if (!fullObj.routing) fullObj.routing = { rules: [], balancers: [] };
+                        if (!Array.isArray(fullObj.routing.balancers)) fullObj.routing.balancers = [];
+                        fullObj.routing.balancers.push(...entries);
+                    } else {
+                        if (!Array.isArray(fullObj.outbounds)) fullObj.outbounds = [];
+                        fullObj.outbounds.push(...entries);
+                    }
+                    return { config: fullObj, rawConfigText: stringifyJsonc(fullObj, 2) };
+                });
+                toast.success(`Inserted ${entries.length} item(s) from "${name}"`, {
+                    description: 'These are a copy - they no longer follow the panel snippet.',
+                });
+            },
+
             initDns: () => set((state) => {
                 const fullObj = resolveMutableConfig(state);
                 if (!fullObj.dns) {
@@ -838,7 +1135,18 @@ export const useConfigStore = create(
                 baselineConfigJson: state.baselineConfigJson,
                 histories: state.histories,
                 historyLimit: state.historyLimit,
-                autoSave: state.autoSave
+                autoSave: state.autoSave,
+                // Persisted so panel snippet bodies stay readable offline and
+                // local templates survive a reload. `loading`/`error` are
+                // per-session and deliberately reset on rehydration.
+                snippetLibrary: {
+                    panel: state.snippetLibrary.panel,
+                    local: state.snippetLibrary.local,
+                    fetchedAt: state.snippetLibrary.fetchedAt,
+                    supported: state.snippetLibrary.supported,
+                    loading: false,
+                    error: null,
+                }
             }),
             // IndexedDB read is async: state before this fires is the
             // hardcoded default (config: null, profiles: [default], ...).

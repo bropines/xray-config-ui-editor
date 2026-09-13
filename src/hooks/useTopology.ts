@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNodesState, useEdgesState } from '@xyflow/react';
 import { useConfigStore } from '../store/configStore';
 import { getLayoutedElements } from '../utils/graph-layout';
+import { getSnippetRefName, isSnippetRef } from '../core/snippets';
 
 export const useTopology = () => {
     const { config } = useConfigStore();
@@ -66,6 +67,10 @@ export const useTopology = () => {
         const outboundMap = new Map();
         if (showOutbounds) {
             config.outbounds?.forEach((outbound, i) => {
+                // Snippet references carry no tag or protocol - the panel
+                // expands them into real outbounds, which this graph cannot
+                // see, so an empty node for one is just noise.
+                if (isSnippetRef(outbound)) return;
                 const isUsed = usedOutboundTags.has(outbound.tag || "");
                 if (hideUnused && !isUsed) return;
 
@@ -117,15 +122,27 @@ export const useTopology = () => {
                 else if (rule.port) detail = `Port: ${rule.port}`;
                 else if (rule.inboundTag) detail = `In: ${rule.inboundTag.join(', ')}`;
 
+                // A snippet reference is a placeholder the panel expands, not
+                // a rule with matchers - label it as such instead of showing
+                // it as an anonymous "Match All" rule.
+                const snippetName = getSnippetRefName(rule);
+
                 nodes.push({
                     id: ruleId,
                     type: 'custom',
-                    data: { 
-                        type: 'rule', 
-                        labelType: rule.ruleTag ? 'Named Rule' : 'Rule', 
-                        label: rule.ruleTag || `#${i + 1}`, 
-                        details: detail 
-                    },
+                    data: snippetName
+                        ? {
+                            type: 'rule',
+                            labelType: 'Snippet',
+                            label: snippetName,
+                            details: 'expanded by the panel',
+                        }
+                        : {
+                            type: 'rule',
+                            labelType: rule.ruleTag ? 'Named Rule' : 'Rule',
+                            label: rule.ruleTag || `#${i + 1}`,
+                            details: detail
+                        },
                     position: { x: 0, y: 0 }
                 });
 

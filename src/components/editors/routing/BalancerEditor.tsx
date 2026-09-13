@@ -3,8 +3,18 @@ import { Icon, JsonField, Select, SchemaForm, OutboundSelector } from '../../ui'
 import { validateBalancer } from '../../../core/validators';
 import { BalancerSchema, StrategySettingsSchema } from '../../../core/xray/schemas/routing.schema';
 import { useConfigStore } from '../../../store/configStore';
+import { isSnippetRef } from '../../../core/snippets';
+import { SnippetRefEditor } from './SnippetRefEditor';
 
-export const BalancerEditor = ({ balancer, onChange, outboundTags = [], rawMode }: any) => {
+export const BalancerEditor = ({
+    balancer,
+    onChange,
+    outboundTags = [],
+    rawMode,
+    snippets = [],
+    onOpenSnippets,
+    onInlineSnippet,
+}: any) => {
     const [localRawText, setLocalRawText] = useState<string | null>(null);
     const rawConfigText = useConfigStore(state => state.rawConfigText);
 
@@ -14,6 +24,21 @@ export const BalancerEditor = ({ balancer, onChange, outboundTags = [], rawMode 
                 <Icon name="Scales" className="text-6xl mb-4 opacity-10" />
                 <p>Select a balancer to configure</p>
             </div>
+        );
+    }
+
+    // A snippet reference in the balancers array is a placeholder the panel
+    // expands - there are no balancer fields to edit. See core/snippets.
+    if (isSnippetRef(balancer) && !rawMode) {
+        return (
+            <SnippetRefEditor
+                key={balancer.snippet}
+                rule={balancer}
+                onChange={onChange}
+                snippets={snippets}
+                onOpenSnippets={onOpenSnippets}
+                onInlineCopy={onInlineSnippet}
+            />
         );
     }
 

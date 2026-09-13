@@ -12,6 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { XrayConfig } from "../../core/types";
 import { Select } from "../ui/Select";
 import { CommitModal } from "../git/CommitModal";
+import { collectSnippetRefs, getSnippetRefName, type SnippetDefinition } from '../../core/snippets';
 import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
 
 // Re-usable column Card for the dashboard
@@ -133,22 +134,39 @@ const SortableOutboundItem = ({
       <div className="w-px h-8 bg-slate-800/80 self-center shrink-0" />
 
       <div className="min-w-0 flex-1 py-2 pl-3 flex flex-col justify-center">
-        <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate">
-          <Icon name="PaperPlaneRight" weight="bold" className="text-xs opacity-40" />
-          {ob.tag || "no-tag"}
-        </div>
-        <div className="text-[10px] text-slate-500 mt-0.5 font-mono truncate opacity-80">
-          {ob.protocol}
-          {ob.protocol !== "freedom" && ob.protocol !== "blackhole" && (
-            <>
-              <span className="mx-1 text-slate-700">•</span>
-              {ob.settings?.vnext?.[0]?.address ||
-                ob.settings?.servers?.[0]?.address ||
-                ob.settings?.address ||
-                "no-address"}
-            </>
-          )}
-        </div>
+        {/* An outbound slot can also hold a Remnawave snippet reference, which
+            has no tag or protocol of its own — label it as what it is instead
+            of rendering "no-tag / no-address". See core/snippets. */}
+        {getSnippetRefName(ob) ? (
+          <>
+            <div className="font-bold text-fuchsia-200 text-sm flex items-center gap-2 truncate">
+              <Icon name="BracketsCurly" weight="bold" className="text-xs text-fuchsia-400" />
+              {getSnippetRefName(ob)}
+            </div>
+            <div className="text-[10px] text-fuchsia-300/70 mt-0.5 font-mono truncate">
+              snippet — expanded by the panel
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="font-bold text-blue-400 text-sm flex items-center gap-2 truncate">
+              <Icon name="PaperPlaneRight" weight="bold" className="text-xs opacity-40" />
+              {ob.tag || "no-tag"}
+            </div>
+            <div className="text-[10px] text-slate-500 mt-0.5 font-mono truncate opacity-80">
+              {ob.protocol}
+              {ob.protocol !== "freedom" && ob.protocol !== "blackhole" && (
+                <>
+                  <span className="mx-1 text-slate-700">•</span>
+                  {ob.settings?.vnext?.[0]?.address ||
+                    ob.settings?.servers?.[0]?.address ||
+                    ob.settings?.address ||
+                    "no-address"}
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div
@@ -217,6 +235,9 @@ interface ConfigDashboardProps {
   onOpenConfigInspector: () => void;
   onOpenHistory?: () => void;
   onOpenEditorSettings?: () => void;
+  onOpenSnippets?: () => void;
+  /** Panel snippets + local templates, for resolving references on the card. */
+  snippetDefs?: SnippetDefinition[];
 }
 
 export const ConfigDashboard = ({
@@ -252,6 +273,8 @@ export const ConfigDashboard = ({
   onOpenConfigInspector,
   onOpenHistory,
   onOpenEditorSettings,
+  onOpenSnippets,
+  snippetDefs = [],
 }: ConfigDashboardProps) => {
   const {
     isModified,
@@ -284,6 +307,22 @@ export const ConfigDashboard = ({
     onDeleteOutbound,
     onDeleteOutbounds,
     onMoveOutbound
+  );
+
+  // How many `{ "snippet": "NAME" }` references the open config carries, and
+  // which of them we can resolve — shown on the Snippets button and used by
+  // the Routing card to label each reference.
+  const snippetDefsByName = React.useMemo(() => {
+    const map = new Map<string, SnippetDefinition>();
+    snippetDefs.forEach((def) => { if (def?.name) map.set(def.name, def); });
+    return map;
+  }, [snippetDefs]);
+
+  // Counts rules, balancers and outbounds alike — a Remnawave profile
+  // references a balancer snippet as readily as a rules one.
+  const snippetRefCount = React.useMemo(
+    () => collectSnippetRefs(config).length,
+    [config]
   );
 
   return (
@@ -351,6 +390,16 @@ export const ConfigDashboard = ({
             >
               Config Inspector
             </Button>
+            {onOpenSnippets && (
+              <Button
+                className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/10"
+                variant="secondary"
+                onClick={onOpenSnippets}
+                icon="BracketsCurly"
+              >
+                Snippets{snippetRefCount > 0 ? ` (${snippetRefCount})` : ""}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -562,6 +611,43 @@ export const ConfigDashboard = ({
                 {(config.routing?.rules || [])
                   .slice(0, 20)
                   .map((rule: any, i: number) => {
+                    const snippetName = getSnippetRefName(rule);
+                    if (snippetName) {
+                      const def = snippetDefsByName.get(snippetName);
+                      return (
+                        <div
+                          key={i}
+                          onClick={onOpenSnippets}
+                          className="card-item group flex justify-between items-stretch gap-0 border-fuchsia-500/25 bg-fuchsia-950/10 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 shrink-0 py-2 px-3">
+                            <div className="flex items-center justify-center w-5">
+                              <Icon name="BracketsCurly" weight="bold" className="text-fuchsia-400 text-sm" />
+                            </div>
+                            <div className="text-xl font-black text-slate-600/40 italic tabular-nums w-6 text-center select-none">
+                              {i}
+                            </div>
+                          </div>
+
+                          <div className="w-px h-8 bg-slate-800/80 self-center shrink-0" />
+
+                          <div className="min-w-0 flex-1 py-2 pl-3 flex flex-col justify-center">
+                            <div className="flex justify-between items-center pr-2 gap-2">
+                              <span className="text-sm font-bold truncate text-fuchsia-100">{snippetName}</span>
+                              <span className="font-mono font-bold text-[10px] px-1.5 py-0.5 rounded bg-slate-950 border border-fuchsia-500/30 text-fuchsia-300 shrink-0">
+                                snippet
+                              </span>
+                            </div>
+                            <div className="text-[10px] font-mono truncate opacity-80 mt-0.5">
+                              {def && Array.isArray(def.snippet)
+                                ? <span className="text-slate-500">expands to {def.snippet.length} item(s)</span>
+                                : <span className="text-amber-400/80">body not loaded</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     const hasName = !!rule.ruleTag;
                     const conditions: string[] = [];
                     if (rule.domain) conditions.push(`${rule.domain.length} dom`);

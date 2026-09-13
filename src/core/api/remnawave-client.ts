@@ -1,4 +1,5 @@
 import type { RemnawaveProfile } from '../types/remnawave.types';
+import type { SnippetDefinition } from '../snippets';
 
 export class RemnawaveClient {
     private baseUrl: string;
@@ -81,6 +82,58 @@ export class RemnawaveClient {
         await this.request('/api/config-profiles', {
             method: 'PATCH',
             body: JSON.stringify({ uuid, config }),
+        });
+    }
+
+    // ─── Snippets ────────────────────────────────────────────────────────
+    // Reusable blocks a config profile references as { "snippet": "NAME" };
+    // the panel splices the body in before pushing a config to a node.
+    // Contract: GET/POST/PATCH/DELETE all live on the same /api/snippets
+    // path (name goes in the body, not the URL), and every write answers
+    // with the full list. Snippets were added in a later panel release, so
+    // an older panel answers 404 here — callers must treat that as
+    // "unsupported", not as an outage.
+
+    async getSnippets(): Promise<SnippetDefinition[]> {
+        const data = await this.request('/api/snippets');
+        const list = data?.response?.snippets || [];
+        return list.map((s: any) => ({
+            name: s.name,
+            snippet: Array.isArray(s.snippet) ? s.snippet : [],
+            source: 'panel' as const,
+        }));
+    }
+
+    async createSnippet(name: string, snippet: unknown[]): Promise<void> {
+        await this.request('/api/snippets', {
+            method: 'POST',
+            body: JSON.stringify({ name, snippet }),
+        });
+    }
+
+    async updateSnippet(name: string, snippet: unknown[]): Promise<void> {
+        await this.request('/api/snippets', {
+            method: 'PATCH',
+            body: JSON.stringify({ name, snippet }),
+        });
+    }
+
+    async deleteSnippet(name: string): Promise<void> {
+        await this.request('/api/snippets', {
+            method: 'DELETE',
+            body: JSON.stringify({ name }),
+        });
+    }
+
+    /**
+     * Push a snippet's current body into every config profile referencing it.
+     * Nodes using those profiles are restarted by the panel as a result, so
+     * this is never called implicitly — only from an explicit user action.
+     */
+    async syncSnippet(name: string): Promise<void> {
+        await this.request('/api/snippets/actions/sync', {
+            method: 'POST',
+            body: JSON.stringify({ name }),
         });
     }
 }

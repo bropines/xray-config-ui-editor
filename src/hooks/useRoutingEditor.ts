@@ -2,9 +2,19 @@ import { useState, useMemo, useCallback } from 'react';
 import { useConfigStore } from '../store/configStore';
 import { getCriticalRuleErrors } from '../core/validators';
 import { createDefaultRoutingRule, createDefaultBalancer } from '../utils/protocol-factories';
+import { getSnippetRefName } from '../core/snippets';
+import { toast } from 'sonner';
 
 export const useRoutingEditor = (onClose: () => void) => {
     const { config, updateSection, reorderRules, updateRoutingRule, updateBalancer } = useConfigStore();
+    const snippetLibrary = useConfigStore(state => state.snippetLibrary);
+
+    // Panel snippets shadow same-named local templates: the panel's body is
+    // the one Remnawave will actually splice into this config.
+    const snippets = useMemo(
+        () => [...snippetLibrary.local, ...snippetLibrary.panel],
+        [snippetLibrary.local, snippetLibrary.panel]
+    );
     const rules = config?.routing?.rules || [];
     const balancers = config?.routing?.balancers || [];
     
@@ -54,6 +64,7 @@ export const useRoutingEditor = (onClose: () => void) => {
             const q = searchQuery.toLowerCase();
             if (!q) return true;
             return (
+                getSnippetRefName(rule)?.toLowerCase().includes(q) ||
                 rule.ruleTag?.toLowerCase().includes(q) ||
                 rule.outboundTag?.toLowerCase().includes(q) ||
                 rule.balancerTag?.toLowerCase().includes(q) ||
@@ -70,6 +81,7 @@ export const useRoutingEditor = (onClose: () => void) => {
             const q = balancerSearchQuery.toLowerCase();
             if (!q) return true;
             return (
+                getSnippetRefName(balancer)?.toLowerCase().includes(q) ||
                 balancer.tag?.toLowerCase().includes(q) ||
                 balancer.strategy?.type?.toLowerCase().includes(q) ||
                 balancer.selector?.some((s: string) => s.toLowerCase().includes(q))
@@ -98,6 +110,50 @@ export const useRoutingEditor = (onClose: () => void) => {
         delete cleanRule.originalIndex;
         updateRoutingRule(activeRuleIdx, cleanRule, rawText);
     }, [activeRuleIdx, updateRoutingRule]);
+
+    /**
+     * Replace a snippet reference with a copy of its contents.
+     *
+     * Deliberately explicit and confirmed in the UI: the copy no longer
+     * tracks the panel's snippet, so a later change there stops reaching
+     * this profile.
+     */
+    const handleInlineSnippet = useCallback((name: string) => {
+        if (activeRuleIdx === null) return;
+        const def = snippets.find(d => d.name === name);
+        if (!def || !Array.isArray(def.snippet) || def.snippet.length === 0) {
+            toast.error(`Snippet "${name}" has no loaded body to inline`);
+            return;
+        }
+        const entries = JSON.parse(JSON.stringify(def.snippet));
+        const next = [...rules];
+        next.splice(activeRuleIdx, 1, ...entries);
+        reorderRules(next);
+        setActiveRuleIdx(null);
+        setMobileEditMode(false);
+        toast.success(`Inlined ${entries.length} rule(s) from "${name}"`, {
+            description: 'This copy no longer follows the panel snippet.',
+        });
+    }, [activeRuleIdx, snippets, rules, reorderRules]);
+
+    /** Same as handleInlineSnippet, for a reference in the balancers array. */
+    const handleInlineBalancerSnippet = useCallback((name: string) => {
+        if (activeBalancerIdx === null) return;
+        const def = snippets.find(d => d.name === name);
+        if (!def || !Array.isArray(def.snippet) || def.snippet.length === 0) {
+            toast.error(`Snippet "${name}" has no loaded body to inline`);
+            return;
+        }
+        const entries = JSON.parse(JSON.stringify(def.snippet));
+        const next = [...balancers];
+        next.splice(activeBalancerIdx, 1, ...entries);
+        updateSection('routing', { ...config?.routing, balancers: next });
+        setActiveBalancerIdx(null);
+        setMobileEditMode(false);
+        toast.success(`Inlined ${entries.length} balancer(s) from "${name}"`, {
+            description: 'This copy no longer follows the panel snippet.',
+        });
+    }, [activeBalancerIdx, snippets, balancers, config?.routing, updateSection]);
 
     const handleAddBalancer = useCallback(() => {
         const nb = createDefaultBalancer();
@@ -147,6 +203,9 @@ export const useRoutingEditor = (onClose: () => void) => {
         handleAddRule,
         handleDeleteRule,
         handleUpdateRule,
+        snippets,
+        handleInlineSnippet,
+        handleInlineBalancerSnippet,
         handleAddBalancer,
         handleUpdateBalancer,
         handleDeleteBalancer

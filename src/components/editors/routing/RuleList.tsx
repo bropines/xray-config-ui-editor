@@ -4,6 +4,60 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getCriticalRuleErrors } from '../../../core/validators';
+import { getSnippetRefName, classifySnippet, type SnippetDefinition } from '../../../core/snippets';
+
+/**
+ * A `{ "snippet": "NAME" }` entry is a Remnawave placeholder, not a rule: the
+ * panel replaces it with the referenced block on its way to a node. It keeps
+ * its slot in the list because routing order is positional, but it gets its
+ * own look and never shows rule errors. See core/snippets.
+ */
+const SnippetRuleItem = ({ id, name, definition, isActive, onClick, onDelete }: any) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: transform ? 999 : 'auto'
+    };
+
+    const body = Array.isArray(definition?.snippet) ? definition.snippet : null;
+    const kind = body ? classifySnippet(body) : null;
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes}
+            onClick={onClick}
+            className={`p-2 rounded-lg cursor-pointer text-xs flex items-center gap-2 group transition-all border select-none mb-1
+                ${isActive
+                    ? 'bg-fuchsia-600/20 border-fuchsia-500/60'
+                    : 'bg-fuchsia-950/20 border-fuchsia-500/25 hover:border-fuchsia-500/50'
+                }`}
+        >
+            <div {...listeners} className="cursor-grab text-slate-600 hover:text-slate-300 p-2 touch-none">
+                <Icon name="DotsSixVertical" className="text-base" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <Icon name="BracketsCurly" weight="bold" className="text-fuchsia-400 shrink-0 text-sm" />
+                    <span className="font-bold truncate text-fuchsia-100 text-sm">{name}</span>
+                </div>
+                <div className="text-[10px] font-mono truncate ml-[22px] mt-0.5">
+                    {body
+                        ? <span className="text-fuchsia-300/70">snippet &middot; {body.length} {kind === 'outbounds' ? 'outbound(s)' : 'entry(ies)'}</span>
+                        : <span className="text-amber-400/80">snippet &middot; body not loaded</span>}
+                </div>
+            </div>
+
+            <button
+                onClick={e => { e.stopPropagation(); onDelete(); }}
+                className="text-slate-600 hover:text-rose-500 p-2 rounded-md hover:bg-rose-500/10 transition-colors"
+                title="Remove this snippet reference"
+            >
+                <Icon name="Trash" className="text-lg" />
+            </button>
+        </div>
+    );
+};
 
 const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete, warnings = [] }: any) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
@@ -84,8 +138,23 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete, warnings = []
     );
 };
 
-export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }: any) => {
+export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, snippets = [], onOpenSnippets }: any) => {
     const brokenCount = rules.filter((r: any) => getCriticalRuleErrors(r).length > 0).length;
+
+    const snippetDefs = React.useMemo(() => {
+        const map = new Map<string, SnippetDefinition>();
+        (snippets as SnippetDefinition[]).forEach(def => { if (def?.name) map.set(def.name, def); });
+        return map;
+    }, [snippets]);
+
+    const snippetRefs = React.useMemo(
+        () => rules.map((r: any) => getSnippetRefName(r)).filter(Boolean) as string[],
+        [rules]
+    );
+    const unloadedSnippets = React.useMemo(
+        () => Array.from(new Set(snippetRefs.filter(name => !snippetDefs.has(name)))),
+        [snippetRefs, snippetDefs]
+    );
 
     // Calculate duplicate matchers across all rules (flagging ALL rules involved in a conflict)
     const warningsMap = React.useMemo(() => {
@@ -168,6 +237,22 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }: 
                 </div>
             )}
 
+            {snippetRefs.length > 0 && (
+                <button
+                    onClick={onOpenSnippets}
+                    className="mx-1 mb-2 px-3 py-2 bg-fuchsia-950/30 border border-fuchsia-500/30 rounded-lg text-fuchsia-200 text-[10px] flex items-center gap-2 text-left hover:border-fuchsia-400/60 transition-colors"
+                >
+                    <Icon name="BracketsCurly" weight="bold" className="shrink-0 text-fuchsia-400 text-xs" />
+                    <span className="flex-1">
+                        <b>{snippetRefs.length}</b> snippet reference{snippetRefs.length > 1 ? 's' : ''} expanded by the panel
+                        {unloadedSnippets.length > 0 && (
+                            <span className="text-amber-400/90"> &middot; {unloadedSnippets.length} not loaded</span>
+                        )}
+                    </span>
+                    <Icon name="ArrowSquareOut" className="shrink-0 opacity-60" />
+                </button>
+            )}
+
             {duplicateCount > 0 && (
                 <div className="mx-1 mb-2 px-3 py-2 bg-amber-950/30 border border-amber-500/40 rounded-lg text-amber-300 text-[10px] flex items-center gap-2">
                     <Icon name="Warning" weight="fill" className="shrink-0 text-amber-400 text-xs" />
@@ -182,6 +267,19 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder }: 
                     {rules.map((rule: any, i: number) => {
                         const isActive = rule.originalIndex !== undefined ? rule.originalIndex === activeIndex : activeIndex === i;
                         const warnings = warningsMap.get(rule.originalIndex !== undefined ? rule.originalIndex : i) || [];
+                        const snippetName = getSnippetRefName(rule);
+                        if (snippetName) {
+                            return (
+                                <SnippetRuleItem
+                                    key={`rule-${i}`} id={`rule-${i}`}
+                                    name={snippetName}
+                                    definition={snippetDefs.get(snippetName)}
+                                    isActive={isActive}
+                                    onClick={() => onSelect(i)}
+                                    onDelete={() => onDelete(i)}
+                                />
+                            );
+                        }
                         return (
                             <SortableRuleItem
                                 key={`rule-${i}`} id={`rule-${i}`}

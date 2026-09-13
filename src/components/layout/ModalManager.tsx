@@ -16,6 +16,7 @@ import { WarpGeneratorModal } from '../editors/WarpGeneratorModal';
 import { ConfigInspectorModal } from '../editors/ConfigInspectorModal';
 import { GitHistoryModal } from '../git/GitHistoryModal';
 import { EditorSettingsModal } from '../editors/EditorSettingsModal';
+import { SnippetsModal } from '../editors/snippets/SnippetsModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -71,6 +72,10 @@ interface ModalManagerProps {
     editorSettingsOpen?: boolean;
     onCloseEditorSettings?: () => void;
 
+    snippetsModalOpen?: boolean;
+    onOpenSnippets?: () => void;
+    onCloseSnippets?: () => void;
+
     setModal: (m: any) => void;
     openSectionJson: (section: string, title: string, data: any) => void;
 }
@@ -107,6 +112,9 @@ export const ModalManager = ({
     onOpenHistory,
     editorSettingsOpen,
     onCloseEditorSettings,
+    snippetsModalOpen,
+    onOpenSnippets,
+    onCloseSnippets,
     setModal,
     openSectionJson,
 }: ModalManagerProps) => (
@@ -119,7 +127,7 @@ export const ModalManager = ({
         {modal.type === 'outbound' && (
             <OutboundModal data={modal.data} onClose={onCloseModal} index={modal.index} onSave={onSaveModal} />
         )}
-        {modal.type === 'routing' && <RoutingModal onClose={onCloseModal} />}
+        {modal.type === 'routing' && <RoutingModal onClose={onCloseModal} onOpenSnippets={onOpenSnippets} />}
         {modal.type === 'dns' && <DnsModal onClose={onCloseModal} />}
         {modal.type === 'settings' && <SettingsModal onClose={onCloseModal} />}
         {modal.type === 'reverse' && <ReverseModal onClose={onCloseModal} />}
@@ -132,6 +140,7 @@ export const ModalManager = ({
         {editorSettingsOpen && onCloseEditorSettings && (
             <EditorSettingsModal onClose={onCloseEditorSettings} onOpenHistory={onOpenHistory} />
         )}
+        {snippetsModalOpen && onCloseSnippets && <SnippetsModal onClose={onCloseSnippets} />}
 
         {sectionModal.open && (
             <SectionJsonModal

@@ -38,6 +38,7 @@ export const useAppLogic = () => {
     const [configInspectorOpen, setConfigInspectorOpen] = useState(false);
     const [historyModalOpen, setHistoryModalOpen] = useState(false);
     const [editorSettingsOpen, setEditorSettingsOpen] = useState(false);
+    const [snippetsModalOpen, setSnippetsModalOpen] = useState(false);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -199,7 +200,15 @@ export const useAppLogic = () => {
         });
     }, [config]);
 
-    const diagnostics = useMemo(() => runFullDiagnostics(config), [config]);
+    // Snippet definitions feed diagnostics so a rule targeting an outbound
+    // that only exists inside a snippet is not reported as dangling, and an
+    // unresolved reference is surfaced instead of passing silently.
+    const snippetLibrary = useConfigStore(state => state.snippetLibrary);
+    const snippetDefs = useMemo(
+        () => [...snippetLibrary.local, ...snippetLibrary.panel],
+        [snippetLibrary.local, snippetLibrary.panel]
+    );
+    const diagnostics = useMemo(() => runFullDiagnostics(config, snippetDefs), [config, snippetDefs]);
     const criticalCount = useMemo(() => diagnostics.filter(d => d.severity === 'critical').length, [diagnostics]);
     const warningCount = useMemo(() => diagnostics.filter(d => d.severity === 'warning').length, [diagnostics]);
 
@@ -239,6 +248,10 @@ export const useAppLogic = () => {
         editorSettingsOpen, setEditorSettingsOpen,
         onOpenEditorSettings: () => setEditorSettingsOpen(true),
         onCloseEditorSettings: () => setEditorSettingsOpen(false),
+        snippetsModalOpen, setSnippetsModalOpen,
+        onOpenSnippets: () => setSnippetsModalOpen(true),
+        onCloseSnippets: () => setSnippetsModalOpen(false),
+        snippetDefs,
         rawMode, setRawMode,
         isDragging,
         obSearch, setObSearch,

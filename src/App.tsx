@@ -27,6 +27,8 @@ export const App = () => {
         onOpenHistory, onCloseHistory,
         editorSettingsOpen, setEditorSettingsOpen,
         onOpenEditorSettings, onCloseEditorSettings,
+        snippetsModalOpen, onOpenSnippets, onCloseSnippets,
+        snippetDefs,
         rawMode, setRawMode,
         isDragging,
         hasHydrated,
@@ -140,6 +142,8 @@ export const App = () => {
                         onOpenGeoViewer={() => setGeoViewerOpen(true)}
                         onOpenConfigInspector={() => setConfigInspectorOpen(true)}
                         onOpenEditorSettings={onOpenEditorSettings}
+                        onOpenSnippets={onOpenSnippets}
+                        snippetDefs={snippetDefs}
                     />
                 )}
             </main>
@@ -172,6 +176,9 @@ export const App = () => {
                 onOpenHistory={onOpenHistory}
                 editorSettingsOpen={editorSettingsOpen}
                 onCloseEditorSettings={onCloseEditorSettings}
+                snippetsModalOpen={snippetsModalOpen}
+                onOpenSnippets={onOpenSnippets}
+                onCloseSnippets={onCloseSnippets}
                 setModal={setModal}
                 openSectionJson={openSectionJson}
             />
