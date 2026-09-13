@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.23] - 2026-09-14
+
+### Changed
+- **DNS defaults now live in one place.** `1.1.1.1 / 8.8.8.8 / UseIP` was written out separately in the WARP presets, the store's `initDns`, the local-balancer defaults and the dns-outbound factory — four copies of the same decision with nothing marking which was authoritative. `src/core/presets/dns.ts` now holds the resolver presets, the default upstream, the query strategy and the single `createDefaultDns()` factory those four call.
+- **Bypass lists became a registry.** `BYPASS_LISTS` in `src/core/presets/bypass-domains.ts` carries each list's id, label, description and domains, and the builder renders a switch per entry — adding a list is one entry, not a new toggle plus new state plus a new parser branch. `splitBypassDomains`/`composeBypassDomains` are the round-trip used when loading someone's existing config.
+- **The bypass section says what it does.** It is now titled "What stays off the tunnel" and states that the same list is written into both the routing rule and the DNS block, which is the part that was easy to miss when the two were configured in separate boxes.
+
+### Added
+- **Your own bypass domains are editable.** Domains outside the curated lists were preserved when loading a config but had nowhere to be typed; there is now a field for them, and the hint points out that `geosite:` categories work there — a list maintained upstream rather than shipped in this app.
+- **Resolver presets** (Cloudflare, Google, Quad9, AdGuard, system) as one-click choices, in the builder's DNS section and in the DNS editor's server list, so the two screens no longer disagree about what the usual DNS is.
+
 ## [1.0.22] - 2026-09-14
 
 ### Added

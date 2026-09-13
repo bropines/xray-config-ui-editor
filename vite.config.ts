@@ -47,7 +47,11 @@ export default defineConfig({
     ]
   },
   server: {
-    port: 3000,
+    // Default stays 3000 for `bun run dev`; PORT overrides it so a launcher
+    // can pick a free port when 3000 is already taken (a local Remnawave
+    // panel uses it). Nothing here needs a fixed port — the app is static and
+    // the panel's CORS allowlist is keyed to the deployed origin, not localhost.
+    port: Number(process.env.PORT) || 3000,
     host: '0.0.0.0',
     watch: {
       usePolling: true,

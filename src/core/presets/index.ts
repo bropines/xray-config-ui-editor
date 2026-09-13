@@ -1,6 +1,24 @@
-export { RUSSIAN_DOMAINS, LEAK_CHECK_DOMAINS, DEFAULT_BYPASS_DOMAINS } from './bypass-domains';
+export {
+    RUSSIAN_DOMAINS,
+    LEAK_CHECK_DOMAINS,
+    DEFAULT_BYPASS_DOMAINS,
+    BYPASS_LISTS,
+    splitBypassDomains,
+    composeBypassDomains,
+} from './bypass-domains';
+export type { BypassList } from './bypass-domains';
+export {
+    DNS_RESOLVERS,
+    DEFAULT_DNS_UPSTREAM,
+    DEFAULT_QUERY_STRATEGY,
+    DEFAULT_DNS_TAG,
+    createDefaultDns,
+    matchResolverPreset,
+} from './dns';
+export type { DnsResolverPreset } from './dns';
 
 import { generateUUID, generateRealityKeyPair } from '../generators/crypto';
+import { DEFAULT_DNS_UPSTREAM, DEFAULT_QUERY_STRATEGY } from './dns';
 import type { XrayConfig } from '../types';
 
 export interface Preset {
@@ -43,7 +61,7 @@ export const getPresets = (): Preset[] => {
             icon: 'Cloud',
             config: {
                 log: { loglevel: 'warning' },
-                dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIP' },
+                dns: { servers: [...DEFAULT_DNS_UPSTREAM], queryStrategy: DEFAULT_QUERY_STRATEGY },
                 inbounds: [{ tag: 'socks-in', port: 10808, listen: '127.0.0.1', protocol: 'socks', settings: { auth: 'noauth', udp: true } }],
                 outbounds: [
                     {
@@ -78,7 +96,7 @@ export const getPresets = (): Preset[] => {
             icon: 'CloudCheck',
             config: {
                 log: { loglevel: 'warning' },
-                dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIP' },
+                dns: { servers: [...DEFAULT_DNS_UPSTREAM], queryStrategy: DEFAULT_QUERY_STRATEGY },
                 inbounds: [{ tag: 'socks-in', port: 10808, listen: '127.0.0.1', protocol: 'socks', settings: { auth: 'noauth', udp: true } }],
                 outbounds: [
                     {
@@ -113,7 +131,7 @@ export const getPresets = (): Preset[] => {
             icon: 'CloudFog',
             config: {
                 log: { loglevel: 'warning' },
-                dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIP' },
+                dns: { servers: [...DEFAULT_DNS_UPSTREAM], queryStrategy: DEFAULT_QUERY_STRATEGY },
                 inbounds: [{ tag: 'socks-in', port: 10808, listen: '127.0.0.1', protocol: 'socks', settings: { auth: 'noauth', udp: true } }],
                 outbounds: [
                     {

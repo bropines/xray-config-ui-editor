@@ -1,4 +1,5 @@
 import type { Inbound, Outbound, RoutingRule, Balancer } from '../types';
+import { DEFAULT_DNS_UPSTREAM } from '../presets/dns';
 import { generateUUID } from './crypto';
 
 export const createDefaultInbound = (protocol = 'vless'): Inbound => {
@@ -68,7 +69,7 @@ export const createDefaultOutbound = (protocol = 'vless'): Outbound => {
             base.settings = { response: { type: 'none' } };
             break;
         case 'dns':
-            base.settings = { network: 'tcp', address: '1.1.1.1', port: 53 };
+            base.settings = { network: 'tcp', address: DEFAULT_DNS_UPSTREAM[0], port: 53 };
             break;
         case 'wireguard':
             base.settings = {

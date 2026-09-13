@@ -97,8 +97,55 @@ export const LEAK_CHECK_DOMAINS: string[] = [
     "domain:coveryourtracks.eff.org",
 ];
 
-/** The default bypass set: Russian services plus the leak checkers. */
-export const DEFAULT_BYPASS_DOMAINS: string[] = [
-    ...RUSSIAN_DOMAINS,
-    ...LEAK_CHECK_DOMAINS,
+/**
+ * One bypass list as the UI shows it. The registry below is what the builder
+ * renders switches from, so adding a list here is the whole change — no new
+ * toggle, no new state field, no second place to keep in sync.
+ */
+export interface BypassList {
+    id: string;
+    label: string;
+    /** Why someone would keep these off the tunnel. */
+    description: string;
+    domains: string[];
+}
+
+export const BYPASS_LISTS: BypassList[] = [
+    {
+        id: 'russian',
+        label: 'Russian sites direct',
+        description: 'Banks, government portals, marketplaces and media that only work from a Russian address.',
+        domains: RUSSIAN_DOMAINS,
+    },
+    {
+        id: 'leak-checks',
+        label: 'IP/DNS leak checkers direct',
+        description: 'Sites like whoer.net and ipleak.net. Proxied, they report the exit node instead of your real connection.',
+        domains: LEAK_CHECK_DOMAINS,
+    },
+];
+
+/** The default bypass set: every list above, in registry order. */
+export const DEFAULT_BYPASS_DOMAINS: string[] = BYPASS_LISTS.flatMap(list => list.domains);
+
+/**
+ * Split a bypass list back into "which presets are fully present" plus
+ * whatever else it contained. Loading someone's existing config must not
+ * quietly drop domains this app does not recognise.
+ */
+export const splitBypassDomains = (domains: string[]): { enabled: string[]; custom: string[] } => {
+    const present = new Set(domains || []);
+    const enabled = BYPASS_LISTS
+        .filter(list => list.domains.length > 0 && list.domains.every(d => present.has(d)))
+        .map(list => list.id);
+    const covered = new Set(
+        BYPASS_LISTS.filter(list => enabled.includes(list.id)).flatMap(list => list.domains)
+    );
+    return { enabled, custom: (domains || []).filter(d => !covered.has(d)) };
+};
+
+/** Rebuild a bypass list from the enabled preset ids plus custom entries. */
+export const composeBypassDomains = (enabledIds: string[], custom: string[] = []): string[] => [
+    ...BYPASS_LISTS.filter(list => enabledIds.includes(list.id)).flatMap(list => list.domains),
+    ...custom,
 ];

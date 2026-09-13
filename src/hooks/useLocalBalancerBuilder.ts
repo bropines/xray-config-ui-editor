@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useConfigStore } from '../store/configStore';
 import { parseRawSubscriptionText } from '../utils/link-parser';
 import { stringifyJsonc } from '../utils/jsonc';
-import { RUSSIAN_DOMAINS, LEAK_CHECK_DOMAINS } from '../core/presets/bypass-domains';
+import { BYPASS_LISTS, composeBypassDomains, splitBypassDomains } from '../core/presets/bypass-domains';
 import { buildClientOutbound, clientOutboundBlocker } from '../core/generators/client-outbound';
 import {
     buildLocalBalancerConfig,
@@ -103,11 +103,16 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
         ...DEFAULT_LOCAL_BALANCER_OPTIONS,
         ...LOCAL_BALANCER_PRESETS.simple!.options,
     });
-    const [bypassRussian, setBypassRussian] = useState(true);
-    const [bypassLeakChecks, setBypassLeakChecks] = useState(true);
-    /** Bypass entries that belong to neither preset list — kept so loading an
-     *  existing balancer never silently drops someone's own domains. */
-    const [bypassCustom, setBypassCustom] = useState<string[]>([]);
+    // Which curated bypass lists are on, by id from the registry. Driving this
+    // off ids rather than one boolean per list means adding a list is a single
+    // entry in core/presets/bypass-domains.ts.
+    const [enabledBypassIds, setEnabledBypassIds] = useState<string[]>(() => BYPASS_LISTS.map(l => l.id));
+    /**
+     * Bypass entries that belong to no curated list — typed here, or carried in
+     * from a loaded config so that someone else's own domains are never
+     * silently dropped on the next save.
+     */
+    const [bypassCustomText, setBypassCustomText] = useState('');
     const [dnsExtraText, setDnsExtraText] = useState('');
     const [previewIndex, setPreviewIndex] = useState(0);
     const [source, setSource] = useState<'paste' | 'panel'>('paste');
@@ -327,11 +332,19 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
         setPresetKey('custom');
     }, []);
 
-    const bypassDomains = useMemo(() => [
-        ...(bypassRussian ? RUSSIAN_DOMAINS : []),
-        ...(bypassLeakChecks ? LEAK_CHECK_DOMAINS : []),
-        ...bypassCustom,
-    ], [bypassRussian, bypassLeakChecks, bypassCustom]);
+    const bypassCustom = useMemo(
+        () => bypassCustomText.split(/[\s,]+/).map(d => d.trim()).filter(Boolean),
+        [bypassCustomText]
+    );
+
+    const toggleBypassList = useCallback((id: string) => {
+        setEnabledBypassIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+    }, []);
+
+    const bypassDomains = useMemo(
+        () => composeBypassDomains(enabledBypassIds, bypassCustom),
+        [enabledBypassIds, bypassCustom]
+    );
 
     const dnsExtraDomains = useMemo(
         () => dnsExtraText.split(/[\s,]+/).map(d => d.trim()).filter(Boolean),
@@ -433,18 +446,9 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
      * so a list this app did not write survives a load/save round trip.
      */
     const applyParsed = useCallback((parsed: ReturnType<typeof parseLocalBalancer>) => {
-        const domains = parsed.options.bypassDomains || [];
-        const hasAll = (list: string[]) => list.length > 0 && list.every(d => domains.includes(d));
-        const ru = hasAll(RUSSIAN_DOMAINS);
-        const leak = hasAll(LEAK_CHECK_DOMAINS);
-        const known = new Set([
-            ...(ru ? RUSSIAN_DOMAINS : []),
-            ...(leak ? LEAK_CHECK_DOMAINS : []),
-        ]);
-
-        setBypassRussian(ru);
-        setBypassLeakChecks(leak);
-        setBypassCustom(domains.filter(d => !known.has(d)));
+        const { enabled, custom } = splitBypassDomains(parsed.options.bypassDomains || []);
+        setEnabledBypassIds(enabled);
+        setBypassCustomText(custom.join(', '));
         setDnsExtraText((parsed.options.dnsExtraDomains || []).join(', '));
         setOptions(prev => ({ ...prev, ...parsed.options }));
         if (parsed.inject) setInject(parsed.inject);
@@ -695,13 +699,14 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
 
         // options
         presetKey, applyPreset, options, setOption,
-        bypassRussian, setBypassRussian,
-        bypassLeakChecks, setBypassLeakChecks,
+        bypassLists: BYPASS_LISTS,
+        enabledBypassIds, toggleBypassList,
+        bypassCustomText, setBypassCustomText,
+        bypassCustom,
         dnsExtraText, setDnsExtraText,
 
         // loading an existing balancer
         loadTemplateIntoBuilder, loadFromCurrentConfig,
-        bypassCustom,
 
         // publishing hosts
         poolTag, setPoolTag, normalisedPoolTag,

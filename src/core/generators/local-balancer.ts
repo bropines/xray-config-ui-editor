@@ -19,6 +19,7 @@
 // ============================================================
 
 import { DEFAULT_BYPASS_DOMAINS } from '../presets/bypass-domains';
+import { DEFAULT_DNS_UPSTREAM, DEFAULT_QUERY_STRATEGY } from '../presets/dns';
 
 /** One proxy the balancer can pick, as parsed from a link or an existing config. */
 export interface LocalBalancerNode {
@@ -108,8 +109,8 @@ export const DEFAULT_LOCAL_BALANCER_OPTIONS: LocalBalancerOptions = {
     dnsExtraDomains: [],
     bypassBittorrent: true,
     dns: true,
-    dnsUpstream: ['1.1.1.1', '8.8.8.8'],
-    queryStrategy: 'UseIP',
+    dnsUpstream: [...DEFAULT_DNS_UPSTREAM],
+    queryStrategy: DEFAULT_QUERY_STRATEGY,
     domainMatcher: 'hybrid',
     domainStrategy: 'AsIs',
     forceBalancer: false,

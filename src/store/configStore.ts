@@ -14,6 +14,7 @@ import {
     type SnippetSection,
 } from '../core/snippets';
 import { XrayConfigSchema } from '../core/xray/schemas';
+import { createDefaultDns } from '../core/presets/dns';
 import { diffLines } from 'diff';
 import { parseJsonc, stringifyJsonc } from '../utils/jsonc';
 import { idbStorage } from '../utils/indexedDbStorage';
@@ -1436,12 +1437,10 @@ export const useConfigStore = create(
 
             initDns: () => set((state) => {
                 const fullObj = resolveMutableConfig(state);
+                // Shared with the WARP presets and the balancer builder — see
+                // core/presets/dns.ts for why there is only one copy.
                 if (!fullObj.dns) {
-                    fullObj.dns = {
-                        servers: ["1.1.1.1", "8.8.8.8", "localhost"],
-                        queryStrategy: "UseIP",
-                        tag: "dns_inbound"
-                    };
+                    fullObj.dns = createDefaultDns();
                 }
                 const newText = stringifyJsonc(fullObj, 2);
                 return { config: fullObj, rawConfigText: newText };

@@ -11,6 +11,7 @@ import { DurationInput } from '../../ui/DurationInput';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { useLocalBalancerBuilder } from '../../../hooks/useLocalBalancerBuilder';
 import { LOCAL_BALANCER_PRESETS } from '../../../core/generators/local-balancer';
+import { DNS_RESOLVERS, matchResolverPreset } from '../../../core/presets/dns';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3 flex flex-col gap-3">
@@ -755,34 +756,95 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid }: {
                             </Section>
                         )}
 
-                        <Section title="Bypass & DNS">
-                            {b.bypassCustom.length > 0 && (
-                                <Badge variant="info" size="sm" icon="Info">
-                                    +{b.bypassCustom.length} domain(s) loaded from the existing config are kept
-                                </Badge>
-                            )}
-                            <Switch checked={b.bypassRussian} onChange={b.setBypassRussian} label="Russian sites direct" />
-                            <Switch checked={b.bypassLeakChecks} onChange={b.setBypassLeakChecks} label="IP/DNS leak checkers direct" />
+                        <Section title="What stays off the tunnel">
+                            <p className="text-[10px] text-slate-500 -mt-1">
+                                These domains get a routing rule straight to <span className="font-mono">direct</span>,
+                                and the same list is repeated in the DNS block so their lookups are answered
+                                locally instead of through the proxy.
+                            </p>
+
+                            {b.bypassLists.map((list: any) => (
+                                <div key={list.id}>
+                                    <Switch
+                                        checked={b.enabledBypassIds.includes(list.id)}
+                                        onChange={() => b.toggleBypassList(list.id)}
+                                        label={`${list.label} (${list.domains.length})`}
+                                    />
+                                    <p className="text-[10px] text-slate-500 mt-1 ml-[52px]">{list.description}</p>
+                                </div>
+                            ))}
+
+                            <div>
+                                <span className="label-xs">Your own domains</span>
+                                <textarea
+                                    className="input-base font-mono text-[11px] h-16 resize-none bg-slate-950/60 mt-1.5"
+                                    placeholder="domain:mybank.example, regexp:.+\.local$, geosite:category-ads"
+                                    value={b.bypassCustomText}
+                                    onChange={e => b.setBypassCustomText(e.target.value)}
+                                />
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Any Xray matcher works here — <span className="font-mono">domain:</span>,{' '}
+                                    <span className="font-mono">regexp:</span> or a{' '}
+                                    <span className="font-mono">geosite:</span> category, which stays current
+                                    without this app shipping a list.
+                                    {b.bypassCustom.length > 0 && ` Currently ${b.bypassCustom.length} entry(ies).`}
+                                </p>
+                            </div>
+
                             <Switch
                                 checked={options.bypassBittorrent}
                                 onChange={v => b.setOption({ bypassBittorrent: v })}
                                 label="BitTorrent direct"
                             />
-                            <Switch checked={options.dns} onChange={v => b.setOption({ dns: v })} label="DNS block" />
+                            <p className="text-[10px] text-slate-500 -mt-2 ml-[52px]">
+                                Matched by sniffing the protocol, not by domain.
+                            </p>
+                        </Section>
+
+                        <Section title="DNS">
+                            <Switch
+                                checked={options.dns}
+                                onChange={v => b.setOption({ dns: v })}
+                                label="Write a DNS block"
+                            />
+                            <p className="text-[10px] text-slate-500 -mt-2 ml-[52px]">
+                                Off means the client uses whatever DNS the system gives it.
+                            </p>
                             {options.dns && (
                                 <>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {DNS_RESOLVERS.map(preset => {
+                                            const active = matchResolverPreset(options.dnsUpstream)?.id === preset.id;
+                                            return (
+                                                <button
+                                                    key={preset.id}
+                                                    onClick={() => b.setOption({ dnsUpstream: [...preset.servers] })}
+                                                    title={preset.hint}
+                                                    className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
+                                                        active
+                                                            ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-200'
+                                                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                                                    }`}
+                                                >
+                                                    {preset.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                     <Input
-                                        label="Upstream DNS"
+                                        label="Upstream servers"
                                         value={options.dnsUpstream.join(', ')}
                                         onChange={(e: any) => b.setOption({
                                             dnsUpstream: e.target.value.split(/[\s,]+/).filter(Boolean),
                                         })}
+                                        hint="Used for everything that is not in the bypass list above"
                                     />
                                     <Input
-                                        label="Extra bypass domains (DNS only)"
+                                        label="Resolved locally, but not routed direct"
                                         value={b.dnsExtraText}
                                         onChange={(e: any) => b.setDnsExtraText(e.target.value)}
                                         placeholder="domain:mypanel.io"
+                                        hint="Added to the DNS bypass entry only — the traffic still goes through the proxy"
                                     />
                                 </>
                             )}

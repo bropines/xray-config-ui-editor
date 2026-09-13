@@ -9,6 +9,7 @@ import { useArrayField } from '../../../hooks/useField';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { DNS_RESOLVERS, DEFAULT_DNS_UPSTREAM } from '../../../core/presets/dns';
 
 // Компонент одного элемента (Sortable)
 const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
@@ -75,9 +76,24 @@ export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder 
             <div className="flex justify-between items-center">
                 <label className="label-xs">DNS Servers Priority List</label>
                 <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => onAdd("8.8.8.8")} icon="Plus">Simple</Button>
-                    <Button variant="primary" size="sm" onClick={() => onAdd({ address: "https://1.1.1.1/dns-query", domains: [] })} icon="Plus">Advanced</Button>
+                    <Button variant="secondary" size="sm" onClick={() => onAdd(DEFAULT_DNS_UPSTREAM[0])} icon="Plus">Simple</Button>
+                    <Button variant="primary" size="sm" onClick={() => onAdd({ address: `https://${DEFAULT_DNS_UPSTREAM[0]}/dns-query`, domains: [] })} icon="Plus">Advanced</Button>
                 </div>
+            </div>
+
+            {/* Same resolver presets the Local Balancer builder offers, so the
+                two screens do not disagree about what "the usual DNS" is. */}
+            <div className="flex flex-wrap gap-1.5">
+                {DNS_RESOLVERS.map(preset => (
+                    <button
+                        key={preset.id}
+                        onClick={() => preset.servers.forEach(server => onAdd(server))}
+                        title={`${preset.hint} Adds ${preset.servers.join(', ')}.`}
+                        className="px-2 py-1.5 text-[10px] rounded-md border bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-all"
+                    >
+                        + {preset.label}
+                    </button>
+                ))}
             </div>
             
             <div className="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1">
