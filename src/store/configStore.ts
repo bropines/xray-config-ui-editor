@@ -187,6 +187,8 @@ interface ConfigState {
     // --- Panel hosts (write) ---
     createPanelHost: (payload: Record<string, unknown>) => Promise<any | null>;
     updatePanelHosts: (updates: Array<Record<string, unknown> & { uuid: string }>) => Promise<number>;
+    updatePanelHost: (patch: Record<string, unknown> & { uuid: string }) => Promise<boolean>;
+    deletePanelHost: (uuid: string) => Promise<boolean>;
 
     // --- Subscription templates, session-only ---
     panelTemplates: PanelTemplatesState;
@@ -382,6 +384,44 @@ export const useConfigStore = create(
                     toast.success(`Updated ${done} host(s)`);
                 }
                 return done;
+            },
+
+            updatePanelHost: async (patch) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return false;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    await client.updateHost(patch);
+                    await get().fetchPanelCatalog();
+                    toast.success("Host saved");
+                    return true;
+                } catch (e: any) {
+                    toast.error("Failed to save the host", { description: e?.message || 'Unknown error' });
+                    return false;
+                }
+            },
+
+            deletePanelHost: async (uuid) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return false;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    await client.deleteHost(uuid);
+                    await get().fetchPanelCatalog();
+                    toast.info("Host deleted");
+                    return true;
+                } catch (e: any) {
+                    toast.error("Failed to delete the host", { description: e?.message || 'Unknown error' });
+                    return false;
+                }
             },
 
             // --- Subscription templates ---

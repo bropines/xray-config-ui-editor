@@ -57,10 +57,12 @@ const NodeRow = ({ node, onToggle, onRename, onRemove }: any) => (
  * The parts that must agree (tag prefix, selector, probe selector, catch-all
  * rule, bypass list in both routing and DNS) are derived, not typed.
  */
-export const LocalBalancerModal = ({ onClose, initialTemplateUuid }: {
+export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }: {
     onClose: () => void;
     /** Opened from the template editor: load this template straight away. */
     initialTemplateUuid?: string;
+    /** Opens one of the listed panel hosts in the host editor. */
+    onEditHost?: (uuid: string) => void;
 }) => {
     const b = useLocalBalancerBuilder(initialTemplateUuid);
     const { options } = b;
@@ -168,11 +170,11 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid }: {
                         ) : (
                             <>
                                 <Input
-                                    label="Client UUID"
+                                    label="Client UUID — only to add hosts as nodes"
                                     value={b.panelUserId}
                                     onChange={(e: any) => b.setPanelUserId(e.target.value)}
                                     placeholder="9bed733f-b58f-4d23-9ca2-6397e8debedf"
-                                    hint="The id from that user's vless:// link — the panel issues it per subscriber"
+                                    hint="Needed only by Add, which mirrors hosts into client outbounds. Editing a host needs no UUID."
                                 />
                                 <div className="flex gap-2">
                                     <Button
@@ -241,11 +243,11 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid }: {
                                     const selected = b.panelSelection.has(row.uuid);
                                     const usable = !row.blocker;
                                     return (
+                                        <div key={row.uuid} className="relative group">
                                         <button
-                                            key={row.uuid}
                                             onClick={() => usable && b.togglePanelHost(row.uuid)}
                                             disabled={!usable}
-                                            className={`w-full text-left p-2 rounded-lg border text-xs flex items-start gap-2 mb-1 transition-all ${
+                                            className={`w-full text-left p-2 pr-9 rounded-lg border text-xs flex items-start gap-2 mb-1 transition-all ${
                                                 !usable
                                                     ? 'bg-slate-950 border-slate-900 opacity-60 cursor-not-allowed'
                                                     : selected
@@ -278,6 +280,16 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid }: {
                                                     : row.profileName && <span className="block text-[10px] text-slate-600 truncate">{row.profileName} · {row.inboundTag}</span>}
                                             </span>
                                         </button>
+                                        {onEditHost && (
+                                            <button
+                                                onClick={() => onEditHost(row.uuid)}
+                                                title="Edit this host: address, transport, inbound, template"
+                                                className="absolute top-1.5 right-1.5 p-2 rounded-md text-slate-500 hover:text-white hover:bg-slate-700/60 md:opacity-0 md:group-hover:opacity-100 transition-all"
+                                            >
+                                                <Icon name="PencilSimple" className="text-sm" />
+                                            </button>
+                                        )}
+                                        </div>
                                     );
                                 })
                             )}

@@ -240,6 +240,7 @@ interface ConfigDashboardProps {
   onOpenSnippets?: () => void;
   onOpenBuilder?: () => void;
   onOpenTemplates?: () => void;
+  onOpenHosts?: () => void;
   /** Panel snippets + local templates, for resolving references on the card. */
   snippetDefs?: SnippetDefinition[];
 }
@@ -280,6 +281,7 @@ export const ConfigDashboard = ({
   onOpenSnippets,
   onOpenBuilder,
   onOpenTemplates,
+  onOpenHosts,
   snippetDefs = [],
 }: ConfigDashboardProps) => {
   const {
@@ -426,6 +428,17 @@ export const ConfigDashboard = ({
                 title="Edit the subscription templates stored in your Remnawave panel"
               >
                 Templates
+              </Button>
+            )}
+            {onOpenHosts && (
+              <Button
+                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+                variant="secondary"
+                onClick={onOpenHosts}
+                icon="Broadcast"
+                title="Edit the hosts in your Remnawave panel: address, transport, inbound and template"
+              >
+                Hosts
               </Button>
             )}
           </div>

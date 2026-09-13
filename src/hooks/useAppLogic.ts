@@ -42,6 +42,8 @@ export const useAppLogic = () => {
     const [builderModalOpen, setBuilderModalOpen] = useState(false);
     const [builderTemplateUuid, setBuilderTemplateUuid] = useState<string | undefined>(undefined);
     const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+    const [hostsModalOpen, setHostsModalOpen] = useState(false);
+    const [hostsInitialUuid, setHostsInitialUuid] = useState<string | undefined>(undefined);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -261,6 +263,11 @@ export const useAppLogic = () => {
         templatesModalOpen, setTemplatesModalOpen,
         onOpenTemplates: () => setTemplatesModalOpen(true),
         onCloseTemplates: () => setTemplatesModalOpen(false),
+        hostsModalOpen, hostsInitialUuid,
+        onOpenHosts: () => { setHostsInitialUuid(undefined); setHostsModalOpen(true); },
+        onCloseHosts: () => { setHostsModalOpen(false); setHostsInitialUuid(undefined); },
+        // Handoff: a host row elsewhere opens that host in the editor.
+        onEditHost: (uuid: string) => { setHostsInitialUuid(uuid); setHostsModalOpen(true); },
         // Handoff: the template editor sends one template into the builder.
         onOpenTemplateInBuilder: (uuid: string) => {
             setTemplatesModalOpen(false);

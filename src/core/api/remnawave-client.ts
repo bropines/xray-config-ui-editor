@@ -125,6 +125,10 @@ export class RemnawaveClient {
         return data?.response || null;
     }
 
+    async deleteHost(uuid: string): Promise<void> {
+        await this.request(`/api/hosts/${uuid}`, { method: 'DELETE' });
+    }
+
     // ─── Subscription templates ──────────────────────────────────────────
     // An XRAY_JSON template is the config the panel renders for a subscriber,
     // with hosts injected into it. A host points at one via its

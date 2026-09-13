@@ -19,6 +19,7 @@ import { EditorSettingsModal } from '../editors/EditorSettingsModal';
 import { SnippetsModal } from '../editors/snippets/SnippetsModal';
 import { LocalBalancerModal } from '../editors/builder/LocalBalancerModal';
 import { TemplatesModal } from '../editors/templates/TemplatesModal';
+import { HostsModal } from '../editors/hosts/HostsModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -84,7 +85,13 @@ interface ModalManagerProps {
 
     templatesModalOpen?: boolean;
     onCloseTemplates?: () => void;
+    onOpenTemplates?: () => void;
     onOpenTemplateInBuilder?: (uuid: string) => void;
+
+    hostsModalOpen?: boolean;
+    hostsInitialUuid?: string;
+    onCloseHosts?: () => void;
+    onEditHost?: (uuid: string) => void;
 
     setModal: (m: any) => void;
     openSectionJson: (section: string, title: string, data: any) => void;
@@ -130,7 +137,12 @@ export const ModalManager = ({
     builderTemplateUuid,
     templatesModalOpen,
     onCloseTemplates,
+    onOpenTemplates,
     onOpenTemplateInBuilder,
+    hostsModalOpen,
+    hostsInitialUuid,
+    onCloseHosts,
+    onEditHost,
     setModal,
     openSectionJson,
 }: ModalManagerProps) => (
@@ -158,10 +170,17 @@ export const ModalManager = ({
         )}
         {snippetsModalOpen && onCloseSnippets && <SnippetsModal onClose={onCloseSnippets} />}
         {builderModalOpen && onCloseBuilder && (
-            <LocalBalancerModal onClose={onCloseBuilder} initialTemplateUuid={builderTemplateUuid} />
+            <LocalBalancerModal
+                onClose={onCloseBuilder}
+                initialTemplateUuid={builderTemplateUuid}
+                onEditHost={onEditHost}
+            />
         )}
         {templatesModalOpen && onCloseTemplates && (
             <TemplatesModal onClose={onCloseTemplates} onOpenInBuilder={onOpenTemplateInBuilder} />
+        )}
+        {hostsModalOpen && onCloseHosts && (
+            <HostsModal onClose={onCloseHosts} initialHostUuid={hostsInitialUuid} onOpenTemplates={onOpenTemplates} />
         )}
 
         {sectionModal.open && (

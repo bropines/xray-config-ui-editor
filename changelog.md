@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.24] - 2026-09-14
+
+### Added
+- **Hosts editor** (`Core Modules -> Hosts`): edit the panel's hosts in this app instead of switching to the panel for it. Remark, address and port, tag, the inbound it serves, the Xray JSON template it renders, the transport details (security layer, SNI, Host header, path, fingerprint, ALPN, allow-insecure) and the hidden/disabled switches. Create and delete are in the same screen.
+  - **Saving sends only what changed.** A PATCH built from the difference against the loaded host, so settings this form does not show — squad assignments, mappers, per-node overrides — keep whatever the panel has. The editor states which fields a save will send before you press it.
+  - Cleared optional fields travel as an explicit `null`, so clearing an SNI actually clears it.
+- The panel host list in the Local Balancer builder has a pencil on each row that opens that host in the editor.
+
+### Changed
+- Selecting hosts in the builder no longer looks like it requires a client UUID: that field is labelled and explained as what it is — needed only by **Add**, which mirrors hosts into client outbounds. Editing a host needs no UUID at all.
+
 ## [1.0.23] - 2026-09-14
 
 ### Changed
