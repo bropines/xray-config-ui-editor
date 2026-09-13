@@ -37,10 +37,10 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snipp
                             </div>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onDelete(i); }}
-                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-rose-900/50 rounded-md text-slate-500 hover:text-rose-400 transition-all"
+                                className="md:opacity-0 md:group-hover:opacity-100 p-2 shrink-0 hover:bg-rose-900/50 rounded-md text-slate-500 hover:text-rose-400 transition-all"
                                 title="Remove this snippet reference"
                             >
-                                <Icon name="Trash" className="text-xs" />
+                                <Icon name="Trash" className="text-base" />
                             </button>
                         </div>
                     );
@@ -50,9 +50,9 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snipp
                     <div key={i} onClick={() => onSelect(i)}
                         className={`p-3 rounded-lg cursor-pointer text-xs flex justify-between items-center group border transition-all mb-1
             ${isActive ? 'bg-purple-600/20 border-purple-500/50' : 'hover:bg-slate-900 border-transparent'}`}>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <div className={`font-bold ${isActive ? 'text-white' : 'text-slate-300'}`}>{b.tag}</div>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <div className={`font-bold truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>{b.tag}</div>
                                 {/* ИКОНКА ОШИБКИ */}
                                 {(!b.selector || b.selector.length === 0) && (
                                     <Icon name="Warning" className="text-rose-500 animate-bounce" weight="fill" title="Empty selector!" />
@@ -63,9 +63,9 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snipp
                         {/* Кнопка удаления */}
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDelete(i); }}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-rose-900/50 rounded-md text-slate-500 hover:text-rose-400 transition-all"
+                            className="md:opacity-0 md:group-hover:opacity-100 p-2 shrink-0 hover:bg-rose-900/50 rounded-md text-slate-500 hover:text-rose-400 transition-all"
                         >
-                            <Icon name="Trash" className="text-xs" />
+                            <Icon name="Trash" className="text-base" />
                         </button>
                     </div>
                 );

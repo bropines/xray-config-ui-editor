@@ -9,6 +9,13 @@ interface SnippetBodyEditorProps {
     /** Called with the parsed array on every syntactically valid edit. */
     onChange?: (value: any[]) => void;
     readOnly?: boolean;
+    /**
+     * Fires whenever the text stops or starts parsing. Callers need it because
+     * a body that does not parse never reaches `onChange`: without this the
+     * last valid value stays in state and a "save" would quietly store it
+     * instead of what is on screen.
+     */
+    onSyntaxError?: (hasError: boolean) => void;
     /** Tailwind height for the editor box — it never grows past this. */
     heightClass?: string;
 }
@@ -28,6 +35,7 @@ export const SnippetBodyEditor = ({
     value,
     onChange,
     readOnly = false,
+    onSyntaxError,
     heightClass = 'h-[38vh]',
 }: SnippetBodyEditorProps) => {
     const [text, setText] = useState(() => stringifyJsonc(value ?? [], 2));
@@ -49,6 +57,7 @@ export const SnippetBodyEditor = ({
         }
         setText(stringifyJsonc(value ?? [], 2));
         setError(false);
+        onSyntaxError?.(false);
     }, [value]);
 
     const handleChange = (next: string) => {
@@ -56,15 +65,18 @@ export const SnippetBodyEditor = ({
         isLocalEdit.current = true;
         if (next.trim() === '') {
             setError(false);
+            onSyntaxError?.(false);
             onChange?.([]);
             return;
         }
         try {
             const parsed = parseJsonc(next);
             setError(false);
+            onSyntaxError?.(false);
             onChange?.(parsed as any[]);
         } catch {
             setError(true);
+            onSyntaxError?.(true);
         }
     };
 

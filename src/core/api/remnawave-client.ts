@@ -152,12 +152,24 @@ export class RemnawaveClient {
         return data?.response || null;
     }
 
-    async updateSubscriptionTemplate(uuid: string, templateJson: unknown, name?: string): Promise<any> {
+    /**
+     * Patch a template. XRAY_JSON templates carry `templateJson`; the YAML
+     * kinds (Clash, Stash, Mihomo, Singbox) carry `encodedTemplateYaml`, a
+     * base64 string — pass whichever the template actually uses.
+     */
+    async updateSubscriptionTemplate(
+        uuid: string,
+        patch: { templateJson?: unknown; encodedTemplateYaml?: string; name?: string }
+    ): Promise<any> {
         const data = await this.request('/api/subscription-templates', {
             method: 'PATCH',
-            body: JSON.stringify({ uuid, templateJson, ...(name ? { name } : {}) }),
+            body: JSON.stringify({ uuid, ...patch }),
         });
         return data?.response || null;
+    }
+
+    async deleteSubscriptionTemplate(uuid: string): Promise<void> {
+        await this.request(`/api/subscription-templates/${uuid}`, { method: 'DELETE' });
     }
 
     // ─── Snippets ────────────────────────────────────────────────────────

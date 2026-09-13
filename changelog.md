@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.22] - 2026-09-14
+
+### Added
+- **Subscription Templates editor** (`Core Modules -> Templates`): the free-form counterpart to the Local Balancer builder. Lists every template the panel holds, opens any of them as text, and saves it back. JSON templates are edited as JSON with a live parse check; the YAML kinds (Clash, Stash, Mihomo, Singbox) are stored base64 in the panel and are decoded here — emoji included — then re-encoded on save. Create, rename, duplicate and delete are all in the same screen.
+  - A template that looks like a balancer offers **Edit in Local Balancer**, which opens it in the builder with its settings already in the form fields.
+
+### Fixed
+- **The builder lost the template it had just created.** `saveSubscriptionTemplate` returned a boolean, so after "Save to panel" the new template's uuid was dropped: "Create entry host" stayed disabled telling the user to save a template they had saved, and clicking save again created a second template with the same name. It now returns the uuid, selects it, and refuses a second concurrent save.
+- **Whole panes were unreachable on a phone.** In the Local Balancer builder and the Snippets library the second column collapsed to zero height on a narrow screen, taking every option, the preview and — in Snippets — every save button with it. Both now show one pane at a time with a switch, the way the Routing Manager already did.
+- **Balancer list actions were invisible on touch**: the delete button used `opacity-0 group-hover:opacity-100` with no mobile fallback, so it could never be tapped. Long balancer tags also pushed the row off screen.
+- **Footer buttons wrapped instead of scrolling**, doubling the modal footer's height on a phone.
+- Core Modules buttons now lay out as a two-column grid on mobile instead of wrapping raggedly, and the outbound rows give the tag back the space the decorative index took.
+- **A snippet body with a JSON syntax error could be "saved"**: the editor only propagates parsed values, so the stale body was pushed to the panel with a success toast. Saving is now blocked while the text does not parse, and the button says why.
+
+### Changed
+- Destructive or wide-reaching panel actions now arm before they fire, each stating its consequence: hiding and re-tagging node hosts, emptying a panel snippet, and syncing a snippet (which restarts nodes).
+- The publish flow in template mode is numbered (save the template, then publish it) and lists what is still missing before the entry host can be created, instead of reporting one missing field per click.
+- Wording pass on the terms that were panel jargon: shared tag rather than pool tag, entry host described as the one subscribers see, "insert a detached copy", "samples kept", and empty states that name the next action.
+
 ## [1.0.21] - 2026-09-14
 
 ### Added

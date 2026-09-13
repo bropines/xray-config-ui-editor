@@ -52,6 +52,10 @@ export const useSnippetsLibrary = (open: boolean) => {
     const [draft, setDraft] = useState<SnippetDraft | null>(null);
     const [target, setTarget] = useState<SnippetSection>('rules');
     const [confirmDelete, setConfirmDelete] = useState(false);
+    /** True while the body editor holds text that does not parse. */
+    const [bodySyntaxError, setBodySyntaxError] = useState(false);
+    const [confirmEmpty, setConfirmEmpty] = useState(false);
+    const [confirmSync, setConfirmSync] = useState(false);
 
     // How often each name is referenced by the config currently open.
     const usageByName = useMemo(() => {
@@ -144,6 +148,8 @@ export const useSnippetsLibrary = (open: boolean) => {
     const updateDraft = useCallback((patch: Partial<SnippetDraft>) => {
         setDraft(prev => (prev ? { ...prev, ...patch } : prev));
         setConfirmDelete(false);
+        setConfirmEmpty(false);
+        setConfirmSync(false);
     }, []);
 
     const draftKind = useMemo(() => (draft ? classifySnippet(draft.body) : null), [draft]);
@@ -152,10 +158,29 @@ export const useSnippetsLibrary = (open: boolean) => {
         [draft]
     );
     const draftBodyError = useMemo(() => (draft ? validateSnippetBody(draft.body) : null), [draft]);
-    const canSave = !!draft && !!draft.name.trim() && !draftNameError && !draftBodyError;
+    // A syntax error means the body in state is stale, so saving would store
+    // something other than what the user is looking at.
+    const canSave = !!draft && !!draft.name.trim() && !draftNameError && !draftBodyError && !bodySyntaxError;
+
+    /** Why the save button is disabled, for its tooltip. */
+    const saveBlockedReason = useMemo(() => {
+        if (!draft) return null;
+        if (bodySyntaxError) return 'Fix the JSON syntax first';
+        if (draftNameError) return draftNameError;
+        if (draftBodyError) return draftBodyError;
+        if (!draft.name.trim()) return 'Name the snippet first';
+        return null;
+    }, [draft, bodySyntaxError, draftNameError, draftBodyError]);
 
     const saveDraft = useCallback(async () => {
         if (!draft || !canSave) return;
+        // Emptying a panel snippet changes every profile that references it,
+        // so that specific case asks once.
+        if (draft.originalName && draft.body.length === 0 && !confirmEmpty) {
+            setConfirmEmpty(true);
+            return;
+        }
+        setConfirmEmpty(false);
         if (draft.source === 'local') {
             const ok = saveLocalTemplate({
                 name: draft.name,
@@ -168,7 +193,7 @@ export const useSnippetsLibrary = (open: boolean) => {
             const ok = await pushSnippetToPanel(draft.name, draft.body);
             if (ok) setDraft({ ...draft, name: draft.name.trim(), originalName: draft.name.trim() });
         }
-    }, [draft, canSave, saveLocalTemplate, pushSnippetToPanel]);
+    }, [draft, canSave, confirmEmpty, saveLocalTemplate, pushSnippetToPanel]);
 
     /** Copy the draft into the other library without touching the original. */
     const copyToLocal = useCallback(() => {
@@ -191,10 +216,19 @@ export const useSnippetsLibrary = (open: boolean) => {
         setConfirmDelete(false);
     }, [draft, deleteLocalTemplate, deletePanelSnippet]);
 
+    /**
+     * Two-step: syncing re-applies the snippet to every profile referencing it
+     * and the panel restarts the nodes those profiles run on.
+     */
     const syncDraft = useCallback(async () => {
         if (!draft?.originalName || draft.source !== 'panel') return;
+        if (!confirmSync) {
+            setConfirmSync(true);
+            return;
+        }
+        setConfirmSync(false);
         await syncPanelSnippet(draft.originalName);
-    }, [draft, syncPanelSnippet]);
+    }, [draft, confirmSync, syncPanelSnippet]);
 
     const insertRef = useCallback(() => {
         if (!draft?.name.trim()) return;
@@ -224,9 +258,11 @@ export const useSnippetsLibrary = (open: boolean) => {
 
         // draft
         draft, openEntry, startNew, updateDraft, useCurrentRules,
-        draftKind, draftNameError, draftBodyError, canSave,
+        draftKind, draftNameError, draftBodyError, canSave, saveBlockedReason,
         saveDraft, copyToLocal, pushToPanel, removeDraftEntry, syncDraft,
         confirmDelete, setConfirmDelete,
+        bodySyntaxError, setBodySyntaxError,
+        confirmEmpty, confirmSync,
 
         // insertion
         target, setTarget, insertRef, insertCopy,

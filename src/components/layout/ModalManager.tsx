@@ -18,6 +18,7 @@ import { GitHistoryModal } from '../git/GitHistoryModal';
 import { EditorSettingsModal } from '../editors/EditorSettingsModal';
 import { SnippetsModal } from '../editors/snippets/SnippetsModal';
 import { LocalBalancerModal } from '../editors/builder/LocalBalancerModal';
+import { TemplatesModal } from '../editors/templates/TemplatesModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
 export interface ModalState {
@@ -79,6 +80,11 @@ interface ModalManagerProps {
 
     builderModalOpen?: boolean;
     onCloseBuilder?: () => void;
+    builderTemplateUuid?: string;
+
+    templatesModalOpen?: boolean;
+    onCloseTemplates?: () => void;
+    onOpenTemplateInBuilder?: (uuid: string) => void;
 
     setModal: (m: any) => void;
     openSectionJson: (section: string, title: string, data: any) => void;
@@ -121,6 +127,10 @@ export const ModalManager = ({
     onCloseSnippets,
     builderModalOpen,
     onCloseBuilder,
+    builderTemplateUuid,
+    templatesModalOpen,
+    onCloseTemplates,
+    onOpenTemplateInBuilder,
     setModal,
     openSectionJson,
 }: ModalManagerProps) => (
@@ -147,7 +157,12 @@ export const ModalManager = ({
             <EditorSettingsModal onClose={onCloseEditorSettings} onOpenHistory={onOpenHistory} />
         )}
         {snippetsModalOpen && onCloseSnippets && <SnippetsModal onClose={onCloseSnippets} />}
-        {builderModalOpen && onCloseBuilder && <LocalBalancerModal onClose={onCloseBuilder} />}
+        {builderModalOpen && onCloseBuilder && (
+            <LocalBalancerModal onClose={onCloseBuilder} initialTemplateUuid={builderTemplateUuid} />
+        )}
+        {templatesModalOpen && onCloseTemplates && (
+            <TemplatesModal onClose={onCloseTemplates} onOpenInBuilder={onOpenTemplateInBuilder} />
+        )}
 
         {sectionModal.open && (
             <SectionJsonModal

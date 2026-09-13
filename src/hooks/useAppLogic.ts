@@ -40,6 +40,8 @@ export const useAppLogic = () => {
     const [editorSettingsOpen, setEditorSettingsOpen] = useState(false);
     const [snippetsModalOpen, setSnippetsModalOpen] = useState(false);
     const [builderModalOpen, setBuilderModalOpen] = useState(false);
+    const [builderTemplateUuid, setBuilderTemplateUuid] = useState<string | undefined>(undefined);
+    const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
     
     // UI states
     const [rawMode, setRawMode] = useState(false);
@@ -253,8 +255,18 @@ export const useAppLogic = () => {
         onOpenSnippets: () => setSnippetsModalOpen(true),
         onCloseSnippets: () => setSnippetsModalOpen(false),
         builderModalOpen, setBuilderModalOpen,
-        onOpenBuilder: () => setBuilderModalOpen(true),
-        onCloseBuilder: () => setBuilderModalOpen(false),
+        builderTemplateUuid,
+        onOpenBuilder: () => { setBuilderTemplateUuid(undefined); setBuilderModalOpen(true); },
+        onCloseBuilder: () => { setBuilderModalOpen(false); setBuilderTemplateUuid(undefined); },
+        templatesModalOpen, setTemplatesModalOpen,
+        onOpenTemplates: () => setTemplatesModalOpen(true),
+        onCloseTemplates: () => setTemplatesModalOpen(false),
+        // Handoff: the template editor sends one template into the builder.
+        onOpenTemplateInBuilder: (uuid: string) => {
+            setTemplatesModalOpen(false);
+            setBuilderTemplateUuid(uuid);
+            setBuilderModalOpen(true);
+        },
         snippetDefs,
         rawMode, setRawMode,
         isDragging,

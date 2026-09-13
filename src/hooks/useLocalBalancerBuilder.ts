@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useConfigStore } from '../store/configStore';
 import { parseRawSubscriptionText } from '../utils/link-parser';
@@ -32,6 +32,10 @@ export interface PanelHostRow {
     network: string;
     security: string;
     disabled: boolean;
+    /** Already hidden behind an entry host. */
+    isHidden: boolean;
+    /** The tag that groups it into a pool, if any. */
+    hostTag: string;
     /** null when this host can be mirrored into a client outbound. */
     blocker: string | null;
 }
@@ -77,7 +81,7 @@ const firstUserIdIn = (config: any): string => {
     return '';
 };
 
-export const useLocalBalancerBuilder = () => {
+export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
     const config = useConfigStore(state => state.config);
     const loadConfig = useConfigStore(state => state.loadConfig);
     const createProfile = useConfigStore(state => state.createProfile);
@@ -209,6 +213,10 @@ export const useLocalBalancerBuilder = () => {
                     ? String(host.securityLayer).toLowerCase()
                     : (stream.security || 'none'),
                 disabled: !!host.isDisabled,
+                // Shown in the list so "which hosts are already pooled" is
+                // visible before re-tagging anything.
+                isHidden: !!host.isHidden,
+                hostTag: host.tag || (Array.isArray(host.tags) ? host.tags[0] : '') || '',
                 blocker: clientOutboundBlocker(host, raw),
             };
         });
@@ -414,7 +422,9 @@ export const useLocalBalancerBuilder = () => {
             return;
         }
         setInject(prev => ({ ...prev, selector: { type: 'uuids', values }, selectFrom: 'ALL' }));
-        toast.success(`Injector points at ${values.length} host(s)`);
+        toast.success(`Injector points at ${values.length} host(s)`, {
+            description: '"Take hosts from" switched to All hosts, so an explicit list is not filtered by hidden/visible.',
+        });
     }, [panelSelection]);
 
     /**
@@ -481,18 +491,30 @@ export const useLocalBalancerBuilder = () => {
         }
     }, [config, applyParsed]);
 
+    const [savingTemplate, setSavingTemplate] = useState(false);
+
     const saveTemplate = useCallback(async () => {
         const name = templateName.trim();
         if (!templateTargetUuid && !name) {
             toast.error('Name the new template, or pick an existing one to update');
             return;
         }
-        await saveSubscriptionTemplate(
-            templateTargetUuid
-                ? { mode: 'update', uuid: templateTargetUuid, templateJson: template }
-                : { mode: 'create', name, templateJson: template }
-        );
-    }, [templateName, templateTargetUuid, template, saveSubscriptionTemplate]);
+        if (savingTemplate) return;   // a second click would create a second template
+        setSavingTemplate(true);
+        try {
+            const uuid = await saveSubscriptionTemplate(
+                templateTargetUuid
+                    ? { mode: 'update', uuid: templateTargetUuid, templateJson: template }
+                    : { mode: 'create', name, templateJson: template }
+            );
+            // Selecting the freshly created template is what unlocks the next
+            // step; without it the entry-host button stays disabled telling the
+            // user to save a template they just saved.
+            if (uuid) setTemplateTargetUuid(uuid);
+        } finally {
+            setSavingTemplate(false);
+        }
+    }, [templateName, templateTargetUuid, template, saveSubscriptionTemplate, savingTemplate]);
 
     // --- Publishing hosts -------------------------------------------------
     // A generated template only reaches subscribers once hosts point at it:
@@ -519,23 +541,52 @@ export const useLocalBalancerBuilder = () => {
         [poolTag]
     );
 
-    /** Mark the ticked hosts as the hidden pool behind one tag. */
+    const [confirmPool, setConfirmPool] = useState(false);
+
+    /**
+     * Mark the ticked hosts as the hidden pool behind one tag.
+     *
+     * Two-step on purpose: this hides live hosts from every subscriber and
+     * replaces whatever tag they carry, with no undo in the panel and nothing
+     * in this app's version history covering it.
+     */
     const tagSelectedHostsAsPool = useCallback(async () => {
         if (!normalisedPoolTag) {
-            toast.error('Enter a pool tag first');
+            toast.error('Enter the shared tag first');
             return;
         }
         if (panelSelection.size === 0) {
             toast.error('Select the hosts that should form the pool');
             return;
         }
+        if (!confirmPool) {
+            setConfirmPool(true);
+            return;
+        }
+        setConfirmPool(false);
         await updatePanelHosts([...panelSelection].map(uuid => ({
             uuid,
             isHidden: true,
             tag: normalisedPoolTag,
             tags: [normalisedPoolTag],
         })));
-    }, [normalisedPoolTag, panelSelection, updatePanelHosts]);
+    }, [normalisedPoolTag, panelSelection, confirmPool, updatePanelHosts]);
+
+    /**
+     * Everything still missing before an entry host can be created, in the
+     * order the form presents it. Rendered as a checklist so the user is not
+     * told about the third missing field one toast at a time.
+     */
+    const entryHostMissing = useMemo(() => {
+        const missing: string[] = [];
+        if (!normalisedPoolTag) missing.push('shared tag');
+        if (!entryRemark.trim()) missing.push('remark');
+        if (!entryAddress.trim()) missing.push('address');
+        if (!entryPort) missing.push('port');
+        if (!entryInboundUuid) missing.push('inbound');
+        if (!templateTargetUuid) missing.push('saved template');
+        return missing;
+    }, [normalisedPoolTag, entryRemark, entryAddress, entryPort, entryInboundUuid, templateTargetUuid]);
 
     /** Create the visible host that hands the template to subscribers. */
     const createEntryHost = useCallback(async () => {
@@ -574,6 +625,31 @@ export const useLocalBalancerBuilder = () => {
             xrayJsonTemplateUuid: templateTargetUuid,
         });
     }, [normalisedPoolTag, entryRemark, entryAddress, entryPort, entryInboundUuid, templateTargetUuid, panelInboundOptions, createPanelHost]);
+
+    /**
+     * Switching to template mode: the panel is the only source that matters
+     * there (nodes are injected by the panel, not carried in the template), and
+     * the template list has to be loaded before the Target select can show
+     * anything to update.
+     */
+    const selectOutputMode = useCallback((mode: 'config' | 'template') => {
+        setOutputMode(mode);
+        if (mode !== 'template') return;
+        setSource('panel');
+        if (remnawaveConnected) {
+            fetchSubscriptionTemplates().catch(() => {});
+            if (!panelCatalog.fetchedAt) fetchPanelCatalog().catch(() => {});
+        }
+    }, [remnawaveConnected, fetchSubscriptionTemplates, fetchPanelCatalog, panelCatalog.fetchedAt]);
+
+    // Opening the builder from the template editor: load that template once,
+    // then behave exactly as if the user had picked it here.
+    const autoLoaded = useRef(false);
+    useEffect(() => {
+        if (!initialTemplateUuid || autoLoaded.current) return;
+        autoLoaded.current = true;
+        loadTemplateIntoBuilder(initialTemplateUuid).catch(() => {});
+    }, [initialTemplateUuid, loadTemplateIntoBuilder]);
 
     const download = useCallback(() => {
         if (!outputJson) return;
@@ -629,6 +705,9 @@ export const useLocalBalancerBuilder = () => {
 
         // publishing hosts
         poolTag, setPoolTag, normalisedPoolTag,
+        confirmPool, setConfirmPool,
+        entryHostMissing,
+        savingTemplate,
         entryRemark, setEntryRemark,
         entryAddress, setEntryAddress,
         entryPort, setEntryPort,
@@ -637,7 +716,7 @@ export const useLocalBalancerBuilder = () => {
         tagSelectedHostsAsPool, createEntryHost,
 
         // template mode
-        outputMode, setOutputMode,
+        outputMode, setOutputMode: selectOutputMode,
         inject, setInject, setInjectSelector, setInjectPattern, useSelectedHostsAsSelector,
         template, templateName, setTemplateName,
         templateTargetUuid, setTemplateTargetUuid,

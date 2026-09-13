@@ -28,7 +28,8 @@ export const App = () => {
         editorSettingsOpen, setEditorSettingsOpen,
         onOpenEditorSettings, onCloseEditorSettings,
         snippetsModalOpen, onOpenSnippets, onCloseSnippets,
-        builderModalOpen, onOpenBuilder, onCloseBuilder,
+        builderModalOpen, onOpenBuilder, onCloseBuilder, builderTemplateUuid,
+        templatesModalOpen, onOpenTemplates, onCloseTemplates, onOpenTemplateInBuilder,
         snippetDefs,
         rawMode, setRawMode,
         isDragging,
@@ -146,6 +147,7 @@ export const App = () => {
                         onOpenEditorSettings={onOpenEditorSettings}
                         onOpenSnippets={onOpenSnippets}
                         onOpenBuilder={onOpenBuilder}
+                        onOpenTemplates={onOpenTemplates}
                         snippetDefs={snippetDefs}
                     />
                 )}
@@ -184,6 +186,10 @@ export const App = () => {
                 onCloseSnippets={onCloseSnippets}
                 builderModalOpen={builderModalOpen}
                 onCloseBuilder={onCloseBuilder}
+                builderTemplateUuid={builderTemplateUuid}
+                templatesModalOpen={templatesModalOpen}
+                onCloseTemplates={onCloseTemplates}
+                onOpenTemplateInBuilder={onOpenTemplateInBuilder}
                 setModal={setModal}
                 openSectionJson={openSectionJson}
             />

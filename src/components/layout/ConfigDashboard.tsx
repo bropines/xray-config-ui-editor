@@ -98,7 +98,7 @@ const SortableOutboundItem = ({
           : "hover:border-slate-600"
       }`}
     >
-      <div className="flex items-center gap-2.5 shrink-0 py-2 px-3">
+      <div className="flex items-center gap-2.5 shrink-0 py-2 px-2 sm:px-3">
         <div
           {...listeners}
           {...attributes}
@@ -126,7 +126,9 @@ const SortableOutboundItem = ({
           </div>
         )}
 
-        <div className="text-xs font-black text-slate-600/60 italic tabular-nums w-5 text-center select-none">
+        {/* Decorative index: on a phone those 20px are the difference
+            between a readable tag and six truncated characters. */}
+        <div className="hidden sm:block text-xs font-black text-slate-600/60 italic tabular-nums w-5 text-center select-none">
           {index}
         </div>
       </div>
@@ -237,6 +239,7 @@ interface ConfigDashboardProps {
   onOpenEditorSettings?: () => void;
   onOpenSnippets?: () => void;
   onOpenBuilder?: () => void;
+  onOpenTemplates?: () => void;
   /** Panel snippets + local templates, for resolving references on the card. */
   snippetDefs?: SnippetDefinition[];
 }
@@ -276,6 +279,7 @@ export const ConfigDashboard = ({
   onOpenEditorSettings,
   onOpenSnippets,
   onOpenBuilder,
+  onOpenTemplates,
   snippetDefs = [],
 }: ConfigDashboardProps) => {
   const {
@@ -350,10 +354,10 @@ export const ConfigDashboard = ({
           <div className="hidden md:block w-px h-6 bg-slate-800" />
 
           <div
-            className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-wrap gap-2 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
+            className={`${modulesVisible ? "grid" : "hidden md:flex"} grid-cols-2 md:flex md:flex-wrap gap-2 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
           >
             <Button
-              className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2"
+              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
               variant="secondary"
               onClick={onOpenSettings}
               icon="Gear"
@@ -361,7 +365,7 @@ export const ConfigDashboard = ({
               Core Settings
             </Button>
             <Button
-              className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2"
+              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
               variant="secondary"
               onClick={onOpenReverse}
               icon="ArrowsLeftRight"
@@ -369,7 +373,7 @@ export const ConfigDashboard = ({
               Reverse Proxy
             </Button>
             <Button
-              className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2"
+              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
               variant="secondary"
               onClick={onOpenTopology}
               icon="GitMerge"
@@ -377,7 +381,7 @@ export const ConfigDashboard = ({
               Topology
             </Button>
             <Button
-              className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2"
+              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
               variant="secondary"
               onClick={onOpenGeoViewer}
               icon="GlobeHemisphereWest"
@@ -385,7 +389,7 @@ export const ConfigDashboard = ({
               Geo Viewer
             </Button>
             <Button
-              className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
               variant="secondary"
               onClick={onOpenConfigInspector}
               icon="FileSearch"
@@ -394,7 +398,7 @@ export const ConfigDashboard = ({
             </Button>
             {onOpenSnippets && (
               <Button
-                className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/10"
+                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/10"
                 variant="secondary"
                 onClick={onOpenSnippets}
                 icon="BracketsCurly"
@@ -404,13 +408,24 @@ export const ConfigDashboard = ({
             )}
             {onOpenBuilder && (
               <Button
-                className="flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
                 variant="secondary"
                 onClick={onOpenBuilder}
                 icon="Scales"
                 title="Build a client config with a local balancer from a set of nodes"
               >
                 Local Balancer
+              </Button>
+            )}
+            {onOpenTemplates && (
+              <Button
+                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-sky-500/30 text-sky-300 hover:bg-sky-500/10"
+                variant="secondary"
+                onClick={onOpenTemplates}
+                icon="FileText"
+                title="Edit the subscription templates stored in your Remnawave panel"
+              >
+                Templates
               </Button>
             )}
           </div>

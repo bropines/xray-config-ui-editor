@@ -25,7 +25,7 @@ const NodeRow = ({ node, onToggle, onRename, onRemove }: any) => (
     }`}>
         <button
             onClick={onToggle}
-            className={`mt-0.5 shrink-0 ${node.include ? 'text-emerald-400' : 'text-slate-600'}`}
+            className={`mt-0.5 shrink-0 p-2 -m-1 ${node.include ? 'text-emerald-400' : 'text-slate-600'}`}
             title={node.include ? 'Exclude from the build' : 'Include in the build'}
         >
             <Icon name={node.include ? 'CheckSquare' : 'Square'} weight={node.include ? 'fill' : 'regular'} className="text-base" />
@@ -41,8 +41,8 @@ const NodeRow = ({ node, onToggle, onRename, onRemove }: any) => (
                 {node.protocol}{node.address ? ` · ${node.address}` : ''}
             </div>
         </div>
-        <button onClick={onRemove} className="text-slate-600 hover:text-rose-400 p-1 shrink-0" title="Remove">
-            <Icon name="Trash" className="text-sm" />
+        <button onClick={onRemove} className="text-slate-600 hover:text-rose-400 p-2 shrink-0" title="Remove">
+            <Icon name="Trash" className="text-base" />
         </button>
     </div>
 );
@@ -56,20 +56,29 @@ const NodeRow = ({ node, onToggle, onRename, onRemove }: any) => (
  * The parts that must agree (tag prefix, selector, probe selector, catch-all
  * rule, bypass list in both routing and DNS) are derived, not typed.
  */
-export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
-    const b = useLocalBalancerBuilder();
+export const LocalBalancerModal = ({ onClose, initialTemplateUuid }: {
+    onClose: () => void;
+    /** Opened from the template editor: load this template straight away. */
+    initialTemplateUuid?: string;
+}) => {
+    const b = useLocalBalancerBuilder(initialTemplateUuid);
     const { options } = b;
 
     const multi = b.results.length > 1;
     const isTemplate = b.outputMode === 'template';
     const selectorType = b.inject.selector.type;
 
+    // On a phone the two columns cannot both have height: the right one would
+    // collapse to nothing and take every option and the preview with it. Same
+    // approach the Routing Manager uses — show one pane at a time.
+    const [mobilePane, setMobilePane] = React.useState<'nodes' | 'output'>('nodes');
+
     return (
         <Modal
             title="Local Balancer Builder"
             onClose={onClose}
-            onSave={isTemplate ? b.saveTemplate : (b.preview ? b.loadIntoEditor : undefined)}
-            saveText={isTemplate ? 'Save to panel' : (multi ? 'Load shown config' : 'Load into editor')}
+            onSave={isTemplate ? (b.savingTemplate ? () => {} : b.saveTemplate) : (b.preview ? b.loadIntoEditor : undefined)}
+            saveText={isTemplate ? (b.savingTemplate ? 'Saving…' : 'Save to panel') : (multi ? 'Load shown config' : 'Load into editor')}
             saveIcon={isTemplate ? 'CloudArrowUp' : 'ArrowSquareIn'}
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             extraButtons={
@@ -86,9 +95,23 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                 </>
             }
         >
+            <div className="flex md:hidden bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 mb-3 shrink-0">
+                {([['nodes', 'Nodes'], ['output', isTemplate ? 'Template' : 'Config']] as const).map(([key, label]) => (
+                    <button
+                        key={key}
+                        onClick={() => setMobilePane(key)}
+                        className={`flex-1 px-3 py-2 text-[11px] font-bold rounded-md transition-all ${
+                            mobilePane === key ? 'bg-slate-700 text-white' : 'text-slate-400'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
             <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-3">
                 {/* ─── Sources & nodes ─────────────────────────────── */}
-                <div className="w-full md:w-96 shrink-0 flex flex-col min-h-0 gap-3">
+                <div className={`w-full md:w-96 md:shrink-0 flex-col min-h-0 gap-3 ${mobilePane === 'nodes' ? 'flex' : 'hidden md:flex'}`}>
                     <Section title="Nodes from">
                         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
                             {([['paste', 'Links / JSON'], ['panel', 'Remnawave panel']] as const).map(([key, label]) => (
@@ -191,9 +214,9 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                         </div>
                                         <div className="flex items-center justify-between text-[10px] text-slate-500">
                                             <span>{b.filteredPanelRows.length} host(s) · {b.panelSelection.size} selected</span>
-                                            <span className="flex gap-2">
-                                                <button onClick={b.selectAllPanel} className="hover:text-emerald-400">select usable</button>
-                                                <button onClick={b.clearPanelSelection} className="hover:text-rose-400">clear</button>
+                                            <span className="flex gap-3">
+                                                <button onClick={b.selectAllPanel} className="px-2 py-1.5 -my-1 hover:text-emerald-400">select usable</button>
+                                                <button onClick={b.clearPanelSelection} className="px-2 py-1.5 -my-1 hover:text-rose-400">clear</button>
                                             </span>
                                         </div>
                                     </>
@@ -206,7 +229,11 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         <div className="flex-1 overflow-y-auto custom-scroll min-h-0 pr-1">
                             {b.panelRows.length === 0 ? (
                                 <div className="text-center text-slate-600 italic text-[11px] py-8 px-3">
-                                    {b.panelError || 'Load the panel hosts to pick nodes from them.'}
+                                    {!b.panelConnected
+                                        ? 'Connect to Remnawave in the header, then press Load hosts.'
+                                        : b.panelError
+                                            ? `${b.panelError} — press Load hosts to retry.`
+                                            : 'Load the panel hosts to pick nodes from them.'}
                                 </div>
                             ) : (
                                 b.filteredPanelRows.map(row => {
@@ -233,9 +260,14 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                                 }`}
                                             />
                                             <span className="min-w-0 flex-1">
-                                                <span className="flex items-center gap-1.5">
+                                                <span className="flex items-center gap-1.5 flex-wrap">
                                                     <span className="font-bold text-slate-200 truncate">{row.remark}</span>
                                                     {row.disabled && <Badge variant="warning" size="sm">off</Badge>}
+                                                    {row.isHidden && (
+                                                        <Badge variant="info" size="sm">
+                                                            hidden{row.hostTag ? ` · ${row.hostTag}` : ''}
+                                                        </Badge>
+                                                    )}
                                                 </span>
                                                 <span className="block text-[10px] text-slate-500 font-mono truncate">
                                                     {row.address}:{row.port} · {row.protocol}/{row.network || '?'}/{row.security}
@@ -251,6 +283,14 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     )}
 
+                    {isTemplate && (
+                        <div className="text-[10px] text-slate-400 bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 shrink-0">
+                            A template carries no nodes — the panel injects hosts when it renders it.
+                            Your selection here is used for the pool and the entry host below, not for
+                            the template body.
+                        </div>
+                    )}
+
                     <div className={`${b.source === 'panel' ? 'max-h-44 shrink-0' : 'flex-1'} flex flex-col min-h-0`}>
                         <div className="flex items-center justify-between px-1 shrink-0 mb-1">
                             <span className="text-[11px] text-slate-400">
@@ -258,13 +298,14 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                 {b.results.length > 0 && <> · <b className="text-slate-200">{b.results.length}</b> config(s)</>}
                             </span>
                             {b.nodes.length > 0 && (
-                                <button onClick={b.clearNodes} className="text-[10px] text-slate-500 hover:text-rose-400">clear</button>
+                                <button onClick={b.clearNodes} className="text-[10px] text-slate-500 hover:text-rose-400 px-2 py-1.5 -my-1">clear</button>
                             )}
                         </div>
                         <div className="flex-1 overflow-y-auto custom-scroll min-h-0 pr-1">
                             {b.nodes.length === 0 ? (
                                 <div className="text-center text-slate-600 italic text-[11px] py-6 px-3">
-                                    No nodes yet.
+                                    No nodes yet — paste links above and press Parse, or pull them in
+                                    with From config.
                                 </div>
                             ) : (
                                 b.nodes.map(node => (
@@ -284,6 +325,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         <Switch
                             checked={b.splitByLocation}
                             onChange={b.setSplitByLocation}
+                            disabled={isTemplate}
                             label="One config per location"
                         />
                         <p className="text-[10px] text-slate-500 mt-1 ml-[52px]">
@@ -294,7 +336,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
 
                 {/* ─── Options + preview ────────────────────────────── */}
-                <div className="flex-1 min-w-0 flex flex-col min-h-0 gap-3">
+                <div className={`flex-1 min-w-0 flex-col min-h-0 gap-3 overflow-y-auto custom-scroll md:overflow-visible ${mobilePane === 'output' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
                         {([['config', 'Client config'], ['template', 'Panel template']] as const).map(([key, label]) => (
                             <button
@@ -342,7 +384,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 shrink-0 overflow-y-auto custom-scroll max-h-[38vh] pr-1">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:shrink-0 md:overflow-y-auto custom-scroll md:max-h-[38vh] pr-1">
                         <Section title="Balancer">
                             <div className="grid grid-cols-2 gap-2">
                                 <Input
@@ -380,15 +422,21 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                             />
                             <Select
                                 label="Fallback"
-                                value={options.fallbackTag === 'none' || options.fallbackTag === 'first' ? options.fallbackTag : 'first'}
+                                value={options.fallbackTag}
                                 onChange={v => b.setOption({ fallbackTag: v as any })}
+                                hint="Where traffic goes when the balancer has nothing healthy to pick"
                                 options={[
-                                    { value: 'none', label: 'None', description: 'Fail when no node is healthy' },
+                                    { value: 'none', label: 'None', description: 'Fail the connection' },
                                     { value: 'first', label: 'First node', description: 'Degrade to node #1 instead of failing' },
+                                    // A loaded config can name any outbound here; showing it as
+                                    // "First node" would misreport what the JSON actually says.
+                                    ...(options.fallbackTag !== 'none' && options.fallbackTag !== 'first'
+                                        ? [{ value: options.fallbackTag, label: `Custom: ${options.fallbackTag}` }]
+                                        : []),
                                 ]}
                             />
                             {options.strategy === 'leastLoad' && (
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                         <span className="label-xs">Max RTT</span>
                                         <DurationInput
@@ -415,14 +463,14 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                 value={options.probe}
                                 onChange={v => b.setOption({ probe: v as any })}
                                 options={[
-                                    { value: 'burst', label: 'burstObservatory', description: 'Concurrent pings, sampled' },
-                                    { value: 'observatory', label: 'observatory', description: 'Classic sequential probe' },
-                                    { value: 'none', label: 'None', description: 'Balancer without measurements' },
+                                    { value: 'burst', label: 'burstObservatory (concurrent pings)', description: 'Measures latency to the probe URL from every node at once' },
+                                    { value: 'observatory', label: 'observatory (sequential)', description: 'Classic probe, one node after another' },
+                                    { value: 'none', label: 'None', description: 'Balancer picks without measuring' },
                                 ]}
                             />
                             {options.probe !== 'none' && (
                                 <>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div>
                                             <span className="label-xs">Interval</span>
                                             <DurationInput
@@ -442,7 +490,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                     </div>
                                     {options.probe === 'burst' && (
                                         <div>
-                                            <span className="label-xs">Sampling</span>
+                                            <span className="label-xs">Samples kept</span>
                                             <NumberInput
                                                 value={options.probeSampling}
                                                 onChange={v => b.setOption({ probeSampling: v ?? 1 })}
@@ -460,7 +508,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         </Section>
 
                         <Section title="Local listeners">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
                                     <span className="label-xs">SOCKS port</span>
                                     <NumberInput
@@ -496,7 +544,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         </Section>
 
                         {isTemplate && (
-                            <Section title="Host injection">
+                            <Section title="Which hosts the panel injects">
                                 <p className="text-[10px] text-slate-500 -mt-1">
                                     The template carries no nodes. The panel injects the hosts this
                                     selector picks, tagging them <span className="font-mono text-slate-400">{b.options.proxyTagPrefix}…</span> so
@@ -507,7 +555,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                     value={selectorType}
                                     onChange={v => b.setInjectSelector(v as any)}
                                     options={[
-                                        { value: 'sameTagAsRecipient', label: 'Same tag as the shown host', description: 'What a per-location balancer entry usually uses' },
+                                        { value: 'sameTagAsRecipient', label: 'Same tag as the entry host', description: 'The usual choice: matches the shared tag set below' },
                                         { value: 'tagRegex', label: 'Host tag matches a pattern' },
                                         { value: 'remarkRegex', label: 'Host remark matches a pattern' },
                                         { value: 'uuids', label: 'An explicit list of hosts' },
@@ -536,7 +584,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                     value={b.inject.selectFrom}
                                     onChange={v => b.setInject({ ...b.inject, selectFrom: v as any })}
                                     options={[
-                                        { value: 'HIDDEN', label: 'Hidden hosts', description: 'The nodes behind a visible balancer entry' },
+                                        { value: 'HIDDEN', label: 'The hidden hosts (the pool)', description: 'The nodes sitting behind a visible entry host' },
                                         { value: 'NOT_HIDDEN', label: 'Visible hosts' },
                                         { value: 'ALL', label: 'All hosts' },
                                     ]}
@@ -544,13 +592,13 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                 <Switch
                                     checked={b.inject.addVirtualHostAsOutbound}
                                     onChange={v => b.setInject({ ...b.inject, addVirtualHostAsOutbound: v })}
-                                    label="Also balance the shown host itself"
+                                    label="Also send traffic through the entry host's own address"
                                 />
                             </Section>
                         )}
 
                         {isTemplate && (
-                            <Section title="Save to the panel">
+                            <Section title="Step 1 · Save the template to the panel">
                                 <Select
                                     label="Target"
                                     value={b.templateTargetUuid}
@@ -592,53 +640,62 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                     disabled={!b.panelConnected}
                                     onClick={b.loadPanelTemplates}
                                 >
-                                    Load templates from the panel
+                                    Refresh templates
                                 </Button>
                                 <p className="text-[10px] text-slate-500">
-                                    After saving, point a host at this template (its Xray JSON template
-                                    field) — subscribers of that host then get the balanced config.
+                                    {b.templateTargetUuid
+                                        ? 'Saved. Step 2 below points hosts at it.'
+                                        : 'Not saved yet — step 2 needs a saved template to point hosts at.'}
                                 </p>
                             </Section>
                         )}
 
                         {isTemplate && (
-                            <Section title="Publish to subscribers">
+                            <Section title="Step 2 · Publish it to subscribers">
                                 <p className="text-[10px] text-slate-500 -mt-1">
                                     The nodes become hidden hosts sharing one tag; a visible host with
                                     that same tag carries the template. Subscribers see the one entry
                                     and their client gets the balanced config.
                                 </p>
                                 <Input
-                                    label="Pool tag"
+                                    label="Shared tag for this location"
                                     value={b.poolTag}
                                     onChange={(e: any) => b.setPoolTag(e.target.value)}
                                     placeholder="NLMAIN"
                                     hint={b.normalisedPoolTag && b.normalisedPoolTag !== b.poolTag.trim()
                                         ? `Will be sent as ${b.normalisedPoolTag}`
-                                        : 'Uppercase letters, digits, _ and :'}
+                                        : 'The nodes and the entry host all carry it — that is how the panel knows which hosts to inject'}
                                 />
                                 <Button
-                                    variant="secondary"
+                                    variant={b.confirmPool ? 'warning' : 'secondary'}
                                     size="sm"
-                                    icon="EyeSlash"
+                                    icon={b.confirmPool ? 'Warning' : 'EyeSlash'}
                                     className="text-[11px]"
                                     onClick={b.tagSelectedHostsAsPool}
                                     disabled={b.panelSelection.size === 0 || !b.normalisedPoolTag}
-                                    title="Mark the hosts ticked in the panel list as hidden and give them this tag"
                                 >
-                                    Mark {b.panelSelection.size || ''} selected host(s) as the pool
+                                    {b.confirmPool
+                                        ? `Confirm: hide and re-tag ${b.panelSelection.size} host(s)`
+                                        : `Mark ${b.panelSelection.size || ''} selected host(s) as the pool`}
                                 </Button>
+                                {b.confirmPool && (
+                                    <p className="text-[10px] text-amber-300/80">
+                                        They disappear from every subscriber's list and their current tag is
+                                        replaced by {b.normalisedPoolTag}. Do this once the entry host exists,
+                                        or this location vanishes for subscribers in between.
+                                    </p>
+                                )}
 
                                 <div className="border-t border-slate-800 pt-3 flex flex-col gap-3">
-                                    <span className="label-xs">Entry host</span>
+                                    <span className="label-xs">Entry host — the one subscribers see</span>
                                     <Input
                                         label="Remark"
                                         value={b.entryRemark}
                                         onChange={(e: any) => b.setEntryRemark(e.target.value)}
                                         placeholder="🇳🇱 ⚡ Нидерланды"
                                     />
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div className="col-span-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        <div className="sm:col-span-2">
                                             <Input
                                                 label="Address"
                                                 value={b.entryAddress}
@@ -661,20 +718,36 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                         value={b.entryInboundUuid}
                                         onChange={v => b.setEntryInboundUuid(v)}
                                         options={[
-                                            { value: '', label: b.panelInboundOptions.length ? 'Pick an inbound…' : 'Load the panel hosts first' },
+                                            { value: '', label: b.panelInboundOptions.length ? 'Pick an inbound…' : 'Load panel hosts to choose one' },
                                             ...b.panelInboundOptions.map((i: any) => ({ value: i.uuid, label: i.label })),
                                         ]}
                                     />
+                                    {b.panelInboundOptions.length === 0 && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            icon="CloudArrowDown"
+                                            className="text-[11px]"
+                                            loading={b.panelLoading}
+                                            disabled={!b.panelConnected}
+                                            onClick={b.loadPanelHosts}
+                                        >
+                                            Load panel hosts
+                                        </Button>
+                                    )}
+                                    {b.entryHostMissing.length > 0 && (
+                                        <p className="text-[10px] text-amber-300/80">
+                                            Still needed: {b.entryHostMissing.join(', ')}
+                                        </p>
+                                    )}
                                     <Button
                                         variant="primary"
                                         size="sm"
                                         icon="Plus"
                                         className="text-[11px]"
                                         onClick={b.createEntryHost}
-                                        disabled={!b.templateTargetUuid}
-                                        title={b.templateTargetUuid
-                                            ? 'Create the visible host and attach this template to it'
-                                            : 'Save the template first — the host needs something to point at'}
+                                        disabled={b.entryHostMissing.length > 0}
+                                        title="Create the visible host and attach this template to it"
                                     >
                                         Create entry host with this template
                                     </Button>
@@ -726,7 +799,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                                         <button
                                             key={i}
                                             onClick={() => b.setPreviewIndex(i)}
-                                            className={`px-2 py-1 text-[10px] rounded-md border whitespace-nowrap transition-all ${
+                                            className={`px-2 py-1.5 md:py-1 text-[10px] rounded-md border whitespace-nowrap transition-all ${
                                                 i === b.previewIndex
                                                     ? 'bg-slate-700 border-slate-600 text-white'
                                                     : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300'
@@ -745,7 +818,7 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                             </div>
                         )}
 
-                        <div className="flex-1 min-h-[160px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
+                        <div className="flex-1 min-h-[220px] md:min-h-[160px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
                             {isTemplate ? (
                                 <div className="absolute inset-0">
                                     <JsonEditor

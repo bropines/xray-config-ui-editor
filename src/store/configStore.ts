@@ -191,12 +191,19 @@ interface ConfigState {
     panelTemplates: PanelTemplatesState;
     fetchSubscriptionTemplates: () => Promise<void>;
     loadSubscriptionTemplate: (uuid: string) => Promise<any | null>;
+    createPanelTemplate: (name: string, templateType: string) => Promise<string | null>;
+    patchPanelTemplate: (
+        uuid: string,
+        patch: { templateJson?: unknown; encodedTemplateYaml?: string; name?: string }
+    ) => Promise<boolean>;
+    deletePanelTemplate: (uuid: string) => Promise<boolean>;
+    /** Resolves to the template's uuid — the caller needs it for the next step. */
     saveSubscriptionTemplate: (input: {
         mode: 'create' | 'update';
         uuid?: string;
         name?: string;
         templateJson: any;
-    }) => Promise<boolean>;
+    }) => Promise<string | null>;
 
     // --- Snippets & templates ---
     snippetLibrary: SnippetLibraryState;
@@ -421,11 +428,70 @@ export const useConfigStore = create(
                 }
             },
 
-            saveSubscriptionTemplate: async ({ mode, uuid, name, templateJson }) => {
+            createPanelTemplate: async (name, templateType) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return null;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    const created = await client.createSubscriptionTemplate(name.trim(), templateType);
+                    await get().fetchSubscriptionTemplates();
+                    toast.success(`Template "${name}" created`);
+                    return created?.uuid || null;
+                } catch (e: any) {
+                    toast.error("Failed to create the template", { description: e?.message || 'Unknown error' });
+                    return null;
+                }
+            },
+
+            patchPanelTemplate: async (uuid, patch) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
                     toast.error("Connect to Remnawave first");
                     return false;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    await client.updateSubscriptionTemplate(uuid, patch);
+                    await get().fetchSubscriptionTemplates();
+                    toast.success("Template saved to the panel", {
+                        description: 'Every host pointing at it serves the new body.',
+                    });
+                    return true;
+                } catch (e: any) {
+                    toast.error("Failed to save the template", { description: e?.message || 'Unknown error' });
+                    return false;
+                }
+            },
+
+            deletePanelTemplate: async (uuid) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return false;
+                }
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    await client.deleteSubscriptionTemplate(uuid);
+                    await get().fetchSubscriptionTemplates();
+                    toast.info("Template deleted");
+                    return true;
+                } catch (e: any) {
+                    toast.error("Failed to delete the template", { description: e?.message || 'Unknown error' });
+                    return false;
+                }
+            },
+
+            saveSubscriptionTemplate: async ({ mode, uuid, name, templateJson }) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return null;
                 }
 
                 const client = new RemnawaveClient(url);
@@ -435,7 +501,7 @@ export const useConfigStore = create(
                     // Creating a template and filling it in are two calls: the
                     // panel's create endpoint takes only a name and a type, so
                     // the body follows in a PATCH.
-                    let targetUuid = uuid;
+                    let targetUuid: string | undefined = uuid;
                     if (mode === 'create') {
                         const created = await client.createSubscriptionTemplate((name || '').trim(), 'XRAY_JSON');
                         targetUuid = created?.uuid;
@@ -443,17 +509,30 @@ export const useConfigStore = create(
                     }
                     if (!targetUuid) throw new Error('No template selected');
 
-                    await client.updateSubscriptionTemplate(targetUuid, templateJson);
+                    await client.updateSubscriptionTemplate(targetUuid, { templateJson });
                     await get().fetchSubscriptionTemplates();
+
+                    // Updating is the case where "who else sees this" matters:
+                    // every host already pointing at the template serves the
+                    // new body, which is easy to forget when the template is
+                    // shared between locations.
+                    const usedBy = get().panelCatalog.hosts.filter(
+                        (h: any) => h?.xrayJsonTemplateUuid === targetUuid
+                    ).length;
+
                     toast.success(mode === 'create'
                         ? `Template "${name}" created in the panel`
                         : 'Template updated in the panel', {
-                        description: 'Point a host at it (Xray JSON template) to hand it to subscribers.',
+                        description: mode === 'create'
+                            ? 'Next: create an entry host that points at it.'
+                            : usedBy > 0
+                                ? `${usedBy} host(s) already point at it — their subscribers get this on the next refresh.`
+                                : 'No host points at it yet — create an entry host to hand it to subscribers.',
                     });
-                    return true;
+                    return targetUuid;
                 } catch (e: any) {
                     toast.error("Failed to save the template", { description: e?.message || 'Unknown error' });
-                    return false;
+                    return null;
                 }
             },
 

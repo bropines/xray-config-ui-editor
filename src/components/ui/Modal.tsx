@@ -62,7 +62,10 @@ export const Modal = ({
         {/* Footer */}
         {!hideFooter && (
           <div className="p-4 md:p-5 border-t border-slate-800 flex flex-col-reverse md:flex-row justify-between items-center bg-slate-900 md:rounded-b-2xl shrink-0 gap-3 md:gap-0 z-20">
-            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10">
+            {/* Buttons must keep their intrinsic width for overflow-x-auto to
+                mean anything — without shrink-0 they compress and wrap their
+                labels instead, doubling the footer height on a phone. */}
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10 [&>*]:shrink-0 [&_button]:whitespace-nowrap">
                 {extraButtons}
             </div>
             <div className="flex gap-3 w-full md:w-auto relative z-10">

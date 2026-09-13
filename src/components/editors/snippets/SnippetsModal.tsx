@@ -72,11 +72,14 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
         >
             <div className="flex flex-col md:flex-row flex-1 min-h-0 border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl">
                 {/* ─── Library list ─────────────────────────────────── */}
-                <div className="w-full md:w-72 bg-slate-950 border-r border-slate-800 flex flex-col min-h-0 shrink-0">
+                {/* One pane at a time on a phone: with both mounted the editor
+                    column collapses to zero height and its buttons — including
+                    every save action — become unreachable. */}
+                <div className={`w-full md:w-72 bg-slate-950 border-r border-slate-800 flex-col min-h-0 md:shrink-0 ${draft ? 'hidden md:flex' : 'flex'}`}>
                     <div className="p-3 border-b border-slate-800 space-y-2.5 bg-slate-900/50 shrink-0">
                         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
                             {tabButton('panel', 'Panel', lib.panelEntries.length)}
-                            {tabButton('local', 'Local', lib.localEntries.length)}
+                            {tabButton('local', 'This browser', lib.localEntries.length)}
                         </div>
 
                         <div className="relative">
@@ -118,8 +121,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="flex-1 overflow-y-auto custom-scroll p-2">
                         {lib.tab === 'panel' && !lib.connected && (
                             <div className="text-[11px] text-slate-500 bg-slate-900 border border-slate-800 rounded-lg p-3 mb-2">
-                                Not connected to Remnawave. Panel snippets shown here are the last
-                                cached copy.
+                                Not connected to Remnawave. These are the last cached copies, and
+                                saving to the panel is disabled until you connect.
                             </div>
                         )}
                         {lib.tab === 'panel' && lib.supported === false && (
@@ -140,15 +143,15 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                         {lib.filteredEntries.length === 0 && (
                             <div className="text-center text-slate-600 py-8 italic text-[11px] px-3">
                                 {lib.tab === 'panel'
-                                    ? 'No panel snippets loaded.'
-                                    : 'No local templates yet. Create one to reuse blocks across configs.'}
+                                    ? 'No panel snippets loaded — press Refresh, or New to create the first one.'
+                                    : 'No templates in this browser yet. Create one to reuse blocks across configs.'}
                             </div>
                         )}
 
                         {lib.missingNames.length > 0 && (
                             <div className="mt-3 border-t border-slate-800 pt-3">
                                 <div className="text-[10px] uppercase tracking-widest text-amber-400/80 font-bold px-1 mb-1.5">
-                                    Referenced but not loaded
+                                    Referenced by this config, body not found
                                 </div>
                                 {lib.missingNames.map(name => (
                                     <div
@@ -165,7 +168,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
 
                 {/* ─── Editor ───────────────────────────────────────── */}
-                <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-900/50">
+                <div className={`flex-1 flex-col min-h-0 min-w-0 bg-slate-900/50 ${draft ? 'flex' : 'hidden md:flex'}`}>
                     {!draft ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-600 p-6 text-center">
                             <Icon name="BracketsCurly" className="text-6xl mb-4 opacity-10" />
@@ -178,6 +181,15 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     ) : (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scroll p-4 md:p-5 flex flex-col gap-4">
+                            <Button
+                                variant="secondary"
+                                icon="ArrowLeft"
+                                className="md:hidden w-full"
+                                onClick={() => lib.startNew(lib.tab)}
+                                title="Back to the library list"
+                            >
+                                Back to the list
+                            </Button>
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge
                                     variant={draft.source === 'panel' ? 'primary' : 'info'}
@@ -221,7 +233,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                     label="Body — a JSON array of rules or outbounds"
                                     value={draft.body}
                                     onChange={body => lib.updateDraft({ body })}
-                                    heightClass="h-[34vh]"
+                                    onSyntaxError={lib.setBodySyntaxError}
+                                    heightClass="h-[240px] md:h-[34vh]"
                                 />
                                 {lib.draftBodyError && (
                                     <span className="text-[10px] text-rose-400 mt-1.5">{lib.draftBodyError}</span>
@@ -231,12 +244,16 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                             {/* Save / library actions */}
                             <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-800 pt-3">
                                 <Button
-                                    variant="success"
-                                    icon="FloppyDisk"
-                                    disabled={!lib.canSave}
+                                    variant={lib.confirmEmpty ? 'warning' : 'success'}
+                                    icon={lib.confirmEmpty ? 'Warning' : 'FloppyDisk'}
+                                    disabled={!lib.canSave || (draft.source === 'panel' && !lib.connected)}
                                     onClick={lib.saveDraft}
+                                    title={lib.saveBlockedReason
+                                        || (draft.source === 'panel' && !lib.connected ? 'Connect to Remnawave to write to the panel' : undefined)}
                                 >
-                                    {draft.source === 'panel' ? 'Save to panel' : 'Save template'}
+                                    {lib.confirmEmpty
+                                        ? `Confirm: empty "${draft.name}"`
+                                        : draft.source === 'panel' ? 'Save to panel' : 'Save template'}
                                 </Button>
 
                                 {draft.source === 'panel' ? (
@@ -245,13 +262,13 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                             Copy to local
                                         </Button>
                                         <Button
-                                            variant="secondary"
-                                            icon="Broadcast"
+                                            variant={lib.confirmSync ? 'warning' : 'secondary'}
+                                            icon={lib.confirmSync ? 'Warning' : 'Broadcast'}
                                             onClick={lib.syncDraft}
                                             disabled={!draft.originalName || !lib.connected}
                                             title="Re-apply this snippet to every profile that references it (restarts affected nodes)"
                                         >
-                                            Sync to profiles
+                                            {lib.confirmSync ? 'Confirm: re-apply and restart nodes' : 'Sync to profiles'}
                                         </Button>
                                     </>
                                 ) : (
@@ -265,8 +282,13 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                         >
                                             Push to panel
                                         </Button>
-                                        <Button variant="secondary" icon="ArrowsSplit" onClick={lib.useCurrentRules}>
-                                            Capture current rules
+                                        <Button
+                                            variant="secondary"
+                                            icon="ArrowsSplit"
+                                            onClick={lib.useCurrentRules}
+                                            title="Overwrites the body above with the plain rules from the open config"
+                                        >
+                                            Replace body with config rules
                                         </Button>
                                     </>
                                 )}
@@ -293,7 +315,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                             <button
                                                 key={t}
                                                 onClick={() => lib.setTarget(t)}
-                                                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                                                className={`px-3 py-2 md:py-1 text-[10px] font-bold rounded-md transition-all ${
                                                     lib.target === t ? 'bg-slate-700 text-white' : 'text-slate-500'
                                                 }`}
                                             >
@@ -307,8 +329,10 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                         variant="primary"
                                         icon="Link"
                                         onClick={lib.insertRef}
-                                        disabled={!draft.name.trim() || !!lib.draftNameError}
-                                        title="Add a { snippet: NAME } reference the panel will expand"
+                                        disabled={!draft.name.trim() || !!lib.draftNameError || !draft.originalName}
+                                        title={draft.originalName
+                                            ? 'Add a { snippet: NAME } reference the panel will expand'
+                                            : 'Save the snippet first — a reference to an unsaved name expands to nothing'}
                                     >
                                         Insert reference
                                     </Button>
@@ -317,14 +341,22 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                         icon="LinkBreak"
                                         onClick={lib.insertCopy}
                                         disabled={!draft.originalName || draft.body.length === 0}
-                                        title="Paste the body in as ordinary items — no longer linked to the snippet"
+                                        title={draft.originalName
+                                            ? 'Paste the body in as ordinary items — no longer linked to the snippet'
+                                            : 'Save this draft first — the copy is taken from the saved body'}
                                     >
-                                        Insert a copy
+                                        Insert a detached copy
                                     </Button>
                                 </div>
+                                {lib.draftKind && ['rules', 'outbounds', 'balancers'].includes(lib.draftKind) && lib.draftKind !== lib.target && (
+                                    <p className="text-[10px] text-amber-300/80">
+                                        This body looks like {lib.draftKind} — inserting it into{' '}
+                                        {lib.target} will not do what you expect.
+                                    </p>
+                                )}
                                 <p className="text-[10px] text-slate-500">
-                                    A reference stays managed by the panel. A copy is a one-off: later
-                                    changes to the snippet will not reach this config.
+                                    A reference stays managed by the panel. A detached copy is a one-off:
+                                    later changes to the snippet will not reach this config.
                                 </p>
                             </div>
                         </div>

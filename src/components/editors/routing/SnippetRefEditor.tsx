@@ -133,7 +133,7 @@ export const SnippetRefEditor = ({
                         label="Snippet body (read-only)"
                         value={body}
                         readOnly
-                        heightClass="h-[32vh]"
+                        heightClass="h-[240px] md:h-[32vh]"
                     />
                     <p className="text-[10px] text-slate-500 mt-1.5">
                         Edit this body in the snippet library — it is shared by every profile that
@@ -150,9 +150,12 @@ export const SnippetRefEditor = ({
                 )}
                 {onInlineCopy && body && (
                     confirmInline ? (
-                        <Button variant="warning" icon="Warning" onClick={() => { onInlineCopy(name); setConfirmInline(false); }}>
-                            Confirm: inline {body.length} item(s) and drop the link
-                        </Button>
+                        <>
+                            <Button variant="warning" icon="Warning" onClick={() => { onInlineCopy(name); setConfirmInline(false); }}>
+                                Confirm: inline {body.length} item(s) and drop the link
+                            </Button>
+                            <Button variant="ghost" onClick={() => setConfirmInline(false)}>Cancel</Button>
+                        </>
                     ) : (
                         <Button variant="secondary" icon="LinkBreak" onClick={() => setConfirmInline(true)}>
                             Inline a copy
