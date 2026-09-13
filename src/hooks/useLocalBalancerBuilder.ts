@@ -81,7 +81,7 @@ const firstUserIdIn = (config: any): string => {
     return '';
 };
 
-export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
+export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMode?: 'config' | 'template') => {
     const config = useConfigStore(state => state.config);
     const loadConfig = useConfigStore(state => state.loadConfig);
     const createProfile = useConfigStore(state => state.createProfile);
@@ -122,7 +122,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
 
     // Output mode: a finished client config, or the template the panel renders
     // per subscriber with its own hosts injected into it.
-    const [outputMode, setOutputMode] = useState<'config' | 'template'>('config');
+    const [outputMode, setOutputMode] = useState<'config' | 'template'>(initialMode || 'config');
     const [inject, setInject] = useState<InjectOptions>(DEFAULT_INJECT_OPTIONS);
     const [templateName, setTemplateName] = useState('');
     const [templateTargetUuid, setTemplateTargetUuid] = useState('');
@@ -479,6 +479,21 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
         }
     }, [loadSubscriptionTemplate, applyParsed]);
 
+    /**
+     * Read a raw template object into the controls — what switching from the
+     * JSON view back to the form does.
+     */
+    const applyTemplateObject = useCallback((body: any): boolean => {
+        try {
+            const parsed = parseLocalBalancer(body);
+            applyParsed(parsed);
+            return true;
+        } catch (e: any) {
+            toast.error('That JSON is not a balancer template', { description: e?.message });
+            return false;
+        }
+    }, [applyParsed]);
+
     /** Read the config currently open in the editor back into the controls. */
     const loadFromCurrentConfig = useCallback(() => {
         if (!config) {
@@ -650,10 +665,19 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
     // then behave exactly as if the user had picked it here.
     const autoLoaded = useRef(false);
     useEffect(() => {
-        if (!initialTemplateUuid || autoLoaded.current) return;
+        if (autoLoaded.current) return;
+        if (!initialTemplateUuid && initialMode !== 'template') return;
         autoLoaded.current = true;
-        loadTemplateIntoBuilder(initialTemplateUuid).catch(() => {});
-    }, [initialTemplateUuid, loadTemplateIntoBuilder]);
+        // Opened straight into template mode: pull in what that mode reads,
+        // exactly as picking the mode by hand would.
+        if (initialMode === 'template') setSource('panel');
+        if (remnawaveConnected) {
+            fetchSubscriptionTemplates().catch(() => {});
+            if (!panelCatalog.fetchedAt) fetchPanelCatalog().catch(() => {});
+        }
+        if (initialTemplateUuid) loadTemplateIntoBuilder(initialTemplateUuid).catch(() => {});
+    }, [initialTemplateUuid, initialMode, remnawaveConnected, panelCatalog.fetchedAt,
+        fetchSubscriptionTemplates, fetchPanelCatalog, loadTemplateIntoBuilder]);
 
     const download = useCallback(() => {
         if (!outputJson) return;
@@ -706,7 +730,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string) => {
         dnsExtraText, setDnsExtraText,
 
         // loading an existing balancer
-        loadTemplateIntoBuilder, loadFromCurrentConfig,
+        loadTemplateIntoBuilder, loadFromCurrentConfig, applyTemplateObject,
 
         // publishing hosts
         poolTag, setPoolTag, normalisedPoolTag,

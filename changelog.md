@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.25] - 2026-09-14
+
+### Changed
+- **Templates moved inside the Local Balancer instead of being a module of their own.** A panel template is what the builder writes, so they were two screens for one object with nothing on either explaining the relationship. In panel-template mode the builder's left column is now the template list — the node list there was meaningless anyway, since the panel injects hosts when it renders a template — and the right side gained the **Form / JSON** switch this app already uses for routing rules, inbounds and outbounds.
+  - Form and JSON are two views of the same template: switching to JSON shows exactly what a save would write, and switching back reads the text into the fields, reporting anything the form cannot represent rather than dropping it.
+  - Selecting a template loads it into the form and makes it the save target in one step; duplicate and delete sit under the list.
+  - The Templates button now opens the builder in template mode rather than a second editor.
+- **The module row is split into Core and Remnawave.** Core covers what edits the config open in the editor (settings, reverse proxy, topology, geo viewer, inspector, local balancer); Remnawave covers what reads or writes the panel (hosts, templates, snippets). Nine unlabelled buttons in a row gave no clue which of them touched someone's live panel.
+
+### Fixed
+- `tweetnacl`'s local type declaration was missing `scalarMult`, so the REALITY public-key derivation added in 1.0.20 type-checked only by accident.
+
 ## [1.0.24] - 2026-09-14
 
 ### Added

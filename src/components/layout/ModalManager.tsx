@@ -18,7 +18,6 @@ import { GitHistoryModal } from '../git/GitHistoryModal';
 import { EditorSettingsModal } from '../editors/EditorSettingsModal';
 import { SnippetsModal } from '../editors/snippets/SnippetsModal';
 import { LocalBalancerModal } from '../editors/builder/LocalBalancerModal';
-import { TemplatesModal } from '../editors/templates/TemplatesModal';
 import { HostsModal } from '../editors/hosts/HostsModal';
 import type { Diagnostic } from '../../core/diagnostics';
 
@@ -83,10 +82,8 @@ interface ModalManagerProps {
     onCloseBuilder?: () => void;
     builderTemplateUuid?: string;
 
-    templatesModalOpen?: boolean;
-    onCloseTemplates?: () => void;
     onOpenTemplates?: () => void;
-    onOpenTemplateInBuilder?: (uuid: string) => void;
+    builderInitialMode?: 'config' | 'template';
 
     hostsModalOpen?: boolean;
     hostsInitialUuid?: string;
@@ -135,10 +132,8 @@ export const ModalManager = ({
     builderModalOpen,
     onCloseBuilder,
     builderTemplateUuid,
-    templatesModalOpen,
-    onCloseTemplates,
     onOpenTemplates,
-    onOpenTemplateInBuilder,
+    builderInitialMode,
     hostsModalOpen,
     hostsInitialUuid,
     onCloseHosts,
@@ -173,11 +168,9 @@ export const ModalManager = ({
             <LocalBalancerModal
                 onClose={onCloseBuilder}
                 initialTemplateUuid={builderTemplateUuid}
+                initialMode={builderInitialMode}
                 onEditHost={onEditHost}
             />
-        )}
-        {templatesModalOpen && onCloseTemplates && (
-            <TemplatesModal onClose={onCloseTemplates} onOpenInBuilder={onOpenTemplateInBuilder} />
         )}
         {hostsModalOpen && onCloseHosts && (
             <HostsModal onClose={onCloseHosts} initialHostUuid={hostsInitialUuid} onOpenTemplates={onOpenTemplates} />

@@ -41,7 +41,7 @@ export const useAppLogic = () => {
     const [snippetsModalOpen, setSnippetsModalOpen] = useState(false);
     const [builderModalOpen, setBuilderModalOpen] = useState(false);
     const [builderTemplateUuid, setBuilderTemplateUuid] = useState<string | undefined>(undefined);
-    const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+    const [builderInitialMode, setBuilderInitialMode] = useState<'config' | 'template' | undefined>(undefined);
     const [hostsModalOpen, setHostsModalOpen] = useState(false);
     const [hostsInitialUuid, setHostsInitialUuid] = useState<string | undefined>(undefined);
     
@@ -258,22 +258,30 @@ export const useAppLogic = () => {
         onCloseSnippets: () => setSnippetsModalOpen(false),
         builderModalOpen, setBuilderModalOpen,
         builderTemplateUuid,
-        onOpenBuilder: () => { setBuilderTemplateUuid(undefined); setBuilderModalOpen(true); },
-        onCloseBuilder: () => { setBuilderModalOpen(false); setBuilderTemplateUuid(undefined); },
-        templatesModalOpen, setTemplatesModalOpen,
-        onOpenTemplates: () => setTemplatesModalOpen(true),
-        onCloseTemplates: () => setTemplatesModalOpen(false),
+        builderInitialMode,
+        onOpenBuilder: () => {
+            setBuilderTemplateUuid(undefined);
+            setBuilderInitialMode(undefined);
+            setBuilderModalOpen(true);
+        },
+        onCloseBuilder: () => {
+            setBuilderModalOpen(false);
+            setBuilderTemplateUuid(undefined);
+            setBuilderInitialMode(undefined);
+        },
+        // A subscription template is what the balancer builder writes, so
+        // editing one opens that modal straight in template mode rather than a
+        // second screen for the same object.
+        onOpenTemplates: () => {
+            setBuilderTemplateUuid(undefined);
+            setBuilderInitialMode('template');
+            setBuilderModalOpen(true);
+        },
         hostsModalOpen, hostsInitialUuid,
         onOpenHosts: () => { setHostsInitialUuid(undefined); setHostsModalOpen(true); },
         onCloseHosts: () => { setHostsModalOpen(false); setHostsInitialUuid(undefined); },
         // Handoff: a host row elsewhere opens that host in the editor.
         onEditHost: (uuid: string) => { setHostsInitialUuid(uuid); setHostsModalOpen(true); },
-        // Handoff: the template editor sends one template into the builder.
-        onOpenTemplateInBuilder: (uuid: string) => {
-            setTemplatesModalOpen(false);
-            setBuilderTemplateUuid(uuid);
-            setBuilderModalOpen(true);
-        },
         snippetDefs,
         rawMode, setRawMode,
         isDragging,

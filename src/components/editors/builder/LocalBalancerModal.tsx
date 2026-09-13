@@ -10,6 +10,9 @@ import { NumberInput } from '../../ui/NumberInput';
 import { DurationInput } from '../../ui/DurationInput';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { useLocalBalancerBuilder } from '../../../hooks/useLocalBalancerBuilder';
+import { useTemplatesLibrary } from '../../../hooks/useTemplatesLibrary';
+import { TemplatePickerPanel } from './TemplatePickerPanel';
+import { TemplateJsonView } from './TemplateJsonView';
 import { LOCAL_BALANCER_PRESETS } from '../../../core/generators/local-balancer';
 import { DNS_RESOLVERS, matchResolverPreset } from '../../../core/presets/dns';
 
@@ -57,14 +60,16 @@ const NodeRow = ({ node, onToggle, onRename, onRemove }: any) => (
  * The parts that must agree (tag prefix, selector, probe selector, catch-all
  * rule, bypass list in both routing and DNS) are derived, not typed.
  */
-export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }: {
+export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, onEditHost }: {
     onClose: () => void;
-    /** Opened from the template editor: load this template straight away. */
+    /** Open on a specific panel template. */
     initialTemplateUuid?: string;
+    /** Open directly in panel-template mode rather than client-config mode. */
+    initialMode?: 'config' | 'template';
     /** Opens one of the listed panel hosts in the host editor. */
     onEditHost?: (uuid: string) => void;
 }) => {
-    const b = useLocalBalancerBuilder(initialTemplateUuid);
+    const b = useLocalBalancerBuilder(initialTemplateUuid, initialMode);
     const { options } = b;
 
     const multi = b.results.length > 1;
@@ -76,12 +81,51 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
     // approach the Routing Manager uses — show one pane at a time.
     const [mobilePane, setMobilePane] = React.useState<'nodes' | 'output'>('nodes');
 
+    // Templates are edited here rather than in a module of their own: a panel
+    // template *is* what this builder writes, so the form and the raw JSON are
+    // two views of one object — the same JSON/UI pair the routing and protocol
+    // editors already offer.
+    const tpl = useTemplatesLibrary();
+    const [templateView, setTemplateView] = React.useState<'form' | 'json'>('form');
+    const editingSavedTemplate = isTemplate && !!b.templateTargetUuid && !!tpl.draft;
+
+    const selectTemplate = async (uuid: string) => {
+        await b.loadTemplateIntoBuilder(uuid);
+        await tpl.open(uuid);
+    };
+
+    const newTemplate = () => {
+        tpl.closeDraft();
+        b.setTemplateTargetUuid('');
+        b.setTemplateName('');
+        setTemplateView('form');
+    };
+
+    const switchTemplateView = (view: 'form' | 'json') => {
+        // Leaving the JSON view means the form has to catch up with whatever
+        // was typed, or the next save would quietly write the old fields back.
+        if (view === 'form' && templateView === 'json' && tpl.draft && !tpl.parseError) {
+            try {
+                b.applyTemplateObject(JSON.parse(tpl.draft.text || '{}'));
+            } catch {
+                /* reported by applyTemplateObject */
+            }
+        }
+        setTemplateView(view);
+    };
+
     return (
         <Modal
-            title="Local Balancer Builder"
+            title={isTemplate ? 'Local Balancer — panel template' : 'Local Balancer Builder'}
             onClose={onClose}
-            onSave={isTemplate ? (b.savingTemplate ? () => {} : b.saveTemplate) : (b.preview ? b.loadIntoEditor : undefined)}
-            saveText={isTemplate ? (b.savingTemplate ? 'Saving…' : 'Save to panel') : (multi ? 'Load shown config' : 'Load into editor')}
+            onSave={isTemplate
+                ? (templateView === 'json' && editingSavedTemplate
+                    ? tpl.save
+                    : (b.savingTemplate ? () => {} : b.saveTemplate))
+                : (b.preview ? b.loadIntoEditor : undefined)}
+            saveText={isTemplate
+                ? (b.savingTemplate || tpl.saving ? 'Saving…' : (templateView === 'json' && editingSavedTemplate ? 'Save JSON to panel' : 'Save to panel'))
+                : (multi ? 'Load shown config' : 'Load into editor')}
             saveIcon={isTemplate ? 'CloudArrowUp' : 'ArrowSquareIn'}
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             extraButtons={
@@ -99,7 +143,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
             }
         >
             <div className="flex md:hidden bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 mb-3 shrink-0">
-                {([['nodes', 'Nodes'], ['output', isTemplate ? 'Template' : 'Config']] as const).map(([key, label]) => (
+                {([['nodes', isTemplate ? 'Templates' : 'Nodes'], ['output', isTemplate ? 'Template' : 'Config']] as const).map(([key, label]) => (
                     <button
                         key={key}
                         onClick={() => setMobilePane(key)}
@@ -115,6 +159,15 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
             <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-3">
                 {/* ─── Sources & nodes ─────────────────────────────── */}
                 <div className={`w-full md:w-96 md:shrink-0 flex-col min-h-0 gap-3 ${mobilePane === 'nodes' ? 'flex' : 'hidden md:flex'}`}>
+                    {isTemplate ? (
+                        <TemplatePickerPanel
+                            tpl={tpl}
+                            selectedUuid={b.templateTargetUuid}
+                            onSelect={selectTemplate}
+                            onNew={newTemplate}
+                        />
+                    ) : (
+                    <>
                     <Section title="Nodes from">
                         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
                             {([['paste', 'Links / JSON'], ['panel', 'Remnawave panel']] as const).map(([key, label]) => (
@@ -296,14 +349,6 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                         </div>
                     )}
 
-                    {isTemplate && (
-                        <div className="text-[10px] text-slate-400 bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 shrink-0">
-                            A template carries no nodes — the panel injects hosts when it renders it.
-                            Your selection here is used for the pool and the entry host below, not for
-                            the template body.
-                        </div>
-                    )}
-
                     <div className={`${b.source === 'panel' ? 'max-h-44 shrink-0' : 'flex-1'} flex flex-col min-h-0`}>
                         <div className="flex items-center justify-between px-1 shrink-0 mb-1">
                             <span className="text-[11px] text-slate-400">
@@ -338,7 +383,6 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                         <Switch
                             checked={b.splitByLocation}
                             onChange={b.setSplitByLocation}
-                            disabled={isTemplate}
                             label="One config per location"
                         />
                         <p className="text-[10px] text-slate-500 mt-1 ml-[52px]">
@@ -346,6 +390,8 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                             "… #1 / … #2" becomes one balanced config per place.
                         </p>
                     </div>
+                    </>
+                    )}
                 </div>
 
                 {/* ─── Options + preview ────────────────────────────── */}
@@ -367,7 +413,26 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                         ))}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {isTemplate && (
+                        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
+                            {([['form', 'Form'], ['json', 'JSON']] as const).map(([key, label]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => switchTemplateView(key)}
+                                    title={key === 'form'
+                                        ? 'Edit the template through the fields'
+                                        : 'Edit the template body directly — the same JSON the panel stores'}
+                                    className={`flex-1 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                                        templateView === key ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className={`flex-wrap items-center gap-2 shrink-0 ${isTemplate && templateView === 'json' ? 'hidden' : 'flex'}`}>
                         {(['simple', 'fleet'] as const).map(key => (
                             <button
                                 key={key}
@@ -397,7 +462,9 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:shrink-0 md:overflow-y-auto custom-scroll md:max-h-[38vh] pr-1">
+                    <div className={`grid-cols-1 xl:grid-cols-2 gap-3 md:shrink-0 md:overflow-y-auto custom-scroll md:max-h-[38vh] pr-1 ${
+                        isTemplate && templateView === 'json' ? 'hidden' : 'grid'
+                    }`}>
                         <Section title="Balancer">
                             <div className="grid grid-cols-2 gap-2">
                                 <Input
@@ -863,7 +930,14 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                         </Section>
                     </div>
 
-                    {/* Preview */}
+                    {/* Preview, or the raw template when the JSON view is on */}
+                    {isTemplate && templateView === 'json' ? (
+                        <TemplateJsonView
+                            tpl={tpl}
+                            generatedJson={JSON.stringify(b.template, null, 2)}
+                            isExisting={editingSavedTemplate}
+                        />
+                    ) : (
                     <div className="flex-1 min-h-0 flex flex-col">
                         <div className="flex items-center justify-between mb-1.5 gap-2">
                             <span className="label-xs">{isTemplate ? 'Generated template' : 'Generated config'}</span>
@@ -918,6 +992,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, onEditHost }:
                             )}
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
         </Modal>

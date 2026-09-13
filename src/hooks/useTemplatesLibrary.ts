@@ -129,8 +129,10 @@ export const useTemplatesLibrary = () => {
         }
     }, [draft]);
 
+    const [saving, setSaving] = useState(false);
+
     const save = useCallback(async () => {
-        if (!draft) return;
+        if (!draft || saving) return;
         if (parseError) {
             toast.error('Fix the JSON before saving', { description: parseError });
             return;
@@ -143,9 +145,14 @@ export const useTemplatesLibrary = () => {
         }
         if (draft.name.trim()) patch.name = draft.name.trim();
 
-        const ok = await patchTemplate(draft.uuid, patch);
-        if (ok) setDraft(prev => (prev ? { ...prev, original: prev.text } : prev));
-    }, [draft, parseError, patchTemplate]);
+        setSaving(true);
+        try {
+            const ok = await patchTemplate(draft.uuid, patch);
+            if (ok) setDraft(prev => (prev ? { ...prev, original: prev.text } : prev));
+        } finally {
+            setSaving(false);
+        }
+    }, [draft, saving, parseError, patchTemplate]);
 
     const create = useCallback(async () => {
         const name = newName.trim();
@@ -219,7 +226,7 @@ export const useTemplatesLibrary = () => {
         search, setSearch,
         typeFilter, setTypeFilter,
         draft, open, closeDraft, loadingBody, setText, setName, isDirty, parseError,
-        save, create, duplicate, remove, copyBody, download,
+        save, saving, create, duplicate, remove, copyBody, download,
         confirmDelete, setConfirmDelete,
         newName, setNewName, newType, setNewType,
         looksLikeBalancer,

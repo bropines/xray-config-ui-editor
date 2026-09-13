@@ -340,7 +340,7 @@ export const ConfigDashboard = ({
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
           <div className="flex items-center justify-between w-full md:w-auto">
             <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm md:text-base">
-              <Icon name="SlidersHorizontal" /> Core Modules
+              <Icon name="SlidersHorizontal" /> Modules
             </h2>
             <button
               onClick={() => setModulesVisible(!modulesVisible)}
@@ -356,90 +356,108 @@ export const ConfigDashboard = ({
           <div className="hidden md:block w-px h-6 bg-slate-800" />
 
           <div
-            className={`${modulesVisible ? "grid" : "hidden md:flex"} grid-cols-2 md:flex md:flex-wrap gap-2 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
+            className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-col md:flex-row md:items-center gap-3 md:gap-4 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
           >
-            <Button
-              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
-              variant="secondary"
-              onClick={onOpenSettings}
-              icon="Gear"
-            >
-              Core Settings
-            </Button>
-            <Button
-              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
-              variant="secondary"
-              onClick={onOpenReverse}
-              icon="ArrowsLeftRight"
-            >
-              Reverse Proxy
-            </Button>
-            <Button
-              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
-              variant="secondary"
-              onClick={onOpenTopology}
-              icon="GitMerge"
-            >
-              Topology
-            </Button>
-            <Button
-              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
-              variant="secondary"
-              onClick={onOpenGeoViewer}
-              icon="GlobeHemisphereWest"
-            >
-              Geo Viewer
-            </Button>
-            <Button
-              className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
-              variant="secondary"
-              onClick={onOpenConfigInspector}
-              icon="FileSearch"
-            >
-              Config Inspector
-            </Button>
-            {onOpenSnippets && (
-              <Button
-                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/10"
-                variant="secondary"
-                onClick={onOpenSnippets}
-                icon="BracketsCurly"
-              >
-                Snippets{snippetRefCount > 0 ? ` (${snippetRefCount})` : ""}
-              </Button>
-            )}
-            {onOpenBuilder && (
-              <Button
-                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
-                variant="secondary"
-                onClick={onOpenBuilder}
-                icon="Scales"
-                title="Build a client config with a local balancer from a set of nodes"
-              >
-                Local Balancer
-              </Button>
-            )}
-            {onOpenTemplates && (
-              <Button
-                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-sky-500/30 text-sky-300 hover:bg-sky-500/10"
-                variant="secondary"
-                onClick={onOpenTemplates}
-                icon="FileText"
-                title="Edit the subscription templates stored in your Remnawave panel"
-              >
-                Templates
-              </Button>
-            )}
-            {onOpenHosts && (
-              <Button
-                className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
-                variant="secondary"
-                onClick={onOpenHosts}
-                icon="Broadcast"
-                title="Edit the hosts in your Remnawave panel: address, transport, inbound and template"
-              >
-                Hosts
-              </Button>
+            {/* Core: everything that edits the config open in this editor. */}
+            <div className="flex flex-col gap-1.5 w-full md:w-auto">
+              <span className="label-xs md:hidden">Core</span>
+              <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
+                <Button
+                  className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
+                  variant="secondary"
+                  onClick={onOpenSettings}
+                  icon="Gear"
+                >
+                  Core Settings
+                </Button>
+                <Button
+                  className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
+                  variant="secondary"
+                  onClick={onOpenReverse}
+                  icon="ArrowsLeftRight"
+                >
+                  Reverse Proxy
+                </Button>
+                <Button
+                  className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
+                  variant="secondary"
+                  onClick={onOpenTopology}
+                  icon="GitMerge"
+                >
+                  Topology
+                </Button>
+                <Button
+                  className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
+                  variant="secondary"
+                  onClick={onOpenGeoViewer}
+                  icon="GlobeHemisphereWest"
+                >
+                  Geo Viewer
+                </Button>
+                <Button
+                  className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+                  variant="secondary"
+                  onClick={onOpenConfigInspector}
+                  icon="FileSearch"
+                >
+                  Config Inspector
+                </Button>
+                {onOpenBuilder && (
+                  <Button
+                    className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                    variant="secondary"
+                    onClick={onOpenBuilder}
+                    icon="Scales"
+                    title="Build a client config with a local balancer from a set of nodes"
+                  >
+                    Local Balancer
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Remnawave: everything that reads or writes the panel. */}
+            {(onOpenSnippets || onOpenHosts || onOpenTemplates) && (
+              <>
+                <div className="hidden md:block w-px h-6 bg-slate-800" />
+                <div className="flex flex-col gap-1.5 w-full md:w-auto">
+                  <span className="label-xs">Remnawave</span>
+                  <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
+                    {onOpenHosts && (
+                      <Button
+                        className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+                        variant="secondary"
+                        onClick={onOpenHosts}
+                        icon="Broadcast"
+                        title="Edit the hosts in your panel: address, transport, inbound and template"
+                      >
+                        Hosts
+                      </Button>
+                    )}
+                    {onOpenTemplates && (
+                      <Button
+                        className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-sky-500/30 text-sky-300 hover:bg-sky-500/10"
+                        variant="secondary"
+                        onClick={onOpenTemplates}
+                        icon="FileText"
+                        title="Subscription templates — opens the balancer builder in template mode, where they are edited as a form or as JSON"
+                      >
+                        Templates
+                      </Button>
+                    )}
+                    {onOpenSnippets && (
+                      <Button
+                        className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/10"
+                        variant="secondary"
+                        onClick={onOpenSnippets}
+                        icon="BracketsCurly"
+                      >
+                        Snippets{snippetRefCount > 0 ? ` (${snippetRefCount})` : ""}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

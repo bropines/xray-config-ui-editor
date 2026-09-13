@@ -29,7 +29,7 @@ export const App = () => {
         onOpenEditorSettings, onCloseEditorSettings,
         snippetsModalOpen, onOpenSnippets, onCloseSnippets,
         builderModalOpen, onOpenBuilder, onCloseBuilder, builderTemplateUuid,
-        templatesModalOpen, onOpenTemplates, onCloseTemplates, onOpenTemplateInBuilder,
+        onOpenTemplates, builderInitialMode,
         hostsModalOpen, hostsInitialUuid, onOpenHosts, onCloseHosts, onEditHost,
         snippetDefs,
         rawMode, setRawMode,
@@ -189,10 +189,8 @@ export const App = () => {
                 builderModalOpen={builderModalOpen}
                 onCloseBuilder={onCloseBuilder}
                 builderTemplateUuid={builderTemplateUuid}
-                templatesModalOpen={templatesModalOpen}
-                onCloseTemplates={onCloseTemplates}
                 onOpenTemplates={onOpenTemplates}
-                onOpenTemplateInBuilder={onOpenTemplateInBuilder}
+                builderInitialMode={builderInitialMode}
                 hostsModalOpen={hostsModalOpen}
                 hostsInitialUuid={hostsInitialUuid}
                 onCloseHosts={onCloseHosts}
