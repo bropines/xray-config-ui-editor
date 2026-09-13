@@ -336,15 +336,17 @@ export const ConfigDashboard = ({
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
       {/* Toolbar */}
-      <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl shadow-lg gap-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center justify-between w-full md:w-auto">
-            <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm md:text-base">
+      <div className="shrink-0 flex flex-col md:flex-row justify-between items-start bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl shadow-lg gap-4">
+        <div className="flex flex-col md:flex-row items-start gap-4 w-full md:w-auto">
+          {/* The collapse control is mobile-only; on desktop each group's own
+              label is its heading, so both columns share one baseline. */}
+          <div className="flex items-center justify-between w-full md:hidden">
+            <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm">
               <Icon name="SlidersHorizontal" /> Modules
             </h2>
             <button
               onClick={() => setModulesVisible(!modulesVisible)}
-              className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+              className="p-2 text-slate-400 hover:text-white transition-colors"
             >
               <Icon
                 name={modulesVisible ? "CaretUp" : "CaretDown"}
@@ -353,14 +355,14 @@ export const ConfigDashboard = ({
             </button>
           </div>
 
-          <div className="hidden md:block w-px h-6 bg-slate-800" />
-
           <div
-            className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-col md:flex-row md:items-center gap-3 md:gap-4 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
+            className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-col md:flex-row md:items-start gap-3 md:gap-4 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
           >
             {/* Core: everything that edits the config open in this editor. */}
             <div className="flex flex-col gap-1.5 w-full md:w-auto">
-              <span className="label-xs md:hidden">Core</span>
+              <span className="label-xs flex items-center gap-1.5">
+                <Icon name="SlidersHorizontal" className="text-xs" /> Core
+              </span>
               <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
                 <Button
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
@@ -419,9 +421,11 @@ export const ConfigDashboard = ({
             {/* Remnawave: everything that reads or writes the panel. */}
             {(onOpenSnippets || onOpenHosts || onOpenTemplates) && (
               <>
-                <div className="hidden md:block w-px h-6 bg-slate-800" />
+                <div className="hidden md:block w-px self-stretch bg-slate-800" />
                 <div className="flex flex-col gap-1.5 w-full md:w-auto">
-                  <span className="label-xs">Remnawave</span>
+                  <span className="label-xs flex items-center gap-1.5">
+                    <Icon name="Cloud" className="text-xs" /> Remnawave
+                  </span>
                   <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
                     {onOpenHosts && (
                       <Button
@@ -463,7 +467,7 @@ export const ConfigDashboard = ({
         </div>
 
         <div
-          className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-wrap items-center gap-2 w-full md:w-auto pt-3 md:pt-0 border-t border-slate-800 md:border-transparent animate-in fade-in slide-in-from-top-1 duration-200`}
+          className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-wrap items-center gap-2 w-full md:w-auto pt-3 md:pt-[22px] border-t border-slate-800 md:border-transparent animate-in fade-in slide-in-from-top-1 duration-200`}
         >
           {/* Modified Status Badge */}
           {isModified ? (

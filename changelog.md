@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.26] - 2026-09-14
+
+### Fixed
+- **Toolbar alignment**: only the Remnawave group carried a visible label, so it started one line lower than the Core buttons and the whole row looked off-centre. Both groups are labelled now and the row is top-aligned, so the labels share a baseline and the buttons line up. On desktop those labels are the headings — the separate "Modules" title only appears on mobile, where it carries the collapse control.
+
 ## [1.0.25] - 2026-09-14
 
 ### Changed
