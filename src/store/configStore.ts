@@ -90,6 +90,32 @@ interface SnippetLibraryState {
     error: string | null;
 }
 
+/**
+ * The panel's hosts plus the inbounds they point at, kept only for the current
+ * session: it is a read-through cache of someone else's live state, and a
+ * stale copy of "which key does this node use" is worse than no copy. Not
+ * persisted, deliberately.
+ */
+interface PanelCatalogState {
+    hosts: any[];
+    /** configProfileInboundUuid -> { rawInbound, tag, profileName }. */
+    inbounds: Record<string, any>;
+    loading: boolean;
+    error: string | null;
+    fetchedAt: number | null;
+}
+
+/**
+ * Remnawave's subscription templates, session-only like the host catalog.
+ * The list endpoint returns metadata without bodies; a body is fetched only
+ * when one is opened.
+ */
+interface PanelTemplatesState {
+    items: any[];
+    loading: boolean;
+    error: string | null;
+}
+
 interface ConfigState {
     config: XrayConfig | null;
     rawConfigText: string | null;
@@ -153,6 +179,20 @@ interface ConfigState {
     updateBalancer: (index: number, balancer: any, rawText?: string | null) => void;
     initDns: () => void;
 
+    // --- Panel catalog (hosts + their inbounds), session-only ---
+    panelCatalog: PanelCatalogState;
+    fetchPanelCatalog: () => Promise<void>;
+
+    // --- Subscription templates, session-only ---
+    panelTemplates: PanelTemplatesState;
+    fetchSubscriptionTemplates: () => Promise<void>;
+    saveSubscriptionTemplate: (input: {
+        mode: 'create' | 'update';
+        uuid?: string;
+        name?: string;
+        templateJson: any;
+    }) => Promise<boolean>;
+
     // --- Snippets & templates ---
     snippetLibrary: SnippetLibraryState;
     /** Every known definition, panel entries shadowing same-named local ones. */
@@ -212,6 +252,139 @@ export const useConfigStore = create(
             
             warpWorkerUrl: '',
             setWarpWorkerUrl: (url: string) => set({ warpWorkerUrl: url }),
+
+            // --- Panel catalog ---
+            panelCatalog: {
+                hosts: [],
+                inbounds: {},
+                loading: false,
+                error: null,
+                fetchedAt: null,
+            },
+
+            fetchPanelCatalog: async () => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return;
+                }
+
+                set(produce((state: any) => {
+                    state.panelCatalog.loading = true;
+                    state.panelCatalog.error = null;
+                }));
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+
+                try {
+                    // Hosts say where clients connect; the profiles carry the
+                    // inbounds those hosts point at. Both are needed to mirror
+                    // a server inbound into a client outbound, so they are
+                    // fetched together and indexed by the id hosts reference.
+                    const [hosts, profiles] = await Promise.all([
+                        client.getHosts(),
+                        client.getConfigProfiles(),
+                    ]);
+
+                    const inbounds: Record<string, any> = {};
+                    (profiles as any[]).forEach((profile: any) => {
+                        (profile?.inbounds || []).forEach((inbound: any) => {
+                            if (!inbound?.uuid) return;
+                            inbounds[inbound.uuid] = {
+                                uuid: inbound.uuid,
+                                tag: inbound.tag,
+                                type: inbound.type,
+                                port: inbound.port,
+                                rawInbound: inbound.rawInbound,
+                                profileName: profile.name,
+                                profileUuid: profile.uuid,
+                            };
+                        });
+                    });
+
+                    set(produce((state: any) => {
+                        state.panelCatalog.hosts = hosts;
+                        state.panelCatalog.inbounds = inbounds;
+                        state.panelCatalog.loading = false;
+                        state.panelCatalog.fetchedAt = Date.now();
+                        state.panelCatalog.error = null;
+                    }));
+                    toast.success(`Loaded ${hosts.length} host(s) from the panel`);
+                } catch (e: any) {
+                    const message = e?.message || 'Unknown error';
+                    set(produce((state: any) => {
+                        state.panelCatalog.loading = false;
+                        state.panelCatalog.error = message;
+                    }));
+                    toast.error("Failed to load hosts from the panel", { description: message });
+                }
+            },
+
+            // --- Subscription templates ---
+            panelTemplates: { items: [], loading: false, error: null },
+
+            fetchSubscriptionTemplates: async () => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return;
+                }
+                set(produce((state: any) => { state.panelTemplates.loading = true; state.panelTemplates.error = null; }));
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+                try {
+                    const items = await client.getSubscriptionTemplates();
+                    set(produce((state: any) => {
+                        state.panelTemplates.items = items;
+                        state.panelTemplates.loading = false;
+                    }));
+                } catch (e: any) {
+                    const message = e?.message || 'Unknown error';
+                    set(produce((state: any) => {
+                        state.panelTemplates.loading = false;
+                        state.panelTemplates.error = message;
+                    }));
+                    toast.error("Failed to load subscription templates", { description: message });
+                }
+            },
+
+            saveSubscriptionTemplate: async ({ mode, uuid, name, templateJson }) => {
+                const { url, token, connected } = get().remnawave;
+                if (!connected || !url || !token) {
+                    toast.error("Connect to Remnawave first");
+                    return false;
+                }
+
+                const client = new RemnawaveClient(url);
+                client.setToken(token);
+
+                try {
+                    // Creating a template and filling it in are two calls: the
+                    // panel's create endpoint takes only a name and a type, so
+                    // the body follows in a PATCH.
+                    let targetUuid = uuid;
+                    if (mode === 'create') {
+                        const created = await client.createSubscriptionTemplate((name || '').trim(), 'XRAY_JSON');
+                        targetUuid = created?.uuid;
+                        if (!targetUuid) throw new Error('Panel did not return a template uuid');
+                    }
+                    if (!targetUuid) throw new Error('No template selected');
+
+                    await client.updateSubscriptionTemplate(targetUuid, templateJson);
+                    await get().fetchSubscriptionTemplates();
+                    toast.success(mode === 'create'
+                        ? `Template "${name}" created in the panel`
+                        : 'Template updated in the panel', {
+                        description: 'Point a host at it (Xray JSON template) to hand it to subscribers.',
+                    });
+                    return true;
+                } catch (e: any) {
+                    toast.error("Failed to save the template", { description: e?.message || 'Unknown error' });
+                    return false;
+                }
+            },
 
             // --- Snippet / template library ---
             snippetLibrary: {

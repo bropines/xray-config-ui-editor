@@ -43,6 +43,41 @@ export const generateRealityKeyPair = (): { privateKey: string; publicKey: strin
     };
 };
 
+const b64urlDecode = (value: string): Uint8Array => {
+    const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    const binary = atob(padded);
+    return Uint8Array.from(binary, c => c.charCodeAt(0));
+};
+
+const b64urlEncode = (bytes: Uint8Array): string =>
+    btoa(String.fromCharCode(...bytes))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+/**
+ * Derive a REALITY public key from its private key (X25519 base point
+ * multiplication) — the same relationship `xray x25519` prints as a pair.
+ *
+ * A server inbound stores only the private half; a client needs the public
+ * half. Deriving it is what lets a client outbound be built from a server
+ * config instead of asking the user to copy a key they may not have.
+ *
+ * Returns null for input that is not a 32-byte url-safe base64 key, since the
+ * alternative is silently emitting a key that cannot work.
+ */
+export const publicKeyFromPrivateKey = (privateKey: string): string | null => {
+    if (!privateKey || typeof privateKey !== 'string') return null;
+    try {
+        const bytes = b64urlDecode(privateKey.trim());
+        if (bytes.length !== 32) return null;
+        return b64urlEncode(nacl.scalarMult.base(bytes));
+    } catch {
+        return null;
+    }
+};
+
 /**
  * Alias kept for call sites that historically imported this name from the
  * now-removed `utils/crypto.ts` duplicate. Functionally identical to

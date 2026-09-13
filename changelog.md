@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.20] - 2026-09-13
+
+### Added
+- **Build a balancer out of the nodes already in your panel.** The Local Balancer Builder gained a second source: it reads the panel's hosts (`GET /api/hosts`) together with the inbounds they point at, and mirrors each one into a client outbound — address, port and SNI from the host, transport from the inbound, and the REALITY **public key derived from the inbound's private key** (X25519 base point), so nothing has to be copied by hand. Hosts that cannot be mirrored (Shadowsocks, a missing key) are listed with the reason instead of being hidden.
+- **Panel template output — the way a panel actually hands this to subscribers.** Switch the builder to *Panel template* and it emits a Remnawave `XRAY_JSON` subscription template: same routing, balancer, probe and bypass, but with no proxy outbounds and a `remnawave.injectHosts` block instead. The panel fills the nodes in per subscriber and tags them with the prefix the balancer selects on. Save it straight to the panel (create a new template or update an existing one), then point a host at it.
+  - Host selection supports every selector the panel understands: same tag as the shown host, a tag/remark pattern, or an explicit list of hosts (fillable from the picker selection).
+  - Verified field for field against a balancer template already running in a production panel.
+- `publicKeyFromPrivateKey()` in `src/core/generators/crypto.ts` — the X25519 derivation `xray x25519` performs, needed to turn a server inbound into a client outbound.
+
 ## [1.0.19] - 2026-09-13
 
 ### Added

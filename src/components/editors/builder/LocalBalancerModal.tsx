@@ -61,81 +61,211 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
     const { options } = b;
 
     const multi = b.results.length > 1;
+    const isTemplate = b.outputMode === 'template';
+    const selectorType = b.inject.selector.type;
 
     return (
         <Modal
             title="Local Balancer Builder"
             onClose={onClose}
-            onSave={b.preview ? b.loadIntoEditor : undefined}
-            saveText={multi ? 'Load shown config' : 'Load into editor'}
-            saveIcon="ArrowSquareIn"
+            onSave={isTemplate ? b.saveTemplate : (b.preview ? b.loadIntoEditor : undefined)}
+            saveText={isTemplate ? 'Save to panel' : (multi ? 'Load shown config' : 'Load into editor')}
+            saveIcon={isTemplate ? 'CloudArrowUp' : 'ArrowSquareIn'}
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             extraButtons={
                 <>
                     <Button variant="secondary" icon="FileArrowDown" onClick={b.download} disabled={!b.outputJson}>
-                        Download {multi ? `${b.results.length} configs` : 'JSON'}
+                        Download {isTemplate ? 'template' : (multi ? `${b.results.length} configs` : 'JSON')}
                     </Button>
                     <Button variant="secondary" icon="Copy" onClick={b.copy} disabled={!b.outputJson}>Copy</Button>
-                    <Button variant="secondary" icon="CardsThree" onClick={b.saveAsProfiles} disabled={b.results.length === 0}>
-                        Save as profile{multi ? 's' : ''}
-                    </Button>
+                    {!isTemplate && (
+                        <Button variant="secondary" icon="CardsThree" onClick={b.saveAsProfiles} disabled={b.results.length === 0}>
+                            Save as profile{multi ? 's' : ''}
+                        </Button>
+                    )}
                 </>
             }
         >
             <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-3">
-                {/* ─── Nodes ────────────────────────────────────────── */}
-                <div className="w-full md:w-80 shrink-0 flex flex-col min-h-0 gap-3">
-                    <Section title="Nodes">
-                        <textarea
-                            className="input-base font-mono text-[11px] h-24 resize-none bg-slate-950/60"
-                            placeholder="Paste vless:// / vmess:// / ss:// links, a base64 subscription, or a JSON config…"
-                            value={b.input}
-                            onChange={e => b.setInput(e.target.value)}
-                        />
-                        <div className="flex gap-2">
-                            <Button variant="primary" size="sm" icon="MagicWand" className="flex-1 text-[11px]" onClick={b.parseInput}>
-                                Parse
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                icon="ArrowsClockwise"
-                                className="flex-1 text-[11px]"
-                                onClick={b.takeFromCurrentConfig}
-                                disabled={!b.hasCurrentOutbounds}
-                                title="Take the proxy outbounds from the config open in the editor"
-                            >
-                                From config
-                            </Button>
+                {/* ─── Sources & nodes ─────────────────────────────── */}
+                <div className="w-full md:w-96 shrink-0 flex flex-col min-h-0 gap-3">
+                    <Section title="Nodes from">
+                        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
+                            {([['paste', 'Links / JSON'], ['panel', 'Remnawave panel']] as const).map(([key, label]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => b.setSource(key)}
+                                    className={`flex-1 px-2 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                                        b.source === key ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
                         </div>
+
+                        {b.source === 'paste' ? (
+                            <>
+                                <textarea
+                                    className="input-base font-mono text-[11px] h-24 resize-none bg-slate-950/60"
+                                    placeholder="Paste vless:// / vmess:// / ss:// links, a base64 subscription, or a JSON config…"
+                                    value={b.input}
+                                    onChange={e => b.setInput(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                    <Button variant="primary" size="sm" icon="MagicWand" className="flex-1 text-[11px]" onClick={b.parseInput}>
+                                        Parse
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        icon="ArrowsClockwise"
+                                        className="flex-1 text-[11px]"
+                                        onClick={b.takeFromCurrentConfig}
+                                        disabled={!b.hasCurrentOutbounds}
+                                        title="Take the proxy outbounds from the config open in the editor"
+                                    >
+                                        From config
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <Input
+                                    label="Client UUID"
+                                    value={b.panelUserId}
+                                    onChange={(e: any) => b.setPanelUserId(e.target.value)}
+                                    placeholder="9bed733f-b58f-4d23-9ca2-6397e8debedf"
+                                    hint="The id from that user's vless:// link — the panel issues it per subscriber"
+                                />
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        icon="CloudArrowDown"
+                                        className="flex-1 text-[11px]"
+                                        loading={b.panelLoading}
+                                        disabled={!b.panelConnected}
+                                        onClick={b.loadPanelHosts}
+                                    >
+                                        {b.panelFetchedAt ? 'Refresh hosts' : 'Load hosts'}
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        icon="Plus"
+                                        className="flex-1 text-[11px]"
+                                        onClick={b.addSelectedFromPanel}
+                                        disabled={b.panelSelection.size === 0}
+                                    >
+                                        Add {b.panelSelection.size || ''}
+                                    </Button>
+                                </div>
+                                {!b.panelConnected && (
+                                    <p className="text-[10px] text-amber-300/80">
+                                        Not connected to Remnawave — connect from the header first.
+                                    </p>
+                                )}
+                                {b.panelRows.length > 0 && (
+                                    <>
+                                        <div className="relative">
+                                            <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
+                                            <input
+                                                className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-emerald-500"
+                                                placeholder="Search hosts, profiles, addresses…"
+                                                value={b.panelSearch}
+                                                onChange={e => b.setPanelSearch(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between text-[10px] text-slate-500">
+                                            <span>{b.filteredPanelRows.length} host(s) · {b.panelSelection.size} selected</span>
+                                            <span className="flex gap-2">
+                                                <button onClick={b.selectAllPanel} className="hover:text-emerald-400">select usable</button>
+                                                <button onClick={b.clearPanelSelection} className="hover:text-rose-400">clear</button>
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        )}
                     </Section>
 
-                    <div className="flex items-center justify-between px-1 shrink-0">
-                        <span className="text-[11px] text-slate-400">
-                            <b className="text-slate-200">{b.includedNodes.length}</b> of {b.nodes.length} node(s)
-                            {b.results.length > 0 && <> · <b className="text-slate-200">{b.results.length}</b> config(s)</>}
-                        </span>
-                        {b.nodes.length > 0 && (
-                            <button onClick={b.clearNodes} className="text-[10px] text-slate-500 hover:text-rose-400">clear</button>
-                        )}
-                    </div>
+                    {b.source === 'panel' && (
+                        <div className="flex-1 overflow-y-auto custom-scroll min-h-0 pr-1">
+                            {b.panelRows.length === 0 ? (
+                                <div className="text-center text-slate-600 italic text-[11px] py-8 px-3">
+                                    {b.panelError || 'Load the panel hosts to pick nodes from them.'}
+                                </div>
+                            ) : (
+                                b.filteredPanelRows.map(row => {
+                                    const selected = b.panelSelection.has(row.uuid);
+                                    const usable = !row.blocker;
+                                    return (
+                                        <button
+                                            key={row.uuid}
+                                            onClick={() => usable && b.togglePanelHost(row.uuid)}
+                                            disabled={!usable}
+                                            className={`w-full text-left p-2 rounded-lg border text-xs flex items-start gap-2 mb-1 transition-all ${
+                                                !usable
+                                                    ? 'bg-slate-950 border-slate-900 opacity-60 cursor-not-allowed'
+                                                    : selected
+                                                        ? 'bg-emerald-600/15 border-emerald-500/50'
+                                                        : 'bg-slate-900 border-slate-800 hover:border-slate-600'
+                                            }`}
+                                        >
+                                            <Icon
+                                                name={!usable ? 'Prohibit' : selected ? 'CheckSquare' : 'Square'}
+                                                weight={selected ? 'fill' : 'regular'}
+                                                className={`mt-0.5 shrink-0 text-base ${
+                                                    !usable ? 'text-slate-700' : selected ? 'text-emerald-400' : 'text-slate-600'
+                                                }`}
+                                            />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex items-center gap-1.5">
+                                                    <span className="font-bold text-slate-200 truncate">{row.remark}</span>
+                                                    {row.disabled && <Badge variant="warning" size="sm">off</Badge>}
+                                                </span>
+                                                <span className="block text-[10px] text-slate-500 font-mono truncate">
+                                                    {row.address}:{row.port} · {row.protocol}/{row.network || '?'}/{row.security}
+                                                </span>
+                                                {row.blocker
+                                                    ? <span className="block text-[10px] text-amber-400/80 truncate">{row.blocker}</span>
+                                                    : row.profileName && <span className="block text-[10px] text-slate-600 truncate">{row.profileName} · {row.inboundTag}</span>}
+                                            </span>
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    )}
 
-                    <div className="flex-1 overflow-y-auto custom-scroll min-h-0 pr-1">
-                        {b.nodes.length === 0 ? (
-                            <div className="text-center text-slate-600 italic text-[11px] py-10 px-3">
-                                No nodes yet. Paste links or pull them from the open config.
-                            </div>
-                        ) : (
-                            b.nodes.map(node => (
-                                <NodeRow
-                                    key={node.id}
-                                    node={node}
-                                    onToggle={() => b.toggleNode(node.id)}
-                                    onRename={(label: string) => b.renameNode(node.id, label)}
-                                    onRemove={() => b.removeNode(node.id)}
-                                />
-                            ))
-                        )}
+                    <div className={`${b.source === 'panel' ? 'max-h-44 shrink-0' : 'flex-1'} flex flex-col min-h-0`}>
+                        <div className="flex items-center justify-between px-1 shrink-0 mb-1">
+                            <span className="text-[11px] text-slate-400">
+                                <b className="text-slate-200">{b.includedNodes.length}</b> of {b.nodes.length} node(s)
+                                {b.results.length > 0 && <> · <b className="text-slate-200">{b.results.length}</b> config(s)</>}
+                            </span>
+                            {b.nodes.length > 0 && (
+                                <button onClick={b.clearNodes} className="text-[10px] text-slate-500 hover:text-rose-400">clear</button>
+                            )}
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scroll min-h-0 pr-1">
+                            {b.nodes.length === 0 ? (
+                                <div className="text-center text-slate-600 italic text-[11px] py-6 px-3">
+                                    No nodes yet.
+                                </div>
+                            ) : (
+                                b.nodes.map(node => (
+                                    <NodeRow
+                                        key={node.id}
+                                        node={node}
+                                        onToggle={() => b.toggleNode(node.id)}
+                                        onRename={(label: string) => b.renameNode(node.id, label)}
+                                        onRemove={() => b.removeNode(node.id)}
+                                    />
+                                ))
+                            )}
+                        </div>
                     </div>
 
                     <div className="shrink-0">
@@ -153,6 +283,23 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
 
                 {/* ─── Options + preview ────────────────────────────── */}
                 <div className="flex-1 min-w-0 flex flex-col min-h-0 gap-3">
+                    <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
+                        {([['config', 'Client config'], ['template', 'Panel template']] as const).map(([key, label]) => (
+                            <button
+                                key={key}
+                                onClick={() => b.setOutputMode(key)}
+                                title={key === 'config'
+                                    ? 'A finished config for one person: nodes baked in'
+                                    : 'An Xray JSON template the panel renders per subscriber, injecting its own hosts as the balanced nodes'}
+                                className={`flex-1 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                                    b.outputMode === key ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                         {(['simple', 'fleet'] as const).map(key => (
                             <button
@@ -336,6 +483,100 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                             />
                         </Section>
 
+                        {isTemplate && (
+                            <Section title="Host injection">
+                                <p className="text-[10px] text-slate-500 -mt-1">
+                                    The template carries no nodes. The panel injects the hosts this
+                                    selector picks, tagging them <span className="font-mono text-slate-400">{b.options.proxyTagPrefix}…</span> so
+                                    the balancer and probe find them.
+                                </p>
+                                <Select
+                                    label="Pick hosts by"
+                                    value={selectorType}
+                                    onChange={v => b.setInjectSelector(v as any)}
+                                    options={[
+                                        { value: 'sameTagAsRecipient', label: 'Same tag as the shown host', description: 'What a per-location balancer entry usually uses' },
+                                        { value: 'tagRegex', label: 'Host tag matches a pattern' },
+                                        { value: 'remarkRegex', label: 'Host remark matches a pattern' },
+                                        { value: 'uuids', label: 'An explicit list of hosts' },
+                                    ]}
+                                />
+                                {(selectorType === 'tagRegex' || selectorType === 'remarkRegex') && (
+                                    <Input
+                                        label="Pattern"
+                                        value={'pattern' in b.inject.selector ? b.inject.selector.pattern : ''}
+                                        onChange={(e: any) => b.setInjectPattern(e.target.value)}
+                                        placeholder="^NL"
+                                    />
+                                )}
+                                {selectorType === 'uuids' && (
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant={'values' in b.inject.selector && b.inject.selector.values.length > 0 ? 'success' : 'warning'} size="sm">
+                                            {'values' in b.inject.selector ? b.inject.selector.values.length : 0} host(s)
+                                        </Badge>
+                                        <Button variant="secondary" size="sm" icon="Check" className="text-[10px]" onClick={b.useSelectedHostsAsSelector}>
+                                            Use panel selection
+                                        </Button>
+                                    </div>
+                                )}
+                                <Select
+                                    label="Take hosts from"
+                                    value={b.inject.selectFrom}
+                                    onChange={v => b.setInject({ ...b.inject, selectFrom: v as any })}
+                                    options={[
+                                        { value: 'HIDDEN', label: 'Hidden hosts', description: 'The nodes behind a visible balancer entry' },
+                                        { value: 'NOT_HIDDEN', label: 'Visible hosts' },
+                                        { value: 'ALL', label: 'All hosts' },
+                                    ]}
+                                />
+                                <Switch
+                                    checked={b.inject.addVirtualHostAsOutbound}
+                                    onChange={v => b.setInject({ ...b.inject, addVirtualHostAsOutbound: v })}
+                                    label="Also balance the shown host itself"
+                                />
+                            </Section>
+                        )}
+
+                        {isTemplate && (
+                            <Section title="Save to the panel">
+                                <Select
+                                    label="Target"
+                                    value={b.templateTargetUuid}
+                                    onChange={v => b.setTemplateTargetUuid(v)}
+                                    options={[
+                                        { value: '', label: 'Create a new template' },
+                                        ...b.panelTemplateItems
+                                            .filter((t: any) => t.templateType === 'XRAY_JSON')
+                                            .map((t: any) => ({ value: t.uuid, label: `Update: ${t.name}` })),
+                                    ]}
+                                />
+                                {!b.templateTargetUuid && (
+                                    <Input
+                                        label="New template name"
+                                        value={b.templateName}
+                                        onChange={(e: any) => b.setTemplateName(e.target.value)}
+                                        placeholder="NL-Fast-Balancer"
+                                        hint="Letters, digits, spaces, _ and -"
+                                    />
+                                )}
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    icon="ArrowsClockwise"
+                                    className="text-[11px]"
+                                    loading={b.panelTemplatesLoading}
+                                    disabled={!b.panelConnected}
+                                    onClick={b.loadPanelTemplates}
+                                >
+                                    Load templates from the panel
+                                </Button>
+                                <p className="text-[10px] text-slate-500">
+                                    After saving, point a host at this template (its Xray JSON template
+                                    field) — subscribers of that host then get the balanced config.
+                                </p>
+                            </Section>
+                        )}
+
                         <Section title="Bypass & DNS">
                             <Switch checked={b.bypassRussian} onChange={b.setBypassRussian} label="Russian sites direct" />
                             <Switch checked={b.bypassLeakChecks} onChange={b.setBypassLeakChecks} label="IP/DNS leak checkers direct" />
@@ -368,8 +609,8 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                     {/* Preview */}
                     <div className="flex-1 min-h-0 flex flex-col">
                         <div className="flex items-center justify-between mb-1.5 gap-2">
-                            <span className="label-xs">Generated config</span>
-                            {multi && (
+                            <span className="label-xs">{isTemplate ? 'Generated template' : 'Generated config'}</span>
+                            {!isTemplate && multi && (
                                 <div className="flex gap-1 overflow-x-auto hide-scrollbar">
                                     {b.results.map((r, i) => (
                                         <button
@@ -395,7 +636,16 @@ export const LocalBalancerModal = ({ onClose }: { onClose: () => void }) => {
                         )}
 
                         <div className="flex-1 min-h-[160px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
-                            {b.preview ? (
+                            {isTemplate ? (
+                                <div className="absolute inset-0">
+                                    <JsonEditor
+                                        value={JSON.stringify(b.template, null, 2)}
+                                        onChange={() => {}}
+                                        schemaMode="full"
+                                        readOnly
+                                    />
+                                </div>
+                            ) : b.preview ? (
                                 <div className="absolute inset-0">
                                     <JsonEditor
                                         value={JSON.stringify(b.preview.config, null, 2)}

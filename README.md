@@ -22,7 +22,7 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 - 📝 **Dual Mode Editing**: Switch between a user-friendly GUI and a raw JSON editor ([CodeMirror 6](https://code.haverbeke.berlin/codemirror/dev/)) with one click.
 - 📂 **Local Management**: Drag & Drop your `config.json` to edit locally or use built-in presets.
 - 🧩 **Smart Routing**: Advanced routing manager with Drag-and-Drop rule reordering.
-- ⚖️ **Local Balancer Builder**: paste links or a subscription and get a ready client config — local SOCKS/HTTP inbounds, several proxies behind one balancer, a burst/observatory probe, and a bypass list for Russian sites and leak checkers. Groups a subscription into one config per location.
+- ⚖️ **Local Balancer Builder**: paste links or a subscription — or pick nodes straight from your Remnawave panel — and get a ready client config — local SOCKS/HTTP inbounds, several proxies behind one balancer, a burst/observatory probe, and a bypass list for Russian sites and leak checkers. Groups a subscription into one config per location, and can emit a Remnawave `XRAY_JSON` subscription template (with `remnawave.injectHosts`) so the panel renders the balanced config for every subscriber.
 - 🧷 **Snippets & Templates**: Remnawave snippet references (`{ "snippet": "NAME" }`) are recognised, resolved and editable — browse the panel's snippet library, keep your own local templates, and insert either as a reference or as an inline copy.
 - 😇 **Lots of tooltips**: As a developer, I know what it's like to be a stupid sunshine. Therefore, we have left hints on the main functions.
 

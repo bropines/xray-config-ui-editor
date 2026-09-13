@@ -1,5 +1,6 @@
 import type { RemnawaveProfile } from '../types/remnawave.types';
 import type { SnippetDefinition } from '../snippets';
+import type { PanelHost } from '../generators/client-outbound';
 
 export class RemnawaveClient {
     private baseUrl: string;
@@ -83,6 +84,55 @@ export class RemnawaveClient {
             method: 'PATCH',
             body: JSON.stringify({ uuid, config }),
         });
+    }
+
+    /**
+     * Hosts are the panel's client-facing view of an inbound: which public
+     * address, port, SNI and transport params a client should use for it.
+     * Pairing a host with the inbound it points at (from getConfigProfiles's
+     * `inbounds[].rawInbound`) is what lets a client outbound be derived from
+     * a server config. Returns the array as-is; the shape is documented in
+     * core/generators/client-outbound.
+     */
+    async getHosts(): Promise<PanelHost[]> {
+        const data = await this.request('/api/hosts');
+        const list = data?.response;
+        return Array.isArray(list) ? list : [];
+    }
+
+    // ─── Subscription templates ──────────────────────────────────────────
+    // An XRAY_JSON template is the config the panel renders for a subscriber,
+    // with hosts injected into it. A host points at one via its
+    // `xrayJsonTemplateUuid`, which is how a single visible entry can hand a
+    // client a whole balanced config.
+
+    async getSubscriptionTemplates(): Promise<any[]> {
+        const data = await this.request('/api/subscription-templates');
+        const list = data?.response;
+        if (Array.isArray(list)) return list;
+        return list?.templates || [];
+    }
+
+    /** The list endpoint omits template bodies; fetch one to get its JSON. */
+    async getSubscriptionTemplate(uuid: string): Promise<any> {
+        const data = await this.request(`/api/subscription-templates/${uuid}`);
+        return data?.response || null;
+    }
+
+    async createSubscriptionTemplate(name: string, templateType = 'XRAY_JSON'): Promise<any> {
+        const data = await this.request('/api/subscription-templates', {
+            method: 'POST',
+            body: JSON.stringify({ name, templateType }),
+        });
+        return data?.response || null;
+    }
+
+    async updateSubscriptionTemplate(uuid: string, templateJson: unknown, name?: string): Promise<any> {
+        const data = await this.request('/api/subscription-templates', {
+            method: 'PATCH',
+            body: JSON.stringify({ uuid, templateJson, ...(name ? { name } : {}) }),
+        });
+        return data?.response || null;
     }
 
     // ─── Snippets ────────────────────────────────────────────────────────

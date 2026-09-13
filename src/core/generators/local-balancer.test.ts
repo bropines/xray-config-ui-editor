@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import {
     buildLocalBalancerConfig,
+    buildLocalBalancerTemplate,
     buildLocalBalancerSubscription,
     groupNodesByLabel,
     proxyTagFor,
@@ -218,5 +219,67 @@ describe('input filtering', () => {
     it('refuses to build a config with nothing to proxy through', () => {
         expect(() => buildLocalBalancerConfig([{ outbound: { tag: 'direct', protocol: 'freedom' } }]))
             .toThrow('No proxy outbounds');
+    });
+});
+
+
+describe('buildLocalBalancerTemplate — what the panel renders per subscriber', () => {
+    // Matches the shape a Remnawave XRAY_JSON template has in practice: same
+    // skeleton as a client config, no proxy outbounds, plus an injector block
+    // telling the panel which hosts to splice in and how to tag them.
+    const template = buildLocalBalancerTemplate();
+
+    it('carries no proxy outbounds — the panel injects those per subscriber', () => {
+        expect(template.outbounds.map((o: any) => o.tag)).toEqual(['direct', 'block']);
+    });
+
+    it('keeps the balancer, the catch-all rule and the probe', () => {
+        expect(template.routing.balancers[0].tag).toBe('entry-balancer');
+        expect(template.routing.rules.at(-1).balancerTag).toBe('entry-balancer');
+        expect(template.burstObservatory.subjectSelector).toEqual(['proxy']);
+    });
+
+    it('tags injected hosts with the prefix the balancer selects on', () => {
+        expect(template.remnawave).toEqual({
+            injectHosts: [{
+                selector: { type: 'sameTagAsRecipient' },
+                selectFrom: 'HIDDEN',
+                tagPrefix: 'proxy',
+            }],
+            addVirtualHostAsOutbound: false,
+        });
+        expect(template.remnawave.injectHosts[0].tagPrefix)
+            .toBe(template.routing.balancers[0].selector[0]);
+    });
+
+    it('follows a custom prefix into both the injector and the selectors', () => {
+        const t = buildLocalBalancerTemplate({ proxyTagPrefix: 'fb-', balancerTag: 'bal-fb' });
+        expect(t.remnawave.injectHosts[0].tagPrefix).toBe('fb-');
+        expect(t.routing.balancers[0].selector).toEqual(['fb-']);
+        expect(t.burstObservatory.subjectSelector).toEqual(['fb-']);
+        expect(t.routing.rules.at(-1).balancerTag).toBe('bal-fb');
+    });
+
+    it('supports the other host selectors the panel understands', () => {
+        const byUuid = buildLocalBalancerTemplate({}, {
+            selector: { type: 'uuids', values: ['4f1f4b1a-0000-4000-8000-000000000001'] },
+            selectFrom: 'ALL',
+            addVirtualHostAsOutbound: true,
+        });
+        expect(byUuid.remnawave).toEqual({
+            injectHosts: [{
+                selector: { type: 'uuids', values: ['4f1f4b1a-0000-4000-8000-000000000001'] },
+                selectFrom: 'ALL',
+                tagPrefix: 'proxy',
+            }],
+            addVirtualHostAsOutbound: true,
+        });
+
+        const byRegex = buildLocalBalancerTemplate({}, { selector: { type: 'tagRegex', pattern: '^NL' } });
+        expect(byRegex.remnawave.injectHosts[0].selector).toEqual({ type: 'tagRegex', pattern: '^NL' });
+    });
+
+    it('leaves out remarks, which belong to a rendered config not a template', () => {
+        expect(buildLocalBalancerTemplate({ remarks: 'ignored' }).remarks).toBeUndefined();
     });
 });

@@ -159,6 +159,34 @@ export const LOCAL_BALANCER_PRESETS: Record<string, { label: string; description
     },
 };
 
+/**
+ * How a Remnawave subscription template picks the hosts it injects as
+ * outbounds. Mirrors the panel's own injector schema:
+ *   sameTagAsRecipient — the hosts sharing the tag of the host being rendered
+ *   tagRegex / remarkRegex — hosts whose tag/remark matches a pattern
+ *   uuids — an explicit list of hosts
+ */
+export type InjectSelector =
+    | { type: 'sameTagAsRecipient' }
+    | { type: 'tagRegex'; pattern: string }
+    | { type: 'remarkRegex'; pattern: string }
+    | { type: 'uuids'; values: string[] };
+
+export interface InjectOptions {
+    selector: InjectSelector;
+    /** Which pool to take hosts from. HIDDEN is the usual one: the nodes are
+     *  hidden rows, and the visible host is the balancer entry the user sees. */
+    selectFrom: 'ALL' | 'HIDDEN' | 'NOT_HIDDEN';
+    /** Also inject the visible host itself as one of the balanced outbounds. */
+    addVirtualHostAsOutbound: boolean;
+}
+
+export const DEFAULT_INJECT_OPTIONS: InjectOptions = {
+    selector: { type: 'sameTagAsRecipient' },
+    selectFrom: 'HIDDEN',
+    addVirtualHostAsOutbound: false,
+};
+
 /** A named set of nodes that becomes one config in the output. */
 export interface LocalBalancerGroup {
     name: string;
@@ -424,6 +452,50 @@ export const buildLocalBalancerConfig = (
             probe: balanced ? options.probe : 'none',
         },
     };
+};
+
+/**
+ * Build the same config as a Remnawave **subscription template**: identical
+ * routing, balancer, probe and bypass, but with no proxy outbounds of its own.
+ * The panel fills those in per subscriber from the hosts the injector selects,
+ * tagging them with `tagPrefix` — which is why that prefix has to be the one
+ * the balancer's selector matches.
+ *
+ * This is the difference between "a config file for one person" and "a thing
+ * the panel hands to every subscriber": the template carries no user id and no
+ * node addresses, so it stays correct as nodes come and go.
+ */
+export const buildLocalBalancerTemplate = (
+    overrides: Partial<LocalBalancerOptions> = {},
+    inject: Partial<InjectOptions> = {}
+): any => {
+    const options: LocalBalancerOptions = { ...DEFAULT_LOCAL_BALANCER_OPTIONS, ...overrides };
+    const injectOptions: InjectOptions = { ...DEFAULT_INJECT_OPTIONS, ...inject };
+
+    // One placeholder node stands in while the skeleton is assembled, then the
+    // proxies are dropped: it keeps the balancer/probe/catch-all wiring in the
+    // single code path that already gets it right.
+    const placeholder = {
+        outbound: { tag: 'placeholder', protocol: 'vless', settings: { vnext: [] } },
+    };
+    const { config } = buildLocalBalancerConfig([placeholder], {
+        ...options,
+        forceBalancer: true,
+    });
+
+    config.outbounds = config.outbounds.filter((o: any) => o.tag === 'direct' || o.tag === 'block');
+    config.remnawave = {
+        injectHosts: [{
+            selector: injectOptions.selector,
+            selectFrom: injectOptions.selectFrom,
+            tagPrefix: options.proxyTagPrefix,
+        }],
+        addVirtualHostAsOutbound: injectOptions.addVirtualHostAsOutbound,
+    };
+
+    // `remarks` belongs to a rendered client config, not to a template.
+    delete config.remarks;
+    return config;
 };
 
 /**
