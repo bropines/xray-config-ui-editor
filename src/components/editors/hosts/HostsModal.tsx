@@ -11,6 +11,7 @@ import { useHostsManager } from '../../../hooks/useHostsManager';
 import { HOST_ALPN_OPTIONS, HOST_FINGERPRINTS, HOST_SECURITY_LAYERS } from '../../../core/presets/host-fields';
 import { normaliseHostTag } from '../../../core/generators/host-payload';
 import { t } from '../../../i18n';
+import { RemnawaveGuide } from '../remnawave/RemnawaveGuide';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3 flex flex-col gap-3">
@@ -58,13 +59,15 @@ export const HostsModal = ({ onClose, initialHostUuid, onOpenTemplates }: {
             extraButtons={draft && !h.isNew ? (
                 h.confirmDelete ? (
                     <Button variant="danger" icon="Warning" onClick={h.remove}>
-                        Confirm: delete "{draft.remark}"
+                        {t("Confirm: delete “{remark}”", { remark: draft.remark })}
                     </Button>
                 ) : (
                     <Button variant="ghost" icon="Trash" onClick={() => h.setConfirmDelete(true)}>{t("Delete host")}</Button>
                 )
             ) : null}
         >
+            <RemnawaveGuide module="hosts" />
+
             <div className="flex flex-col md:flex-row flex-1 min-h-0 border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl">
                 {/* ─── List ─────────────────────────────────────────── */}
                 <div className={`w-full md:w-72 bg-slate-950 border-r border-slate-800 flex-col min-h-0 md:shrink-0 ${draft ? 'hidden md:flex' : 'flex'}`}>

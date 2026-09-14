@@ -42,6 +42,11 @@ const detect = (): Lang => {
 let current: Lang = detect();
 const listeners = new Set<() => void>();
 
+// Stamped on load as well as on every switch: index.html can only carry one
+// language, and a wrong `lang` sends screen readers and spellcheckers down the
+// wrong dictionary before anyone has touched the switch.
+if (typeof document !== 'undefined') document.documentElement.lang = current;
+
 export const getLang = (): Lang => current;
 
 export const setLang = (lang: Lang) => {

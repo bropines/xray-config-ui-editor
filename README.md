@@ -26,6 +26,7 @@ The most advanced, static web-based GUI for **Xray-core**. Manage your configura
 - 📡 **Hosts editor**: edit your Remnawave hosts here — address, transport, the inbound they serve and the template they render — with saves that touch only the fields you changed.
 - 📄 **Subscription Templates**: edited inside the Local Balancer, as a form or as raw JSON — the same object, two views.
 - 🧷 **Snippets & Templates**: Remnawave snippet references (`{ "snippet": "NAME" }`) are recognised, resolved and editable — browse the panel's snippet library, keep your own local templates, and insert either as a reference or as an inline copy.
+- 🌐 **English and Russian**: the whole interface, down to toasts and validation messages, switches from the header. Xray's own vocabulary (inbound, outbound, REALITY, sockopt) and config enum values stay in English on purpose, so what you read still matches what the JSON says.
 - 😇 **Lots of tooltips**: As a developer, I know what it's like to be a stupid sunshine. Therefore, we have left hints on the main functions.
 
 ---
@@ -142,6 +143,20 @@ bun run dev
 ```bash
 bun run build
 ```
+
+### Translations
+
+Every user-visible string goes through `t()` in `src/i18n`, keyed by its
+English text. To add or fix a translation, edit `src/i18n/ru.ts`; a key with no
+entry falls back to English, so nothing breaks while a language is incomplete.
+
+```bash
+bun run i18n:report
+```
+
+prints what is missing, what is stale, and what is deliberately the same in both
+languages (`src/i18n/untranslated.ts` — protocol names, config enum values and
+example inputs). `bun test` enforces all three.
 
 ---
 

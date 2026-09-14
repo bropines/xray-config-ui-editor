@@ -13,6 +13,7 @@ import { useLocalBalancerBuilder } from '../../../hooks/useLocalBalancerBuilder'
 import { useTemplatesLibrary } from '../../../hooks/useTemplatesLibrary';
 import { TemplatePickerPanel } from './TemplatePickerPanel';
 import { TemplateJsonView } from './TemplateJsonView';
+import { RemnawaveGuide } from '../remnawave/RemnawaveGuide';
 import { LOCAL_BALANCER_PRESETS } from '../../../core/generators/local-balancer';
 import { DNS_RESOLVERS, matchResolverPreset } from '../../../core/presets/dns';
 import { t, tn } from '../../../i18n';
@@ -134,19 +135,26 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
             extraButtons={
                 <>
                     <Button variant="secondary" icon="FileArrowDown" onClick={b.download} disabled={!b.outputJson}>
-                        Download {isTemplate ? 'template' : (multi ? `${b.results.length} configs` : 'JSON')}
+                        {isTemplate
+                            ? t("Download template")
+                            : (multi
+                                ? tn(b.results.length, "Download {n} config", "Download {n} configs")
+                                : t("Download JSON"))}
                     </Button>
                     <Button variant="secondary" icon="Copy" onClick={b.copy} disabled={!b.outputJson}>{t("Copy")}</Button>
                     {!isTemplate && (
                         <Button variant="secondary" icon="CardsThree" onClick={b.saveAsProfiles} disabled={b.results.length === 0}>
-                            Save as profile{multi ? 's' : ''}
+                            {tn(b.results.length, "Save as profile", "Save as profiles")}
                         </Button>
                     )}
                 </>
             }
         >
+            {isTemplate && <RemnawaveGuide module="templates" />}
+
             <div className="flex md:hidden bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 mb-3 shrink-0">
-                {([['nodes', isTemplate ? 'Templates' : 'Nodes'], ['output', isTemplate ? 'Template' : 'Config']] as const).map(([key, label]) => (
+                {([['nodes', isTemplate ? t("Templates") : t("Nodes")],
+                  ['output', isTemplate ? t("Template") : t("Config")]] as const).map(([key, label]) => (
                     <button
                         key={key}
                         onClick={() => setMobilePane(key)}
@@ -173,7 +181,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                     <>
                     <Section title={t("Nodes from")}>
                         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
-                            {([['paste', 'Links / JSON'], ['panel', 'Remnawave panel']] as const).map(([key, label]) => (
+                            {([['paste', t("Links / JSON")], ['panel', t("Remnawave panel")]] as const).map(([key, label]) => (
                                 <button
                                     key={key}
                                     onClick={() => b.setSource(key)}
@@ -403,7 +411,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                 {/* ─── Options + preview ────────────────────────────── */}
                 <div className={`flex-1 min-w-0 flex-col min-h-0 gap-3 overflow-y-auto custom-scroll md:overflow-visible ${mobilePane === 'output' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
-                        {([['config', 'Client config'], ['template', 'Panel template']] as const).map(([key, label]) => (
+                        {([['config', t("Client config")], ['template', t("Panel template")]] as const).map(([key, label]) => (
                             <button
                                 key={key}
                                 onClick={() => b.setOutputMode(key)}
@@ -421,7 +429,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
 
                     {isTemplate && (
                         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
-                            {([['form', 'Form'], ['json', 'JSON']] as const).map(([key, label]) => (
+                            {([['form', t("Form")], ['json', t("JSON")]] as const).map(([key, label]) => (
                                 <button
                                     key={key}
                                     onClick={() => switchTemplateView(key)}

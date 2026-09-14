@@ -6,6 +6,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { t, tn } from '../../i18n';
+import { dndAccessibility } from './dndAccessibility';
 
 interface Suggestion {
     code: string;
@@ -435,7 +436,7 @@ export const SmartTagInput = ({
                     className="flex flex-wrap gap-2 flex-1 cursor-text"
                     onClick={() => wrapperRef.current?.querySelector('input')?.focus()}
                 >
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} accessibility={dndAccessibility()}>
                         <SortableContext items={itemIds} strategy={rectSortingStrategy}>
                             {value.map((tag, i) => {
                                 const isInvalid = invalidTags.includes(tag);

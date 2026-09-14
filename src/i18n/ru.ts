@@ -1743,4 +1743,66 @@ export const ru: Record<string, string> = {
     'It is stored base64-encoded and did not decode cleanly.':
         'Оно хранится в base64 и не раскодировалось корректно.',
     'Snippets': 'Сниппеты',
+    // ── Remnawave module guides ─────────────────────────────────────────────
+    'Config profile': 'Профиль конфига',
+    'XRAY JSON template': 'Шаблон XRAY JSON',
+    'Subscriber': 'Подписчик',
+    'Snippet': 'Сниппет',
+    'Node': 'Нода',
+    'What a host is': 'Что такое хост',
+    'One entry in a subscription: the address a client connects to, and the inbound that serves it.':
+        'Одна запись в подписке: адрес, к которому подключается клиент, и inbound, который его обслуживает.',
+    'Bind it to an inbound from a config profile — that is what fixes the protocol, the keys and the transport.':
+        'Привяжите его к inbound из профиля конфига — именно это задаёт протокол, ключи и транспорт.',
+    'Attach an Xray JSON template and the subscriber receives that whole config instead of a single link. A balancer reaches people this way and no other.':
+        'Прикрепите шаблон Xray JSON — и подписчик получит целый конфиг вместо одной ссылки. Балансировщик доходит до людей только так.',
+    'A hidden host never appears in a subscription on its own. Hidden hosts are the pool a template injects.':
+        'Скрытый хост сам по себе в подписке не появится. Скрытые хосты — это пул, который подставляет шаблон.',
+    'What a subscription template is': 'Что такое шаблон подписки',
+    "The JSON a subscriber's client receives. The panel fills in the hosts; the template supplies everything around them — routing, balancer, DNS.":
+        'Это JSON, который получает клиент подписчика. Хосты подставляет панель, а всё вокруг них — маршрутизацию, балансировщик, DNS — задаёт шаблон.',
+    'A template carries no nodes of its own. It says which hosts to pull in, and the panel substitutes them when it renders the subscription.':
+        'Своих узлов у шаблона нет. Он говорит, какие хосты взять, а панель подставляет их, когда собирает подписку.',
+    "Saving a template to the panel is not enough to publish it: attach it to a visible host, and that host's subscribers get it.":
+        'Сохранить шаблон в панель — ещё не значит опубликовать его: прикрепите его к видимому хосту, и подписчики этого хоста его получат.',
+    'Form and JSON are two views of one object — switch between them as often as you like.':
+        'Форма и JSON — два взгляда на один объект, переключайтесь сколько угодно.',
+    'What a snippet is': 'Что такое сниппет',
+    'A reusable array of routing rules or outbounds, stored once in the panel and shared by every config that references it.':
+        'Переиспользуемый массив правил маршрутизации или outbound’ов: хранится в панели в одном месте и общий для всех конфигов, которые на него ссылаются.',
+    'A config refers to it by name, and the panel replaces that reference with the body before the config ever reaches a node.':
+        'Конфиг ссылается на него по имени, а панель заменяет ссылку содержимым ещё до того, как конфиг дойдёт до ноды.',
+    'Editing the body here changes every profile that references it — that is the whole point of a snippet.':
+        'Правка тела здесь меняет все профили, которые на него ссылаются, — ради этого сниппеты и нужны.',
+    'Templates under “This browser” are local scratch copies. They never touch the panel.':
+        'Шаблоны во вкладке «Этот браузер» — локальные черновики. Панели они не касаются.',
+
+    // ── Strings rescued from template literals ──────────────────────────────
+    'Download template': 'Скачать шаблон',
+    'Download JSON': 'Скачать JSON',
+    'Download {n} config|Download {n} configs':
+        'Скачать {n} конфиг|Скачать {n} конфига|Скачать {n} конфигов',
+    'Save as profile|Save as profiles':
+        'Сохранить как профиль|Сохранить как профили|Сохранить как профили',
+    'Panel': 'Панель',
+    'This browser': 'Этот браузер',
+    'Confirm: delete “{remark}”': 'Подтвердить удаление «{remark}»',
+    'Panel host': 'Хост в панели',
+    'Client config': 'Клиентский конфиг',
+    'Panel template': 'Шаблон панели',
+    'Form': 'Форма',
+    'Nodes': 'Узлы',
+    'Template': 'Шаблон',
+    'Config': 'Конфиг',
+    'Links / JSON': 'Ссылки / JSON',
+    'Remnawave panel': 'Панель Remnawave',
+    // ── Drag-and-drop, for screen readers ───────────────────────────────────
+    'To pick up an item, press the space bar. While dragging, use the arrow keys to move it. Press space again to drop it, or escape to cancel.':
+        'Чтобы взять элемент, нажмите пробел. Во время перетаскивания двигайте его стрелками. Нажмите пробел ещё раз, чтобы положить, или Esc, чтобы отменить.',
+    'Picked up item {id}.': 'Элемент {id} взят.',
+    'Item {id} is over position {target}.': 'Элемент {id} над позицией {target}.',
+    'Item {id} is no longer over a drop position.': 'Элемент {id} больше не над позицией для сброса.',
+    'Item {id} was dropped at position {target}.': 'Элемент {id} помещён на позицию {target}.',
+    'Item {id} was dropped.': 'Элемент {id} помещён.',
+    'Dragging of item {id} was cancelled.': 'Перетаскивание элемента {id} отменено.',
 };

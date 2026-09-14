@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { getCriticalRuleErrors } from '../../../core/validators';
 import { getSnippetRefName, classifySnippet, type SnippetDefinition } from '../../../core/snippets';
 import { t, tn } from '../../../i18n';
+import { dndAccessibility } from '../../ui/dndAccessibility';
 
 /**
  * A `{ "snippet": "NAME" }` entry is a Remnawave placeholder, not a rule: the
@@ -276,7 +277,7 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, sn
                 </div>
             )}
 
-            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} accessibility={dndAccessibility()}>
                 <SortableContext items={rules.map((_: any, i: number) => `rule-${i}`)} strategy={verticalListSortingStrategy}>
                     {rules.map((rule: any, i: number) => {
                         const isActive = rule.originalIndex !== undefined ? rule.originalIndex === activeIndex : activeIndex === i;

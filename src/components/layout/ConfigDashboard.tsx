@@ -15,6 +15,7 @@ import { CommitModal } from "../git/CommitModal";
 import { collectSnippetRefs, getSnippetRefName, type SnippetDefinition } from '../../core/snippets';
 import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
 import { t, tn } from '../../i18n';
+import { dndAccessibility } from '../ui/dndAccessibility';
 
 // Re-usable column Card for the dashboard
 interface DashCardProps {
@@ -1006,6 +1007,7 @@ export const ConfigDashboard = ({
                 <DndContext
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
+                  accessibility={dndAccessibility()}
                 >
                   <SortableContext
                     items={filteredOutbounds.map((item) => `ob-${item.originalIndex}`)}

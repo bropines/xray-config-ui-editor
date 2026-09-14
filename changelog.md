@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-09-14
+
+### Added
+- **The interface speaks Russian.** All 1390 user-visible strings — labels, help text, placeholders, toasts, validation messages, empty states, even the screen-reader instructions for drag-and-drop lists — switch from the **EN / RU** control in the header. The first visit follows the browser's language; after that the choice is remembered.
+  - Xray's own vocabulary (inbound, outbound, sniffing, REALITY, sockopt) and config enum values (`AsIs`, `UseIP`, `leastPing`, cipher names) stay in English on purpose: translating a dropdown option would stop it matching what the JSON says. Those are listed explicitly in `src/i18n/untranslated.ts`, so each one is a decision rather than an omission.
+  - Russian plurals are handled properly — "1 конфиг / 2 конфига / 5 конфигов", including the 11–14 exceptions — rather than the usual "1 конфиг(ов)".
+  - A missing translation falls back to English, so an incomplete dictionary can never break a screen. `bun test` asserts that every rendered string is either translated or explicitly exempt, and `bun run i18n:report` prints what is missing or stale.
+- **"What is this" guides in the Remnawave modules.** Hosts, Templates and Snippets each open with a short explainer showing where that module sits in the chain a config actually travels — config profile → inbound → host → XRAY JSON template → subscriber — with its own link highlighted, plus the two or three things that are easy to get wrong. Collapsible, and remembered once closed.
+  - Hosts: what binding to an inbound decides, and that attaching a template is the only way a balancer reaches a subscriber.
+  - Templates: that a template carries no nodes of its own, and that saving it to the panel is not the same as publishing it.
+  - Snippets: that the panel expands the reference before a node ever sees the config, so editing a body changes every profile that uses it.
+
+### Fixed
+- `Modal` rendered its default Save and Close labels through a helper it never imported. Types and the production build both accepted it; every modal would have thrown on open. A test now checks that every file calling `t()` imports it, since neither `tsc` nor the bundler can.
+- The document's `lang` attribute now matches the active language from the first paint, instead of always claiming English.
+
 ## [1.0.26] - 2026-09-14
 
 ### Fixed

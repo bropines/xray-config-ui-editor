@@ -11,6 +11,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { DNS_RESOLVERS, DEFAULT_DNS_UPSTREAM } from '../../../core/presets/dns';
 import { t, tn } from '../../../i18n';
+import { dndAccessibility } from '../../ui/dndAccessibility';
 
 // Компонент одного элемента (Sortable)
 const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
@@ -98,7 +99,7 @@ export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder 
             </div>
             
             <div className="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1">
-                <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} accessibility={dndAccessibility()}>
                     <SortableContext items={servers.map((_, i) => `srv-${i}`)} strategy={verticalListSortingStrategy}>
                         {servers.map((s, i) => (
                             <SortableDnsItem 

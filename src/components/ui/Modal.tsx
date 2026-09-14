@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Icon } from './Icon';
+import { t } from '../../i18n';
 
 export const Modal = ({
   title,

@@ -108,6 +108,30 @@ describe('translation lookup', () => {
     });
 });
 
+describe('i18n imports', () => {
+    it('imports every helper it calls', () => {
+        // `t` is a plain function, so a missing import is not a type error and
+        // not a build error either — it is a ReferenceError the first time that
+        // component renders. This is the only thing that catches it.
+        const broken: string[] = [];
+        for (const file of sourceFiles('src')) {
+            if (/[\\/]i18n[\\/]/.test(file)) continue;
+            const text = readFileSync(file, 'utf8');
+            const needed = new Set<string>();
+            if (/\bt\(\s*["']/.test(text)) needed.add('t');
+            if (/\btn\(/.test(text)) needed.add('tn');
+            if (text.includes('perLanguage(')) needed.add('perLanguage');
+            if (!needed.size) continue;
+
+            const line = text.match(/^import \{ ([^}]+) \} from '[^']*i18n';$/m);
+            const imported = new Set((line?.[1] ?? '').split(',').map(s => s.trim()));
+            const missing = [...needed].filter(name => !imported.has(name));
+            if (missing.length) broken.push(`${file}: ${missing.join(', ')}`);
+        }
+        expect(broken).toEqual([]);
+    });
+});
+
 describe('russian coverage', () => {
     it('translates every string the app renders', () => {
         const missing = [...usedKeys().keys()]

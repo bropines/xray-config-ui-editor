@@ -8,6 +8,7 @@ import { SnippetBodyEditor } from './SnippetBodyEditor';
 import { useSnippetsLibrary, type SnippetEntry } from '../../../hooks/useSnippetsLibrary';
 import type { SnippetSource } from '../../../core/snippets';
 import { t } from '../../../i18n';
+import { RemnawaveGuide } from '../remnawave/RemnawaveGuide';
 
 const KIND_LABEL: Record<string, string> = {
     rules: 'routing rules',
@@ -71,6 +72,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             hideFooter
         >
+            <RemnawaveGuide module="snippets" />
+
             <div className="flex flex-col md:flex-row flex-1 min-h-0 border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl">
                 {/* ─── Library list ─────────────────────────────────── */}
                 {/* One pane at a time on a phone: with both mounted the editor
@@ -79,8 +82,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                 <div className={`w-full md:w-72 bg-slate-950 border-r border-slate-800 flex-col min-h-0 md:shrink-0 ${draft ? 'hidden md:flex' : 'flex'}`}>
                     <div className="p-3 border-b border-slate-800 space-y-2.5 bg-slate-900/50 shrink-0">
                         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
-                            {tabButton('panel', 'Panel', lib.panelEntries.length)}
-                            {tabButton('local', 'This browser', lib.localEntries.length)}
+                            {tabButton('panel', t("Panel"), lib.panelEntries.length)}
+                            {tabButton('local', t("This browser"), lib.localEntries.length)}
                         </div>
 
                         <div className="relative">
