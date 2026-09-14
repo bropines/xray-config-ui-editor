@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-09-14
+
+### Added
+- **Snippets are edited as forms, not just as JSON.** A snippet body is an array of the very objects the routing editor already edits, so it now gets those same editors instead of a second set: rules open in the rule editor, balancers in the balancer editor, and an outbound opens the outbound editor as a secondary modal. A **Form / JSON** switch sits above the body, matching the rest of the app.
+  - Editing a rule inside a snippet and editing one in Routing are the same screen, with the same matchers, geo lookups and duplicate warnings — nothing to learn twice.
+  - Tag suggestions come from the config currently open. A snippet has no config of its own, so the open one is the closest thing to the context it will be spliced into.
+  - A new snippet starts empty and therefore has no kind yet, so the form asks what you are building — routing rules, outbounds or balancers — and creates the first entry. Sending someone to raw JSON to write their first rule is exactly the case a form should cover.
+  - A body with two kinds of entry in it has no single editor to show, so mixed and unrecognised bodies stay on JSON.
+
+### Fixed
+- The generated-body block could overflow the snippet editor and cover its save buttons: a fixed-height box inside a flex column was being squeezed rather than scrolled.
+- The kind badge and the "this body looks like …" warning were English-only, and the local library's empty state was never translated.
+
 ## [1.1.2] - 2026-09-14
 
 ### Added

@@ -1881,4 +1881,31 @@ export const ru: Record<string, string> = {
         'Появилось в коммите {commit} xray-core, в релизах пока нет.',
     'Matched by prefix “{prefix}”': 'Совпало по префиксу «{prefix}»',
     'Sorted: {name} first': 'Отсортировано: сначала {name}',
+    // ── Snippet form editor ─────────────────────────────────────────────────
+    'Add rule': 'Добавить правило',
+    'Add balancer': 'Добавить балансировщик',
+    'Add outbound': 'Добавить outbound',
+    'Entries': 'Записи',
+    'Empty — press Add to create the first entry.':
+        'Пусто — нажмите «Добавить», чтобы создать первую запись.',
+    '(no tag)': '(без тега)',
+    'Pick an outbound to open it in the outbound editor — the same one the config uses.':
+        'Выберите outbound, чтобы открыть его в том же редакторе, которым правится конфиг.',
+    'What does this snippet hold?': 'Что лежит в этом сниппете?',
+    'Routing rules': 'Правила маршрутизации',
+    'What the panel splices into routing.rules': 'То, что панель вставит в routing.rules',
+    'Whole outbounds, spliced into the outbounds array': 'Целые outbound’ы — вставятся в массив outbounds',
+    'Balancer definitions for routing.balancers': 'Описания балансировщиков для routing.balancers',
+    'Or switch to JSON and paste a body you already have.':
+        'Или переключитесь на JSON и вставьте готовое тело.',
+    'No templates in this browser yet. Create one to reuse blocks across configs.':
+        'В этом браузере пока нет шаблонов. Создайте, чтобы переиспользовать блоки между конфигами.',
+    'routing rules': 'правил маршрутизации',
+    'outbounds': 'outbound’ов',
+    'balancers': 'балансировщиков',
+    'mixed contents': 'смешанное содержимое',
+    'empty': 'пусто',
+    'unrecognised contents': 'нераспознанное содержимое',
+    'This body looks like {kind} — inserting it into {target} will not do what you expect.':
+        'Похоже, в теле {kind} — вставка этого в {target} сработает не так, как вы ожидаете.',
 };

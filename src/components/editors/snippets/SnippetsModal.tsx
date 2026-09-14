@@ -7,17 +7,20 @@ import { Input } from '../../ui/Input';
 import { SnippetBodyEditor } from './SnippetBodyEditor';
 import { useSnippetsLibrary, type SnippetEntry } from '../../../hooks/useSnippetsLibrary';
 import type { SnippetSource } from '../../../core/snippets';
-import { t } from '../../../i18n';
+import { perLanguage, t } from '../../../i18n';
 import { RemnawaveGuide } from '../remnawave/RemnawaveGuide';
+import { SnippetFormEditor, FORM_EDITABLE } from './SnippetFormEditor';
 
-const KIND_LABEL: Record<string, string> = {
-    rules: 'routing rules',
-    outbounds: 'outbounds',
-    balancers: 'balancers',
-    mixed: 'mixed contents',
-    empty: 'empty',
-    unknown: 'unrecognised contents',
-};
+// perLanguage, not a plain const: a module-level table of labels is built once
+// at import and would keep whatever language was active then.
+const kindLabels = perLanguage((): Record<string, string> => ({
+    rules: t("routing rules"),
+    outbounds: t("outbounds"),
+    balancers: t("balancers"),
+    mixed: t("mixed contents"),
+    empty: t("empty"),
+    unknown: t("unrecognised contents"),
+}));
 
 const EntryRow = ({ entry, active, onClick }: { entry: SnippetEntry; active: boolean; onClick: () => void }) => (
     <button
@@ -50,9 +53,21 @@ const EntryRow = ({ entry, active, onClick }: { entry: SnippetEntry; active: boo
  * stored in this browser. Right: one editor for whichever is selected, with
  * every write to the panel behind an explicit button.
  */
+/** The snippet kinds, named the way the badge above names them. */
+const kindName = (kind: string | null): string =>
+    (kind && kindLabels()[kind]) || String(kind ?? "");
+
 export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
     const lib = useSnippetsLibrary(true);
     const { draft } = lib;
+
+    // A snippet body is an array of the very objects the routing editor
+    // already edits, so it can be edited as a form instead of as raw JSON —
+    // but only when every entry is of one kind. A mixed body has no single
+    // editor to show, and JSON stays the honest answer there.
+    const formEditable = !!lib.draftKind && FORM_EDITABLE.includes(lib.draftKind as any);
+    const [bodyView, setBodyView] = React.useState<'form' | 'json'>('form');
+    const view = formEditable ? bodyView : 'json';
 
     const tabButton = (id: SnippetSource, label: string, count: number) => (
         <button
@@ -147,7 +162,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                             <div className="text-center text-slate-600 py-8 italic text-[11px] px-3">
                                 {lib.tab === 'panel'
                                     ? 'No panel snippets loaded — press Refresh, or New to create the first one.'
-                                    : 'No templates in this browser yet. Create one to reuse blocks across configs.'}
+                                    : t("No templates in this browser yet. Create one to reuse blocks across configs.")}
                             </div>
                         )}
 
@@ -201,7 +216,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 </Badge>
                                 {lib.draftKind && (
                                     <Badge variant="default" size="sm">
-                                        {draft.body.length} × {KIND_LABEL[lib.draftKind] || lib.draftKind}
+                                        {draft.body.length} × {kindLabels()[lib.draftKind] || lib.draftKind}
                                     </Badge>
                                 )}
                                 {!draft.originalName && (
@@ -228,15 +243,43 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 )}
                             </div>
 
-                            <div className="flex flex-col">
-                                <SnippetBodyEditor
-                                    key={`${draft.source}-${draft.originalName ?? 'new'}`}
-                                    label={t("Body — a JSON array of rules or outbounds")}
-                                    value={draft.body}
-                                    onChange={body => lib.updateDraft({ body })}
-                                    onSyntaxError={lib.setBodySyntaxError}
-                                    heightClass="h-[240px] md:h-[34vh]"
-                                />
+                            <div className="flex flex-col shrink-0">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                    <span className="label-xs">{t("Body — a JSON array of rules or outbounds")}</span>
+                                    {formEditable && (
+                                        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
+                                            {([['form', t("Form")], ['json', t("JSON")]] as const).map(([key, label]) => (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => setBodyView(key)}
+                                                    className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                                                        view === key ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {view === 'form' ? (
+                                    <div className="h-[320px] md:h-[38vh] flex shrink-0">
+                                        <SnippetFormEditor
+                                            kind={lib.draftKind as any}
+                                            body={draft.body}
+                                            onChange={body => lib.updateDraft({ body })}
+                                        />
+                                    </div>
+                                ) : (
+                                    <SnippetBodyEditor
+                                        key={`${draft.source}-${draft.originalName ?? 'new'}`}
+                                        value={draft.body}
+                                        onChange={body => lib.updateDraft({ body })}
+                                        onSyntaxError={lib.setBodySyntaxError}
+                                        heightClass="h-[240px] md:h-[34vh]"
+                                    />
+                                )}
                                 {lib.draftBodyError && (
                                     <span className="text-[10px] text-rose-400 mt-1.5">{lib.draftBodyError}</span>
                                 )}
@@ -353,8 +396,10 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 </div>
                                 {lib.draftKind && ['rules', 'outbounds', 'balancers'].includes(lib.draftKind) && lib.draftKind !== lib.target && (
                                     <p className="text-[10px] text-amber-300/80">
-                                        This body looks like {lib.draftKind} — inserting it into{' '}
-                                        {lib.target} will not do what you expect.
+                                        {t("This body looks like {kind} — inserting it into {target} will not do what you expect.", {
+                                            kind: kindName(lib.draftKind),
+                                            target: kindName(lib.target),
+                                        })}
                                     </p>
                                 )}
                                 <p className="text-[10px] text-slate-500">
