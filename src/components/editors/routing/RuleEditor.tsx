@@ -163,7 +163,7 @@ export const RuleEditor = ({
                                             type="button"
                                             onClick={() => onSelectRule(warn.otherIndex)}
                                             className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-200 hover:text-white bg-amber-800/60 hover:bg-amber-700/80 border border-amber-500/40 rounded px-2 py-0.5 transition-all shadow-sm"
-                                            title={`Jump to Rule #${warn.otherIndex + 1}`}
+                                            title={t("Jump to rule #{n}", { n: warn.otherIndex + 1 })}
                                         >
                                             View Rule #{warn.otherIndex + 1} <Icon name="ArrowRight" className="text-[9px]" />
                                         </button>

@@ -35,7 +35,7 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <Modal
-            title={`Local History Timeline (${history.length}/${historyLimit})`}
+            title={t("Local history timeline ({used}/{limit})", { used: history.length, limit: historyLimit })}
             onClose={onClose}
             className="max-w-5xl h-[85vh]"
             extraButtons={

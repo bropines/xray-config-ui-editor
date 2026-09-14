@@ -14,7 +14,7 @@ import { OutboundServer } from './outbound/OutboundServer';
 import { OutboundWireguard } from './outbound/OutboundWireguard';
 import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 import { TransportSettings } from './shared/TransportSettings';
-import { t } from '../../i18n';
+import { t, tn } from '../../i18n';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const { config, addItem, rawConfigText } = useConfigStore();
@@ -39,7 +39,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             const [primary, ...others] = parsed.outbounds;
             setLocal(primary);
             others.forEach(outbound => addItem('outbounds', outbound));
-            toast.success(`Imported ${parsed.outbounds.length} outbounds (chained)`);
+            toast.success(tn(parsed.outbounds.length, "Imported {n} outbound (chained)", "Imported {n} outbounds (chained)"));
         } else {
             setLocal(parsed);
             toast.success(t("Configuration imported successfully"));

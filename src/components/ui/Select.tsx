@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import { Help } from './Help';
 import { t } from '../../i18n';
 
 export interface SelectOption<T extends string = string> {
@@ -17,6 +18,8 @@ export interface SelectProps<T extends string = string> {
     label?: string;
     error?: string;
     hint?: string;
+    /** Longer explanation, behind a "?" next to the label. */
+    help?: string;
     placeholder?: string;
     disabled?: boolean;
     className?: string;
@@ -30,6 +33,7 @@ export function Select<T extends string = string>({
     label,
     error,
     hint,
+    help,
     placeholder = "Select option...",
     disabled = false,
     className = '',
@@ -202,9 +206,12 @@ export function Select<T extends string = string>({
     return (
         <div className={`flex flex-col gap-1.5 ${className}`} id={id}>
             {label && (
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">
-                    {label}
-                </label>
+                <div className="flex items-center">
+                    <label className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">
+                        {label}
+                    </label>
+                    {help && <Help>{help}</Help>}
+                </div>
             )}
             
             <button

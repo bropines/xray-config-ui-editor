@@ -7,7 +7,7 @@ import { parseXrayLink, parseJsonSubscription } from '../../../utils/link-parser
 import { generateXrayLink } from '../../../utils/link-generator';
 import { generateUUID } from '../../../core/generators/crypto';
 import { toast } from 'sonner';
-import { t } from '../../../i18n';
+import { t, tn } from '../../../i18n';
 
 // Ключ для хранения HWID
 const HWID_STORAGE_KEY = 'xray_editor_v2_hwid';
@@ -169,7 +169,7 @@ const handleFetchSub = async () => {
                 const links = obs.map(o => generateXrayLink(o)).filter(Boolean);
                 if (links.length > 0) {
                     setText(prev => prev ? prev + '\n\n' + links.join('\n') : links.join('\n'));
-                    toast.success(`Imported ${links.length} nodes from JSON subscription`);
+                    toast.success(tn(links.length, "Imported {n} node from the JSON subscription", "Imported {n} nodes from the JSON subscription"));
                 } else {
                     setText(prev => prev ? prev + '\n\n' + decoded : decoded);
                     toast.success(t("JSON subscription fetched (Raw)"));
@@ -263,7 +263,7 @@ const handleFetchSub = async () => {
 
                         if (obs.length > 0) {
                             addOutbounds(obs);
-                            toast.success(`Imported ${obs.length} nodes`);
+                            toast.success(tn(obs.length, "Imported {n} node", "Imported {n} nodes"));
                             onClose();
                         } else {
                             toast.error(t("No valid links or JSON configs found to import"));

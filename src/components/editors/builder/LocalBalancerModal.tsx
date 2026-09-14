@@ -8,6 +8,7 @@ import { Select } from '../../ui/Select';
 import { Switch } from '../../ui/Switch';
 import { NumberInput } from '../../ui/NumberInput';
 import { DurationInput } from '../../ui/DurationInput';
+import { Help } from '../../ui/Help';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { useLocalBalancerBuilder } from '../../../hooks/useLocalBalancerBuilder';
 import { useTemplatesLibrary } from '../../../hooks/useTemplatesLibrary';
@@ -62,6 +63,17 @@ const NodeRow = ({ node, onToggle, onRename, onRemove }: any) => (
  * The parts that must agree (tag prefix, selector, probe selector, catch-all
  * rule, bypass list in both routing and DNS) are derived, not typed.
  */
+/** Names `entryHostMissing` can report, worded as the fields above word them. */
+const entryFieldLabel = (field: string): string =>
+    ({
+        "shared tag": t("Shared tag for this location"),
+        remark: t("Remark"),
+        address: t("Address"),
+        port: t("Port"),
+        inbound: t("Inbound"),
+        "saved template": t("Saved template"),
+    })[field] ?? field;
+
 export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, onEditHost }: {
     onClose: () => void;
     /** Open on a specific panel template. */
@@ -303,7 +315,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     {!b.panelConnected
                                         ? 'Connect to Remnawave in the header, then press Load hosts.'
                                         : b.panelError
-                                            ? `${b.panelError} — press Load hosts to retry.`
+                                            ? t("{error} — press Load hosts to retry.", { error: b.panelError })
                                             : 'Load the panel hosts to pick nodes from them.'}
                                 </div>
                             ) : (
@@ -409,7 +421,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                 </div>
 
                 {/* ─── Options + preview ────────────────────────────── */}
-                <div className={`flex-1 min-w-0 flex-col min-h-0 gap-3 overflow-y-auto custom-scroll md:overflow-visible ${mobilePane === 'output' ? 'flex' : 'hidden md:flex'}`}>
+                <div className={`flex-1 min-w-0 flex-col min-h-0 gap-3 overflow-y-auto custom-scroll pr-1 ${mobilePane === 'output' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 shrink-0">
                         {([['config', t("Client config")], ['template', t("Panel template")]] as const).map(([key, label]) => (
                             <button
@@ -476,7 +488,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                         )}
                     </div>
 
-                    <div className={`grid-cols-1 xl:grid-cols-2 gap-3 md:shrink-0 md:overflow-y-auto custom-scroll md:max-h-[38vh] pr-1 ${
+                    <div className={`grid-cols-1 xl:grid-cols-2 gap-3 shrink-0 ${
                         isTemplate && templateView === 'json' ? 'hidden' : 'grid'
                     }`}>
                         <Section title={t("Balancer")}>
@@ -486,15 +498,18 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     value={options.proxyTagPrefix}
                                     onChange={(e: any) => b.setOption({ proxyTagPrefix: e.target.value })}
                                     hint={t("Also the selector")}
+                                    help={t("Every proxy outbound is named with this prefix, and the balancer selects on it. Change it and the tags in the generated config change with it.")}
                                 />
                                 <Input
                                     label={t("Balancer tag")}
                                     value={options.balancerTag}
                                     onChange={(e: any) => b.setOption({ balancerTag: e.target.value })}
+                                    help={t("The name of the balancer itself. Routing rules send traffic to this tag instead of to a single outbound.")}
                                 />
                             </div>
                             <Select
                                 label={t("Tag style")}
+                                help={t("How the individual node tags are numbered. Cosmetic — pick whatever matches the configs you already run.")}
                                 value={options.tagStyle}
                                 onChange={v => b.setOption({ tagStyle: v as any })}
                                 options={[
@@ -505,6 +520,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                             />
                             <Select
                                 label={t("Strategy")}
+                                help={t("How the balancer picks a node for each connection. leastPing and leastLoad need a probe; roundRobin and random do not measure anything.")}
                                 value={options.strategy}
                                 onChange={v => b.setOption({ strategy: v as any })}
                                 options={[
@@ -518,7 +534,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                 label={t("Fallback")}
                                 value={options.fallbackTag}
                                 onChange={v => b.setOption({ fallbackTag: v as any })}
-                                hint={t("Where traffic goes when the balancer has nothing healthy to pick")}
+                                help={t("Where traffic goes when the balancer has nothing healthy to pick. \"None\" drops the connection, which surfaces the outage instead of hiding it behind a slow node.")}
                                 options={[
                                     { value: 'none', label: t("None"), description: t("Fail the connection") },
                                     { value: 'first', label: t("First node"), description: t("Degrade to node #1 instead of failing") },
@@ -532,7 +548,10 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                             {options.strategy === 'leastLoad' && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                        <span className="label-xs">{t("Max RTT")}</span>
+                                        <span className="label-xs flex items-center">
+                                            {t("Max RTT")}
+                                            <Help>{t("Nodes slower than this are treated as unusable. Too low and the pool empties; too high and a bad node keeps getting traffic.")}</Help>
+                                        </span>
                                         <DurationInput
                                             value={options.strategySettings.maxRTT}
                                             onChange={v => b.setOption({ strategySettings: { ...options.strategySettings, maxRTT: v } })}
@@ -540,7 +559,10 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                         />
                                     </div>
                                     <div>
-                                        <span className="label-xs">{t("Expected")}</span>
+                                        <span className="label-xs flex items-center">
+                                            {t("Expected")}
+                                            <Help>{t("How many healthy nodes leastLoad aims to keep in play. Leave at 1 unless you are deliberately spreading load across several.")}</Help>
+                                        </span>
                                         <NumberInput
                                             value={options.strategySettings.expected}
                                             onChange={v => b.setOption({ strategySettings: { ...options.strategySettings, expected: v } })}
@@ -554,6 +576,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                         <Section title={t("Probe")}>
                             <Select
                                 label={t("Kind")}
+                                help={t("How node health is measured. burstObservatory pings every node at once and reacts fastest; observatory walks them one at a time and is gentler on the nodes.")}
                                 value={options.probe}
                                 onChange={v => b.setOption({ probe: v as any })}
                                 options={[
@@ -566,7 +589,10 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                 <>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div>
-                                            <span className="label-xs">{t("Interval")}</span>
+                                            <span className="label-xs flex items-center">
+                                                {t("Interval")}
+                                                <Help>{t("How often each node is probed. Shorter reacts to an outage sooner and costs more requests from every client running this config.")}</Help>
+                                            </span>
                                             <DurationInput
                                                 value={options.probeInterval}
                                                 onChange={v => b.setOption({ probeInterval: v })}
@@ -574,7 +600,10 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                             />
                                         </div>
                                         <div>
-                                            <span className="label-xs">{t("Timeout")}</span>
+                                            <span className="label-xs flex items-center">
+                                                {t("Timeout")}
+                                                <Help>{t("A probe that takes longer than this counts as a failure. Keep it below the interval.")}</Help>
+                                            </span>
                                             <DurationInput
                                                 value={options.probeTimeout}
                                                 onChange={v => b.setOption({ probeTimeout: v })}
@@ -584,7 +613,10 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     </div>
                                     {options.probe === 'burst' && (
                                         <div>
-                                            <span className="label-xs">{t("Samples kept")}</span>
+                                            <span className="label-xs flex items-center">
+                                                {t("Samples kept")}
+                                                <Help>{t("How many recent probe results are averaged. More samples smooth out a single bad ping; fewer switch away from a failing node sooner.")}</Help>
+                                            </span>
                                             <NumberInput
                                                 value={options.probeSampling}
                                                 onChange={v => b.setOption({ probeSampling: v ?? 1 })}
@@ -596,6 +628,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                         label={t("Probe URL")}
                                         value={options.probeURL}
                                         onChange={(e: any) => b.setOption({ probeURL: e.target.value })}
+                                        help={t("The address each node is measured against. It should answer HTTP 204 with an empty body, so the timing reflects the route and not the page.")}
                                     />
                                 </>
                             )}
@@ -640,10 +673,10 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                         {isTemplate && (
                             <Section title={t("Which hosts the panel injects")}>
                                 <p className="text-[10px] text-slate-500 -mt-1">
-                                    The template carries no nodes. The panel injects the hosts this
-                                    selector picks, tagging them <span className="font-mono text-slate-400">{b.options.proxyTagPrefix}…</span>
-{t("so the balancer and probe find them.")}
-</p>
+                                    {t("The template carries no nodes. The panel injects the hosts this selector picks, tagging them {prefix}… so the balancer and probe find them.", {
+                                        prefix: b.options.proxyTagPrefix,
+                                    })}
+                                </p>
                                 <Select
                                     label={t("Pick hosts by")}
                                     value={selectorType}
@@ -738,8 +771,8 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     </Button>
                                 <p className="text-[10px] text-slate-500">
                                     {b.templateTargetUuid
-                                        ? 'Saved. Step 2 below points hosts at it.'
-                                        : 'Not saved yet — step 2 needs a saved template to point hosts at.'}
+                                        ? t("Saved. Step 2 below points hosts at it.")
+                                        : t("Not saved yet — step 2 needs a saved template to point hosts at.")}
                                 </p>
                             </Section>
                         )}
@@ -755,8 +788,8 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     onChange={(e: any) => b.setPoolTag(e.target.value)}
                                     placeholder={t("NLMAIN")}
                                     hint={b.normalisedPoolTag && b.normalisedPoolTag !== b.poolTag.trim()
-                                        ? `Will be sent as ${b.normalisedPoolTag}`
-                                        : 'The nodes and the entry host all carry it — that is how the panel knows which hosts to inject'}
+                                        ? t("Will be sent as {tag}", { tag: b.normalisedPoolTag })
+                                        : t("The nodes and the entry host all carry it — that is how the panel knows which hosts to inject")}
                                 />
                                 <Button
                                     variant={b.confirmPool ? 'warning' : 'secondary'}
@@ -767,14 +800,14 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     disabled={b.panelSelection.size === 0 || !b.normalisedPoolTag}
                                 >
                                     {b.confirmPool
-                                        ? `Confirm: hide and re-tag ${b.panelSelection.size} host(s)`
-                                        : `Mark ${b.panelSelection.size || ''} selected host(s) as the pool`}
+                                        ? tn(b.panelSelection.size, "Confirm: hide and re-tag {n} host", "Confirm: hide and re-tag {n} hosts")
+                                        : tn(b.panelSelection.size, "Mark {n} selected host as the pool", "Mark {n} selected hosts as the pool")}
                                 </Button>
                                 {b.confirmPool && (
                                     <p className="text-[10px] text-amber-300/80">
-                                        They disappear from every subscriber's list and their current tag is
-                                        replaced by {b.normalisedPoolTag}. Do this once the entry host exists,
-                                        or this location vanishes for subscribers in between.
+                                        {t("They disappear from every subscriber's list and their current tag is replaced by {tag}. Do this once the entry host exists, or this location vanishes for subscribers in between.", {
+                                            tag: b.normalisedPoolTag,
+                                        })}
                                     </p>
                                 )}
 
@@ -834,7 +867,9 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     )}
                                     {b.entryHostMissing.length > 0 && (
                                         <p className="text-[10px] text-amber-300/80">
-                                            Still needed: {b.entryHostMissing.join(', ')}
+                                            {t("Still needed: {fields}", {
+                                                fields: b.entryHostMissing.map(entryFieldLabel).join(', '),
+                                            })}
                                         </p>
                                     )}
                                     <Button
@@ -854,9 +889,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
 
                         <Section title={t("What stays off the tunnel")}>
                             <p className="text-[10px] text-slate-500 -mt-1">
-                                These domains get a routing rule straight to <span className="font-mono">{t("direct")}</span>,
-                                and the same list is repeated in the DNS block so their lookups are answered
-                                locally instead of through the proxy.
+                                {t("These domains get a routing rule straight to the direct outbound, and the same list is repeated in the DNS block so their lookups are answered locally instead of through the proxy.")}
                             </p>
 
                             {b.bypassLists.map((list: any) => (
@@ -953,7 +986,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                             isExisting={editingSavedTemplate}
                         />
                     ) : (
-                    <div className="flex-1 min-h-0 flex flex-col">
+                    <div className="flex flex-col shrink-0">
                         <div className="flex items-center justify-between mb-1.5 gap-2">
                             <span className="label-xs">{isTemplate ? t("Generated template") : t("Generated config")}</span>
                             {!isTemplate && multi && (
@@ -981,7 +1014,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                             </div>
                         )}
 
-                        <div className="flex-1 min-h-[220px] md:min-h-[160px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
+                        <div className="shrink-0 h-[360px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
                             {isTemplate ? (
                                 <div className="absolute inset-0">
                                     <JsonEditor

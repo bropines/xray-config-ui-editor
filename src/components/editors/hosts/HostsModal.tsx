@@ -198,7 +198,7 @@ export const HostsModal = ({ onClose, initialHostUuid, onOpenTemplates }: {
                                     onChange={(e: any) => h.update({ tag: e.target.value })}
                                     placeholder={t("NLMAIN")}
                                     hint={normalisedTag && normalisedTag !== draft.tag.trim()
-                                        ? `Will be saved as ${normalisedTag}`
+                                        ? t("Will be saved as {tag}", { tag: normalisedTag })
                                         : 'Groups hosts: a template can inject every host sharing this tag'}
                                 />
                             </Section>

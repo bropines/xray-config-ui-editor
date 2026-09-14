@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2026-09-14
+
+### Added
+- **A "?" hint on every balancer field.** Tag prefix, balancer tag, tag style, strategy, fallback, max RTT, expected nodes, probe kind, interval, timeout, samples kept and probe URL now each explain what they do and what going too far in either direction costs you — the column had no room left for more inline text, which is what a tooltip is for. `Input` and `Select` grew the same `help` prop `FormField` already had, so this is available to every form in the app.
+
+### Fixed
+- **The generated JSON was cut off with no way to scroll to it.** The builder's right column had three nested scroll areas — the column itself was `overflow-visible` on desktop while the options grid scrolled inside a 38vh box — so the preview below simply grew past the modal and was clipped. One scroll container now, with the preview a fixed-height block inside it.
+- **Russian text mixed into English sentences.** "These domains get a routing rule straight to напрямую" and similar: the translation pass had wrapped single words that sat inside a longer sentence, splitting what should have been one translatable string. Those sentences are whole again.
+- Another 22 strings were hiding in template literals — import counts, delete confirmations, the git log header, duplicate-matcher warnings — where a scan for quoted text could not see them. They are translated, with proper Russian plurals for the counts.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed

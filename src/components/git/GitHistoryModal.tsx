@@ -78,7 +78,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
 
     const handleDeleteCommit = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm(`Delete commit ${id.substring(0, 7)} from history?`)) {
+        if (confirm(t("Delete commit {hash} from history?", { hash: id.substring(0, 7) }))) {
             deleteSnapshot(id);
             if (selectedCommitId === id) {
                 const remaining = history.filter(h => h.id !== id);
@@ -88,7 +88,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleClear = () => {
-        if (confirm(`Clear all commit history for profile "${profileName}"?`)) {
+        if (confirm(t("Clear all commit history for profile “{name}”?", { name: profileName }))) {
             clearHistory();
             setSelectedCommitId(null);
         }
@@ -96,7 +96,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <Modal
-            title={`Git Log — ${profileName} (${history.length} commits)`}
+            title={t("Git log — {name} ({count} commits)", { name: profileName, count: history.length })}
             onClose={onClose}
             className="max-w-6xl h-[88vh]"
             extraButtons={

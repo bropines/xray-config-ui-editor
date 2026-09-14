@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { Help } from './Help';
 import { cn } from '../../utils/cn';
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -13,6 +14,8 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
     label?: string;
     /** Helper text below the field */
     hint?: string;
+    /** Longer explanation, behind a "?" next to the label. */
+    help?: string;
     size?: 'sm' | 'md' | 'lg';
 }
 
@@ -23,7 +26,7 @@ const sizeClasses = {
 };
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ leftIcon, rightIcon, error, label, hint, size = 'md', className = '', id, ...rest }, ref) => {
+    ({ leftIcon, rightIcon, error, label, hint, help, size = 'md', className = '', id, ...rest }, ref) => {
         const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
         const border = error
             ? 'border-rose-500/70 focus:border-rose-500 focus:ring-rose-500/30'
@@ -32,12 +35,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="flex flex-col gap-1.5">
                 {label && (
-                    <label
-                        htmlFor={inputId}
-                        className="text-[10px] uppercase text-slate-500 font-bold tracking-widest"
-                    >
-                        {label}
-                    </label>
+                    <div className="flex items-center">
+                        <label
+                            htmlFor={inputId}
+                            className="text-[10px] uppercase text-slate-500 font-bold tracking-widest"
+                        >
+                            {label}
+                        </label>
+                        {help && <Help>{help}</Help>}
+                    </div>
                 )}
                 <div className="relative">
                     {leftIcon && (

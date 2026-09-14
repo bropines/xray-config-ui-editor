@@ -8,7 +8,7 @@ import { Select } from '../ui/Select';
 import { useGeoViewer } from '../../hooks/useGeoViewer';
 import { useTagDetails } from '../../hooks/useTagDetails';
 import { VList } from 'virtua';
-import { t } from '../../i18n';
+import { t, tn } from '../../i18n';
 
 const CUSTOM_PRESETS = [
     { label: "🌍 V2Fly GeoSite", format: 'geosite', url: 'https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat' },
@@ -90,7 +90,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 ta.value = textToCopy; ta.style.position = "fixed"; ta.style.left = "-999999px";
                 document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
             }
-            toast.success(`Copied ${displayData.length} items`);
+            toast.success(tn(displayData.length, "Copied {n} item", "Copied {n} items"));
         } catch { toast.error(t("Failed to copy data")); }
     };
 
@@ -185,7 +185,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                             <Icon name="MagnifyingGlass" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                             <input 
                                 className="w-full h-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-9 text-sm text-white focus:border-indigo-500 outline-none transition-colors" 
-                                placeholder={isDeepSearch ? "Search INSIDE domains/IPs..." : `Search in ${activeTab} categories...`} 
+                                placeholder={isDeepSearch ? "Search INSIDE domains/IPs..." : t("Search in {source} categories...", { source: activeTab })} 
                                 value={search} 
                                 onChange={e => setSearch(e.target.value)} 
                             />

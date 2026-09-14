@@ -199,7 +199,7 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, sn
                         .filter(o => o.index !== occ.index)
                         .map(o => `${o.name} (Rule #${o.index + 1})`)
                         .join(', ');
-                    map.get(occ.index)!.push(`Duplicate matcher "${matcher}" is also used in: ${otherRules}`);
+                    map.get(occ.index)!.push(t("Duplicate matcher “{matcher}” is also used in: {rules}", { matcher, rules: otherRules }));
                 });
             }
         });
@@ -212,7 +212,7 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, sn
                         .filter(o => o.index !== occ.index)
                         .map(o => `${o.name} (Rule #${o.index + 1})`)
                         .join(', ');
-                    map.get(occ.index)!.push(`Duplicate IP matcher "${matcher}" is also used in: ${otherRules}`);
+                    map.get(occ.index)!.push(t("Duplicate IP matcher “{matcher}” is also used in: {rules}", { matcher, rules: otherRules }));
                 });
             }
         });

@@ -4,7 +4,7 @@ import { Help } from '../../ui/Help';
 import { Icon } from '../../ui/Icon';
 import { parseXrayLink, parseWireguardConfig, parseJsonSubscription } from '../../../utils/link-parser';
 import { toast } from 'sonner';
-import { t } from '../../../i18n';
+import { t, tn } from '../../../i18n';
 
 export const OutboundImport = ({ onImport }: any) => {
     const [input, setInput] = useState("");
@@ -33,7 +33,7 @@ export const OutboundImport = ({ onImport }: any) => {
                     toast.success(t("JSON configuration imported"));
                 } else {
                     onImport({ multiple: true, outbounds: parsed });
-                    toast.success(`Imported ${parsed.length} outbounds from JSON`);
+                    toast.success(tn(parsed.length, "Imported {n} outbound from JSON", "Imported {n} outbounds from JSON"));
                 }
                 setInput("");
                 return;

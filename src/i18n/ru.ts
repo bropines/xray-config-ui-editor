@@ -84,8 +84,6 @@ export const ru: Record<string, string> = {
     'Tag style': 'Стиль тегов',
     'Strategy': 'Стратегия',
     'Fallback': 'Fallback',
-    'Where traffic goes when the balancer has nothing healthy to pick':
-        'Куда пойдёт трафик, если балансировщику не из чего выбрать',
     'Max RTT': 'Макс. RTT',
     'Expected': 'Ожидается',
     'Probe': 'Проверка',
@@ -101,7 +99,6 @@ export const ru: Record<string, string> = {
     '127.0.0.1 keeps the proxy off your LAN': '127.0.0.1 не выпускает прокси в локальную сеть',
     'Sniffing (needed for domain rules)': 'Sniffing (нужен для правил по домену)',
     'Which hosts the panel injects': 'Какие хосты подставляет панель',
-    'so the balancer and probe find them.': 'чтобы балансировщик и проверка их нашли.',
     'Pick hosts by': 'Выбирать хосты по',
     'Pattern': 'Шаблон',
     'Use panel selection': 'Использовать выбор из панели',
@@ -128,7 +125,6 @@ export const ru: Record<string, string> = {
         'Создать видимый хост и прикрепить к нему этот шаблон',
     'Create entry host with this template': 'Создать точку входа с этим шаблоном',
     'What stays off the tunnel': 'Что не идёт в туннель',
-    'direct': 'напрямую',
     'Your own domains': 'Ваши собственные домены',
     'BitTorrent direct': 'BitTorrent напрямую',
     'Matched by sniffing the protocol, not by domain.':
@@ -1805,4 +1801,84 @@ export const ru: Record<string, string> = {
     'Item {id} was dropped at position {target}.': 'Элемент {id} помещён на позицию {target}.',
     'Item {id} was dropped.': 'Элемент {id} помещён.',
     'Dragging of item {id} was cancelled.': 'Перетаскивание элемента {id} отменено.',
+    // ── Balancer field hints ────────────────────────────────────────────────
+    'Every proxy outbound is named with this prefix, and the balancer selects on it. Change it and the tags in the generated config change with it.':
+        'С этим префиксом называется каждый proxy-outbound, и по нему же выбирает балансировщик. Измените его — изменятся и теги в готовом конфиге.',
+    'The name of the balancer itself. Routing rules send traffic to this tag instead of to a single outbound.':
+        'Имя самого балансировщика. Правила маршрутизации отправляют трафик на этот тег, а не на конкретный outbound.',
+    'How the individual node tags are numbered. Cosmetic — pick whatever matches the configs you already run.':
+        'Как нумеруются теги отдельных узлов. Чисто косметика — выберите то, что совпадает с вашими текущими конфигами.',
+    'How the balancer picks a node for each connection. leastPing and leastLoad need a probe; roundRobin and random do not measure anything.':
+        'Как балансировщик выбирает узел для каждого соединения. leastPing и leastLoad требуют проверки, roundRobin и random ничего не измеряют.',
+    'Where traffic goes when the balancer has nothing healthy to pick. "None" drops the connection, which surfaces the outage instead of hiding it behind a slow node.':
+        'Куда пойдёт трафик, если балансировщику не из чего выбрать. «Нет» обрывает соединение — так авария будет видна, а не спрячется за медленным узлом.',
+    'Nodes slower than this are treated as unusable. Too low and the pool empties; too high and a bad node keeps getting traffic.':
+        'Узлы медленнее этого значения считаются непригодными. Слишком мало — пул опустеет, слишком много — плохой узел продолжит получать трафик.',
+    'How many healthy nodes leastLoad aims to keep in play. Leave at 1 unless you are deliberately spreading load across several.':
+        'Сколько здоровых узлов leastLoad старается держать в работе. Оставьте 1, если не разносите нагрузку по нескольким специально.',
+    'How node health is measured. burstObservatory pings every node at once and reacts fastest; observatory walks them one at a time and is gentler on the nodes.':
+        'Как измеряется состояние узлов. burstObservatory пингует все сразу и реагирует быстрее, observatory обходит их по одному и мягче к узлам.',
+    'How often each node is probed. Shorter reacts to an outage sooner and costs more requests from every client running this config.':
+        'Как часто проверяется каждый узел. Чаще — быстрее заметите аварию, но и запросов с каждого клиента будет больше.',
+    'A probe that takes longer than this counts as a failure. Keep it below the interval.':
+        'Проверка дольше этого времени считается неудачной. Держите значение меньше интервала.',
+    'How many recent probe results are averaged. More samples smooth out a single bad ping; fewer switch away from a failing node sooner.':
+        'Сколько последних результатов усредняется. Больше замеров — сглаживается случайный плохой пинг, меньше — быстрее уход с падающего узла.',
+    'The address each node is measured against. It should answer HTTP 204 with an empty body, so the timing reflects the route and not the page.':
+        'Адрес, по которому меряется каждый узел. Он должен отвечать HTTP 204 с пустым телом, чтобы замер отражал маршрут, а не загрузку страницы.',
+    'These domains get a routing rule straight to the direct outbound, and the same list is repeated in the DNS block so their lookups are answered locally instead of through the proxy.':
+        'Для этих доменов создаётся правило маршрутизации прямо в outbound direct, а тот же список повторяется в блоке DNS, чтобы их имена резолвились локально, а не через прокси.',
+    'No templates yet — build one on the right and save it, or press New template.':
+        'Шаблонов пока нет — соберите шаблон справа и сохраните его либо нажмите «Новый шаблон».',
+    'Connect to the panel to see its templates.':
+        'Подключитесь к панели, чтобы увидеть её шаблоны.',
+    'Saved template': 'Сохранённый шаблон',
+    'The template carries no nodes. The panel injects the hosts this selector picks, tagging them {prefix}… so the balancer and probe find them.':
+        'Своих узлов у шаблона нет. Панель подставит хосты, которые выберет этот селектор, и пометит их тегами {prefix}… — чтобы балансировщик и проверка их нашли.',
+    'Saved. Step 2 below points hosts at it.': 'Сохранено. Шаг 2 ниже направит на него хосты.',
+    'Not saved yet — step 2 needs a saved template to point hosts at.':
+        'Ещё не сохранено — для шага 2 нужен сохранённый шаблон, на который будут ссылаться хосты.',
+    'Will be sent as {tag}': 'Будет отправлено как {tag}',
+    'The nodes and the entry host all carry it — that is how the panel knows which hosts to inject':
+        'Его несут и узлы, и точка входа — так панель понимает, какие хосты подставлять',
+    "They disappear from every subscriber's list and their current tag is replaced by {tag}. Do this once the entry host exists, or this location vanishes for subscribers in between.":
+        'Они исчезнут из списка у всех подписчиков, а их текущий тег заменится на {tag}. Делайте это после создания точки входа, иначе локация на время пропадёт у подписчиков.',
+    'Confirm: hide and re-tag {n} host|Confirm: hide and re-tag {n} hosts':
+        'Подтвердить: скрыть и перетегировать {n} хост|Подтвердить: скрыть и перетегировать {n} хоста|Подтвердить: скрыть и перетегировать {n} хостов',
+    'Mark {n} selected host as the pool|Mark {n} selected hosts as the pool':
+        'Отметить {n} выбранный хост как пул|Отметить {n} выбранных хоста как пул|Отметить {n} выбранных хостов как пул',
+    // ── Strings that used to be template literals ───────────────────────────
+    'Delete commit {hash} from history?': 'Удалить коммит {hash} из истории?',
+    'Clear all commit history for profile “{name}”?':
+        'Очистить всю историю коммитов профиля «{name}»?',
+    'Git log — {name} ({count} commits)': 'Журнал Git — {name} ({count} коммитов)',
+    'Search in {source} categories...': 'Поиск по категориям {source}...',
+    'Copied {n} item|Copied {n} items':
+        'Скопирован {n} элемент|Скопировано {n} элемента|Скопировано {n} элементов',
+    'Imported {n} node from the JSON subscription|Imported {n} nodes from the JSON subscription':
+        'Из JSON-подписки импортирован {n} узел|Из JSON-подписки импортировано {n} узла|Из JSON-подписки импортировано {n} узлов',
+    'Imported {n} node|Imported {n} nodes':
+        'Импортирован {n} узел|Импортировано {n} узла|Импортировано {n} узлов',
+    'Duplicate matcher “{matcher}” is also used in: {rules}':
+        'Дубликат условия «{matcher}» используется ещё и в: {rules}',
+    'Duplicate IP matcher “{matcher}” is also used in: {rules}':
+        'Дубликат IP-условия «{matcher}» используется ещё и в: {rules}',
+    '{name} is referenced by this config but is in neither library':
+        'На {name} ссылается этот конфиг, но его нет ни в одной библиотеке',
+    'Confirm: empty “{name}”': 'Подтвердить: очистить «{name}»',
+    '{error} — press Load hosts to retry.': '{error} — нажмите «Загрузить хосты», чтобы повторить.',
+    'Will be saved as {tag}': 'Будет сохранено как {tag}',
+    'Imported {n} outbound from JSON|Imported {n} outbounds from JSON':
+        'Из JSON импортирован {n} outbound|Из JSON импортировано {n} outbound’а|Из JSON импортировано {n} outbound’ов',
+    'Imported {n} outbound (chained)|Imported {n} outbounds (chained)':
+        'Импортирован {n} outbound (цепочкой)|Импортировано {n} outbound’а (цепочкой)|Импортировано {n} outbound’ов (цепочкой)',
+    'Jump to rule #{n}': 'Перейти к правилу №{n}',
+    'Delete profile “{name}”?': 'Удалить профиль «{name}»?',
+    'Local history timeline ({used}/{limit})': 'Локальная история ({used}/{limit})',
+    'Update config ({inbounds} inbounds, {outbounds} outbounds, {rules} rules)':
+        'Обновление конфига ({inbounds} inbound, {outbounds} outbound, {rules} правил)',
+    'Landed in xray-core commit {commit}, not yet in a tagged release.':
+        'Появилось в коммите {commit} xray-core, в релизах пока нет.',
+    'Matched by prefix “{prefix}”': 'Совпало по префиксу «{prefix}»',
+    'Sorted: {name} first': 'Отсортировано: сначала {name}',
 };

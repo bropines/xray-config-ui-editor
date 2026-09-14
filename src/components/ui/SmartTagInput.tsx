@@ -324,7 +324,7 @@ export const SmartTagInput = ({
         });
         onChange(sorted);
         setShowSortMenu(false);
-        toast.success(`Sorted: ${prefixName} first`);
+        toast.success(t("Sorted: {name} first", { name: prefixName }));
     };
 
     const sortPlainFirst = () => {

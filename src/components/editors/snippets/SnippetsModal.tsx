@@ -160,7 +160,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                     <div
                                         key={name}
                                         className="text-[11px] text-amber-200/90 bg-amber-950/20 border border-amber-500/25 rounded-lg px-2.5 py-1.5 mb-1 font-mono truncate"
-                                        title={`${name} is referenced by this config but is in neither library`}
+                                        title={t("{name} is referenced by this config but is in neither library", { name })}
                                     >
                                         {name}
                                     </div>
@@ -253,7 +253,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                         || (draft.source === 'panel' && !lib.connected ? 'Connect to Remnawave to write to the panel' : undefined)}
                                 >
                                     {lib.confirmEmpty
-                                        ? `Confirm: empty "${draft.name}"`
+                                        ? t("Confirm: empty “{name}”", { name: draft.name })
                                         : draft.source === 'panel' ? t("Save to panel") : t("Save template")}
                                 </Button>
 

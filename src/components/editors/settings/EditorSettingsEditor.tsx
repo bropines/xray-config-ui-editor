@@ -204,7 +204,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                if (confirm(`Delete profile "${profile.name}"?`)) {
+                                                if (confirm(t("Delete profile “{name}”?", { name: profile.name }))) {
                                                     deleteProfile(profile.id);
                                                 }
                                             }}

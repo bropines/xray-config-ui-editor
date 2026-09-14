@@ -278,7 +278,7 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
                         <div
                             key={tag}
                             onClick={(e) => handleTagClick(e, tag, idx)}
-                            title={prefixMatch ? `Matched by prefix "${matchedPrefix}"` : tag}
+                            title={prefixMatch ? t("Matched by prefix “{prefix}”", { prefix: matchedPrefix }) : tag}
                             className={`cursor-pointer px-2.5 py-1.5 rounded-lg border text-xs font-mono flex justify-between items-center transition-all select-none ${styleClass}`}
                         >
                             <span className="truncate mr-1">{tag}</span>

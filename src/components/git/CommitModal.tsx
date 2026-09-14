@@ -23,7 +23,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
         const inbounds = config.inbounds?.length || 0;
         const outbounds = config.outbounds?.length || 0;
         const rules = config.routing?.rules?.length || 0;
-        return `Update config (${inbounds} Inbounds, ${outbounds} Outbounds, ${rules} Rules)`;
+        return t("Update config ({inbounds} inbounds, {outbounds} outbounds, {rules} rules)", { inbounds, outbounds, rules });
     });
 
     const shortHash = React.useMemo(() => generateShortHash(), []);

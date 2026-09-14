@@ -62,8 +62,8 @@ export const TemplatePickerPanel = ({
             {tpl.items.length === 0 ? (
                 <div className="text-center text-slate-600 italic text-[11px] py-8 px-3">
                     {tpl.connected
-                        ? 'No templates yet — build one on the right and save it, or press New template.'
-                        : 'Connect to the panel to see its templates.'}
+                        ? t("No templates yet — build one on the right and save it, or press New template.")
+                        : t("Connect to the panel to see its templates.")}
                 </div>
             ) : (
                 tpl.items.map((item: any) => (
