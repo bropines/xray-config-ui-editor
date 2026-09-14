@@ -1,6 +1,7 @@
 import React from 'react';
 import { Switch, Card, SchemaForm } from '../../ui';
 import { ApiSchema } from '../../../core/xray/schemas/api.schema';
+import { t } from '../../../i18n';
 
 export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleStats }: any) => {
     const apiEnabled = !!api;
@@ -11,7 +12,7 @@ export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleS
         <div className="space-y-6">
             {/* STATS TOGGLE */}
             <Card 
-                title="Statistics" 
+                title={t("Statistics")} 
                 icon="ChartBar"
                 headerExtra={
                     <Switch 
@@ -20,12 +21,12 @@ export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleS
                     />
                 }
             >
-                <p className="text-xs text-slate-500 mb-2">Enable internal traffic counters (Required for panels)</p>
+                <p className="text-xs text-slate-500 mb-2">{t("Enable internal traffic counters (Required for panels)")}</p>
             </Card>
 
             {/* API TOGGLE */}
             <Card 
-                title="gRPC API" 
+                title={t("gRPC API")} 
                 icon="Plugs"
                 headerExtra={
                     <Switch 
@@ -34,7 +35,7 @@ export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleS
                     />
                 }
             >
-                <p className="text-xs text-slate-500 mb-2">Control Xray via gRPC (Required for panels)</p>
+                <p className="text-xs text-slate-500 mb-2">{t("Control Xray via gRPC (Required for panels)")}</p>
 
                 {apiEnabled && (
                     <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-slate-800/50 space-y-4">
@@ -44,24 +45,24 @@ export const ApiStatsEditor = ({ api, stats, onUpdateApi, onToggleApi, onToggleS
                             onChange={onUpdateApi}
                             fieldConfigs={{
                                 tag: {
-                                    label: 'API Outbound Tag',
-                                    help: 'The tag used by other components to refer to this API.',
+                                    label: t("API Outbound Tag"),
+                                    help: t("The tag used by other components to refer to this API."),
                                     placeholder: 'api'
                                 },
                                 listen: {
-                                    label: 'Listen Address',
-                                    help: 'gRPC server listen address (IP:port).',
+                                    label: t("Listen Address"),
+                                    help: t("gRPC server listen address (IP:port)."),
                                     placeholder: '127.0.0.1:10085'
                                 },
                                 services: {
-                                    label: 'Enabled Services',
-                                    help: 'Services enabled in the gRPC API (comma-separated).',
-                                    placeholder: 'e.g. HandlerService, LoggerService, StatsService'
+                                    label: t("Enabled Services"),
+                                    help: t("Services enabled in the gRPC API (comma-separated)."),
+                                    placeholder: t("e.g. HandlerService, LoggerService, StatsService")
                                 }
                             }}
                         />
                         <div className="p-3 bg-yellow-900/10 border border-yellow-700/30 rounded text-yellow-500 text-xs">
-                            Don't forget to add an <b>Inbound</b> with protocol <code>dokodemo-door</code> listening on <code>127.0.0.1:10085</code> routed to this API tag!
+                            {t("Remember to add an inbound with protocol dokodemo-door, listening on 127.0.0.1:10085 and routed to this API tag.")}
                         </div>
                     </div>
                 )}

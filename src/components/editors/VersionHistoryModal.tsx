@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { JsonField } from '../ui/JsonField';
+import { t } from '../../i18n';
 
 export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
     const { histories, activeProfileId, remnawave, restoreSnapshot, clearHistory, historyLimit } = useConfigStore();
@@ -46,8 +47,8 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
                             onClick={handleClear}
                             icon="Trash"
                         >
-                            Clear History
-                        </Button>
+                            {t("Clear History")}
+                            </Button>
                     )}
                 </div>
             }
@@ -58,8 +59,8 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
                         <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                             <Icon name="GitBranch" className="text-indigo-400" />
-                            Snapshots
-                        </span>
+                            {t("Snapshots")}
+                            </span>
                         <div className="text-[10px] text-slate-500 font-mono">
                             Max {historyLimit} saves
                         </div>
@@ -69,8 +70,8 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
                         {history.length === 0 ? (
                             <div className="py-12 text-center text-slate-500 italic text-xs">
                                 No history snapshots recorded yet.<br />
-                                Edits and saves will automatically create rollback points.
-                            </div>
+                                {t("Edits and saves will automatically create rollback points.")}
+                                </div>
                         ) : (
                             history.map((snapshot, index) => {
                                 const isSelected = snapshot.id === selectedSnapshotId;
@@ -130,13 +131,13 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                     onClick={() => handleRestore(selectedSnapshot.id)}
                                     icon="ArrowCounterClockwise"
                                 >
-                                    Restore This Version
-                                </Button>
+                                    {t("Restore This Version")}
+                                    </Button>
                             </div>
 
                             <div className="flex-1 p-3 overflow-hidden">
                                 <JsonField
-                                    label="Snapshot JSON Preview"
+                                    label={t("Snapshot JSON Preview")}
                                     value={selectedSnapshot.config}
                                     onChange={() => {}}
                                     readOnly={true}
@@ -147,7 +148,7 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-600 p-6 text-center">
                             <Icon name="ClockCounterClockwise" className="text-5xl mb-3 opacity-20" />
-                            <p className="text-sm">Select a history snapshot from the left timeline to preview and restore</p>
+                            <p className="text-sm">{t("Select a history snapshot from the left timeline to preview and restore")}</p>
                         </div>
                     )}
                 </div>

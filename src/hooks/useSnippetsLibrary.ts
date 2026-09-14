@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useConfigStore } from '../store/configStore';
+import { t } from '../i18n';
 import {
     classifySnippet,
     collectSnippetRefs,
@@ -135,7 +136,7 @@ export const useSnippetsLibrary = (open: boolean) => {
     const useCurrentRules = useCallback(() => {
         const rules = (config?.routing?.rules || []).filter(r => !isSnippetRef(r));
         if (rules.length === 0) {
-            toast.error('This config has no plain rules to capture');
+            toast.error(t("This config has no plain rules to capture"));
             return;
         }
         setDraft(prev => prev
@@ -241,7 +242,7 @@ export const useSnippetsLibrary = (open: boolean) => {
             insertSnippetBody(draft.originalName, target);
             return;
         }
-        toast.error('Save the draft first, then insert a copy of it');
+        toast.error(t("Save the draft first, then insert a copy of it"));
     }, [draft, target, insertSnippetBody]);
 
     return {

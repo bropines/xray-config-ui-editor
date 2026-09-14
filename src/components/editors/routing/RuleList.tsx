@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { getCriticalRuleErrors } from '../../../core/validators';
 import { getSnippetRefName, classifySnippet, type SnippetDefinition } from '../../../core/snippets';
+import { t, tn } from '../../../i18n';
 
 /**
  * A `{ "snippet": "NAME" }` entry is a Remnawave placeholder, not a rule: the
@@ -43,15 +44,20 @@ const SnippetRuleItem = ({ id, name, definition, isActive, onClick, onDelete }: 
                 </div>
                 <div className="text-[10px] font-mono truncate ml-[22px] mt-0.5">
                     {body
-                        ? <span className="text-fuchsia-300/70">snippet &middot; {body.length} {kind === 'outbounds' ? 'outbound(s)' : 'entry(ies)'}</span>
-                        : <span className="text-amber-400/80">snippet &middot; body not loaded</span>}
+                        ? <span className="text-fuchsia-300/70">
+                            {t("snippet")} &middot;{" "}
+                            {kind === 'outbounds'
+                                ? tn(body.length, "{n} outbound", "{n} outbounds")
+                                : tn(body.length, "{n} entry", "{n} entries")}
+                        </span>
+                        : <span className="text-amber-400/80">{t("snippet · body not loaded")}</span>}
                 </div>
             </div>
 
             <button
                 onClick={e => { e.stopPropagation(); onDelete(); }}
                 className="text-slate-600 hover:text-rose-500 p-2 rounded-md hover:bg-rose-500/10 transition-colors"
-                title="Remove this snippet reference"
+                title={t("Remove this snippet reference")}
             >
                 <Icon name="Trash" className="text-lg" />
             </button>
@@ -116,7 +122,7 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete, warnings = []
                 {rule.ruleTag && (
                     <div className="text-[9px] text-slate-500 uppercase flex items-center gap-1 ml-3 mt-0.5">
                         <Icon name="ArrowElbowDownRight" className="text-[8px]" />
-                        Target: {rule.outboundTag || rule.balancerTag || <span className="text-rose-400">none!</span>}
+                        Target: {rule.outboundTag || rule.balancerTag || <span className="text-rose-400">{t("none!")}</span>}
                     </div>
                 )}
 
@@ -130,7 +136,7 @@ const SortableRuleItem = ({ rule, id, isActive, onClick, onDelete, warnings = []
             <button
                 onClick={e => { e.stopPropagation(); onDelete(); }}
                 className="text-slate-600 hover:text-rose-500 p-2 rounded-md hover:bg-rose-500/10 transition-colors"
-                title="Delete Rule"
+                title={t("Delete Rule")}
             >
                 <Icon name="Trash" className="text-lg" />
             </button>
@@ -232,7 +238,9 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, sn
                 <div className="mx-1 mb-1.5 px-3 py-2 bg-rose-900/20 border border-rose-500/40 rounded-lg text-rose-300 text-[10px] flex items-center gap-2">
                     <Icon name="WarningOctagon" weight="fill" className="shrink-0" />
                     <span>
-                        <b>{brokenCount}</b> rule{brokenCount > 1 ? 's' : ''} will crash Xray — fix before closing
+                        {tn(brokenCount,
+                            "{n} rule will crash Xray — fix it before closing",
+                            "{n} rules will crash Xray — fix them before closing")}
                     </span>
                 </div>
             )}
@@ -244,9 +252,13 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, sn
                 >
                     <Icon name="BracketsCurly" weight="bold" className="shrink-0 text-fuchsia-400 text-xs" />
                     <span className="flex-1">
-                        <b>{snippetRefs.length}</b> snippet reference{snippetRefs.length > 1 ? 's' : ''} expanded by the panel
+                        {tn(snippetRefs.length,
+                            "{n} snippet reference expanded by the panel",
+                            "{n} snippet references expanded by the panel")}
                         {unloadedSnippets.length > 0 && (
-                            <span className="text-amber-400/90"> &middot; {unloadedSnippets.length} not loaded</span>
+                            <span className="text-amber-400/90">
+                                {" · "}{t("{n} not loaded", { n: unloadedSnippets.length })}
+                            </span>
                         )}
                     </span>
                     <Icon name="ArrowSquareOut" className="shrink-0 opacity-60" />
@@ -257,7 +269,9 @@ export const RuleList = ({ rules, activeIndex, onSelect, onDelete, onReorder, sn
                 <div className="mx-1 mb-2 px-3 py-2 bg-amber-950/30 border border-amber-500/40 rounded-lg text-amber-300 text-[10px] flex items-center gap-2">
                     <Icon name="Warning" weight="fill" className="shrink-0 text-amber-400 text-xs" />
                     <span>
-                        <b>{duplicateCount}</b> rule{duplicateCount > 1 ? 's' : ''} contain shadowed duplicate matchers
+                        {tn(duplicateCount,
+                            "{n} rule contains shadowed duplicate matchers",
+                            "{n} rules contain shadowed duplicate matchers")}
                     </span>
                 </div>
             )}

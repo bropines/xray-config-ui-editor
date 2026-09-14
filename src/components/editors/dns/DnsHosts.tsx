@@ -3,6 +3,7 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { isValidDomain } from '../../../core/validators';
 import { useDnsHostsEditor } from '../../../hooks/useDnsHostsEditor';
+import { t } from '../../../i18n';
 
 export const DnsHosts = ({ hosts = {}, onChange }: any) => {
     const { entries, addHost, updateDomain, updateIpValue, removeHost } = useDnsHostsEditor(hosts, onChange);
@@ -11,12 +12,12 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-6 px-1">
                 <div>
-                    <label className="label-xs text-emerald-400">DNS Static Mapping</label>
-                    <p className="text-[10px] text-slate-500">Map domains to specific IP addresses.</p>
+                    <label className="label-xs text-emerald-400">{t("DNS Static Mapping")}</label>
+                    <p className="text-[10px] text-slate-500">{t("Map domains to specific IP addresses.")}</p>
                 </div>
                 <Button variant="secondary" className="px-3 py-1.5 text-xs" onClick={addHost} icon="Plus">
-                    Add Host
-                </Button>
+                    {t("Add Host")}
+                    </Button>
             </div>
             
             <div className="flex-1 overflow-y-auto custom-scroll space-y-4 pr-2 pb-10">
@@ -38,14 +39,14 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
                                     </label>
                                     <input 
                                         className={`input-base text-sm font-bold ${domainIsInvalid ? 'border-rose-500 text-rose-200 bg-rose-950' : 'text-white'}`} 
-                                        placeholder="example.com"
+                                        placeholder={t("example.com")}
                                         value={host.domain}
                                         onChange={e => updateDomain(hIdx, e.target.value)}
                                     />
                                 </div>
 
                                 <div className="md:col-span-7 space-y-2">
-                                    <label className="label-xs text-slate-500 mb-1.5 block">IP Addresses</label>
+                                    <label className="label-xs text-slate-500 mb-1.5 block">{t("IP Addresses")}</label>
                                     {host.ips.map((ip, ipIdx) => (
                                         <input 
                                             key={ipIdx}
@@ -64,7 +65,7 @@ export const DnsHosts = ({ hosts = {}, onChange }: any) => {
                 {entries.length === 0 && (
                     <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-2xl">
                         <Icon name="Globe" size={48} className="mx-auto text-slate-800 mb-4" />
-                        <p className="text-slate-500 text-sm">No static hosts configured.</p>
+                        <p className="text-slate-500 text-sm">{t("No static hosts configured.")}</p>
                     </div>
                 )}
             </div>

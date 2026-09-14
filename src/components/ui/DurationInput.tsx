@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from './Icon';
 import { cn } from '../../utils/cn';
+import { perLanguage, t } from '../../i18n';
 
 export type TimeUnit = 'ms' | 's' | 'm' | 'h';
 
@@ -18,12 +19,12 @@ export interface DurationInputProps {
     disabled?: boolean;
 }
 
-const UNIT_LABELS: Record<TimeUnit, { short: string; label: string }> = {
-    ms: { short: 'ms', label: 'Milliseconds' },
-    s: { short: 's', label: 'Seconds' },
-    m: { short: 'm', label: 'Minutes' },
-    h: { short: 'h', label: 'Hours' }
-};
+const unitLabels = perLanguage((): Record<TimeUnit, { short: string; label: string }> => ({
+    ms: { short: 'ms', label: t("Milliseconds") },
+    s: { short: 's', label: t("Seconds") },
+    m: { short: 'm', label: t("Minutes") },
+    h: { short: 'h', label: t("Hours") }
+}));
 
 const TO_SECONDS: Record<TimeUnit, number> = {
     ms: 0.001,
@@ -200,7 +201,7 @@ export const DurationInput: React.FC<DurationInputProps> = ({
                     disabled={disabled}
                     onClick={() => setIsDropdownOpen(prev => !prev)}
                     className="px-2 h-[30px] rounded-md flex items-center gap-1 text-xs font-mono font-bold text-indigo-400 hover:text-indigo-300 hover:bg-slate-800/80 active:bg-slate-800 transition-colors cursor-pointer disabled:opacity-40"
-                    title="Select time unit"
+                    title={t("Select time unit")}
                 >
                     <span>{selectedUnit}</span>
                     <Icon
@@ -217,8 +218,8 @@ export const DurationInput: React.FC<DurationInputProps> = ({
                         className="absolute right-0 top-full mt-1.5 z-50 bg-[#0f172a] border border-slate-700 rounded-xl shadow-2xl overflow-hidden py-1 w-36 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
                     >
                         <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-800 mb-1">
-                            Time Unit
-                        </div>
+                            {t("Time Unit")}
+                            </div>
                         {unitOptions.map(u => {
                             const isSelected = u === selectedUnit;
                             return (
@@ -234,7 +235,7 @@ export const DurationInput: React.FC<DurationInputProps> = ({
                                     )}
                                 >
                                     <span>
-                                        <b className="font-bold">{u}</b> <span className="text-[10px] opacity-60 font-sans">({UNIT_LABELS[u].label})</span>
+                                        <b className="font-bold">{u}</b> <span className="text-[10px] opacity-60 font-sans">({unitLabels()[u].label})</span>
                                     </span>
                                     {isSelected && <Icon name="Check" weight="bold" className="text-indigo-400 text-xs" />}
                                 </button>

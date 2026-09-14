@@ -17,6 +17,7 @@ import xraySchema from "../../utils/config.schema.json";
 
 import { parseJsonc } from "../../utils/jsonc";
 import { toast } from "sonner";
+import { t } from '../../i18n';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 
@@ -579,7 +580,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                         onChange(currentDoc);
                         if (onSaveShortcut) {
                             onSaveShortcut();
-                            toast.success("✓ Saved to memory & UI updated", { id: 'ctrl-s-toast' });
+                            toast.success(t("✓ Saved to memory & UI updated"), { id: 'ctrl-s-toast' });
                         }
                         return true;
                     }
@@ -598,7 +599,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                                 toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions ?? 0} -${snapshot.deletions ?? 0})`, { id: 'ctrl-shift-s-toast' });
                             } else {
                                 console.log('[JsonEditor] Already at HEAD');
-                                toast.info("Already at HEAD (no changes to commit)", { id: 'ctrl-shift-s-toast' });
+                                toast.info(t("Already at HEAD (no changes to commit)"), { id: 'ctrl-shift-s-toast' });
                             }
                         }
                         return true;

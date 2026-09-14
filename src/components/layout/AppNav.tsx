@@ -2,7 +2,9 @@ import React from 'react';
 import { Icon } from '../ui';
 import { Button } from '../ui';
 import { Select } from '../ui/Select';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { useAppNavLogic } from '../../hooks/useAppNavLogic';
+import { t } from '../../i18n';
 
 interface AppNavProps {
     /** Whether Remnawave panel is connected */
@@ -65,14 +67,14 @@ export const AppNav = ({
                         <Icon name="Planet" weight="fill" className="text-xl" />
                     </div>
                     <div className="flex flex-col leading-tight hidden sm:flex">
-                        <span className="font-black text-sm tracking-tight text-white uppercase">Xray GUI</span>
+                        <span className="font-black text-sm tracking-tight text-white uppercase">{t("Xray GUI")}</span>
                         {connected ? (
                             <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                                Cloud Linked
-                            </span>
+                                {t("Cloud Linked")}
+                                </span>
                         ) : (
-                            <span className="text-[10px] text-slate-500 font-medium">Local Mode</span>
+                            <span className="text-[10px] text-slate-500 font-medium">{t("Local Mode")}</span>
                         )}
                     </div>
 
@@ -116,9 +118,9 @@ export const AppNav = ({
                                     onClick={onOpenEditorSettings}
                                     icon="FolderUser"
                                     className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none border-slate-700/60"
-                                    title="Profiles & Editor Settings"
+                                    title={t("Profiles & Editor Settings")}
                                 >
-                                    <span className="hidden sm:inline">Profiles</span>
+                                    <span className="hidden sm:inline">{t("Profiles")}</span>
                                 </Button>
                             )}
 
@@ -128,9 +130,9 @@ export const AppNav = ({
                                     onClick={onOpenHistory}
                                     icon="GitBranch"
                                     className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none border-indigo-500/40 text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60"
-                                    title="Git Version History & Log"
+                                    title={t("Git Version History & Log")}
                                 >
-                                    <span className="hidden sm:inline">Git Log</span>
+                                    <span className="hidden sm:inline">{t("Git Log")}</span>
                                 </Button>
                             )}
 
@@ -142,9 +144,9 @@ export const AppNav = ({
                                     }}
                                     icon="XCircle"
                                     className="h-9 px-2 sm:px-3 text-xs rounded-lg shadow-none bg-rose-600 hover:bg-rose-500 text-white font-bold"
-                                    title="Clear Config"
+                                    title={t("Clear Config")}
                                 >
-                                    <span className="hidden sm:inline">Clear</span>
+                                    <span className="hidden sm:inline">{t("Clear")}</span>
                                 </Button>
                             )}
                         </div>
@@ -156,7 +158,7 @@ export const AppNav = ({
                             <button
                                 onClick={onOpenSwitchProfile}
                                 className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"
-                                title="Switch Profile"
+                                title={t("Switch Profile")}
                             >
                                 <Icon name="ListDashes" weight="bold" />
                             </button>
@@ -169,13 +171,13 @@ export const AppNav = ({
                                 }`}
                             >
                                 <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" className="text-base" />
-                                <span className="hidden lg:inline">{pushStage === 'confirm' ? 'Confirm Push?' : 'Push'}</span>
+                                <span className="hidden lg:inline">{pushStage === 'confirm' ? t("Confirm Push?") : t("Push")}</span>
                             </button>
                             <div className="w-px h-4 bg-slate-800 mx-1" />
                             <button
                                 onClick={onDisconnect}
                                 className="w-9 h-9 flex items-center justify-center hover:bg-rose-500/10 rounded-lg text-slate-600 hover:text-rose-500 transition-all"
-                                title="Disconnect"
+                                title={t("Disconnect")}
                             >
                                 <Icon name="LinkBreak" weight="bold" />
                             </button>
@@ -188,9 +190,9 @@ export const AppNav = ({
                                 variant="secondary"
                                 onClick={onOpenRemnawave}
                                 className="h-9 px-2.5 sm:px-4 text-xs font-bold rounded-lg border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 shadow-none"
-                                title="Connect Cloud"
+                                title={t("Connect Cloud")}
                             >
-                                <Icon name="Cloud" /> <span className="hidden md:inline">Connect Cloud</span>
+                                <Icon name="Cloud" /> <span className="hidden md:inline">{t("Connect Cloud")}</span>
                             </Button>
                         </div>
                     )}
@@ -208,7 +210,7 @@ export const AppNav = ({
                                     }`}
                                 >
                                     <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" />
-                                    <span>{pushStage === 'confirm' ? 'Confirm?' : 'Push Cloud'}</span>
+                                    <span>{pushStage === 'confirm' ? t("Confirm?") : t("Push Cloud")}</span>
                                 </button>
                             </div>
                         ) : (
@@ -217,9 +219,9 @@ export const AppNav = ({
                                     variant="secondary"
                                     onClick={onOpenRemnawave}
                                     className="h-9 px-3 text-xs font-bold rounded-lg border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 shadow-none"
-                                    title="Connect Cloud"
+                                    title={t("Connect Cloud")}
                                 >
-                                    <Icon name="Cloud" /> <span>Connect Cloud</span>
+                                    <Icon name="Cloud" /> <span>{t("Connect Cloud")}</span>
                                 </Button>
                             </div>
                         )}
@@ -233,7 +235,7 @@ export const AppNav = ({
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded-lg text-indigo-400 hover:text-white transition-all"
-                            title="Profile & Tools Menu"
+                            title={t("Profile & Tools Menu")}
                         >
                             <Icon name="SlidersHorizontal" className="text-base" />
                         </button>
@@ -243,13 +245,13 @@ export const AppNav = ({
                     <div className="flex gap-1 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                         <label
                             className="bg-slate-800/80 hover:bg-slate-700 text-slate-200 w-9 h-9 rounded-lg cursor-pointer transition-all border border-slate-700/60 flex items-center justify-center text-sm"
-                            title="Load JSON"
+                            title={t("Load JSON")}
                         >
                             <Icon name="FolderOpen" />
                             <input type="file" className="hidden" accept=".json" onChange={onFileUpload} />
                         </label>
-                        <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-lg h-9 px-2.5 sm:px-4 text-xs font-bold shadow-none" disabled={!hasConfig} title="Download">
-                            <span className="hidden md:inline">Download</span>
+                        <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-lg h-9 px-2.5 sm:px-4 text-xs font-bold shadow-none" disabled={!hasConfig} title={t("Download")}>
+                            <span className="hidden md:inline">{t("Download")}</span>
                         </Button>
                     </div>
 
@@ -260,10 +262,10 @@ export const AppNav = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-9 px-3 flex items-center gap-2 rounded-lg bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
-                            title="Telegram Channel (@xcue_dev)"
+                            title={t("Telegram Channel (@xcue_dev)")}
                         >
                             <Icon name="TelegramLogo" weight="bold" />
-                            <span>Telegram</span>
+                            <span>{t("Telegram")}</span>
                         </a>
                         <div className="w-px h-4 bg-slate-800 mx-1 shrink-0" />
                         <a
@@ -271,10 +273,10 @@ export const AppNav = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-9 px-3 flex items-center gap-2 rounded-lg bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider group"
-                            title="Support Developer (Boosty)"
+                            title={t("Support Developer (Boosty)")}
                         >
                             <Icon name="Heart" weight="fill" className="text-rose-500 group-hover:text-white transition-all group-hover:scale-110" />
-                            <span>Support</span>
+                            <span>{t("Support")}</span>
                         </a>
                         <div className="w-px h-4 bg-slate-800 mx-1 shrink-0" />
                         <a
@@ -282,21 +284,22 @@ export const AppNav = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-9 px-3 flex items-center gap-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white transition-all font-bold text-xs uppercase tracking-wider"
-                            title="Official Xray Documentation"
+                            title={t("Official Xray Documentation")}
                         >
                             <Icon name="BookOpen" weight="bold" />
-                            <span>Xray Docs</span>
+                            <span>{t("Xray Docs")}</span>
                         </a>
                     </div>
 
                     <div className="w-px h-8 bg-slate-800/50 mx-0.5 hidden sm:block shrink-0" />
 
-                    {/* About / Repository at the VERY RIGHT END */}
-                    <div className="flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    {/* Language + About / Repository at the VERY RIGHT END */}
+                    <div className="flex items-center gap-1 h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                        <LanguageSwitcher className="hidden sm:flex h-9" />
                         <button
                             onClick={onOpenAbout}
                             className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all"
-                            title="About / Repository"
+                            title={t("About / Repository")}
                         >
                             <Icon name="Info" className="text-base" />
                         </button>
@@ -314,19 +317,22 @@ export const AppNav = ({
                                     <Icon name="SlidersHorizontal" className="text-lg" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-black uppercase text-white tracking-wide">Profiles & Tools</h3>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Management Menu</p>
+                                    <h3 className="text-sm font-black uppercase text-white tracking-wide">{t("Profiles & Tools")}</h3>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t("Mobile Management Menu")}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors">
-                                <Icon name="X" weight="bold" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <LanguageSwitcher className="sm:hidden" />
+                                <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors">
+                                    <Icon name="X" weight="bold" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Mobile Selector in Drawer */}
                         {hasConfig && (
                             <div className="space-y-1.5 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
-                                <label className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider block">Select Active Profile</label>
+                                <label className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider block">{t("Select Active Profile")}</label>
                                 <Select
                                     value={currentOptionValue}
                                     onChange={(val) => {
@@ -346,7 +352,7 @@ export const AppNav = ({
                                         className="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl flex flex-col items-center gap-1.5 text-slate-300 hover:text-white transition-all group"
                                     >
                                         <Icon name="FolderUser" className="text-xl text-indigo-400 group-hover:scale-110 transition-transform" />
-                                        <span className="text-xs font-bold">Profiles</span>
+                                        <span className="text-xs font-bold">{t("Profiles")}</span>
                                     </button>
                                 )}
                                 {onOpenHistory && (
@@ -355,7 +361,7 @@ export const AppNav = ({
                                         className="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl flex flex-col items-center gap-1.5 text-indigo-300 hover:text-white transition-all group"
                                     >
                                         <Icon name="GitBranch" className="text-xl text-indigo-400 group-hover:scale-110 transition-transform" />
-                                        <span className="text-xs font-bold">Git Log</span>
+                                        <span className="text-xs font-bold">{t("Git Log")}</span>
                                     </button>
                                 )}
                                 {onClearConfig && (
@@ -367,27 +373,27 @@ export const AppNav = ({
                                         className="p-3 bg-slate-950 border border-slate-800 hover:border-rose-500/50 rounded-2xl flex flex-col items-center gap-1.5 text-rose-400 hover:text-rose-200 transition-all group"
                                     >
                                         <Icon name="XCircle" className="text-xl text-rose-500 group-hover:scale-110 transition-transform" />
-                                        <span className="text-xs font-bold">Clear</span>
+                                        <span className="text-xs font-bold">{t("Clear")}</span>
                                     </button>
                                 )}
                             </div>
                         )}
 
                         <div className="space-y-2 pt-1 border-t border-slate-800/80">
-                            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cloud Connection</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{t("Cloud Connection")}</span>
                             {connected ? (
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button variant="secondary" onClick={() => { onPush(); setMobileMenuOpen(false); }} icon="CloudArrowUp" className="py-2.5 text-xs rounded-xl font-bold">
-                                        {pushStage === 'confirm' ? 'Confirm Push?' : 'Push Cloud'}
+                                        {pushStage === 'confirm' ? t("Confirm Push?") : t("Push Cloud")}
                                     </Button>
                                     <Button variant="danger" onClick={() => { onDisconnect(); setMobileMenuOpen(false); }} icon="LinkBreak" className="py-2.5 text-xs rounded-xl font-bold">
-                                        Disconnect
-                                    </Button>
+                                        {t("Disconnect")}
+                                        </Button>
                                 </div>
                             ) : (
                                 <Button variant="secondary" onClick={() => { onOpenRemnawave(); setMobileMenuOpen(false); }} icon="Cloud" className="w-full py-2.5 text-xs rounded-xl font-bold border-indigo-500/30 bg-indigo-500/10 text-indigo-300">
-                                    Connect Remnawave Cloud
-                                </Button>
+                                    {t("Connect Remnawave Cloud")}
+                                    </Button>
                             )}
                         </div>
 
@@ -399,7 +405,7 @@ export const AppNav = ({
                                 className="p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5"
                             >
                                 <Icon name="TelegramLogo" weight="bold" className="text-base" />
-                                <span>Telegram</span>
+                                <span>{t("Telegram")}</span>
                             </a>
                             <a
                                 href="https://boosty.to/pinus"
@@ -408,7 +414,7 @@ export const AppNav = ({
                                 className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5 group"
                             >
                                 <Icon name="Heart" weight="fill" className="text-base text-rose-500 group-hover:text-white transition-all group-hover:scale-110" />
-                                <span>Support</span>
+                                <span>{t("Support")}</span>
                             </a>
                             <a
                                 href="https://xtls.github.io/"
@@ -417,7 +423,7 @@ export const AppNav = ({
                                 className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all font-bold text-xs flex items-center justify-center gap-1.5"
                             >
                                 <Icon name="BookOpen" weight="bold" className="text-base" />
-                                <span>Docs</span>
+                                <span>{t("Docs")}</span>
                             </a>
                         </div>
                     </div>

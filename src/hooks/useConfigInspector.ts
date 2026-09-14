@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useConfigStore } from '../store/configStore';
 import { parseRawSubscriptionText } from '../utils/link-parser';
 import { generateUUID } from '../core/generators/crypto';
+import { t } from '../i18n';
 
 /**
  * All the state, localStorage persistence, and multi-step handlers behind
@@ -96,7 +97,7 @@ export function useConfigInspector(setModal: (m: any) => void) {
         const newId = generateUUID();
         setHwid(newId);
         localStorage.setItem(HWID_STORAGE_KEY, newId);
-        toast.info("Generated new HWID", { description: newId });
+        toast.info(t("Generated new HWID"), { description: newId });
     };
 
     const handleAutoDetect = () => {
@@ -107,7 +108,7 @@ export function useConfigInspector(setModal: (m: any) => void) {
         localStorage.setItem(OS_STORAGE_KEY, detected.os);
         localStorage.setItem(VER_STORAGE_KEY, detected.ver);
         localStorage.setItem(MODEL_STORAGE_KEY, detected.model);
-        toast.success("Detected system parameters", { description: `${detected.os} ${detected.ver} • ${detected.model}` });
+        toast.success(t("Detected system parameters"), { description: `${detected.os} ${detected.ver} • ${detected.model}` });
     };
 
     const handleFetchSub = async () => {
@@ -165,9 +166,9 @@ export function useConfigInspector(setModal: (m: any) => void) {
             } catch (e) { }
 
             setInputText(decoded);
-            toast.success("Subscription fetched successfully", { description: `HWID: ${hwid.substring(0, 8)}...` });
+            toast.success(t("Subscription fetched successfully"), { description: `HWID: ${hwid.substring(0, 8)}...` });
         } catch (error: any) {
-            toast.error("Fetch failed", { description: error.message });
+            toast.error(t("Fetch failed"), { description: error.message });
         } finally {
             setIsFetching(false);
         }
@@ -178,16 +179,16 @@ export function useConfigInspector(setModal: (m: any) => void) {
         try {
             const data = JSON.parse(inputText);
             setInputText(JSON.stringify(data, null, 2));
-            toast.success("JSON beautified");
+            toast.success(t("JSON beautified"));
         } catch {
             try {
                 const configs = parseRawSubscriptionText(inputText);
                 if (configs && configs.length > 0) {
                     setInputText(JSON.stringify(configs.length === 1 ? configs[0] : configs, null, 2));
-                    toast.success("Parsed & beautified as JSON");
+                    toast.success(t("Parsed & beautified as JSON"));
                 }
             } catch {
-                toast.error("Could not beautify: input is not valid JSON");
+                toast.error(t("Could not beautify: input is not valid JSON"));
             }
         }
     };
@@ -208,14 +209,14 @@ export function useConfigInspector(setModal: (m: any) => void) {
             });
 
             if (isDummyOnly) {
-                toast.warning("Warning: Provider returned announcement/dummy nodes", {
-                    description: "Your provider may require a different User-Agent or device authorization."
+                toast.warning(t("Warning: Provider returned announcement/dummy nodes"), {
+                    description: t("Your provider may require a different User-Agent or device authorization.")
                 });
             } else {
                 toast.success(`Analyzed ${configs.length} configuration(s) (${firstConfig?.outbounds?.length || 0} nodes found)`);
             }
         } catch (e: any) {
-            toast.error("Parse failed", { description: e.message });
+            toast.error(t("Parse failed"), { description: e.message });
         }
     };
 
@@ -226,12 +227,12 @@ export function useConfigInspector(setModal: (m: any) => void) {
 
     const importOutbound = (proxy: any, customTag?: string) => {
         addOutbounds([{ ...proxy, tag: customTag || proxy.tag }]);
-        toast.success("Node added to outbounds");
+        toast.success(t("Node added to outbounds"));
     };
 
     const importInbound = (ib: any) => {
         addItem('inbounds', ib);
-        toast.success("Inbound added");
+        toast.success(t("Inbound added"));
     };
 
     const openInboundEditor = (ib: any) => {

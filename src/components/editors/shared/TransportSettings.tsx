@@ -16,6 +16,7 @@ import { SchemaForm } from '../../ui/SchemaForm';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useField } from '../../../hooks/useField';
 import type { FieldPath } from '../../../hooks/useField';
+import { t } from '../../../i18n';
 
 interface TransportProps {
     streamSettings: any;
@@ -149,40 +150,41 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
         <div className="bg-slate-900/40 p-5 rounded-2xl border border-slate-800/80 space-y-6 animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
                 <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2.5">
-                    <Icon name="GlobeHemisphereWest" size={18} /> Stream Settings
-                </h4>
+                    <Icon name="GlobeHemisphereWest" size={18} />
+{t("Stream Settings")}
+</h4>
             </div>
 
             {/* --- MAIN SELECTORS --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Select
-                        label="Network"
-                        hint="Transport protocol used to deliver data."
+                        label={t("Network")}
+                        hint={t("Transport protocol used to deliver data.")}
                         value={net}
                         onChange={val => network.onChange(val)}
                         options={[
-                            { value: "tcp", label: "TCP", description: "Standard reliable stream" },
-                            { value: "ws", label: "WebSocket", description: "Standard web transport" },
-                            { value: "xhttp", label: "XHTTP", description: "Next-gen HTTP transport" },
-                            { value: "splithttp", label: "SplitHTTP", description: "High-performance split stream" },
-                            { value: "grpc", label: "gRPC", description: "Modern RPC framework" },
-                            { value: "http", label: "HTTP", description: "Standard HTTP proxying" },
-                            { value: "quic", label: "QUIC", description: "UDP-based transport (HTTP/3)" },
-                            { value: "kcp", label: "mKCP", description: "Aggressive UDP transport" },
-                            { value: "raw", label: "RAW", description: "Raw socket access" },
-                            { value: "httpupgrade", label: "HTTP Upgrade", description: "Modern WebSocket alternative" },
+                            { value: "tcp", label: "TCP", description: t("Standard reliable stream") },
+                            { value: "ws", label: t("WebSocket"), description: t("Standard web transport") },
+                            { value: "xhttp", label: t("XHTTP"), description: t("Next-gen HTTP transport") },
+                            { value: "splithttp", label: t("SplitHTTP"), description: t("High-performance split stream") },
+                            { value: "grpc", label: t("gRPC"), description: t("Modern RPC framework") },
+                            { value: "http", label: "HTTP", description: t("Standard HTTP proxying") },
+                            { value: "quic", label: t("QUIC"), description: t("UDP-based transport (HTTP/3)") },
+                            { value: "kcp", label: t("mKCP"), description: t("Aggressive UDP transport") },
+                            { value: "raw", label: t("RAW"), description: t("Raw socket access") },
+                            { value: "httpupgrade", label: t("HTTP Upgrade"), description: t("Modern WebSocket alternative") },
                         ]}
                     />
                     <Select
-                        label="Security"
-                        hint="Encryption layer (TLS/Reality)."
+                        label={t("Security")}
+                        hint={t("Encryption layer (TLS/Reality).")}
                         value={sec}
                         onChange={val => security.onChange(val)}
                         options={[
-                            { value: "none", label: "NONE", description: "Plaintext (unsafe)" },
-                            { value: "tls", label: "TLS", description: "Standard SSL/TLS encryption" },
+                            { value: "none", label: t("NONE"), description: t("Plaintext (unsafe)") },
+                            { value: "tls", label: "TLS", description: t("Standard SSL/TLS encryption") },
                             ...(['vless', 'vmess', 'trojan', 'shadowsocks'].includes(protocol || '') ? [
-                                { value: "reality", label: "REALITY", description: "Next-gen stealth encryption" }
+                                { value: "reality", label: t("REALITY"), description: t("Next-gen stealth encryption") }
                             ] : []),
                         ]}
                     />
@@ -196,8 +198,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'raw' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
                     <div className="col-span-full flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-400">RAW Socket Settings</span>
-                        <Help>Used primarily with Finalmask for obfuscation.</Help>
+                        <span className="text-xs font-bold text-emerald-400">{t("RAW Socket Settings")}</span>
+                        <Help>{t("Used primarily with Finalmask for obfuscation.")}</Help>
                     </div>
                 </div>
             )}
@@ -206,10 +208,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'httpupgrade' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
                     <div className="col-span-full flex items-center gap-2">
-                        <span className="text-xs font-bold text-blue-400">HTTP Upgrade Configuration</span>
+                        <span className="text-xs font-bold text-blue-400">{t("HTTP Upgrade Configuration")}</span>
                     </div>
-                    <div><label className="label-xs">Path</label><input className="input-base font-mono" placeholder="/" value={httpupgradePath.value || ""} onChange={e => httpupgradePath.onChange(e.target.value)} /></div>
-                    <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="example.com" value={httpupgradeHost.value || ""} onChange={e => httpupgradeHost.onChange(e.target.value)} /></div>
+                    <div><label className="label-xs">{t("Path")}</label><input className="input-base font-mono" placeholder="/" value={httpupgradePath.value || ""} onChange={e => httpupgradePath.onChange(e.target.value)} /></div>
+                    <div><label className="label-xs">{t("Host")}</label><input className="input-base font-mono" placeholder={t("example.com")} value={httpupgradeHost.value || ""} onChange={e => httpupgradeHost.onChange(e.target.value)} /></div>
                 </div>
             )}
 
@@ -217,7 +219,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'tcp' && (
                 <div className="space-y-4 border-t border-slate-800/50 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-400">TCP (RAW) Settings</span>
+                        <span className="text-xs font-bold text-slate-400">{t("TCP (RAW) Settings")}</span>
                     </div>
 
                     {!isClient && (
@@ -225,30 +227,30 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <Switch
                                 checked={tcpAcceptProxyProtocol.value || false}
                                 onChange={checked => tcpAcceptProxyProtocol.onChange(checked)}
-                                label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>}
+                                label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">{t("Accept PROXY Protocol")}</span>}
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
-                            label="Header Type (Obfuscation)"
+                            label={t("Header Type (Obfuscation)")}
                             value={tcpHeaderType.value || "none"}
                             onChange={val => tcpHeaderType.onChange(val)}
                             options={[
-                                { value: "none", label: "None", description: "No obfuscation" },
-                                { value: "http", label: "HTTP", description: "Simulate HTTP request" },
+                                { value: "none", label: t("None"), description: t("No obfuscation") },
+                                { value: "http", label: "HTTP", description: t("Simulate HTTP request") },
                             ]}
                         />
 
                         {tcpHeaderType.value === 'http' && (
                             <div className="col-span-full space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
-                                <label className="label-xs text-yellow-500">HTTP Request (Legacy Obfuscation)</label>
+                                <label className="label-xs text-yellow-500">{t("HTTP Request (Legacy Obfuscation)")}</label>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <input className="input-base text-xs font-mono" placeholder="Path (e.g. /)"
+                                    <input className="input-base text-xs font-mono" placeholder={t("Path (e.g. /)")}
                                         value={tcpHeaderPath.value?.[0] || "/"}
                                         onChange={e => tcpHeaderPath.onChange([e.target.value])} />
-                                    <input className="input-base text-xs font-mono" placeholder="Host (e.g. bing.com)"
+                                    <input className="input-base text-xs font-mono" placeholder={t("Host (e.g. bing.com)")}
                                         value={tcpHeaderHost.value?.[0] || ""}
                                         onChange={e => tcpHeaderHost.onChange([e.target.value])} />
                                 </div>
@@ -261,8 +263,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {(net === 'xhttp' || net === 'splithttp') && (
                 <div className="border-t border-slate-800 pt-4">
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{net.toUpperCase()} Configuration</span>
-                        <span className="text-[10px] text-white bg-blue-600 px-1.5 py-0.5 rounded font-bold animate-pulse">BEYOND REALITY</span>
+                        <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                            {t("{net} configuration", { net: net.toUpperCase() })}
+                        </span>
+                        <span className="text-[10px] text-white bg-blue-600 px-1.5 py-0.5 rounded font-bold animate-pulse">{t("BEYOND REALITY")}</span>
                     </div>
                     <XhttpSettingsEditor
                         xhttpSettings={streamSettings.xhttpSettings || streamSettings.splithttpSettings}
@@ -275,7 +279,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'ws' && (
                 <div className="space-y-4 border-t border-slate-800/50 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">WebSocket Settings</span>
+                        <span className="text-xs font-bold text-indigo-400">{t("WebSocket Settings")}</span>
                     </div>
 
                     {!isClient && (
@@ -283,16 +287,16 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <Switch
                                 checked={wsAcceptProxyProtocol.value || false}
                                 onChange={checked => wsAcceptProxyProtocol.onChange(checked)}
-                                label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Accept PROXY Protocol</span>}
+                                label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">{t("Accept PROXY Protocol")}</span>}
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label className="label-xs">Path</label><input className="input-base font-mono" value={wsPath.value || "/"} onChange={e => wsPath.onChange(e.target.value)} /></div>
-                        <div><label className="label-xs">Host</label><input className="input-base font-mono" placeholder="host.com" value={wsHost.value || ""} onChange={e => wsHost.onChange(e.target.value)} /></div>
+                        <div><label className="label-xs">{t("Path")}</label><input className="input-base font-mono" value={wsPath.value || "/"} onChange={e => wsPath.onChange(e.target.value)} /></div>
+                        <div><label className="label-xs">{t("Host")}</label><input className="input-base font-mono" placeholder={t("host.com")} value={wsHost.value || ""} onChange={e => wsHost.onChange(e.target.value)} /></div>
                         <div>
-                            <label className="label-xs">Heartbeat Period (s)</label>
+                            <label className="label-xs">{t("Heartbeat Period (s)")}</label>
                             <NumberInput
                                 placeholder="10"
                                 value={wsHeartbeatPeriod.value}
@@ -306,7 +310,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'grpc' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">gRPC Settings</span>
+                        <span className="text-xs font-bold text-indigo-400">{t("gRPC Settings")}</span>
                     </div>
 
                     {isClient && (
@@ -314,24 +318,24 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <Switch
                                 checked={grpcMultiMode.value || false}
                                 onChange={checked => grpcMultiMode.onChange(checked)}
-                                label="Enable Multi Mode"
+                                label={t("Enable Multi Mode")}
                             />
                             <Switch
                                 checked={grpcPermitWithoutStream.value || false}
                                 onChange={checked => grpcPermitWithoutStream.onChange(checked)}
-                                label="Permit Without Stream"
+                                label={t("Permit Without Stream")}
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="col-span-full"><label className="label-xs">Service Name</label><input className="input-base font-mono" placeholder="GunService" value={grpcServiceName.value || ""} onChange={e => grpcServiceName.onChange(e.target.value)} /></div>
-                        <div><label className="label-xs">Authority</label><input className="input-base font-mono" placeholder="grpc.example.com" value={grpcAuthority.value || ""} onChange={e => grpcAuthority.onChange(e.target.value)} /></div>
+                        <div className="col-span-full"><label className="label-xs">{t("Service Name")}</label><input className="input-base font-mono" placeholder={t("GunService")} value={grpcServiceName.value || ""} onChange={e => grpcServiceName.onChange(e.target.value)} /></div>
+                        <div><label className="label-xs">{t("Authority")}</label><input className="input-base font-mono" placeholder={t("grpc.example.com")} value={grpcAuthority.value || ""} onChange={e => grpcAuthority.onChange(e.target.value)} /></div>
                         {isClient && (
                             <>
-                                <div><label className="label-xs">User Agent</label><input className="input-base font-mono" placeholder="custom user agent" value={grpcUserAgent.value || ""} onChange={e => grpcUserAgent.onChange(e.target.value)} /></div>
+                                <div><label className="label-xs">{t("User Agent")}</label><input className="input-base font-mono" placeholder={t("custom user agent")} value={grpcUserAgent.value || ""} onChange={e => grpcUserAgent.onChange(e.target.value)} /></div>
                                 <div>
-                                    <label className="label-xs">Idle Timeout</label>
+                                    <label className="label-xs">{t("Idle Timeout")}</label>
                                     <DurationInput
                                         placeholder="60"
                                         value={grpcIdleTimeout.value}
@@ -343,7 +347,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                     />
                                 </div>
                                 <div>
-                                    <label className="label-xs">Health Check Timeout</label>
+                                    <label className="label-xs">{t("Health Check Timeout")}</label>
                                     <DurationInput
                                         placeholder="20"
                                         value={grpcHealthCheckTimeout.value}
@@ -355,7 +359,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                     />
                                 </div>
                                 <div>
-                                    <label className="label-xs">Initial Windows Size</label>
+                                    <label className="label-xs">{t("Initial Windows Size")}</label>
                                     <NumberInput
                                         placeholder="0"
                                         value={grpcInitialWindowsSize.value}
@@ -371,34 +375,34 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'kcp' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">mKCP Settings</span>
+                        <span className="text-xs font-bold text-indigo-400">{t("mKCP Settings")}</span>
                     </div>
 
                     <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
                         <Switch
                             checked={kcpCongestion.value || false}
                             onChange={checked => kcpCongestion.onChange(checked)}
-                            label="Enable Congestion Control"
+                            label={t("Enable Congestion Control")}
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
-                            label="Header Type"
+                            label={t("Header Type")}
                             value={kcpHeaderType.value || "none"}
                             onChange={val => kcpHeaderType.onChange(val)}
                             options={[
-                                { value: "none", label: "None" },
-                                { value: "srtp", label: "SRTP", description: "Video call simulation" },
-                                { value: "utp", label: "uTP", description: "BitTorrent simulation" },
-                                { value: "wechat-video", label: "WeChat", description: "WeChat video call" },
-                                { value: "dtls", label: "DTLS", description: "DTLS 1.2 simulation" },
-                                { value: "wireguard", label: "WireGuard", description: "WireGuard simulation" },
+                                { value: "none", label: t("None") },
+                                { value: "srtp", label: t("SRTP"), description: t("Video call simulation") },
+                                { value: "utp", label: "uTP", description: t("BitTorrent simulation") },
+                                { value: "wechat-video", label: t("WeChat"), description: t("WeChat video call") },
+                                { value: "dtls", label: t("DTLS"), description: t("DTLS 1.2 simulation") },
+                                { value: "wireguard", label: t("WireGuard"), description: t("WireGuard simulation") },
                             ]}
                         />
-                        <div><label className="label-xs">Seed</label><input className="input-base font-mono" placeholder="password" value={kcpSeed.value || ""} onChange={e => kcpSeed.onChange(e.target.value)} /></div>
+                        <div><label className="label-xs">{t("Seed")}</label><input className="input-base font-mono" placeholder={t("password")} value={kcpSeed.value || ""} onChange={e => kcpSeed.onChange(e.target.value)} /></div>
                         <div>
-                            <label className="label-xs">MTU</label>
+                            <label className="label-xs">{t("MTU")}</label>
                             <NumberInput
                                 placeholder="1350"
                                 value={kcpMtu.value}
@@ -406,7 +410,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             />
                         </div>
                         <div>
-                            <label className="label-xs">TTI (ms)</label>
+                            <label className="label-xs">{t("TTI (ms)")}</label>
                             <NumberInput
                                 placeholder="50"
                                 value={kcpTti.value}
@@ -414,7 +418,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             />
                         </div>
                         <div>
-                            <label className="label-xs">Uplink Capacity (MB/s)</label>
+                            <label className="label-xs">{t("Uplink Capacity (MB/s)")}</label>
                             <NumberInput
                                 placeholder="5"
                                 value={kcpUplinkCapacity.value}
@@ -422,7 +426,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             />
                         </div>
                         <div>
-                            <label className="label-xs">Downlink Capacity (MB/s)</label>
+                            <label className="label-xs">{t("Downlink Capacity (MB/s)")}</label>
                             <NumberInput
                                 placeholder="20"
                                 value={kcpDownlinkCapacity.value}
@@ -430,7 +434,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             />
                         </div>
                         <div>
-                            <label className="label-xs">Read Buffer Size (MB)</label>
+                            <label className="label-xs">{t("Read Buffer Size (MB)")}</label>
                             <NumberInput
                                 placeholder="2"
                                 value={kcpReadBufferSize.value}
@@ -438,7 +442,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             />
                         </div>
                         <div>
-                            <label className="label-xs">Write Buffer Size (MB)</label>
+                            <label className="label-xs">{t("Write Buffer Size (MB)")}</label>
                             <NumberInput
                                 placeholder="2"
                                 value={kcpWriteBufferSize.value}
@@ -452,34 +456,34 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {net === 'quic' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">QUIC Settings</span>
+                        <span className="text-xs font-bold text-indigo-400">{t("QUIC Settings")}</span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
-                            label="Security"
+                            label={t("Security")}
                             value={quicSecurity.value || "none"}
                             onChange={val => quicSecurity.onChange(val)}
                             options={[
-                                { value: "none", label: "None" },
-                                { value: "aes-128-gcm", label: "AES-128-GCM" },
-                                { value: "chacha20-poly1305", label: "ChaCha20" },
+                                { value: "none", label: t("None") },
+                                { value: "aes-128-gcm", label: t("AES-128-GCM") },
+                                { value: "chacha20-poly1305", label: t("ChaCha20") },
                             ]}
                         />
                         <Select
-                            label="Header Type"
+                            label={t("Header Type")}
                             value={quicHeaderType.value || "none"}
                             onChange={val => quicHeaderType.onChange(val)}
                             options={[
-                                { value: "none", label: "None" },
-                                { value: "srtp", label: "SRTP" },
+                                { value: "none", label: t("None") },
+                                { value: "srtp", label: t("SRTP") },
                                 { value: "utp", label: "uTP" },
-                                { value: "wechat-video", label: "WeChat" },
-                                { value: "dtls", label: "DTLS" },
-                                { value: "wireguard", label: "WireGuard" },
+                                { value: "wechat-video", label: t("WeChat") },
+                                { value: "dtls", label: t("DTLS") },
+                                { value: "wireguard", label: t("WireGuard") },
                             ]}
                         />
-                        <div className="col-span-full"><label className="label-xs">Key</label><input className="input-base font-mono" placeholder="key" value={quicKey.value || ""} onChange={e => quicKey.onChange(e.target.value)} /></div>
+                        <div className="col-span-full"><label className="label-xs">{t("Key")}</label><input className="input-base font-mono" placeholder="key" value={quicKey.value || ""} onChange={e => quicKey.onChange(e.target.value)} /></div>
                     </div>
                 </div>
             )}
@@ -492,13 +496,13 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                     <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-purple-400 flex items-center">
                             REALITY Keys
-                            <Help>Reality: A TLS extension for mimicking popular websites to bypass firewalls.</Help>
+                            <Help>{t("Reality: A TLS extension for mimicking popular websites to bypass firewalls.")}</Help>
                         </span>
                     </div>
 
                     {isClient && (
                         <div className="flex flex-wrap gap-2 mb-2">
-                            <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>Gen SpiderX Path</Button>
+                            <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>{t("Gen SpiderX Path")}</Button>
                         </div>
                     )}
 
@@ -548,8 +552,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                     {/* REALITY EXTENDED SECTION */}
                     <ExtendedSection
-                        title="Extended REALITY Settings"
-                        description="Post-quantum signature verification, master key logs, and server debug options."
+                        title={t("Extended REALITY Settings")}
+                        description={t("Post-quantum signature verification, master key logs, and server debug options.")}
                         hasActiveValues={
                             isClient
                                 ? !!realitySettings.value?.mldsa65Verify || !!realitySettings.value?.masterKeyLog
@@ -574,16 +578,16 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             {/* 2. STANDARD TLS SETTINGS */}
             {sec === 'tls' && (
                 <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="text-xs font-bold text-blue-400">Standard TLS Settings</div>
+                    <div className="text-xs font-bold text-blue-400">{t("Standard TLS Settings")}</div>
 
                     {!isClient && (
                         <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 mb-4">
-                            <label className="label-xs font-bold text-slate-400">Certificates (Paths)</label>
+                            <label className="label-xs font-bold text-slate-400">{t("Certificates (Paths)")}</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <input className="input-base text-xs font-mono" placeholder="Certificate file path (e.g. /path/to/fullchain.crt)"
+                                <input className="input-base text-xs font-mono" placeholder={t("Certificate file path (e.g. /path/to/fullchain.crt)")}
                                     value={tlsCertificates.value?.[0]?.certificateFile || ""}
                                     onChange={e => tlsCertificates.onChange([{ ...tlsCertificates.value?.[0], certificateFile: e.target.value }])} />
-                                <input className="input-base text-xs font-mono" placeholder="Private key file path (e.g. /path/to/private.key)"
+                                <input className="input-base text-xs font-mono" placeholder={t("Private key file path (e.g. /path/to/private.key)")}
                                     value={tlsCertificates.value?.[0]?.keyFile || ""}
                                     onChange={e => tlsCertificates.onChange([{ ...tlsCertificates.value?.[0], keyFile: e.target.value }])} />
                             </div>
@@ -613,8 +617,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
                     {/* TLS EXTENDED SECTION */}
                     <ExtendedSection
-                        title="Extended TLS Settings"
-                        description="Cipher suites, session resumption, certificate pinning, and SSLKEYLOGFILE."
+                        title={t("Extended TLS Settings")}
+                        description={t("Cipher suites, session resumption, certificate pinning, and SSLKEYLOGFILE.")}
                         hasActiveValues={
                             !!tlsSettings.value?.masterKeyLog ||
                             !!tlsSettings.value?.pinnedPeerCertSha256 ||

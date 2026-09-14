@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useConfigStore } from '../store/configStore';
 import { RemnawaveClient, type RemnawaveProfile } from '../utils/remnawave-client';
 import { toast } from 'sonner';
+import { t } from '../i18n';
 
 export const useRemnawaveEditor = (onClose: () => void) => {
     const { 
@@ -43,7 +44,7 @@ export const useRemnawaveEditor = (onClose: () => void) => {
 
     const handleConnect = useCallback(async () => {
         if (!url || !apiToken) {
-            toast.error("Please fill URL and API Token");
+            toast.error(t("Please fill URL and API Token"));
             return;
         }
         setLoading(true);
@@ -59,7 +60,7 @@ export const useRemnawaveEditor = (onClose: () => void) => {
             setStep('select');
         } catch (e: any) {
             console.error(e);
-            toast.error("Connection failed", { description: "Invalid token or panel URL" });
+            toast.error(t("Connection failed"), { description: t("Invalid token or panel URL") });
         } finally {
             setLoading(false);
         }

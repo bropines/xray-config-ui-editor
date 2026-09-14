@@ -1,6 +1,7 @@
 import React from 'react';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { TunInboundSettingsSchema } from '../../../core/xray/schemas';
+import { t } from '../../../i18n';
 
 interface InboundTunProps {
     inbound: any;
@@ -25,8 +26,8 @@ export const InboundTun = ({ inbound, onChange, errors = [] }: InboundTunProps) 
     return (
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4 animate-in fade-in">
             <h4 className="text-xs font-bold text-slate-400 uppercase mb-4 border-b border-slate-700/50 pb-2">
-                TUN Interface Settings
-            </h4>
+                {t("TUN Interface Settings")}
+                </h4>
             <SchemaForm
                 schema={TunInboundSettingsSchema}
                 value={settings}

@@ -30,6 +30,7 @@
     "preview": "vite preview",
     "test": "bun test",
     "lint": "eslint .",
+    "i18n:report": "bun run scripts/i18n-report.ts",
     "schema:generate": "node scripts/generate-xray-schema.cjs",
     "schema:diff": "node scripts/xray-schema-diff.cjs",
     "schema:sync": "node scripts/xray-schema-diff.cjs --write-lock"

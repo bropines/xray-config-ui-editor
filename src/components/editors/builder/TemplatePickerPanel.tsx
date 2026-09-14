@@ -3,6 +3,7 @@ import { Badge } from '../../ui/Badge';
 import { Icon } from '../../ui/Icon';
 import { Input } from '../../ui/Input';
 import type { useTemplatesLibrary } from '../../../hooks/useTemplatesLibrary';
+import { t } from '../../../i18n';
 
 /**
  * Template list for the builder's panel-template mode.
@@ -24,20 +25,20 @@ export const TemplatePickerPanel = ({
 }) => (
     <>
         <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3 flex flex-col gap-3 shrink-0">
-            <span className="label-xs">Panel templates</span>
+            <span className="label-xs">{t("Panel templates")}</span>
             <div className="relative">
                 <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
                 <input
                     className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500"
-                    placeholder="Search templates…"
+                    placeholder={t("Search templates…")}
                     value={tpl.search}
                     onChange={e => tpl.setSearch(e.target.value)}
                 />
             </div>
             <div className="flex gap-1.5">
                 <Button variant="secondary" size="sm" icon="Plus" className="flex-1 text-[10px]" onClick={onNew}>
-                    New template
-                </Button>
+                    {t("New template")}
+                    </Button>
                 <Button
                     variant="secondary"
                     size="sm"
@@ -47,13 +48,13 @@ export const TemplatePickerPanel = ({
                     disabled={!tpl.connected}
                     onClick={tpl.refresh}
                 >
-                    Refresh
-                </Button>
+                    {t("Refresh")}
+                    </Button>
             </div>
             {!tpl.connected && (
                 <p className="text-[10px] text-amber-300/80">
-                    Not connected to Remnawave — connect in the header to load or save templates.
-                </p>
+                    {t("Not connected to Remnawave — connect in the header to load or save templates.")}
+                    </p>
             )}
         </div>
 
@@ -92,26 +93,26 @@ export const TemplatePickerPanel = ({
         {tpl.draft && (
             <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 shrink-0">
                 <Input
-                    label="Template name"
+                    label={t("Template name")}
                     value={tpl.draft.name}
                     onChange={(e: any) => tpl.setName(e.target.value)}
                 />
                 <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="primary" size="sm">{tpl.draft.templateType}</Badge>
-                    {tpl.isDirty && <Badge variant="warning" size="sm">Unsaved JSON edits</Badge>}
+                    {tpl.isDirty && <Badge variant="warning" size="sm">{t("Unsaved JSON edits")}</Badge>}
                 </div>
                 <div className="flex gap-1.5">
                     <Button variant="secondary" size="sm" icon="CardsThree" className="flex-1 text-[10px]" onClick={tpl.duplicate}>
-                        Duplicate
-                    </Button>
+                        {t("Duplicate")}
+                        </Button>
                     {tpl.confirmDelete ? (
                         <Button variant="danger" size="sm" icon="Warning" className="flex-1 text-[10px]" onClick={tpl.remove}>
-                            Confirm delete
-                        </Button>
+                            {t("Confirm delete")}
+                            </Button>
                     ) : (
                         <Button variant="ghost" size="sm" icon="Trash" className="flex-1 text-[10px]" onClick={() => tpl.setConfirmDelete(true)}>
-                            Delete
-                        </Button>
+                            {t("Delete")}
+                            </Button>
                     )}
                 </div>
             </div>

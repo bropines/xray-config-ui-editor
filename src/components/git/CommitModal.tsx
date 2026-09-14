@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { calculateConfigStats, generateShortHash } from '../../core/git/gitEngine';
+import { t } from '../../i18n';
 
 interface CommitModalProps {
     onClose: () => void;
@@ -42,13 +43,13 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
 
     return (
         <Modal
-            title="Git Commit Changes"
+            title={t("Git Commit Changes")}
             onClose={onClose}
             onSave={submitCommit}
             saveText={`Commit (${shortHash})`}
             saveIcon="GitCommit"
             variantSave="indigo"
-            closeText="Cancel"
+            closeText={t("Cancel")}
             className="max-w-lg"
         >
             <form onSubmit={handleFormSubmit} className="space-y-4">
@@ -57,12 +58,12 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
                     <div className="flex items-center gap-2">
                         <Icon name="GitBranch" className="text-indigo-400 text-lg" />
                         <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Branch</p>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{t("Branch")}</p>
                             <p className="text-xs font-bold text-white">{activeProfile?.name || 'main'}</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">New Commit Hash</p>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{t("New Commit Hash")}</p>
                         <p className="text-xs font-mono font-bold text-indigo-400">{shortHash}</p>
                     </div>
                 </div>
@@ -71,7 +72,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
                 <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                         <Icon name="GitDiff" className="text-amber-400" />
-                        <span className="text-slate-300 font-medium">Staged Changes</span>
+                        <span className="text-slate-300 font-medium">{t("Staged Changes")}</span>
                     </div>
                     <div className="flex items-center gap-3 font-mono font-bold">
                         <span className="text-emerald-400">+{stats.additions}</span>
@@ -89,7 +90,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
                         rows={3}
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        placeholder="Describe what changed in this config version..."
+                        placeholder={t("Describe what changed in this config version...")}
                         className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl p-3 text-xs text-white outline-none transition-colors custom-scroll resize-none"
                     />
                 </div>

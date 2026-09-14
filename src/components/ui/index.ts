@@ -51,6 +51,8 @@ export type { DividerProps } from './Divider';
 export { Alert } from './Alert';
 export type { AlertProps, AlertVariant } from './Alert';
 
+export { LanguageSwitcher } from './LanguageSwitcher';
+
 // Composite / Molecules
 export { Help } from './Help';
 export { Card } from './Card';

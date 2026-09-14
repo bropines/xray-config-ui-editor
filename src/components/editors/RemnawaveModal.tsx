@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { useRemnawaveEditor } from '../../hooks/useRemnawaveEditor';
+import { t } from '../../i18n';
 
 export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
     const {
@@ -23,7 +24,7 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <Modal 
-            title={step === 'login' ? "Connect Remnawave" : "Select Profile"} 
+            title={step === 'login' ? t("Connect Remnawave") : t("Select Profile")} 
             onClose={onClose} 
             className="max-w-md"
             onSave={onClose}
@@ -35,13 +36,14 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
                             <Icon name="ShieldCheck" className="text-xl shrink-0 text-amber-400" />
                             <p>
                                 Password login is disabled for security reasons. 
-                                Please use an <b>API Token</b> from your panel settings.
-                            </p>
+                                Please use an <b>{t("API Token")}</b>
+{t("from your panel settings.")}
+</p>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="label-xs">Panel URL</label>
+                                <label className="label-xs">{t("Panel URL")}</label>
                                 <input className="input-base" 
                                     placeholder="https://panel.example.com" 
                                     value={url} onChange={e => setUrl(e.target.value)} 
@@ -49,10 +51,10 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
                             </div>
 
                             <div>
-                                <label className="label-xs">API Token</label>
+                                <label className="label-xs">{t("API Token")}</label>
                                 <input className="input-base font-mono text-xs" 
                                     type="password"
-                                    placeholder="Paste your token here..." 
+                                    placeholder={t("Paste your token here...")} 
                                     value={apiToken} onChange={e => setApiToken(e.target.value)} 
                                 />
                             </div>
@@ -65,7 +67,7 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
                 ) : (
                     <div className="animate-in slide-in-from-right-4 duration-300">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Available Profiles</h3>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t("Available Profiles")}</h3>
                             <button onClick={handleRefreshProfiles} className="p-1 hover:bg-slate-800 rounded transition-colors text-indigo-400">
                                 <Icon name="ArrowsClockwise" className={loading ? "animate-spin" : ""} />
                             </button>
@@ -98,11 +100,13 @@ export const RemnawaveModal = ({ onClose }: { onClose: () => void }) => {
 
                         <div className="mt-6 pt-4 border-t border-slate-800 flex justify-between gap-3">
                              <Button variant="ghost" onClick={() => disconnectRemnawave()} className="text-xs text-rose-400 hover:bg-rose-500/10">
-                                <Icon name="LinkBreak" /> Disconnect
-                            </Button>
+                                <Icon name="LinkBreak" />
+{t("Disconnect")}
+</Button>
                              <Button variant="secondary" onClick={() => setStep('login')} className="text-xs">
-                                <Icon name="UserSwitch" /> Change URL
-                            </Button>
+                                <Icon name="UserSwitch" />
+{t("Change URL")}
+</Button>
                         </div>
                     </div>
                 )}

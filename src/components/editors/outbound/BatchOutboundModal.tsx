@@ -7,6 +7,7 @@ import { parseXrayLink, parseJsonSubscription } from '../../../utils/link-parser
 import { generateXrayLink } from '../../../utils/link-generator';
 import { generateUUID } from '../../../core/generators/crypto';
 import { toast } from 'sonner';
+import { t } from '../../../i18n';
 
 // Ключ для хранения HWID
 const HWID_STORAGE_KEY = 'xray_editor_v2_hwid';
@@ -84,7 +85,7 @@ const decodeSubscriptionText = (raw: string): string => {
 };
 
 const handleFetchSub = async () => {
-    if (!subUrl.trim()) return toast.error("Please enter a subscription URL");
+    if (!subUrl.trim()) return toast.error(t("Please enter a subscription URL"));
     const targetUrl = sanitizeUrl(subUrl);
     setIsFetching(true);
     try {
@@ -106,7 +107,7 @@ const handleFetchSub = async () => {
             } else if (res.status === 403 || res.status === 429) {
                 // If Remnawave returned limit headers
                 if (res.headers.get('x-hwid-max-devices-reached') === 'true' || res.headers.get('x-hwid-limit') === 'true') {
-                    toast.error("Panel rejected this device (HWID)", {
+                    toast.error(t("Panel rejected this device (HWID)"), {
                         description: "Device limit reached. Check 'Active Devices' in the panel."
                     });
                     setIsFetching(false);
@@ -150,7 +151,7 @@ const handleFetchSub = async () => {
         }
 
         if (resHeaders && (resHeaders.get('x-hwid-max-devices-reached') === 'true' || resHeaders.get('x-hwid-limit') === 'true')) {
-            toast.error("Panel rejected this device (HWID)", {
+            toast.error(t("Panel rejected this device (HWID)"), {
                 description: "Device limit reached. Check 'Active Devices' in the panel."
             });
             setIsFetching(false);
@@ -161,7 +162,7 @@ const handleFetchSub = async () => {
 
         if (decoded.includes('://')) {
             setText(prev => prev ? prev + '\n\n' + decoded : decoded);
-            toast.success("Subscription fetched successfully");
+            toast.success(t("Subscription fetched successfully"));
         } else if (decoded.startsWith('[') || decoded.startsWith('{')) {
             const obs = parseJsonSubscription(decoded);
             if (obs.length > 0) {
@@ -171,16 +172,16 @@ const handleFetchSub = async () => {
                     toast.success(`Imported ${links.length} nodes from JSON subscription`);
                 } else {
                     setText(prev => prev ? prev + '\n\n' + decoded : decoded);
-                    toast.success("JSON subscription fetched (Raw)");
+                    toast.success(t("JSON subscription fetched (Raw)"));
                 }
             } else {
-                toast.error("JSON detected but no valid outbounds found inside");
+                toast.error(t("JSON detected but no valid outbounds found inside"));
             }
         } else {
-            toast.error("No valid links or configuration found in response");
+            toast.error(t("No valid links or configuration found in response"));
         }
     } catch (err: any) {
-        toast.error("Fetch failed", { description: err.message });
+        toast.error(t("Fetch failed"), { description: err.message });
     } finally {
         setIsFetching(false);
     }
@@ -191,16 +192,16 @@ const handleFetchSub = async () => {
             const newId = generateUUID();
             setCustomClientId(newId);
             localStorage.setItem(HWID_STORAGE_KEY, newId);
-            toast.info("New HWID generated and saved");
+            toast.info(t("New HWID generated and saved"));
         }
     };
 
     return (
-        <Modal title="Batch Operations" onClose={onClose} className="max-w-2xl" onSave={onClose}>
+        <Modal title={t("Batch Operations")} onClose={onClose} className="max-w-2xl" onSave={onClose}>
             <div className="space-y-4">
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
-                    <button onClick={() => setMode('import')} className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${mode === 'import' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-white'}`}>Import</button>
-                    <button onClick={() => setMode('export')} className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${mode === 'export' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-white'}`}>Export</button>
+                    <button onClick={() => setMode('import')} className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${mode === 'import' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-white'}`}>{t("Import")}</button>
+                    <button onClick={() => setMode('export')} className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${mode === 'export' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-white'}`}>{t("Export")}</button>
                 </div>
 
                 {mode === 'import' && (
@@ -208,7 +209,7 @@ const handleFetchSub = async () => {
                         <div className="flex flex-col sm:flex-row gap-2">
                             <div className="relative flex-1">
                                 <Icon name="Link" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-indigo-500 outline-none transition-colors" placeholder="Subscription URL..." value={subUrl} onChange={e => setSubUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFetchSub()}/>
+                                <input className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-indigo-500 outline-none transition-colors" placeholder={t("Subscription URL...")} value={subUrl} onChange={e => setSubUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFetchSub()}/>
                             </div>
                             <Button variant="secondary" onClick={handleFetchSub} disabled={isFetching || !subUrl}>
                                 {isFetching ? <Icon name="Spinner" className="animate-spin" /> : <Icon name="CloudArrowDown" />}
@@ -219,23 +220,24 @@ const handleFetchSub = async () => {
                         <div className="flex justify-between items-center px-1">
                             <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-[10px] text-slate-500 hover:text-indigo-400 flex items-center gap-1 uppercase font-bold transition-colors">
                                 <Icon name={showAdvanced ? "CaretUp" : "CaretDown"} /> 
-                                {showAdvanced ? "Hide Details" : "Device Info (HWID)"}
+                                {showAdvanced ? t("Hide Details") : t("Device Info (HWID)")}
                             </button>
                             {showAdvanced && (
                                 <button onClick={regenerateHwid} className="text-[10px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold transition-colors">
-                                    <Icon name="ArrowsClockwise" /> Reset Device ID
-                                </button>
+                                    <Icon name="ArrowsClockwise" />
+{t("Reset Device ID")}
+</button>
                             )}
                         </div>
 
                         {showAdvanced && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 animate-in slide-in-from-top-2">
                                 <div>
-                                    <label className="text-[9px] uppercase text-slate-500 font-bold mb-1 block font-mono">User-Agent (Fake Client)</label>
+                                    <label className="text-[9px] uppercase text-slate-500 font-bold mb-1 block font-mono">{t("User-Agent (Fake Client)")}</label>
                                     <input className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-white font-mono" value={customUA} onChange={e => setCustomUA(e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="text-[9px] uppercase text-slate-500 font-bold mb-1 block font-mono">X-HW-ID (Persistent)</label>
+                                    <label className="text-[9px] uppercase text-slate-500 font-bold mb-1 block font-mono">{t("X-HW-ID (Persistent)")}</label>
                                     <input className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-indigo-300 font-mono" value={customClientId} onChange={e => {
                                         setCustomClientId(e.target.value);
                                         localStorage.setItem(HWID_STORAGE_KEY, e.target.value);
@@ -246,7 +248,7 @@ const handleFetchSub = async () => {
                     </div>
                 )}
 
-                <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[280px]' : 'h-[380px]'}`} placeholder="Nodes will appear here after Fetching or Paste manual links..." value={text} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
+                <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[280px]' : 'h-[380px]'}`} placeholder={t("Nodes will appear here after Fetching or Paste manual links...")} value={text} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
                 
                 {mode === 'import' && text.trim() && (
                     <Button className="w-full" onClick={() => {
@@ -264,9 +266,9 @@ const handleFetchSub = async () => {
                             toast.success(`Imported ${obs.length} nodes`);
                             onClose();
                         } else {
-                            toast.error("No valid links or JSON configs found to import");
+                            toast.error(t("No valid links or JSON configs found to import"));
                         }
-                    }}>Save To Config</Button>
+                    }}>{t("Save To Config")}</Button>
                 )}
             </div>
         </Modal>

@@ -4,6 +4,7 @@ import { getCriticalRuleErrors } from '../core/validators';
 import { createDefaultRoutingRule, createDefaultBalancer } from '../utils/protocol-factories';
 import { getSnippetRefName } from '../core/snippets';
 import { toast } from 'sonner';
+import { t } from '../i18n';
 
 export const useRoutingEditor = (onClose: () => void) => {
     const { config, updateSection, reorderRules, updateRoutingRule, updateBalancer } = useConfigStore();
@@ -132,7 +133,7 @@ export const useRoutingEditor = (onClose: () => void) => {
         setActiveRuleIdx(null);
         setMobileEditMode(false);
         toast.success(`Inlined ${entries.length} rule(s) from "${name}"`, {
-            description: 'This copy no longer follows the panel snippet.',
+            description: t("This copy no longer follows the panel snippet."),
         });
     }, [activeRuleIdx, snippets, rules, reorderRules]);
 
@@ -151,7 +152,7 @@ export const useRoutingEditor = (onClose: () => void) => {
         setActiveBalancerIdx(null);
         setMobileEditMode(false);
         toast.success(`Inlined ${entries.length} balancer(s) from "${name}"`, {
-            description: 'This copy no longer follows the panel snippet.',
+            description: t("This copy no longer follows the panel snippet."),
         });
     }, [activeBalancerIdx, snippets, balancers, config?.routing, updateSection]);
 

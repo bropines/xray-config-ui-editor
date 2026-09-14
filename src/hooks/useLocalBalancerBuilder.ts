@@ -5,6 +5,7 @@ import { parseRawSubscriptionText } from '../utils/link-parser';
 import { stringifyJsonc } from '../utils/jsonc';
 import { BYPASS_LISTS, composeBypassDomains, splitBypassDomains } from '../core/presets/bypass-domains';
 import { buildClientOutbound, clientOutboundBlocker } from '../core/generators/client-outbound';
+import { t } from '../i18n';
 import {
     buildLocalBalancerConfig,
     buildLocalBalancerTemplate,
@@ -129,7 +130,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
 
     const addNodes = useCallback((incoming: { outbound: any; label: string }[]) => {
         if (incoming.length === 0) {
-            toast.error('No proxy outbounds found in that input');
+            toast.error(t("No proxy outbounds found in that input"));
             return;
         }
         setNodes(prev => {
@@ -156,7 +157,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
     const parseInput = useCallback(() => {
         const text = input.trim();
         if (!text) {
-            toast.error('Paste links, a subscription or a JSON config first');
+            toast.error(t("Paste links, a subscription or a JSON config first"));
             return;
         }
         try {
@@ -181,7 +182,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
                 setInput('');
             }
         } catch (e: any) {
-            toast.error('Could not parse that input', { description: e?.message });
+            toast.error(t("Could not parse that input"), { description: e?.message });
         }
     }, [input, addNodes]);
 
@@ -261,13 +262,13 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
     const addSelectedFromPanel = useCallback(() => {
         const id = panelUserId.trim();
         if (!id) {
-            toast.error('Enter the client UUID first', {
-                description: 'It is the id from that user\'s vless:// link in the panel.',
+            toast.error(t("Enter the client UUID first"), {
+                description: t("It is the id from that user's vless:// link in the panel."),
             });
             return;
         }
         if (panelSelection.size === 0) {
-            toast.error('Select at least one host');
+            toast.error(t("Select at least one host"));
             return;
         }
 
@@ -399,7 +400,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
         if (!preview) return;
         const text = stringifyJsonc(preview.config, 2);
         loadConfig(preview.config, `Local balancer (${preview.summary.nodeCount} nodes)`, false, text);
-        toast.success('Config loaded into the editor');
+        toast.success(t("Config loaded into the editor"));
     }, [preview, loadConfig]);
 
     const saveAsProfiles = useCallback(() => {
@@ -431,7 +432,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
     const useSelectedHostsAsSelector = useCallback(() => {
         const values = [...panelSelection];
         if (values.length === 0) {
-            toast.error('Select hosts in the panel list first');
+            toast.error(t("Select hosts in the panel list first"));
             return;
         }
         setInject(prev => ({ ...prev, selector: { type: 'uuids', values }, selectFrom: 'ALL' }));
@@ -455,7 +456,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
         setPresetKey('custom');
 
         if (parsed.notes.length > 0) {
-            toast.warning('Loaded with caveats', { description: parsed.notes[0], duration: 8000 });
+            toast.warning(t("Loaded with caveats"), { description: parsed.notes[0], duration: 8000 });
         }
     }, []);
 
@@ -465,7 +466,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
         const full = await loadSubscriptionTemplate(uuid);
         const body = full?.templateJson;
         if (!body) {
-            toast.error('That template has no JSON body yet');
+            toast.error(t("That template has no JSON body yet"));
             return;
         }
         try {
@@ -475,7 +476,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
             setTemplateName(full.name || '');
             toast.success(`Loaded "${full.name}" into the builder`);
         } catch (e: any) {
-            toast.error('Could not read that template', { description: e?.message });
+            toast.error(t("Could not read that template"), { description: e?.message });
         }
     }, [loadSubscriptionTemplate, applyParsed]);
 
@@ -489,7 +490,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
             applyParsed(parsed);
             return true;
         } catch (e: any) {
-            toast.error('That JSON is not a balancer template', { description: e?.message });
+            toast.error(t("That JSON is not a balancer template"), { description: e?.message });
             return false;
         }
     }, [applyParsed]);
@@ -497,16 +498,16 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
     /** Read the config currently open in the editor back into the controls. */
     const loadFromCurrentConfig = useCallback(() => {
         if (!config) {
-            toast.error('No config open in the editor');
+            toast.error(t("No config open in the editor"));
             return;
         }
         try {
             const parsed = parseLocalBalancer(config);
             applyParsed(parsed);
             setOutputMode(parsed.kind === 'template' ? 'template' : 'config');
-            toast.success('Loaded the open config into the builder');
+            toast.success(t("Loaded the open config into the builder"));
         } catch (e: any) {
-            toast.error('Could not read the open config', { description: e?.message });
+            toast.error(t("Could not read the open config"), { description: e?.message });
         }
     }, [config, applyParsed]);
 
@@ -515,7 +516,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
     const saveTemplate = useCallback(async () => {
         const name = templateName.trim();
         if (!templateTargetUuid && !name) {
-            toast.error('Name the new template, or pick an existing one to update');
+            toast.error(t("Name the new template, or pick an existing one to update"));
             return;
         }
         if (savingTemplate) return;   // a second click would create a second template
@@ -571,11 +572,11 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
      */
     const tagSelectedHostsAsPool = useCallback(async () => {
         if (!normalisedPoolTag) {
-            toast.error('Enter the shared tag first');
+            toast.error(t("Enter the shared tag first"));
             return;
         }
         if (panelSelection.size === 0) {
-            toast.error('Select the hosts that should form the pool');
+            toast.error(t("Select the hosts that should form the pool"));
             return;
         }
         if (!confirmPool) {
@@ -610,26 +611,26 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
     /** Create the visible host that hands the template to subscribers. */
     const createEntryHost = useCallback(async () => {
         if (!normalisedPoolTag) {
-            toast.error('Enter the pool tag — the entry host must share it with the nodes');
+            toast.error(t("Enter the pool tag — the entry host must share it with the nodes"));
             return;
         }
         if (!entryRemark.trim() || !entryAddress.trim() || !entryPort) {
-            toast.error('Fill in the remark, address and port');
+            toast.error(t("Fill in the remark, address and port"));
             return;
         }
         if (!entryInboundUuid) {
-            toast.error('Pick the inbound this host binds to');
+            toast.error(t("Pick the inbound this host binds to"));
             return;
         }
         if (!templateTargetUuid) {
-            toast.error('Save or pick the template first', {
-                description: 'The entry host needs a template to point at.',
+            toast.error(t("Save or pick the template first"), {
+                description: t("The entry host needs a template to point at."),
             });
             return;
         }
         const inbound = panelInboundOptions.find(i => i.uuid === entryInboundUuid);
         if (!inbound?.profileUuid) {
-            toast.error('That inbound has no config profile attached');
+            toast.error(t("That inbound has no config profile attached"));
             return;
         }
 
@@ -693,9 +694,9 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
         if (!outputJson) return;
         try {
             await navigator.clipboard.writeText(outputJson);
-            toast.success('Copied to clipboard');
+            toast.success(t("Copied to clipboard"));
         } catch {
-            toast.error('Clipboard is not available here');
+            toast.error(t("Clipboard is not available here"));
         }
     }, [outputJson]);
 

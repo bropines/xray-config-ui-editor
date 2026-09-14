@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { parseJsonc, stringifyJsonc } from '../../../utils/jsonc';
+import { t } from '../../../i18n';
 
 interface SnippetBodyEditorProps {
     label?: string;
@@ -87,8 +88,8 @@ export const SnippetBodyEditor = ({
                     <label className="text-xs uppercase font-bold text-slate-500">{label}</label>
                     {error && (
                         <span className="text-rose-500 font-bold text-[10px] animate-pulse">
-                            Invalid JSON Syntax
-                        </span>
+                            {t("Invalid JSON Syntax")}
+                            </span>
                     )}
                 </div>
             )}

@@ -9,6 +9,7 @@ import { ExperimentalBadge } from '../../ui/ExperimentalBadge';
 import { generateWarpAccount } from '../../../core/generators';
 import { useConfigStore } from '../../../store/configStore';
 import { useField, useArrayField } from '../../../hooks/useField';
+import { t } from '../../../i18n';
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {
     // Pre-existing rules-of-hooks violation, caught by the new ESLint config:
@@ -52,9 +53,9 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     keepAlive: 15
                 }]
             });
-            toast.success("WARP account generated successfully");
+            toast.success(t("WARP account generated successfully"));
         } catch (e: any) {
-            toast.error("Failed to generate WARP account", {
+            toast.error(t("Failed to generate WARP account"), {
                 description: e?.message || "CORS error or proxy is down. Check your settings."
             });
         } finally {
@@ -66,28 +67,29 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4 space-y-6">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h4 className="text-xs uppercase text-slate-400 font-bold flex items-center gap-2">
-                    <Icon name="Shield" /> WireGuard Settings
-                </h4>
+                    <Icon name="Shield" />
+{t("WireGuard Settings")}
+</h4>
                 <Button variant="secondary" className="px-3 py-1.5 text-xs bg-indigo-600/20 text-indigo-400 border-indigo-500/50 hover:bg-indigo-600 hover:text-white" onClick={handleGenerateWarp} disabled={loading}>
-                    {loading ? "Generating..." : "Generate WARP"}
+                    {loading ? t("Generating...") : t("Generate WARP")}
                 </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label="Secret Key" error={errors.secretKey}>
-                    <input className={`input-base font-mono text-rose-300 ${errors.secretKey ? 'border-rose-500 bg-rose-500/10' : ''}`} value={secretKey.value || ""} onChange={e => secretKey.onChange(e.target.value)} placeholder="Private Key" />
+                <FormField label={t("Secret Key")} error={errors.secretKey}>
+                    <input className={`input-base font-mono text-rose-300 ${errors.secretKey ? 'border-rose-500 bg-rose-500/10' : ''}`} value={secretKey.value || ""} onChange={e => secretKey.onChange(e.target.value)} placeholder={t("Private Key")} />
                 </FormField>
-                <FormField label="Local Address (CIDR)">
-                    <input className="input-base font-mono" value={(address.value || []).join(', ')} onChange={e => address.onChange(e.target.value.split(',').map((s: string) => s.trim()))} placeholder="10.0.0.1/24, fd00::1/64" />
+                <FormField label={t("Local Address (CIDR)")}>
+                    <input className="input-base font-mono" value={(address.value || []).join(', ')} onChange={e => address.onChange(e.target.value.split(',').map((s: string) => s.trim()))} placeholder={t("10.0.0.1/24, fd00::1/64")} />
                 </FormField>
             </div>
 
             {/* Advanced WG Settings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
-                <FormField label="MTU" help="Maximum Transmission Unit. Default is 1280 for WARP.">
+                <FormField label={t("MTU")} help={t("Maximum Transmission Unit. Default is 1280 for WARP.")}>
                     <input type="number" className="input-base" placeholder="1280" value={mtu.value || ""} onChange={e => mtu.onChange(parseInt(e.target.value) || 0)} />
                 </FormField>
-                <FormField label="Reserved (CSV)" help="[n,n,n] — header byte substitution. Use [0,0,0] for standard WARP.">
+                <FormField label={t("Reserved (CSV)")} help={t("[n,n,n] — header byte substitution. Use [0,0,0] for standard WARP.")}>
                     <input className="input-base font-mono"
                         placeholder="0, 0, 0"
                         value={(reserved.value || []).map((v: any) => isNaN(v) ? 0 : v).join(', ')}
@@ -107,16 +109,16 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     <Switch
                         checked={noKernelTun.value || false}
                         onChange={checked => noKernelTun.onChange(checked)}
-                        label="No Kernel TUN"
+                        label={t("No Kernel TUN")}
                     />
-                    <p className="text-[10px] text-slate-500 mt-1">Enabled: use gVisor (no root). Disabled: system (faster).</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{t("Enabled: use gVisor (no root). Disabled: system (faster).")}</p>
                 </div>
             </div>
 
             <div>
                 <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-xs uppercase text-slate-500 font-bold">Peers</h4>
-                    <Button variant="ghost" onClick={() => peers.add({ endpoint: "", publicKey: "", keepAlive: 0 })} className="px-2 py-1 text-xs" icon="Plus">Add Peer</Button>
+                    <h4 className="text-xs uppercase text-slate-500 font-bold">{t("Peers")}</h4>
+                    <Button variant="ghost" onClick={() => peers.add({ endpoint: "", publicKey: "", keepAlive: 0 })} className="px-2 py-1 text-xs" icon="Plus">{t("Add Peer")}</Button>
                 </div>
                 {errors.peers && (
                     <div className="mb-3 p-3 bg-rose-900/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-center gap-2">
@@ -134,29 +136,29 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                                 </button>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pr-6">
-                                    <FormField label="Endpoint" error={epErr}>
-                                        <input className={`input-base font-mono ${epErr ? 'border-rose-500' : ''}`} value={peer.endpoint || ""} onChange={e => peers.update(i, { endpoint: e.target.value })} placeholder="engage.cloudflareclient.com:2408" />
+                                    <FormField label={t("Endpoint")} error={epErr}>
+                                        <input className={`input-base font-mono ${epErr ? 'border-rose-500' : ''}`} value={peer.endpoint || ""} onChange={e => peers.update(i, { endpoint: e.target.value })} placeholder={t("engage.cloudflareclient.com:2408")} />
                                     </FormField>
-                                    <FormField label="Public Key" error={pkErr}>
-                                        <input className={`input-base font-mono text-emerald-300 ${pkErr ? 'border-rose-500' : ''}`} value={peer.publicKey || ""} onChange={e => peers.update(i, { publicKey: e.target.value })} placeholder="Public Key" />
+                                    <FormField label={t("Public Key")} error={pkErr}>
+                                        <input className={`input-base font-mono text-emerald-300 ${pkErr ? 'border-rose-500' : ''}`} value={peer.publicKey || ""} onChange={e => peers.update(i, { publicKey: e.target.value })} placeholder={t("Public Key")} />
                                     </FormField>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                                     <div className="col-span-1 lg:col-span-3">
-                                        <FormField label="Pre-shared Key">
-                                            <input className="input-base font-mono" value={peer.preSharedKey || ""} onChange={e => peers.update(i, { preSharedKey: e.target.value })} placeholder="Optional" />
+                                        <FormField label={t("Pre-shared Key")}>
+                                            <input className="input-base font-mono" value={peer.preSharedKey || ""} onChange={e => peers.update(i, { preSharedKey: e.target.value })} placeholder={t("Optional")} />
                                         </FormField>
                                     </div>
                                     <div className="col-span-1 lg:col-span-2">
-                                        <FormField label="Keep-alive (s)">
+                                        <FormField label={t("Keep-alive (s)")}>
                                             <input type="number" className="input-base font-mono" value={peer.keepAlive || 0} onChange={e => peers.update(i, { keepAlive: parseInt(e.target.value) || 0 })} />
                                         </FormField>
                                     </div>
                                     <div className="col-span-1 lg:col-span-7">
                                         <div className="flex flex-col gap-1.5 h-full">
                                             <div className="flex justify-between items-center h-[18px]">
-                                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Allowed IPs</label>
+                                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{t("Allowed IPs")}</label>
                                                 <button
                                                     onClick={() => {
                                                         const isExcluding = peer.allowedIPs?.length > 2;
@@ -173,7 +175,7 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                                                     }}
                                                     className={`text-[9px] font-bold px-2 py-0.5 rounded transition-colors uppercase ${peer.allowedIPs?.length > 2 ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                                                 >
-                                                    {peer.allowedIPs?.length > 2 ? 'Restore 0.0.0.0/0' : 'Exclude Local'}
+                                                    {peer.allowedIPs?.length > 2 ? t("Restore 0.0.0.0/0") : t("Exclude Local")}
                                                 </button>
                                             </div>
                                             <textarea
@@ -188,29 +190,29 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                             </div>
                         );
                     })}
-                    {peers.items.length === 0 && <div className="text-sm text-slate-500 text-center py-6 italic border border-dashed border-slate-700 rounded-xl">No peers added</div>}
+                    {peers.items.length === 0 && <div className="text-sm text-slate-500 text-center py-6 italic border border-dashed border-slate-700 rounded-xl">{t("No peers added")}</div>}
                 </div>
             </div>
 
             {/* General WG Engine Settings */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4">
                 <Select
-                    label="Domain Strategy"
-                    hint="ForceIP: query DNS locally and use IP. UseIP: resolve IP through system."
+                    label={t("Domain Strategy")}
+                    hint={t("ForceIP: query DNS locally and use IP. UseIP: resolve IP through system.")}
                     value={domainStrategy.value || "AsIs"}
                     onChange={val => domainStrategy.onChange(val)}
                     options={[
-                        { value: 'AsIs', label: 'AsIs (Default)' },
-                        { value: 'UseIP', label: 'UseIP' },
-                        { value: 'ForceIP', label: 'ForceIP' }
+                        { value: 'AsIs', label: t("AsIs (Default)") },
+                        { value: 'UseIP', label: t("UseIP") },
+                        { value: 'ForceIP', label: t("ForceIP") }
                     ]}
                 />
-                <FormField label="Workers" help="Number of concurrent workers. Default is CPU core count.">
-                    <input type="number" className="input-base h-[42px]" placeholder="Auto" value={workers.value || ""} onChange={e => workers.onChange(parseInt(e.target.value) || 0)} />
+                <FormField label={t("Workers")} help={t("Number of concurrent workers. Default is CPU core count.")}>
+                    <input type="number" className="input-base h-[42px]" placeholder={t("Auto")} value={workers.value || ""} onChange={e => workers.onChange(parseInt(e.target.value) || 0)} />
                 </FormField>
                 <FormField
-                    label={<span className="flex items-center gap-2">Remote DNS <ExperimentalBadge since="main, 25 Aug 2026" commit="c7e569b0" /></span>}
-                    help="DNS server(s) resolved through the WireGuard tunnel itself (not Xray's DNS module) — comma-separated. Useful when the peer's network only resolves internal names."
+                    label={<span className="flex items-center gap-2">{t("Remote DNS")} <ExperimentalBadge since="main, 25 Aug 2026" commit="c7e569b0" /></span>}
+                    help={t("DNS server(s) resolved through the WireGuard tunnel itself (not Xray's DNS module) — comma-separated. Useful when the peer's network only resolves internal names.")}
                 >
                     <input
                         className="input-base font-mono"

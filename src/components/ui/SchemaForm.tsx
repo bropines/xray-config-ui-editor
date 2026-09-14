@@ -2,6 +2,7 @@ import React from 'react';
 import { z } from 'zod';
 import { SchemaField, getSchemaTypeAndDetails } from './SchemaField';
 import type { TimeUnit } from './DurationInput';
+import { perLanguage, t } from '../../i18n';
 
 export interface FieldConfig {
     label?: string;
@@ -15,61 +16,62 @@ export interface FieldConfig {
     baseUnit?: TimeUnit;
 }
 
-// Standard field configurations for premium user experience
-const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
+// Standard field configurations for premium user experience. Built through
+// perLanguage because a plain const would freeze the labels at import time.
+const standardFieldConfigs = perLanguage((): Record<string, FieldConfig> => ({
     tag: {
-        label: 'Tag / Alias',
-        help: 'Unique identifier for routing and logs.',
-        placeholder: 'e.g. inbound-socks'
+        label: t("Tag / Alias"),
+        help: t("Unique identifier for routing and logs."),
+        placeholder: t("e.g. inbound-socks")
     },
     port: {
-        label: 'Port',
-        help: 'Port or port range (e.g. 1080 or 10000-20000) to listen on.',
+        label: t("Port"),
+        help: t("Port or port range (e.g. 1080 or 10000-20000) to listen on."),
         placeholder: 'e.g. 1080'
     },
     listen: {
-        label: 'Listen Address',
-        help: 'IP address to bind the listener to. Default is 0.0.0.0 (all interfaces).',
+        label: t("Listen Address"),
+        help: t("IP address to bind the listener to. Default is 0.0.0.0 (all interfaces)."),
         placeholder: '0.0.0.0'
     },
     protocol: {
-        label: 'Protocol',
-        help: 'The protocol used to accept incoming traffic.',
+        label: t("Protocol"),
+        help: t("The protocol used to accept incoming traffic."),
     },
     enabled: {
-        label: 'Enabled',
-        help: 'Toggle to enable or disable this feature.',
+        label: t("Enabled"),
+        help: t("Toggle to enable or disable this feature."),
     },
     destOverride: {
-        label: 'Destination Override',
-        help: 'Override target destination based on sniffed protocol (e.g., redirect HTTP to FakeDNS).',
-        placeholder: 'http, tls, fakedns'
+        label: t("Destination Override"),
+        help: t("Override target destination based on sniffed protocol (e.g., redirect HTTP to FakeDNS)."),
+        placeholder: t("http, tls, fakedns")
     },
     metadataOnly: {
-        label: 'Metadata Only',
-        help: 'Only sniff connection metadata (like SNI or IP headers) without inspecting actual payload.',
+        label: t("Metadata Only"),
+        help: t("Only sniff connection metadata (like SNI or IP headers) without inspecting actual payload."),
     },
     domainsExcluded: {
-        label: 'Excluded Domains',
-        help: 'List of domains to exclude from sniffing.',
-        placeholder: 'e.g. bypass.com, internal.lan'
+        label: t("Excluded Domains"),
+        help: t("List of domains to exclude from sniffing."),
+        placeholder: t("e.g. bypass.com, internal.lan")
     },
     ipsExcluded: {
-        label: 'Excluded IPs',
-        help: 'List of IP addresses/CIDRs to exclude from sniffing.',
+        label: t("Excluded IPs"),
+        help: t("List of IP addresses/CIDRs to exclude from sniffing."),
         placeholder: 'e.g. 127.0.0.1, 10.0.0.0/8'
     },
     routeOnly: {
-        label: 'Route Only',
-        help: 'Only use sniffed info for routing. Do not override destination.',
+        label: t("Route Only"),
+        help: t("Only use sniffed info for routing. Do not override destination."),
     },
     strategy: {
-        label: 'Allocation Strategy',
-        help: 'How ports are allocated: Always listen on all ports, or random port rotation.',
+        label: t("Allocation Strategy"),
+        help: t("How ports are allocated: Always listen on all ports, or random port rotation."),
     },
     refresh: {
-        label: 'Refresh Interval',
-        help: 'Interval in minutes to refresh port allocation.',
+        label: t("Refresh Interval"),
+        help: t("Interval in minutes to refresh port allocation."),
         placeholder: 'e.g. 5',
         type: 'duration',
         defaultUnit: 'm',
@@ -77,13 +79,13 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 'm'
     },
     concurrency: {
-        label: 'Concurrency',
-        help: 'Number of concurrent ports to allocate.',
+        label: t("Concurrency"),
+        help: t("Number of concurrent ports to allocate."),
         placeholder: 'e.g. 3'
     },
     // Duration / Interval / Timeout settings
     probeInterval: {
-        label: 'Probe Interval',
+        label: t("Probe Interval"),
         help: 'Probe interval (e.g. "10s", "1m", "2h").',
         placeholder: '1m',
         type: 'duration',
@@ -91,23 +93,23 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         durationMode: 'string'
     },
     interval: {
-        label: 'Interval',
-        help: 'Average probe interval per outbound. Min 10s.',
+        label: t("Interval"),
+        help: t("Average probe interval per outbound. Min 10s."),
         placeholder: '1m',
         type: 'duration',
         defaultUnit: 'm',
         durationMode: 'string'
     },
     timeout: {
-        label: 'Timeout',
-        help: 'Probe timeout.',
+        label: t("Timeout"),
+        help: t("Probe timeout."),
         placeholder: '5s',
         type: 'duration',
         defaultUnit: 's',
         durationMode: 'string'
     },
     maxRTT: {
-        label: 'Max RTT',
+        label: t("Max RTT"),
         help: 'Maximum acceptable RTT (e.g. "1s", "500ms").',
         placeholder: '1s',
         type: 'duration',
@@ -115,8 +117,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         durationMode: 'string'
     },
     handshake: {
-        label: 'Handshake Timeout',
-        help: 'Handshake timeout. Default: 4s.',
+        label: t("Handshake Timeout"),
+        help: t("Handshake timeout. Default: 4s."),
         placeholder: '4',
         type: 'duration',
         defaultUnit: 's',
@@ -124,8 +126,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     connIdle: {
-        label: 'Connection Idle Timeout',
-        help: 'Connection idle timeout. Default: 300s.',
+        label: t("Connection Idle Timeout"),
+        help: t("Connection idle timeout. Default: 300s."),
         placeholder: '300',
         type: 'duration',
         defaultUnit: 's',
@@ -133,8 +135,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     uplinkOnly: {
-        label: 'Uplink Only Timeout',
-        help: 'Time to wait after downlink closes. Default: 2s.',
+        label: t("Uplink Only Timeout"),
+        help: t("Time to wait after downlink closes. Default: 2s."),
         placeholder: '2',
         type: 'duration',
         defaultUnit: 's',
@@ -142,8 +144,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     downlinkOnly: {
-        label: 'Downlink Only Timeout',
-        help: 'Time to wait after uplink closes. Default: 5s.',
+        label: t("Downlink Only Timeout"),
+        help: t("Time to wait after uplink closes. Default: 5s."),
         placeholder: '5',
         type: 'duration',
         defaultUnit: 's',
@@ -151,8 +153,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     timeoutMs: {
-        label: 'Query Timeout',
-        help: 'Per-server query timeout.',
+        label: t("Query Timeout"),
+        help: t("Per-server query timeout."),
         placeholder: '5000',
         type: 'duration',
         defaultUnit: 'ms',
@@ -160,8 +162,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 'ms'
     },
     serveExpiredTTL: {
-        label: 'Serve Expired TTL',
-        help: 'Extended TTL for stale cache entries.',
+        label: t("Serve Expired TTL"),
+        help: t("Extended TTL for stale cache entries."),
         placeholder: '86400',
         type: 'duration',
         defaultUnit: 's',
@@ -169,8 +171,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     deduplication: {
-        label: 'Deduplication Interval',
-        help: 'Deduplication interval in seconds.',
+        label: t("Deduplication Interval"),
+        help: t("Deduplication interval in seconds."),
         placeholder: '10',
         type: 'duration',
         defaultUnit: 's',
@@ -178,8 +180,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     tcpKeepAliveIdle: {
-        label: 'TCP Keep-Alive Idle',
-        help: 'TCP keep-alive idle time.',
+        label: t("TCP Keep-Alive Idle"),
+        help: t("TCP keep-alive idle time."),
         placeholder: '300',
         type: 'duration',
         defaultUnit: 's',
@@ -187,8 +189,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     tcpKeepAliveInterval: {
-        label: 'TCP Keep-Alive Interval',
-        help: 'TCP keep-alive interval.',
+        label: t("TCP Keep-Alive Interval"),
+        help: t("TCP keep-alive interval."),
         placeholder: '0',
         type: 'duration',
         defaultUnit: 's',
@@ -196,8 +198,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 's'
     },
     tcpUserTimeout: {
-        label: 'TCP User Timeout',
-        help: 'TCP user timeout.',
+        label: t("TCP User Timeout"),
+        help: t("TCP user timeout."),
         placeholder: '10000',
         type: 'duration',
         defaultUnit: 'ms',
@@ -205,8 +207,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 'ms'
     },
     scMinPostsIntervalMs: {
-        label: 'Min Post Interval',
-        help: 'Min interval between POSTs.',
+        label: t("Min Post Interval"),
+        help: t("Min interval between POSTs."),
         placeholder: '30',
         type: 'duration',
         defaultUnit: 'ms',
@@ -214,8 +216,8 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 'ms'
     },
     hKeepAlivePeriod: {
-        label: 'Keep-Alive Period',
-        help: 'H2/H3 keep-alive period in seconds.',
+        label: t("Keep-Alive Period"),
+        help: t("H2/H3 keep-alive period in seconds."),
         placeholder: '45',
         type: 'duration',
         defaultUnit: 's',
@@ -224,67 +226,67 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
     },
     // Reality Settings
     show: {
-        label: 'Show Debug Logs',
-        help: 'Print Reality keys and debug info to server log on startup.',
+        label: t("Show Debug Logs"),
+        help: t("Print Reality keys and debug info to server log on startup."),
     },
     dest: {
-        label: 'Destination Target',
-        help: 'The target TLS server to mimic (domain:port). E.g. ads.x5.ru:443.',
-        placeholder: 'ads.x5.ru:443'
+        label: t("Destination Target"),
+        help: t("The target TLS server to mimic (domain:port). E.g. ads.x5.ru:443."),
+        placeholder: t("ads.x5.ru:443")
     },
     xver: {
-        label: 'PROXY Protocol Version (xver)',
-        help: 'Sends PROXY protocol header to destination. 0: disable, 1: PROXY v1, 2: PROXY v2.',
+        label: t("PROXY Protocol Version (xver)"),
+        help: t("Sends PROXY protocol header to destination. 0: disable, 1: PROXY v1, 2: PROXY v2."),
         placeholder: '0'
     },
     serverNames: {
-        label: 'Server Names (SNI List)',
-        help: 'List of server names (SNI) that the server allows clients to use.',
-        placeholder: 'e.g. ads.x5.ru, x5.ru'
+        label: t("Server Names (SNI List)"),
+        help: t("List of server names (SNI) that the server allows clients to use."),
+        placeholder: t("e.g. ads.x5.ru, x5.ru")
     },
     privateKey: {
-        label: 'Private Key',
-        help: 'Reality private key (x25519). Keep this secret!',
-        placeholder: 'xNz35zN9FfsM7e27mvyPdLIEuzKnSpoqd7qjjJJHxIw'
+        label: t("Private Key"),
+        help: t("Reality private key (x25519). Keep this secret!"),
+        placeholder: t("xNz35zN9FfsM7e27mvyPdLIEuzKnSpoqd7qjjJJHxIw")
     },
     publicKey: {
-        label: 'Public Key',
-        help: 'Reality public key (x25519) to match private key.',
-        placeholder: 'xNz35zN9FfsM...'
+        label: t("Public Key"),
+        help: t("Reality public key (x25519) to match private key."),
+        placeholder: t("xNz35zN9FfsM...")
     },
     shortIds: {
-        label: 'Short IDs',
-        help: 'Hexadecimal strings used to authenticate clients. CSV or comma separated.',
-        placeholder: 'e.g. 392562c0c3f46bbe'
+        label: t("Short IDs"),
+        help: t("Hexadecimal strings used to authenticate clients. CSV or comma separated."),
+        placeholder: t("e.g. 392562c0c3f46bbe")
     },
     fingerprint: {
-        label: 'Fingerprint (uTLS)',
-        help: 'TLS Client Hello fingerprint to simulate standard browser behavior.',
+        label: t("Fingerprint (uTLS)"),
+        help: t("TLS Client Hello fingerprint to simulate standard browser behavior."),
         options: ['chrome', 'firefox', 'safari', 'ios', 'android', 'edge', '360', 'qq', 'random', 'randomized']
     },
     spiderX: {
-        label: 'SpiderX Path',
-        help: 'Web spider crawl path to authenticate handshake.',
+        label: t("SpiderX Path"),
+        help: t("Web spider crawl path to authenticate handshake."),
         placeholder: '/'
     },
     shortId: {
-        label: 'Short ID',
-        help: 'Specific short ID matching the server list.',
+        label: t("Short ID"),
+        help: t("Specific short ID matching the server list."),
         placeholder: 'e.g. 392562c0'
     },
     minClientVer: {
-        label: 'Min Client Version',
-        help: 'Minimum required Xray client version (e.g. 1.8.0, 24.9.0, or 0.0.0 for any). Leave empty if not restricting.',
+        label: t("Min Client Version"),
+        help: t("Minimum required Xray client version (e.g. 1.8.0, 24.9.0, or 0.0.0 for any). Leave empty if not restricting."),
         placeholder: 'e.g. 1.8.0'
     },
     maxClientVer: {
-        label: 'Max Client Version',
-        help: 'Maximum allowed Xray client version (e.g. 1.8.24, 24.9.0, or 0.0.0 for any). Leave empty if not restricting.',
+        label: t("Max Client Version"),
+        help: t("Maximum allowed Xray client version (e.g. 1.8.24, 24.9.0, or 0.0.0 for any). Leave empty if not restricting."),
         placeholder: 'e.g. 0.0.0'
     },
     maxTimeDiff: {
-        label: 'Max Time Difference',
-        help: 'Maximum allowed timestamp difference between client and server.',
+        label: t("Max Time Difference"),
+        help: t("Maximum allowed timestamp difference between client and server."),
         placeholder: '60000',
         type: 'duration',
         defaultUnit: 'ms',
@@ -292,85 +294,85 @@ const STANDARD_FIELD_CONFIGS: Record<string, FieldConfig> = {
         baseUnit: 'ms'
     },
     mldsa65Seed: {
-        label: 'ML-DSA-65 Seed',
-        help: 'Post-quantum signature seed (base64 string) for PQ-REALITY.',
-        placeholder: 'Base64 seed string'
+        label: t("ML-DSA-65 Seed"),
+        help: t("Post-quantum signature seed (base64 string) for PQ-REALITY."),
+        placeholder: t("Base64 seed string")
     },
     // TLS settings
     minVersion: {
-        label: 'Min TLS Version',
-        help: 'Minimum TLS version allowed for handshake.',
+        label: t("Min TLS Version"),
+        help: t("Minimum TLS version allowed for handshake."),
         options: ['1.2', '1.3', '1.1', '1.0']
     },
     maxVersion: {
-        label: 'Max TLS Version',
-        help: 'Maximum TLS version allowed for handshake.',
+        label: t("Max TLS Version"),
+        help: t("Maximum TLS version allowed for handshake."),
         options: ['1.3', '1.2', '1.1', '1.0']
     },
     allowInsecure: {
-        label: 'Allow Insecure Connections',
-        help: 'Disable TLS certificate verification (insecure, use with caution!).'
+        label: t("Allow Insecure Connections"),
+        help: t("Disable TLS certificate verification (insecure, use with caution!).")
     },
     rejectUnknownSni: {
-        label: 'Reject Unknown SNI',
-        help: 'Reject connection attempts with unknown SNI.'
+        label: t("Reject Unknown SNI"),
+        help: t("Reject connection attempts with unknown SNI.")
     },
     masterKeyLog: {
-        label: 'Master Key Log File (SSLKEYLOGFILE)',
-        help: 'File path to write TLS master keys for Wireshark traffic inspection/debugging.',
-        placeholder: 'e.g. /var/log/xray/sslkey.log'
+        label: t("Master Key Log File (SSLKEYLOGFILE)"),
+        help: t("File path to write TLS master keys for Wireshark traffic inspection/debugging."),
+        placeholder: t("e.g. /var/log/xray/sslkey.log")
     },
     pinnedPeerCertSha256: {
-        label: 'Pinned Peer Certificate SHA-256',
-        help: 'Base64 SHA-256 hash for strict certificate pinning.',
-        placeholder: 'Base64 hash string'
+        label: t("Pinned Peer Certificate SHA-256"),
+        help: t("Base64 SHA-256 hash for strict certificate pinning."),
+        placeholder: t("Base64 hash string")
     },
     mldsa65Verify: {
-        label: 'ML-DSA-65 Public Key (PQ-REALITY)',
-        help: 'Post-Quantum signature verification key for client.',
-        placeholder: 'Base64 verify key'
+        label: t("ML-DSA-65 Public Key (PQ-REALITY)"),
+        help: t("Post-Quantum signature verification key for client."),
+        placeholder: t("Base64 verify key")
     },
     disableSystemRoot: {
-        label: 'Disable System Root CA',
-        help: 'Ignore system root certificates and only trust custom provided certificates.'
+        label: t("Disable System Root CA"),
+        help: t("Ignore system root certificates and only trust custom provided certificates.")
     },
     enableSessionResumption: {
-        label: 'Enable Session Resumption',
-        help: 'Allow TLS session ticket resumption to speed up re-connections.'
+        label: t("Enable Session Resumption"),
+        help: t("Allow TLS session ticket resumption to speed up re-connections.")
     },
     cipherSuites: {
-        label: 'Cipher Suites',
-        help: 'Colon-separated TLS cipher suites.',
-        placeholder: 'e.g. TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384'
+        label: t("Cipher Suites"),
+        help: t("Colon-separated TLS cipher suites."),
+        placeholder: t("e.g. TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384")
     },
     // Routing extended
     ruleTag: {
-        label: 'Rule Tag / Alias',
-        help: 'Unique identifier or label for this rule in stats and metrics.',
-        placeholder: 'e.g. bypass-direct'
+        label: t("Rule Tag / Alias"),
+        help: t("Unique identifier or label for this rule in stats and metrics."),
+        placeholder: t("e.g. bypass-direct")
     },
     // DNS extended
     clientSubnet: {
-        label: 'EDNS Client Subnet (ECS)',
-        help: 'Client IP or CIDR network forwarded in DNS queries for CDN localization.',
-        placeholder: 'e.g. 1.2.3.4 or 1.2.3.0/24'
+        label: t("EDNS Client Subnet (ECS)"),
+        help: t("Client IP or CIDR network forwarded in DNS queries for CDN localization."),
+        placeholder: t("e.g. 1.2.3.4 or 1.2.3.0/24")
     },
     fallbackStrategy: {
-        label: 'DNS Fallback Strategy',
-        help: 'Strategy for falling back to secondary DNS servers.',
+        label: t("DNS Fallback Strategy"),
+        help: t("Strategy for falling back to secondary DNS servers."),
         options: ['Disabled', 'Enabled', 'Always']
     },
     queryStrategy: {
-        label: 'DNS Query Strategy',
-        help: 'Preference for DNS query domain resolution.',
+        label: t("DNS Query Strategy"),
+        help: t("Preference for DNS query domain resolution."),
         options: ['UseIP', 'UseIPv4', 'UseIPv6']
     },
     cacheStrategy: {
-        label: 'DNS Cache Strategy',
-        help: 'Cache strategy for DNS query responses.',
+        label: t("DNS Cache Strategy"),
+        help: t("Cache strategy for DNS query responses."),
         options: ['CacheOnQuery', 'CacheOnResolved']
     }
-};
+}));
 
 interface SchemaFormProps {
     schema: z.ZodObject<any>;
@@ -423,7 +425,7 @@ export const SchemaForm = ({
                     {toggleKeys.map(key => {
                         const fieldSchema = shape[key];
                         const customConfig = fieldConfigs[key] || {};
-                        const standardConfig = STANDARD_FIELD_CONFIGS[key] || {};
+                        const standardConfig = standardFieldConfigs()[key] || {};
                         
                         const label = customConfig.label ?? standardConfig.label;
                         const help = customConfig.help ?? standardConfig.help ?? (fieldSchema._def?.description);
@@ -455,7 +457,7 @@ export const SchemaForm = ({
                     {otherKeys.map(key => {
                         const fieldSchema = shape[key];
                         const customConfig = fieldConfigs[key] || {};
-                        const standardConfig = STANDARD_FIELD_CONFIGS[key] || {};
+                        const standardConfig = standardFieldConfigs()[key] || {};
                         
                         const label = customConfig.label ?? standardConfig.label;
                         const help = customConfig.help ?? standardConfig.help ?? (fieldSchema._def?.description);

@@ -2,6 +2,7 @@ import React from 'react';
 import { Toaster } from 'sonner';
 import { useAppLogic } from './hooks/useAppLogic';
 import { getPresets } from './core/presets';
+import { t } from './i18n';
 import {
     AppNav,
     WelcomeScreen,
@@ -64,7 +65,7 @@ export const App = () => {
             <div className="h-dvh flex items-center justify-center bg-slate-950 text-slate-400 font-sans">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 rounded-full border-2 border-slate-700 border-t-indigo-500 animate-spin" />
-                    <span className="text-sm">Loading your workspace…</span>
+                    <span className="text-sm">{t("Loading your workspace…")}</span>
                 </div>
             </div>
         );

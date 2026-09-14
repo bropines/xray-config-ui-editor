@@ -4,6 +4,7 @@ import { FormField } from '../../ui/FormField';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { useField } from '../../../hooks/useField';
+import { t } from '../../../i18n';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const isShadowsocks = outbound.protocol === 'shadowsocks' || outbound.protocol === 'shadowsocks-2022';
@@ -41,20 +42,20 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
     if (isBlackhole) {
         return (
-            <Card title="Blackhole Settings" icon="NoEntry" className="mt-4">
+            <Card title={t("Blackhole Settings")} icon="NoEntry" className="mt-4">
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg mb-4">
                     <p className="text-[11px] text-slate-400 leading-relaxed italic">
-                        The <b>Blackhole</b> outbound drops all outgoing traffic. It is primarily used to block specific domains or IPs (e.g., for ad-blocking or preventing telemetry) by routing them here.
+                        {t("The Blackhole outbound drops all outgoing traffic. Route specific domains or IPs here to block them — for ad-blocking, or to stop telemetry.")}
                     </p>
                 </div>
                 <Select
-                    label="Response Type"
-                    hint="Determines what the client receives when traffic is blocked."
+                    label={t("Response Type")}
+                    hint={t("Determines what the client receives when traffic is blocked.")}
                     value={responseType.value || "none"}
                     onChange={val => responseType.onChange(val)}
                     options={[
-                        { value: "none", label: "None", description: "Silent Drop" },
-                        { value: "http", label: "HTTP", description: "Return 403 Forbidden" },
+                        { value: "none", label: t("None"), description: t("Silent Drop") },
+                        { value: "http", label: "HTTP", description: t("Return 403 Forbidden") },
                     ]}
                 />
             </Card>
@@ -63,22 +64,22 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
     if (isDns) {
         return (
-            <Card title="DNS Outbound" icon="Globe" className="mt-4">
+            <Card title={t("DNS Outbound")} icon="Globe" className="mt-4">
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg mb-4">
                     <p className="text-[11px] text-slate-400 leading-relaxed italic">
-                        The <b>DNS</b> outbound is used to intercept and forward DNS queries. When a query is routed here, Xray will handle it using internal DNS logic.
+                        {t("The DNS outbound intercepts and forwards DNS queries. A query routed here is handled by Xray's own DNS logic.")}
                     </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-3">
-                        <FormField label="DNS Server Address">
+                        <FormField label={t("DNS Server Address")}>
                             <input className="input-base"
                                 value={dnsAddress.value || ""}
                                 onChange={e => dnsAddress.onChange(e.target.value)}
                             />
                         </FormField>
                     </div>
-                    <FormField label="Port">
+                    <FormField label={t("Port")}>
                         <input type="number" className="input-base"
                             value={dnsPort.value || 53}
                             onChange={e => dnsPort.onChange(parseInt(e.target.value) || 53)}
@@ -91,23 +92,23 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
     if (isFreedom) {
         return (
-            <Card title="Freedom (Direct)" icon="ArrowSquareOut" className="mt-4">
+            <Card title={t("Freedom (Direct)")} icon="ArrowSquareOut" className="mt-4">
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
                     <p className="text-[11px] text-slate-400 leading-relaxed italic">
-                        The <b>Freedom</b> outbound sends traffic directly to its destination without any proxy. This is typically used for local traffic or bypassing the VPN.
+                        {t("The Freedom outbound sends traffic straight to its destination with no proxy. Used for local traffic, or to keep something out of the tunnel.")}
                     </p>
                 </div>
                 <div className="mt-4">
                         <Select
-                            label="Domain Strategy"
-                            hint="How to resolve domain names when connecting."
+                            label={t("Domain Strategy")}
+                            hint={t("How to resolve domain names when connecting.")}
                             value={domainStrategy.value || "AsIs"}
                             onChange={val => domainStrategy.onChange(val)}
                             options={[
-                                { value: "AsIs", label: "As Is", description: "Use system DNS" },
-                                { value: "UseIP", label: "Use IP", description: "Resolve via Xray DNS" },
-                                { value: "UseIPv4", label: "Use IPv4" },
-                                { value: "UseIPv6", label: "Use IPv6" },
+                                { value: "AsIs", label: t("As Is"), description: t("Use system DNS") },
+                                { value: "UseIP", label: t("Use IP"), description: t("Resolve via Xray DNS") },
+                                { value: "UseIPv4", label: t("Use IPv4") },
+                                { value: "UseIPv6", label: t("Use IPv6") },
                             ]}
                         />
                 </div>
@@ -116,19 +117,19 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     }
 
     return (
-        <Card title="Server Details" icon="Cloud" className="mt-4">
+        <Card title={t("Server Details")} icon="Cloud" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-3">
-                    <FormField label="Address (IP or Domain)" error={errors.address}>
+                    <FormField label={t("Address (IP or Domain)")} error={errors.address}>
                         <input
                             className="input-base"
-                            placeholder="example.com"
+                            placeholder={t("example.com")}
                             value={address.value || ""}
                             onChange={e => address.onChange(e.target.value)}
                         />
                     </FormField>
                 </div>
-                <FormField label="Port" error={errors.port}>
+                <FormField label={t("Port")} error={errors.port}>
                     <input
                         type="number"
                         className="input-base"
@@ -140,7 +141,7 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <FormField label={isShadowsocks || outbound.protocol === 'trojan' ? "Password" : "UUID / ID"}>
+                <FormField label={isShadowsocks || outbound.protocol === 'trojan' ? t("Password") : t("UUID / ID")}>
                     <input
                         className="input-base font-mono text-xs"
                         value={userId.value || ""}
@@ -150,18 +151,18 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
                 {isShadowsocks && (
                     <Select
-                        label="Method"
+                        label={t("Method")}
                         value={method.value || (outbound.protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
                         onChange={val => method.onChange(val)}
                         options={outbound.protocol === 'shadowsocks' ? [
-                            { value: "aes-256-gcm", label: "aes-256-gcm" },
-                            { value: "aes-128-gcm", label: "aes-128-gcm" },
-                            { value: "chacha20-ietf-poly1305", label: "chacha20-ietf-poly1305" },
-                            { value: "xchacha20-ietf-poly1305", label: "xchacha20-ietf-poly1305" },
+                            { value: "aes-256-gcm", label: t("aes-256-gcm") },
+                            { value: "aes-128-gcm", label: t("aes-128-gcm") },
+                            { value: "chacha20-ietf-poly1305", label: t("chacha20-ietf-poly1305") },
+                            { value: "xchacha20-ietf-poly1305", label: t("xchacha20-ietf-poly1305") },
                         ] : [
-                            { value: "2022-blake3-aes-128-gcm", label: "2022-blake3-aes-128-gcm" },
-                            { value: "2022-blake3-aes-256-gcm", label: "2022-blake3-aes-256-gcm" },
-                            { value: "2022-blake3-chacha20-poly1305", label: "2022-blake3-chacha20-poly1305" },
+                            { value: "2022-blake3-aes-128-gcm", label: t("2022-blake3-aes-128-gcm") },
+                            { value: "2022-blake3-aes-256-gcm", label: t("2022-blake3-aes-256-gcm") },
+                            { value: "2022-blake3-chacha20-poly1305", label: t("2022-blake3-chacha20-poly1305") },
                         ]}
                     />
                 )}
@@ -171,7 +172,7 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                         <Switch
                             checked={uot.value === true}
                             onChange={checked => uot.onChange(checked)}
-                            label="UDP over TCP (UOT)"
+                            label={t("UDP over TCP (UOT)")}
                         />
                     </div>
                 )}

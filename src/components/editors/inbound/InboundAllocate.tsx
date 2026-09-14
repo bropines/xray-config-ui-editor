@@ -1,6 +1,7 @@
 import React from 'react';
 import { Select, NumberInput, DurationInput, FormField, Help, Switch } from '../../ui';
 import { useField, type FieldPath } from '../../../hooks/useField';
+import { t } from '../../../i18n';
 
 interface AllocateSettings {
     strategy?: 'always' | 'random';
@@ -39,9 +40,9 @@ export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onCh
                 <div>
                     <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                         Port Allocation & Hopping (allocate)
-                        <Help>Rotates or dynamically allocates listen ports across a specified range for anti-censorship port hopping.</Help>
+                        <Help>{t("Rotates or dynamically allocates listen ports across a specified range for anti-censorship port hopping.")}</Help>
                     </span>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Dynamically open random port listeners from the port range.</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{t("Dynamically open random port listeners from the port range.")}</p>
                 </div>
                 <Switch
                     checked={isEnabled}
@@ -52,16 +53,16 @@ export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onCh
             {isEnabled && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 animate-in fade-in">
                     <Select
-                        label="Strategy"
+                        label={t("Strategy")}
                         value={strategy.value || 'always'}
                         onChange={val => strategy.onChange(val)}
                         options={[
-                            { value: 'always', label: 'Always (Fixed List)', description: 'Allocates all random ports continuously' },
-                            { value: 'random', label: 'Random Rotation', description: 'Randomly cycles ports on refresh interval' }
+                            { value: 'always', label: t("Always (Fixed List)"), description: t("Allocates all random ports continuously") },
+                            { value: 'random', label: t("Random Rotation"), description: t("Randomly cycles ports on refresh interval") }
                         ]}
                     />
 
-                    <FormField label="Refresh Interval" help="Interval to rotate random ports.">
+                    <FormField label={t("Refresh Interval")} help={t("Interval to rotate random ports.")}>
                         <DurationInput
                             value={refresh.value ?? 5}
                             onChange={val => refresh.onChange(val)}
@@ -73,7 +74,7 @@ export const InboundAllocate: React.FC<InboundAllocateProps> = ({ allocate, onCh
                         />
                     </FormField>
 
-                    <FormField label="Concurrency" help="Number of concurrent random ports to listen on.">
+                    <FormField label={t("Concurrency")} help={t("Number of concurrent random ports to listen on.")}>
                         <NumberInput
                             value={concurrency.value ?? 3}
                             onChange={val => concurrency.onChange(val)}

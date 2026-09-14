@@ -7,9 +7,9 @@ export const Modal = ({
   title,
   onClose,
   onSave,
-  saveText = "Save",
+  saveText = t("Save"),
   saveIcon = "FloppyDisk",
-  closeText = "Close",
+  closeText = t("Close"),
   variantSave = "success",
   hideFooter = false,
   children,
@@ -43,7 +43,7 @@ export const Modal = ({
             </h3>
             <button 
               onClick={() => setIsFullScreen(!isFullScreen)} 
-              title={isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+              title={isFullScreen ? t("Exit Fullscreen") : t("Fullscreen")}
               className="text-slate-500 hover:text-indigo-400 p-1.5 hover:bg-slate-800 rounded-lg transition-all hidden md:block"
             >
               <Icon name={isFullScreen ? "CornersIn" : "CornersOut"} className="text-base" />

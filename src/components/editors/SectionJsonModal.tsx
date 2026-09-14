@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { JsonField } from '../ui/JsonField';
 import { useConfigStore } from '../../store/configStore';
+import { t } from '../../i18n';
 
 interface SectionJsonModalProps {
     title: string;
@@ -39,7 +40,7 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
             className="h-full overflow-hidden"
         >
             <JsonField
-                label="Partial Configuration"
+                label={t("Partial Configuration")}
                 value={localData}
                 onChange={handleChange}
                 className="flex-1"

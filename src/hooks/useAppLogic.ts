@@ -4,6 +4,7 @@ import { useConfigStore, type XrayConfig } from '../store/configStore';
 import { runFullDiagnostics } from '../core/diagnostics';
 import { parseJsonSubscription } from '../utils/link-parser';
 import { toast } from 'sonner';
+import { t } from '../i18n';
 
 export const useAppLogic = () => {
     const {
@@ -82,13 +83,13 @@ export const useAppLogic = () => {
                     if (snapshot) {
                         toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions} -${snapshot.deletions})`, { id: 'global-commit-toast' });
                     } else {
-                        toast.info("Already at HEAD (no changes to commit)", { id: 'global-commit-toast' });
+                        toast.info(t("Already at HEAD (no changes to commit)"), { id: 'global-commit-toast' });
                     }
                 } else {
                     // Ctrl + S -> Instant Memory Save & UI Sync
                     console.log('[Hotkeys] Ctrl+S -> Syncing memory & UI...');
                     store.saveActiveProfile();
-                    toast.success("✓ Saved to memory & UI updated", { id: 'global-save-toast' });
+                    toast.success(t("✓ Saved to memory & UI updated"), { id: 'global-save-toast' });
                 }
             }
         };
@@ -125,16 +126,16 @@ export const useAppLogic = () => {
                             addOutbounds(obs);
                             toast.success(`Imported ${obs.length} nodes from JSON file`);
                         } else {
-                            toast.error("JSON array detected, but no valid outbounds found");
+                            toast.error(t("JSON array detected, but no valid outbounds found"));
                         }
                     } else {
                         // Это обычный конфиг (объект)
                         loadConfig(parsed, undefined, false, result);
-                        toast.success("Configuration loaded from file");
+                        toast.success(t("Configuration loaded from file"));
                     }
                     setRawMode(false);
                 }
-            } catch { toast.error("Invalid JSON file"); }
+            } catch { toast.error(t("Invalid JSON file")); }
         };
         reader.readAsText(file);
     }, [loadConfig, addOutbounds]);

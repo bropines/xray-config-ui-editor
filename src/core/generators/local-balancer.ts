@@ -20,6 +20,7 @@
 
 import { DEFAULT_BYPASS_DOMAINS } from '../presets/bypass-domains';
 import { DEFAULT_DNS_UPSTREAM, DEFAULT_QUERY_STRATEGY } from '../presets/dns';
+import { t } from '../../i18n';
 
 /** One proxy the balancer can pick, as parsed from a link or an existing config. */
 export interface LocalBalancerNode {
@@ -127,8 +128,8 @@ export const DEFAULT_LOCAL_BALANCER_OPTIONS: LocalBalancerOptions = {
  */
 export const LOCAL_BALANCER_PRESETS: Record<string, { label: string; description: string; options: Partial<LocalBalancerOptions> }> = {
     simple: {
-        label: 'Simple',
-        description: 'proxy / proxy-2 tags, one balancer, 10s burst probe. Good for 2-4 nodes in one location.',
+        get label() { return t("Simple"); },
+        get description() { return t("proxy / proxy-2 tags, one balancer, 10s burst probe. Good for 2-4 nodes in one location."); },
         options: {
             proxyTagPrefix: 'proxy',
             tagStyle: 'numbered',
@@ -143,8 +144,8 @@ export const LOCAL_BALANCER_PRESETS: Record<string, { label: string; description
         },
     },
     fleet: {
-        label: 'Fleet',
-        description: 'fb-0 / fb-1 tags, fallback to the first node, baselines, 60s probe. Built for large pools.',
+        get label() { return t("Fleet"); },
+        get description() { return t("fb-0 / fb-1 tags, fallback to the first node, baselines, 60s probe. Built for large pools."); },
         options: {
             proxyTagPrefix: 'fb-',
             tagStyle: 'zeroIndexed',

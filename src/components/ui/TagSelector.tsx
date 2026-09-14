@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Icon } from './Icon';
+import { t } from '../../i18n';
 
 interface TagSelectorProps {
     availableTags: string[];
@@ -47,7 +48,7 @@ export const TagSelector = ({ availableTags, selected, onChange, multi = false, 
                         <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
                         <input
                             className="w-full bg-slate-900 border border-slate-800 rounded-md pl-8 pr-6 py-1 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
-                            placeholder="Filter tags..."
+                            placeholder={t("Filter tags...")}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -84,7 +85,7 @@ export const TagSelector = ({ availableTags, selected, onChange, multi = false, 
                         );
                     })}
                     {filteredTags.length === 0 && (
-                        <span className="text-xs text-slate-600 italic px-2 py-1">No matches found</span>
+                        <span className="text-xs text-slate-600 italic px-2 py-1">{t("No matches found")}</span>
                     )}
                 </div>
                 
@@ -102,4 +103,4 @@ export const TagSelector = ({ availableTags, selected, onChange, multi = false, 
             </div>
         </div>
     );
-};
+};

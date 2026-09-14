@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { JsonEditor } from '../ui/JsonEditor';
 import { useTagDetails } from '../../hooks/useTagDetails';
+import { t } from '../../i18n';
 
 export const TagDetailsModal = ({ 
     tag, 
@@ -25,13 +26,13 @@ export const TagDetailsModal = ({
             onSave={onClose} 
             className="max-w-2xl" 
             isSecondary={true}
-            extraButtons={<Button variant="secondary" onClick={handleCopy} icon="Copy">Copy Raw Text</Button>}
+            extraButtons={<Button variant="secondary" onClick={handleCopy} icon="Copy">{t("Copy Raw Text")}</Button>}
         >
             <div className="h-[500px] relative overflow-hidden rounded-xl border border-slate-700 bg-[#1e1e1e]">
                 {loading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 bg-slate-900/50 rounded-xl z-10">
                         <Icon name="Spinner" className="animate-spin text-4xl mb-3 text-indigo-500" />
-                        <span className="text-xs font-bold uppercase tracking-wider">Extracting records...</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{t("Extracting records...")}</span>
                     </div>
                 ) : (
                     <div className="h-full w-full">

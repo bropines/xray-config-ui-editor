@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../../ui/Card';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { InboundSchema, InboundProtocolSchema } from '../../../core/xray/schemas';
+import { t } from '../../../i18n';
 
 export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {} }: any) => {
     const isTun = inbound.protocol === 'tun';
@@ -32,7 +33,7 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
     }
 
     return (
-        <Card title="Inbound Connectivity" icon="Globe">
+        <Card title={t("Inbound Connectivity")} icon="Globe">
             <SchemaForm
                 schema={InboundSchema}
                 value={inbound}
@@ -41,17 +42,17 @@ export const InboundGeneral = ({ inbound, onChange, onProtocolChange, errors = {
                 excludeKeys={excludeKeys}
                 fieldConfigs={{
                     protocol: {
-                        label: "Protocol",
-                        help: "Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks.",
+                        label: t("Protocol"),
+                        help: t("Xray supports multiple protocols like VLESS, VMess, Trojan, and Shadowsocks."),
                         options: InboundProtocolSchema.options as unknown as string[]
                     },
                     listen: {
-                        label: "Listen IP",
-                        help: "IP address for the inbound to listen on. Default is 0.0.0.0 (all interfaces)."
+                        label: t("Listen IP"),
+                        help: t("IP address for the inbound to listen on. Default is 0.0.0.0 (all interfaces).")
                     },
                     tag: {
-                        label: "Tag",
-                        help: "A unique name for this inbound to refer to it in routing rules."
+                        label: t("Tag"),
+                        help: t("A unique name for this inbound to refer to it in routing rules.")
                     }
                 }}
             />

@@ -1,3 +1,5 @@
+import { t } from '../../i18n';
+
 // ============================================================
 // Bypass domain presets — src/core/presets/bypass-domains.ts
 // ============================================================
@@ -113,14 +115,14 @@ export interface BypassList {
 export const BYPASS_LISTS: BypassList[] = [
     {
         id: 'russian',
-        label: 'Russian sites direct',
-        description: 'Banks, government portals, marketplaces and media that only work from a Russian address.',
+        get label() { return t("Russian sites direct"); },
+        get description() { return t("Banks, government portals, marketplaces and media that only work from a Russian address."); },
         domains: RUSSIAN_DOMAINS,
     },
     {
         id: 'leak-checks',
-        label: 'IP/DNS leak checkers direct',
-        description: 'Sites like whoer.net and ipleak.net. Proxied, they report the exit node instead of your real connection.',
+        get label() { return t("IP/DNS leak checkers direct"); },
+        get description() { return t("Sites like whoer.net and ipleak.net. Proxied, they report the exit node instead of your real connection."); },
         domains: LEAK_CHECK_DOMAINS,
     },
 ];

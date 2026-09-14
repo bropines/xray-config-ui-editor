@@ -4,6 +4,7 @@ import { Help } from '../../ui/Help';
 import { Icon } from '../../ui/Icon';
 import { parseXrayLink, parseWireguardConfig, parseJsonSubscription } from '../../../utils/link-parser';
 import { toast } from 'sonner';
+import { t } from '../../../i18n';
 
 export const OutboundImport = ({ onImport }: any) => {
     const [input, setInput] = useState("");
@@ -18,7 +19,7 @@ export const OutboundImport = ({ onImport }: any) => {
             if (parsed) {
                 onImport(parsed);
                 setInput("");
-                toast.success("Link imported successfully");
+                toast.success(t("Link imported successfully"));
                 return;
             }
         }
@@ -29,7 +30,7 @@ export const OutboundImport = ({ onImport }: any) => {
             if (parsed && parsed.length > 0) {
                 if (parsed.length === 1) {
                     onImport(parsed[0]);
-                    toast.success("JSON configuration imported");
+                    toast.success(t("JSON configuration imported"));
                 } else {
                     onImport({ multiple: true, outbounds: parsed });
                     toast.success(`Imported ${parsed.length} outbounds from JSON`);
@@ -50,18 +51,20 @@ export const OutboundImport = ({ onImport }: any) => {
                     if (obfuscator) {
                         onImport(obfuscator);
                         setInput("");
-                        toast.success("Only Obfuscator (Freedom) imported");
+                        toast.success(t("Only Obfuscator (Freedom) imported"));
                         return;
                     }
                 }
                 onImport(parsed);
                 setInput("");
-                toast.success(mode === 'chained' ? "WG + Obfuscator (Legacy Chain) imported" : "Direct WireGuard (Modern) imported");
+                toast.success(mode === 'chained'
+                ? t("WG + Obfuscator (Legacy Chain) imported")
+                : t("Direct WireGuard (Modern) imported"));
                 return;
             }
         }
 
-        toast.error("Unrecognized import format");
+        toast.error(t("Unrecognized import format"));
     };
 
     const isAWGDetected = input.includes('[Interface]') && (input.includes('Jc') || input.includes('Jmin') || input.includes('<b 0x'));
@@ -73,20 +76,21 @@ export const OutboundImport = ({ onImport }: any) => {
                     Import from Link or WG Config
                     <Help>
                         Paste a link or a .conf file. 
-                        <b>Direct</b>: Finalmask inside WG (Xray 1.26+).
-                        <b>Chained</b>: Separate Freedom obfuscator (Legacy/Stale cores).
+                        <b>{t("Direct")}</b>: Finalmask inside WG (Xray 1.26+).
+                        <b>{t("Chained")}</b>: Separate Freedom obfuscator (Legacy/Stale cores).
                     </Help>
                 </label>
                 {isAWGDetected && (
                     <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold animate-pulse">
-                        <Icon name="MagicWand" /> AmneziaWG Detected
-                    </span>
+                        <Icon name="MagicWand" />
+{t("AmneziaWG Detected")}
+</span>
                 )}
             </div>
             <div className="flex flex-col gap-2">
                 <textarea 
                     className={`w-full bg-slate-900 border rounded-lg p-2.5 text-white text-[11px] focus:border-indigo-500 outline-none transition-all font-mono min-h-[100px] custom-scroll ${isAWGDetected ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.05)]' : 'border-slate-800'}`} 
-                    placeholder="Paste vless://... or [Interface]... config here" 
+                    placeholder={t("Paste vless://... or [Interface]... config here")} 
                     value={input} 
                     onChange={e => setInput(e.target.value)} 
                 />
@@ -99,24 +103,24 @@ export const OutboundImport = ({ onImport }: any) => {
                                 onClick={() => handleImport('direct')} 
                                 icon="Lightning"
                             >
-                                Modern (Direct)
-                            </Button>
+                                {t("Modern (Direct)")}
+                                </Button>
                             <Button 
                                 variant="primary" 
                                 className="flex-1 text-xs py-2 shadow-lg min-w-[140px]" 
                                 onClick={() => handleImport('chained')} 
                                 icon="Link"
                             >
-                                Legacy (Chained)
-                            </Button>
+                                {t("Legacy (Chained)")}
+                                </Button>
                             <Button 
                                 variant="secondary" 
                                 className="text-[10px] py-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400" 
                                 onClick={() => handleImport('only-obfuscator')} 
                                 icon="ShieldCheck"
                             >
-                                Obfuscator Only
-                            </Button>
+                                {t("Obfuscator Only")}
+                                </Button>
                         </>
                     ) : (
                         <Button 
@@ -125,8 +129,8 @@ export const OutboundImport = ({ onImport }: any) => {
                             onClick={() => handleImport('direct')} 
                             icon="DownloadSimple"
                         >
-                            Import & Parse
-                        </Button>
+                            {t("Import & Parse")}
+                            </Button>
                     )}
                 </div>
             </div>

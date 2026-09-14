@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useConfigStore } from '../store/configStore';
+import { t } from '../i18n';
 
 /** Template kinds the panel stores. XRAY_JSON holds JSON; the rest hold YAML. */
 export const TEMPLATE_TYPES = ['XRAY_JSON', 'XRAY_BASE64', 'MIHOMO', 'STASH', 'CLASH', 'SINGBOX'] as const;
@@ -89,8 +90,8 @@ export const useTemplatesLibrary = () => {
                     text = decodeBase64Utf8(full.encodedTemplateYaml);
                 } catch {
                     text = '';
-                    toast.warning('Could not decode that YAML body', {
-                        description: 'It is stored base64-encoded and did not decode cleanly.',
+                    toast.warning(t("Could not decode that YAML body"), {
+                        description: t("It is stored base64-encoded and did not decode cleanly."),
                     });
                 }
             }
@@ -134,7 +135,7 @@ export const useTemplatesLibrary = () => {
     const save = useCallback(async () => {
         if (!draft || saving) return;
         if (parseError) {
-            toast.error('Fix the JSON before saving', { description: parseError });
+            toast.error(t("Fix the JSON before saving"), { description: parseError });
             return;
         }
         const patch: { templateJson?: unknown; encodedTemplateYaml?: string; name?: string } = {};
@@ -157,7 +158,7 @@ export const useTemplatesLibrary = () => {
     const create = useCallback(async () => {
         const name = newName.trim();
         if (!name) {
-            toast.error('Name the template first');
+            toast.error(t("Name the template first"));
             return;
         }
         const uuid = await createTemplate(name, newType);
@@ -192,9 +193,9 @@ export const useTemplatesLibrary = () => {
         if (!draft) return;
         try {
             await navigator.clipboard.writeText(draft.text);
-            toast.success('Template body copied');
+            toast.success(t("Template body copied"));
         } catch {
-            toast.error('Clipboard is not available here');
+            toast.error(t("Clipboard is not available here"));
         }
     }, [draft]);
 

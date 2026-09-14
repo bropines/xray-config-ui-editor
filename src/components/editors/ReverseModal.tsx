@@ -5,6 +5,7 @@ import { Icon } from '../ui/Icon';
 import { JsonField } from '../ui/JsonField';
 import { useReverseEditor } from '../../hooks/useReverseEditor';
 import { useConfigStore } from '../../store/configStore';
+import { t } from '../../i18n';
 
 export const ReverseModal = ({ onClose }: any) => {
     const {
@@ -25,17 +26,17 @@ export const ReverseModal = ({ onClose }: any) => {
     if (rawMode) {
         return (
             <Modal
-                title="Reverse Proxy (JSON)"
+                title={t("Reverse Proxy (JSON)")}
                 onClose={onClose}
                 onSave={() => onClose()}
-                extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">Form Mode</Button>}
+                extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">{t("Form Mode")}</Button>}
             >
                 <div className="h-[500px] flex flex-col gap-2">
                     <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded text-[10px] text-slate-400 font-mono">
-                        This editor manages the <code>reverse</code> root section directly.
+                        {t("This editor edits the reverse root section directly.")}
                     </div>
                     <JsonField
-                        label="Reverse Proxy Configuration"
+                        label={t("Reverse Proxy Configuration")}
                         value={reverse}
                         onChange={(val: any, raw?: string) => {
                             updateReverse(val, raw);
@@ -58,17 +59,17 @@ export const ReverseModal = ({ onClose }: any) => {
             {(reverse[type] || []).map((item: any, i: number) => (
                 <div key={i} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row items-end gap-4 relative group shadow-lg">
                     <div className="flex-1 w-full">
-                        <label className="label-xs text-indigo-400">Tag</label>
+                        <label className="label-xs text-indigo-400">{t("Tag")}</label>
                         <input className="input-base" 
-                            placeholder="e.g. reverse-tag"
+                            placeholder={t("e.g. reverse-tag")}
                             value={item.tag} 
                             onChange={e => updateItem(type, i, 'tag', e.target.value)}
                         />
                     </div>
                     <div className="flex-1 w-full">
-                        <label className="label-xs text-indigo-400">Domain</label>
+                        <label className="label-xs text-indigo-400">{t("Domain")}</label>
                         <input className="input-base font-mono" 
-                            placeholder="e.g. portal.example.com"
+                            placeholder={t("e.g. portal.example.com")}
                             value={item.domain} 
                             onChange={e => updateItem(type, i, 'domain', e.target.value)}
                         />
@@ -76,7 +77,7 @@ export const ReverseModal = ({ onClose }: any) => {
                     <button 
                         onClick={() => removeItem(type, i)} 
                         className="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                        title="Delete"
+                        title={t("Delete")}
                     >
                         <Icon name="Trash" weight="bold" />
                     </button>
@@ -96,15 +97,15 @@ export const ReverseModal = ({ onClose }: any) => {
 
     return (
         <Modal 
-            title="Reverse Proxy" 
+            title={t("Reverse Proxy")} 
             onClose={onClose} 
             onSave={() => onClose()}
             className="md:max-w-[800px]"
             extraButtons={
                 <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
-                        <button onClick={() => setActiveTab('bridges')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'bridges' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>Bridges</button>
-                        <button onClick={() => setActiveTab('portals')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'portals' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'}`}>Portals</button>
+                        <button onClick={() => setActiveTab('bridges')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'bridges' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>{t("Bridges")}</button>
+                        <button onClick={() => setActiveTab('portals')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'portals' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'}`}>{t("Portals")}</button>
                     </div>
                     <Button variant="secondary" className="text-xs py-1 shrink-0" onClick={() => setRawMode(true)} icon="Code">JSON</Button>
                 </div>
@@ -116,19 +117,21 @@ export const ReverseModal = ({ onClose }: any) => {
                 
                 <div className="mt-8 p-5 bg-indigo-900/20 border border-indigo-500/30 rounded-2xl text-xs text-indigo-100 shadow-xl">
                     <h4 className="font-bold flex items-center gap-2 mb-3 text-sm text-indigo-300">
-                        <Icon name="Info" weight="fill" className="text-lg" /> 
-                        Internal Logic
-                    </h4>
+                        <Icon name="Info" weight="fill" className="text-lg" />
+                        {t("Internal Logic")}
+                        </h4>
                     <div className="space-y-3 opacity-90 leading-relaxed">
                         <p>
-                            <b className="text-indigo-300 uppercase tracking-wider text-[10px]">Bridge:</b> The active end (behind NAT). Initiates connection to the Portal.
-                        </p>
+                            <b className="text-indigo-300 uppercase tracking-wider text-[10px]">{t("Bridge:")}</b>
+{t("The active end (behind NAT). Initiates connection to the Portal.")}
+</p>
                         <p>
-                            <b className="text-indigo-300 uppercase tracking-wider text-[10px]">Portal:</b> The passive end (public server). Listens for and accepts Bridge connections.
-                        </p>
+                            <b className="text-indigo-300 uppercase tracking-wider text-[10px]">{t("Portal:")}</b>
+{t("The passive end (public server). Listens for and accepts Bridge connections.")}
+</p>
                         <div className="pt-2 border-t border-indigo-500/20 text-[10px] text-indigo-400/80 italic">
-                            Traffic flow: User → Portal (Passive) ↔ Bridge (Active) → Target Service.
-                        </div>
+                            {t("Traffic flow: User → Portal (Passive) ↔ Bridge (Active) → Target Service.")}
+                            </div>
                     </div>
                 </div>
             </div>

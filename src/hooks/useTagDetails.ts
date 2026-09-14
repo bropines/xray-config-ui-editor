@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { getSharedProtoWorker } from '../utils/proto-worker';
 import { binaryCache, loadCachedData, saveCachedData } from '../utils/geo-data';
+import { t } from '../i18n';
 
 export const useTagDetails = (tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null) => {
     const [text, setText] = useState("");
@@ -56,7 +57,7 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                         }
                     } catch (err) {
                         if (!isCancelled) {
-                            toast.error("Failed to download database for extraction");
+                            toast.error(t("Failed to download database for extraction"));
                             setText("Network error.");
                             setLoading(false);
                         }
@@ -74,7 +75,7 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
             const handleMessage = (e: MessageEvent) => {
                 if (isCancelled) return;
                 if (e.data.error) {
-                    toast.error("Failed to load details");
+                    toast.error(t("Failed to load details"));
                     setText("Error loading data.\n" + e.data.error);
                 } else if (e.data.type === 'details') {
                     // Simple check to ensure we don't show wrong data if multiple requests are pending
@@ -112,8 +113,8 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                 ta.value = text; ta.style.position = "fixed"; ta.style.left = "-999999px";
                 document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
             }
-            toast.success("Copied to clipboard!");
-        } catch { toast.error("Copy failed"); }
+            toast.success(t("Copied to clipboard!"));
+        } catch { toast.error(t("Copy failed")); }
     }, [text]);
 
     return { text, loading, handleCopy };

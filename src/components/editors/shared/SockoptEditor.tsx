@@ -9,6 +9,7 @@ import { Switch } from '../../ui/Switch';
 import { DurationInput } from '../../ui/DurationInput';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useSockoptEditor } from '../../../hooks/useSockoptEditor';
+import { t } from '../../../i18n';
 
 export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
     const { local, update, add, remove, hasExtendedValues } = useSockoptEditor(sockopt, onChange);
@@ -20,11 +21,12 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
             <div className="border-t border-slate-800 pt-4 space-y-4 animate-in fade-in">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
-                        <Icon name="Sliders" size={14} /> Socket Options (Sockopt)
-                    </label>
+                        <Icon name="Sliders" size={14} />
+{t("Socket Options (Sockopt)")}
+</label>
                     <button className="bg-blue-500/10 border border-blue-500/50 text-blue-500 hover:bg-blue-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={add}>
-                        ADD
-                    </button>
+                        {t("ADD")}
+                        </button>
                 </div>
             </div>
         );
@@ -34,18 +36,19 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
         <div className="border-t border-slate-800/60 pt-6 space-y-4">
             <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
-                    <Icon name="Sliders" size={14} /> Socket Options (Sockopt)
-                </label>
+                    <Icon name="Sliders" size={14} />
+{t("Socket Options (Sockopt)")}
+</label>
                 <button className="bg-rose-500/10 border border-rose-500/50 text-rose-500 hover:bg-rose-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={remove}>
-                    REMOVE
-                </button>
+                    {t("REMOVE")}
+                    </button>
             </div>
 
             <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/60 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* GENERAL / ROUTING */}
                     <div>
-                        <label className="label-xs">Mark (Routing)</label>
+                        <label className="label-xs">{t("Mark (Routing)")}</label>
                         <input type="number" className="input-base font-mono"
                             placeholder="255"
                             value={local.mark || ""}
@@ -54,9 +57,9 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                     </div>
 
                     <div>
-                        <label className="label-xs">Interface (Bind)</label>
+                        <label className="label-xs">{t("Interface (Bind)")}</label>
                         <input className="input-base font-mono"
-                            placeholder="eth0 or wg0"
+                            placeholder={t("eth0 or wg0")}
                             value={local.interface || ""}
                             onChange={e => update('interface', e.target.value)}
                         />
@@ -66,31 +69,31 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                     {!isClient && (
                         <>
                                 <Select 
-                                    label="TProxy (Linux)"
+                                    label={t("TProxy (Linux)")}
                                     value={local.tproxy || "off"}
                                     onChange={val => update('tproxy', val)}
                                     options={[
-                                        { value: "off", label: "Off" },
-                                        { value: "tproxy", label: "TProxy" },
-                                        { value: "redirect", label: "Redirect" },
+                                        { value: "off", label: t("Off") },
+                                        { value: "tproxy", label: t("TProxy") },
+                                        { value: "redirect", label: t("Redirect") },
                                     ]}
                                 />
                                 <Select 
-                                    label="Accept PROXY Protocol"
+                                    label={t("Accept PROXY Protocol")}
                                     value={local.acceptProxyProtocol === true ? "true" : "false"}
                                     onChange={val => update('acceptProxyProtocol', val === "true")}
                                     options={[
-                                        { value: "false", label: "Disabled" },
-                                        { value: "true", label: "Enabled" },
+                                        { value: "false", label: t("Disabled") },
+                                        { value: "true", label: t("Enabled") },
                                     ]}
                                 />
                                 <Select 
-                                    label="V6 Only (Bind ::)"
+                                    label={t("V6 Only (Bind ::)")}
                                     value={local.v6only === true ? "true" : "false"}
                                     onChange={val => update('v6only', val === "true")}
                                     options={[
-                                        { value: "false", label: "Disabled" },
-                                        { value: "true", label: "Enabled" },
+                                        { value: "false", label: t("Disabled") },
+                                        { value: "true", label: t("Enabled") },
                                     ]}
                                 />
                         </>
@@ -104,27 +107,27 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                     label={
                                         <span className="flex items-center gap-1">
                                             Dialer Proxy (Outbound Tag)
-                                            <Help>Forwards this outbound's traffic through another outbound (tag). Used to "wrap" protocols like WireGuard into obfuscation layers like Freedom+Finalmask.</Help>
+                                            <Help>{t("Forwards this outbound's traffic through another outbound (tag). Used to \"wrap\" protocols like WireGuard into obfuscation layers like Freedom+Finalmask.")}</Help>
                                         </span>
                                     }
                                     availableTags={outboundTags}
                                     selected={local.dialerProxy || ""}
                                     onChange={v => update('dialerProxy', v as string)}
                                     multi={false}
-                                    placeholder="Select outbound..."
+                                    placeholder={t("Select outbound...")}
                                 />
                             </div>
                                 <Select 
-                                    label="Domain Strategy"
+                                    label={t("Domain Strategy")}
                                     value={local.domainStrategy || "AsIs"}
                                     onChange={val => update('domainStrategy', val)}
                                     options={[
-                                        { value: "AsIs", label: "AsIs" },
-                                        { value: "UseIP", label: "UseIP" },
-                                        { value: "UseIPv4", label: "UseIPv4" },
-                                        { value: "UseIPv6", label: "UseIPv6" },
-                                        { value: "UseIPv4v6", label: "UseIPv4v6" },
-                                        { value: "UseIPv6v4", label: "UseIPv6v4" },
+                                        { value: "AsIs", label: t("AsIs") },
+                                        { value: "UseIP", label: t("UseIP") },
+                                        { value: "UseIPv4", label: t("UseIPv4") },
+                                        { value: "UseIPv6", label: t("UseIPv6") },
+                                        { value: "UseIPv4v6", label: t("UseIPv4v6") },
+                                        { value: "UseIPv6v4", label: t("UseIPv6v4") },
                                     ]}
                                 />
                         </>
@@ -132,44 +135,44 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
 
                     {/* TCP ADVANCED / KERNEL */}
                                 <Select 
-                                    label="TCP Fast Open"
+                                    label={t("TCP Fast Open")}
                                     value={local.tcpFastOpen === true ? "true" : "false"}
                                     onChange={val => update('tcpFastOpen', val === "true")}
                                     options={[
-                                        { value: "false", label: "Disabled" },
-                                        { value: "true", label: "Enabled" },
+                                        { value: "false", label: t("Disabled") },
+                                        { value: "true", label: t("Enabled") },
                                     ]}
                                 />
 
                                 <Select 
-                                    label="TCP MPTCP"
-                                    hint="Linux 5.6+"
+                                    label={t("TCP MPTCP")}
+                                    hint={t("Linux 5.6+")}
                                     value={local.tcpMptcp === true ? "true" : "false"}
                                     onChange={val => update('tcpMptcp', val === "true")}
                                     options={[
-                                        { value: "false", label: "Disabled" },
-                                        { value: "true", label: "Enabled" },
+                                        { value: "false", label: t("Disabled") },
+                                        { value: "true", label: t("Enabled") },
                                     ]}
                                 />
                 </div>
 
                 {/* EXTENDED SOCKOPT & HAPPY EYEBALLS */}
                 <ExtendedSection
-                    title="Extended Socket & Kernel Options"
-                    description="Happy Eyeballs (RFC 8305 Dual-Stack), TCP window clamping, and penetrate."
+                    title={t("Extended Socket & Kernel Options")}
+                    description={t("Happy Eyeballs (RFC 8305 Dual-Stack), TCP window clamping, and penetrate.")}
                     hasActiveValues={hasExtendedValues}
                 >
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Select
-                                label="Address Port Strategy"
+                                label={t("Address Port Strategy")}
                                 value={local.addressPortStrategy || "none"}
                                 onChange={val => update('addressPortStrategy', val === "none" ? undefined : val)}
                                 options={[
-                                    { value: "none", label: "None (Default)" },
-                                    { value: "same", label: "Same (Reuse)" },
-                                    { value: "different", label: "Different" },
-                                    { value: "random", label: "Random" },
+                                    { value: "none", label: t("None (Default)") },
+                                    { value: "same", label: t("Same (Reuse)") },
+                                    { value: "different", label: t("Different") },
+                                    { value: "random", label: t("Random") },
                                 ]}
                             />
 
@@ -177,9 +180,9 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 <div>
                                     <label className="text-xs font-bold text-slate-300 flex items-center gap-1">
                                         Penetrate Sockopt
-                                        <Help>Applies upload stream socket options to the downstream connection.</Help>
+                                        <Help>{t("Applies upload stream socket options to the downstream connection.")}</Help>
                                     </label>
-                                    <p className="text-[10px] text-slate-500">Inherit socket options across streams</p>
+                                    <p className="text-[10px] text-slate-500">{t("Inherit socket options across streams")}</p>
                                 </div>
                                 <Switch
                                     checked={local.penetrate || false}
@@ -194,9 +197,9 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 <div>
                                     <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
                                         Happy Eyeballs (RFC 8305 Dual-Stack)
-                                        <Help>Simultaneously attempts IPv4 and IPv6 connections and selects the fastest path.</Help>
+                                        <Help>{t("Simultaneously attempts IPv4 and IPv6 connections and selects the fastest path.")}</Help>
                                     </span>
-                                    <p className="text-[10px] text-slate-500">Fast fallback between IPv4 & IPv6</p>
+                                    <p className="text-[10px] text-slate-500">{t("Fast fallback between IPv4 & IPv6")}</p>
                                 </div>
                                 <Switch
                                     checked={!!local.happyEyeballs}
@@ -207,7 +210,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                             {local.happyEyeballs && (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-slate-800/60 animate-in fade-in">
                                     <div>
-                                        <label className="label-xs text-[10px]">Try Delay (ms)</label>
+                                        <label className="label-xs text-[10px]">{t("Try Delay (ms)")}</label>
                                         <input
                                             type="number"
                                             className="input-base font-mono text-xs"
@@ -217,7 +220,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="label-xs text-[10px]">Interleave</label>
+                                        <label className="label-xs text-[10px]">{t("Interleave")}</label>
                                         <input
                                             type="number"
                                             className="input-base font-mono text-xs"
@@ -227,7 +230,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="label-xs text-[10px]">Max Concurrent Try</label>
+                                        <label className="label-xs text-[10px]">{t("Max Concurrent Try")}</label>
                                         <input
                                             type="number"
                                             className="input-base font-mono text-xs"
@@ -237,7 +240,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                         />
                                     </div>
                                     <div className="flex flex-col justify-center">
-                                        <label className="label-xs text-[10px] mb-1.5">Prioritize IPv6</label>
+                                        <label className="label-xs text-[10px] mb-1.5">{t("Prioritize IPv6")}</label>
                                         <Switch
                                             checked={local.happyEyeballs.prioritizeIPv6 ?? true}
                                             onChange={checked => update('happyEyeballs', { ...local.happyEyeballs, prioritizeIPv6: checked })}
@@ -250,7 +253,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                         {/* TCP Low-level tuning */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-slate-800/60">
                             <div>
-                                <label className="label-xs text-[10px]">TCP Keep-Alive Idle</label>
+                                <label className="label-xs text-[10px]">{t("TCP Keep-Alive Idle")}</label>
                                 <DurationInput
                                     placeholder="300"
                                     value={local.tcpKeepAliveIdle}
@@ -262,7 +265,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 />
                             </div>
                             <div>
-                                <label className="label-xs text-[10px]">TCP Keep-Alive Interval</label>
+                                <label className="label-xs text-[10px]">{t("TCP Keep-Alive Interval")}</label>
                                 <DurationInput
                                     placeholder="0"
                                     value={local.tcpKeepAliveInterval}
@@ -274,7 +277,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 />
                             </div>
                             <div>
-                                <label className="label-xs text-[10px]">TCP User Timeout</label>
+                                <label className="label-xs text-[10px]">{t("TCP User Timeout")}</label>
                                 <DurationInput
                                     placeholder="10000"
                                     value={local.tcpUserTimeout}
@@ -286,7 +289,7 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 />
                             </div>
                             <div>
-                                <label className="label-xs text-[10px]">TCP Max Segment (MTU)</label>
+                                <label className="label-xs text-[10px]">{t("TCP Max Segment (MTU)")}</label>
                                 <input type="number" className="input-base font-mono text-xs"
                                     placeholder="1440"
                                     value={local.tcpMaxSeg || ""}
@@ -294,15 +297,15 @@ export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
                                 />
                             </div>
                             <div>
-                                <label className="label-xs text-[10px]">TCP Congestion</label>
+                                <label className="label-xs text-[10px]">{t("TCP Congestion")}</label>
                                 <input type="text" className="input-base font-mono text-xs"
-                                    placeholder="bbr, cubic..."
+                                    placeholder={t("bbr, cubic...")}
                                     value={local.tcpCongestion || ""}
                                     onChange={e => update('tcpCongestion', e.target.value)}
                                 />
                             </div>
                             <div>
-                                <label className="label-xs text-[10px]">TCP Window Clamp</label>
+                                <label className="label-xs text-[10px]">{t("TCP Window Clamp")}</label>
                                 <input type="number" className="input-base font-mono text-xs"
                                     placeholder="600"
                                     value={local.tcpWindowClamp || ""}

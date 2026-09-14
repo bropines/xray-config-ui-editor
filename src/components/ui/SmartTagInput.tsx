@@ -5,6 +5,7 @@ import { useSmartTagInput } from "../../hooks/useSmartTagInput";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { t, tn } from '../../i18n';
 
 interface Suggestion {
     code: string;
@@ -115,7 +116,7 @@ const SortableChipTag = ({
                                 document.execCommand('copy');
                                 document.body.removeChild(el);
                                 toast.success(`Copied: ${tag}`);
-                            } catch (err) { toast.error("Copy failed"); }
+                            } catch (err) { toast.error(t("Copy failed")); }
                         });
                 } else {
                     try {
@@ -126,7 +127,7 @@ const SortableChipTag = ({
                         document.execCommand('copy');
                         document.body.removeChild(el);
                         toast.success(`Copied: ${tag}`);
-                    } catch (err) { toast.error("Copy failed"); }
+                    } catch (err) { toast.error(t("Copy failed")); }
                 }
             }
         }
@@ -295,7 +296,7 @@ export const SmartTagInput = ({
         const [moved] = newValue.splice(oldIndex, 1);
         newValue.splice(newIndex, 0, moved);
         onChange(newValue);
-        toast.success("Tags reordered");
+        toast.success(t("Tags reordered"));
     };
 
     const prefixName = prefix ? prefix.replace(/:$/, '').toUpperCase() : 'PREFIX';
@@ -304,7 +305,7 @@ export const SmartTagInput = ({
         const sorted = [...value].sort((a, b) => a.localeCompare(b));
         onChange(sorted);
         setShowSortMenu(false);
-        toast.success("Sorted alphabetically (A-Z)");
+        toast.success(t("Sorted alphabetically (A-Z)"));
     };
 
     const sortPrefixFirst = () => {
@@ -340,7 +341,7 @@ export const SmartTagInput = ({
         });
         onChange(sorted);
         setShowSortMenu(false);
-        toast.success("Sorted: Plain items first");
+        toast.success(t("Sorted: Plain items first"));
     };
 
     const hasInvalid = invalidTags.length > 0;
@@ -363,7 +364,7 @@ export const SmartTagInput = ({
                         {hasInvalid && (
                             <span className="text-rose-400 flex items-center gap-1 normal-case font-normal text-[10px]">
                                 <Icon name="WarningOctagon" weight="fill" className="text-[11px]" />
-                                {invalidTags.length} error{invalidTags.length > 1 ? 's' : ''}
+                                {tn(invalidTags.length, "{n} error", "{n} errors")}
                             </span>
                         )}
                         {!hasInvalid && hasWarn && (
@@ -376,8 +377,9 @@ export const SmartTagInput = ({
                     <div className="flex items-center gap-2">
                         {isLoading && (
                             <span className="text-indigo-400 flex items-center gap-1">
-                                <Icon name="spinner" className="animate-spin" /> Loading DB...
-                            </span>
+                                <Icon name="spinner" className="animate-spin" />
+{t("Loading DB...")}
+</span>
                         )}
 
                         {value.length > 1 && (
@@ -386,11 +388,11 @@ export const SmartTagInput = ({
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); setShowSortMenu(!showSortMenu); }}
                                     className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-indigo-400 bg-slate-900 border border-slate-800 rounded px-2 py-0.5 transition-colors uppercase tracking-wider"
-                                    title="Sort options"
+                                    title={t("Sort options")}
                                 >
                                     <Icon name="ArrowsDownUp" className="text-xs text-indigo-400" />
-                                    Sort
-                                </button>
+                                    {t("Sort")}
+                                    </button>
 
                                 {showSortMenu && (
                                     <div className="absolute right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[100] py-1.5 min-w-[170px] text-xs animate-in fade-in">
@@ -400,8 +402,8 @@ export const SmartTagInput = ({
                                             className="w-full text-left px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-300 flex items-center gap-2 transition-colors"
                                         >
                                             <Icon name="SortAscending" className="text-sm text-indigo-400" />
-                                            Alphabetical (A-Z)
-                                        </button>
+                                            {t("Alphabetical (A-Z)")}
+                                            </button>
                                         <button
                                             type="button"
                                             onClick={sortPrefixFirst}
@@ -416,8 +418,8 @@ export const SmartTagInput = ({
                                             className="w-full text-left px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-300 flex items-center gap-2 transition-colors"
                                         >
                                             <Icon name="Globe" className="text-sm text-blue-400" />
-                                            Plain items first
-                                        </button>
+                                            {t("Plain items first")}
+                                            </button>
                                     </div>
                                 )}
                             </div>

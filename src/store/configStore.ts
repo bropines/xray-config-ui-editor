@@ -41,6 +41,7 @@ export type {
 } from '../core/types';
 
 import type { XrayConfig, Inbound, Outbound, RoutingRule } from '../core/types';
+import { t } from '../i18n';
 
 export interface LocalProfile {
     id: string;
@@ -248,8 +249,8 @@ function resolveMutableConfig(
             return parseJsonc(state.rawConfigText);
         } catch (e) {
             console.warn('[configStore] Failed to parse rawConfigText, falling back to last known-good config:', e);
-            toast.warning('Raw JSON edits were discarded', {
-                description: 'The raw config text had a syntax error, so this action fell back to the last valid config.',
+            toast.warning(t("Raw JSON edits were discarded"), {
+                description: t("The raw config text had a syntax error, so this action fell back to the last valid config."),
             });
             return state.config ? parseJsonc(stringifyJsonc(state.config)) : fallbackDefault;
         }
@@ -280,7 +281,7 @@ export const useConfigStore = create(
             fetchPanelCatalog: async () => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return;
                 }
 
@@ -332,14 +333,14 @@ export const useConfigStore = create(
                         state.panelCatalog.loading = false;
                         state.panelCatalog.error = message;
                     }));
-                    toast.error("Failed to load hosts from the panel", { description: message });
+                    toast.error(t("Failed to load hosts from the panel"), { description: message });
                 }
             },
 
             createPanelHost: async (payload) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return null;
                 }
                 const client = new RemnawaveClient(url);
@@ -350,7 +351,7 @@ export const useConfigStore = create(
                     toast.success(`Host "${payload.remark}" created`);
                     return host;
                 } catch (e: any) {
-                    toast.error("Failed to create the host", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to create the host"), { description: e?.message || 'Unknown error' });
                     return null;
                 }
             },
@@ -358,7 +359,7 @@ export const useConfigStore = create(
             updatePanelHosts: async (updates) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return 0;
                 }
                 const client = new RemnawaveClient(url);
@@ -389,7 +390,7 @@ export const useConfigStore = create(
             updatePanelHost: async (patch) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return false;
                 }
                 const client = new RemnawaveClient(url);
@@ -397,10 +398,10 @@ export const useConfigStore = create(
                 try {
                     await client.updateHost(patch);
                     await get().fetchPanelCatalog();
-                    toast.success("Host saved");
+                    toast.success(t("Host saved"));
                     return true;
                 } catch (e: any) {
-                    toast.error("Failed to save the host", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to save the host"), { description: e?.message || 'Unknown error' });
                     return false;
                 }
             },
@@ -408,7 +409,7 @@ export const useConfigStore = create(
             deletePanelHost: async (uuid) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return false;
                 }
                 const client = new RemnawaveClient(url);
@@ -416,10 +417,10 @@ export const useConfigStore = create(
                 try {
                     await client.deleteHost(uuid);
                     await get().fetchPanelCatalog();
-                    toast.info("Host deleted");
+                    toast.info(t("Host deleted"));
                     return true;
                 } catch (e: any) {
-                    toast.error("Failed to delete the host", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to delete the host"), { description: e?.message || 'Unknown error' });
                     return false;
                 }
             },
@@ -430,7 +431,7 @@ export const useConfigStore = create(
             fetchSubscriptionTemplates: async () => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return;
                 }
                 set(produce((state: any) => { state.panelTemplates.loading = true; state.panelTemplates.error = null; }));
@@ -449,14 +450,14 @@ export const useConfigStore = create(
                         state.panelTemplates.loading = false;
                         state.panelTemplates.error = message;
                     }));
-                    toast.error("Failed to load subscription templates", { description: message });
+                    toast.error(t("Failed to load subscription templates"), { description: message });
                 }
             },
 
             loadSubscriptionTemplate: async (uuid) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return null;
                 }
                 const client = new RemnawaveClient(url);
@@ -464,7 +465,7 @@ export const useConfigStore = create(
                 try {
                     return await client.getSubscriptionTemplate(uuid);
                 } catch (e: any) {
-                    toast.error("Failed to load the template", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to load the template"), { description: e?.message || 'Unknown error' });
                     return null;
                 }
             },
@@ -472,7 +473,7 @@ export const useConfigStore = create(
             createPanelTemplate: async (name, templateType) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return null;
                 }
                 const client = new RemnawaveClient(url);
@@ -483,7 +484,7 @@ export const useConfigStore = create(
                     toast.success(`Template "${name}" created`);
                     return created?.uuid || null;
                 } catch (e: any) {
-                    toast.error("Failed to create the template", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to create the template"), { description: e?.message || 'Unknown error' });
                     return null;
                 }
             },
@@ -491,7 +492,7 @@ export const useConfigStore = create(
             patchPanelTemplate: async (uuid, patch) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return false;
                 }
                 const client = new RemnawaveClient(url);
@@ -499,12 +500,12 @@ export const useConfigStore = create(
                 try {
                     await client.updateSubscriptionTemplate(uuid, patch);
                     await get().fetchSubscriptionTemplates();
-                    toast.success("Template saved to the panel", {
-                        description: 'Every host pointing at it serves the new body.',
+                    toast.success(t("Template saved to the panel"), {
+                        description: t("Every host pointing at it serves the new body."),
                     });
                     return true;
                 } catch (e: any) {
-                    toast.error("Failed to save the template", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to save the template"), { description: e?.message || 'Unknown error' });
                     return false;
                 }
             },
@@ -512,7 +513,7 @@ export const useConfigStore = create(
             deletePanelTemplate: async (uuid) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return false;
                 }
                 const client = new RemnawaveClient(url);
@@ -520,10 +521,10 @@ export const useConfigStore = create(
                 try {
                     await client.deleteSubscriptionTemplate(uuid);
                     await get().fetchSubscriptionTemplates();
-                    toast.info("Template deleted");
+                    toast.info(t("Template deleted"));
                     return true;
                 } catch (e: any) {
-                    toast.error("Failed to delete the template", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to delete the template"), { description: e?.message || 'Unknown error' });
                     return false;
                 }
             },
@@ -531,7 +532,7 @@ export const useConfigStore = create(
             saveSubscriptionTemplate: async ({ mode, uuid, name, templateJson }) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return null;
                 }
 
@@ -572,7 +573,7 @@ export const useConfigStore = create(
                     });
                     return targetUuid;
                 } catch (e: any) {
-                    toast.error("Failed to save the template", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to save the template"), { description: e?.message || 'Unknown error' });
                     return null;
                 }
             },
@@ -601,12 +602,12 @@ export const useConfigStore = create(
                 state.remnawave.connected = false;
                 state.remnawave.activeProfileUuid = null;
                 state.remnawave.profiles = [];
-                toast.info("Remnawave connection closed");
+                toast.info(t("Remnawave connection closed"));
             })),
 
             connectRemnawaveToken: (url, token) => {
                 if (!url || !token) {
-                    toast.error("URL and Token are required");
+                    toast.error(t("URL and Token are required"));
                     return;
                 }
                 set(produce((state) => {
@@ -614,7 +615,7 @@ export const useConfigStore = create(
                     state.remnawave.token = token;
                     state.remnawave.connected = true;
                 }));
-                toast.success("Linked to Remnawave via Token");
+                toast.success(t("Linked to Remnawave via Token"));
                 get().fetchRemnawaveProfiles().catch(() => {});
                 get().fetchSnippets({ silent: true }).catch(() => {});
             },
@@ -634,7 +635,7 @@ export const useConfigStore = create(
                 } catch (e: any) {
                     if (e.message.includes("401")) {
                         get().disconnectRemnawave();
-                        toast.error("Session expired");
+                        toast.error(t("Session expired"));
                     }
                     throw e;
                 }
@@ -656,7 +657,7 @@ export const useConfigStore = create(
                     const profile = get().remnawave.profiles.find(p => p.uuid === uuid);
                     const rawStr = typeof configData === 'string' ? configData : stringifyJsonc(configData, 2);
                     get().loadConfig(configData, `Loaded Profile (${profile?.name || 'Cloud'})`, true, rawStr);
-                    toast.success("Profile config loaded");
+                    toast.success(t("Profile config loaded"));
 
                     // A panel profile may reference snippets the config does
                     // not contain. Pull their bodies in the background so the
@@ -668,7 +669,7 @@ export const useConfigStore = create(
                         state.remnawave.activeProfileUuid = prevUuid;
                     }));
                     console.error("Failed to load Remnawave profile:", e);
-                    toast.error("Failed to load profile from cloud");
+                    toast.error(t("Failed to load profile from cloud"));
                 }
             },
 
@@ -677,7 +678,7 @@ export const useConfigStore = create(
                 const { config } = get();
 
                 if (!url || !token || !activeProfileUuid || !config) {
-                    toast.error("Cannot save: No active cloud profile");
+                    toast.error(t("Cannot save: No active cloud profile"));
                     return;
                 }
 
@@ -686,7 +687,7 @@ export const useConfigStore = create(
                 const invalidBalancer = balancers.find(b => validateBalancer(b).length > 0);
 
                 if (invalidBalancer) {
-                    toast.error("Push Blocked!", {
+                    toast.error(t("Push Blocked!"), {
                         description: `Balancer "${invalidBalancer.tag}" has no target outbounds. Node will crash if you push this.`,
                         duration: 6000
                     });
@@ -701,7 +702,7 @@ export const useConfigStore = create(
                 const criticalIssues = runFullDiagnostics(config, get().getSnippetDefs()).filter(d => d.severity === 'critical');
                 const firstIssue = criticalIssues[0];
                 if (firstIssue) {
-                    toast.error("Push Blocked!", {
+                    toast.error(t("Push Blocked!"), {
                         description: `${criticalIssues.length} critical issue(s) found: ${firstIssue.message}${criticalIssues.length > 1 ? ` (+${criticalIssues.length - 1} more — see Diagnostics)` : ''}`,
                         duration: 6000
                     });
@@ -713,9 +714,9 @@ export const useConfigStore = create(
 
                 try {
                     await client.updateConfigProfile(activeProfileUuid, config);
-                    toast.success("Cloud Profile Updated!");
+                    toast.success(t("Cloud Profile Updated!"));
                 } catch (e: any) {
-                    toast.error("Failed to push config to cloud", {
+                    toast.error(t("Failed to push config to cloud"), {
                         description: e?.message || 'Unknown error',
                     });
                 }
@@ -823,7 +824,7 @@ export const useConfigStore = create(
                     ? `rw:${remnawave.activeProfileUuid}`
                     : activeProfileId;
                 set({ histories: { ...histories, [key]: [] } });
-                toast.info("Version history cleared");
+                toast.info(t("Version history cleared"));
             },
 
             deduplicateHistory: () => {
@@ -843,7 +844,7 @@ export const useConfigStore = create(
                 if (removed > 0) {
                     toast.success(`Removed ${removed} duplicate snapshot${removed > 1 ? 's' : ''}`);
                 } else {
-                    toast.info('No duplicates found');
+                    toast.info(t("No duplicates found"));
                 }
             },
 
@@ -925,7 +926,7 @@ export const useConfigStore = create(
             deleteProfile: (id) => {
                 const { profiles, activeProfileId } = get();
                 if (profiles.length <= 1) {
-                    toast.error("Cannot delete the only profile");
+                    toast.error(t("Cannot delete the only profile"));
                     return;
                 }
                 const remaining = profiles.filter(p => p.id !== id);
@@ -945,7 +946,7 @@ export const useConfigStore = create(
                     baselineConfigJson: nextConfig ? stringifyJsonc(nextConfig) : null,
                     histories: newHistories
                 });
-                toast.success("Profile deleted");
+                toast.success(t("Profile deleted"));
             },
 
             saveActiveProfile: () => {
@@ -973,11 +974,11 @@ export const useConfigStore = create(
                 // unnoticed until someone tries to push/deploy it. Surface it here too.
                 const criticalCount = runFullDiagnostics(config).filter(d => d.severity === 'critical').length;
                 if (criticalCount > 0) {
-                    toast.warning("Local Profile Saved (with issues)", {
+                    toast.warning(t("Local Profile Saved (with issues)"), {
                         description: `${criticalCount} critical diagnostic issue(s) remain — open Diagnostics before pushing this config.`,
                     });
                 } else {
-                    toast.success("Local Profile Saved!");
+                    toast.success(t("Local Profile Saved!"));
                 }
             },
 
@@ -987,7 +988,7 @@ export const useConfigStore = create(
                 try {
                     const reverted = parseJsonc(baselineConfigJson);
                     set({ config: reverted, rawConfigText: baselineConfigJson });
-                    toast.info("Reverted changes to baseline");
+                    toast.info(t("Reverted changes to baseline"));
                 } catch (e) {}
             },
 
@@ -1048,7 +1049,7 @@ export const useConfigStore = create(
 
                 if (validationWarningIssues) {
                     console.warn('Validation warnings:', validationWarningIssues);
-                    toast.warning("Configuration loaded with validation warnings. Check console.");
+                    toast.warning(t("Configuration loaded with validation warnings. Check console."));
                 }
                 set(produce((state) => {
                     state.config = parsedConfig;
@@ -1257,7 +1258,7 @@ export const useConfigStore = create(
                 const { supported } = get().snippetLibrary;
 
                 if (!connected || !url || !token) {
-                    if (!silent) toast.error("Connect to Remnawave first");
+                    if (!silent) toast.error(t("Connect to Remnawave first"));
                     return;
                 }
                 // A panel that answered 404 once will keep doing so; don't
@@ -1302,19 +1303,19 @@ export const useConfigStore = create(
                 const trimmed = (name || '').trim();
                 const nameError = validateSnippetName(trimmed);
                 if (nameError) {
-                    toast.error("Invalid template name", { description: nameError });
+                    toast.error(t("Invalid template name"), { description: nameError });
                     return false;
                 }
                 const bodyError = validateSnippetBody(snippet);
                 if (bodyError) {
-                    toast.error("Invalid template body", { description: bodyError });
+                    toast.error(t("Invalid template body"), { description: bodyError });
                     return false;
                 }
 
                 const existing = get().snippetLibrary.local;
                 const collides = existing.some(t => t.name === trimmed && t.name !== previousName);
                 if (collides) {
-                    toast.error("A template with this name already exists");
+                    toast.error(t("A template with this name already exists"));
                     return false;
                 }
 
@@ -1348,18 +1349,18 @@ export const useConfigStore = create(
                 const trimmed = (name || '').trim();
                 const nameError = validateSnippetName(trimmed);
                 if (nameError) {
-                    toast.error("Invalid snippet name", { description: nameError });
+                    toast.error(t("Invalid snippet name"), { description: nameError });
                     return false;
                 }
                 const bodyError = validateSnippetBody(snippet);
                 if (bodyError) {
-                    toast.error("Invalid snippet body", { description: bodyError });
+                    toast.error(t("Invalid snippet body"), { description: bodyError });
                     return false;
                 }
 
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return false;
                 }
 
@@ -1376,7 +1377,7 @@ export const useConfigStore = create(
                         : `Snippet "${trimmed}" created in the panel`);
                     return true;
                 } catch (e: any) {
-                    toast.error("Failed to save snippet to the panel", {
+                    toast.error(t("Failed to save snippet to the panel"), {
                         description: e?.message || 'Unknown error',
                     });
                     return false;
@@ -1386,7 +1387,7 @@ export const useConfigStore = create(
             deletePanelSnippet: async (name) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return;
                 }
                 const client = new RemnawaveClient(url);
@@ -1396,14 +1397,14 @@ export const useConfigStore = create(
                     await get().fetchSnippets({ silent: true });
                     toast.success(`Snippet "${name}" deleted from the panel`);
                 } catch (e: any) {
-                    toast.error("Failed to delete snippet", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to delete snippet"), { description: e?.message || 'Unknown error' });
                 }
             },
 
             syncPanelSnippet: async (name) => {
                 const { url, token, connected } = get().remnawave;
                 if (!connected || !url || !token) {
-                    toast.error("Connect to Remnawave first");
+                    toast.error(t("Connect to Remnawave first"));
                     return;
                 }
                 const client = new RemnawaveClient(url);
@@ -1411,10 +1412,10 @@ export const useConfigStore = create(
                 try {
                     await client.syncSnippet(name);
                     toast.success(`Snippet "${name}" synced`, {
-                        description: 'Panel is re-applying it to every profile that references it.',
+                        description: t("Panel is re-applying it to every profile that references it."),
                     });
                 } catch (e: any) {
-                    toast.error("Failed to sync snippet", { description: e?.message || 'Unknown error' });
+                    toast.error(t("Failed to sync snippet"), { description: e?.message || 'Unknown error' });
                 }
             },
 
@@ -1471,7 +1472,7 @@ export const useConfigStore = create(
                     return { config: fullObj, rawConfigText: stringifyJsonc(fullObj, 2) };
                 });
                 toast.success(`Inserted ${entries.length} item(s) from "${name}"`, {
-                    description: 'These are a copy - they no longer follow the panel snippet.',
+                    description: t("These are a copy - they no longer follow the panel snippet."),
                 });
             },
 

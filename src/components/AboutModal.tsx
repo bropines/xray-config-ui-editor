@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from './ui/Icon';
 import { Button } from './ui/Button';
+import { t } from '../i18n';
 
 interface Commit {
     sha: string;
@@ -53,7 +54,7 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                             <Icon name="Planet" weight="fill" className="text-2xl" />
                         </div>
                         <div>
-                            <div className="font-black text-white text-xl tracking-tight uppercase leading-none">Xray GUI</div>
+                            <div className="font-black text-white text-xl tracking-tight uppercase leading-none">{t("Xray GUI")}</div>
                             <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
                                 Version {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v1.0.0-dev'}
                             </div>
@@ -69,23 +70,23 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="grid grid-cols-2 gap-3 shrink-0">
                         <a href="https://github.com/bropines/xray-config-ui-editor" target="_blank" className="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center gap-1.5 hover:border-indigo-500/50 transition-all hover:bg-indigo-500/5 group">
                             <Icon name="GithubLogo" className="text-2xl text-slate-400 group-hover:text-white transition-colors" />
-                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">Repository</span>
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">{t("Repository")}</span>
                         </a>
                         <a href="https://boosty.to/pinus" target="_blank" className="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center gap-1.5 hover:border-rose-500/50 transition-all hover:bg-rose-500/5 group">
                             <Icon name="Heart" weight="fill" className="text-2xl text-rose-500 group-hover:scale-110 transition-transform" />
-                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-rose-200">Support Dev</span>
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-rose-200">{t("Support Dev")}</span>
                         </a>
                         <a href="https://t.me/xcue_dev" target="_blank" rel="noopener noreferrer" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-sky-500/50 transition-all hover:bg-sky-500/5 group">
                             <Icon name="TelegramLogo" weight="bold" className="text-lg text-sky-400 group-hover:scale-110 transition-transform" />
-                            <span className="text-[10px] font-bold text-slate-400 group-hover:text-sky-200">Telegram Channel (@xcue_dev)</span>
+                            <span className="text-[10px] font-bold text-slate-400 group-hover:text-sky-200">{t("Telegram Channel (@xcue_dev)")}</span>
                         </a>
                         <a href="https://xtls.github.io/" target="_blank" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-blue-500/50 transition-all hover:bg-blue-500/5 group">
                             <Icon name="BookOpen" className="text-lg text-slate-400 group-hover:text-white transition-colors" />
-                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">Official Xray-core Documentation</span>
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">{t("Official Xray-core Documentation")}</span>
                         </a>
                         <a href="https://warp-generator.github.io/" target="_blank" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-amber-500/50 transition-all hover:bg-amber-500/5 group">
                             <Icon name="Lightning" className="text-lg text-amber-400 group-hover:scale-110 transition-transform" />
-                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-amber-200">WARP Engine by warp-generator.github.io</span>
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-amber-200">{t("WARP Engine by warp-generator.github.io")}</span>
                         </a>
                     </div>
 
@@ -93,14 +94,14 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="space-y-3">
                         <div className="flex items-center gap-2 px-1">
                             <Icon name="GitCommit" className="text-indigo-400" />
-                            <span className="text-xs font-black uppercase text-slate-400 tracking-wider">What's New (Changelog)</span>
+                            <span className="text-xs font-black uppercase text-slate-400 tracking-wider">{t("What's New (Changelog)")}</span>
                         </div>
                         
                         <div className="bg-slate-950/50 border border-slate-800/50 rounded-2xl overflow-hidden">
                             {loading ? (
                                 <div className="p-10 flex flex-col items-center justify-center gap-3 opacity-50">
                                     <Icon name="CircleNotch" className="text-2xl animate-spin text-indigo-400" />
-                                    <span className="text-[10px] font-bold uppercase">Loading commits...</span>
+                                    <span className="text-[10px] font-bold uppercase">{t("Loading commits...")}</span>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-slate-800/50">
@@ -133,8 +134,8 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                 {/* Footer */}
                 <div className="pt-6 shrink-0">
                     <Button variant="secondary" className="w-full py-2.5 rounded-2xl text-xs font-bold" onClick={onClose}>
-                        Close
-                    </Button>
+                        {t("Close")}
+                        </Button>
                 </div>
             </div>
         </div>

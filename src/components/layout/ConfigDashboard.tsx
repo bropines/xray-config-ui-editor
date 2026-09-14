@@ -14,6 +14,7 @@ import { Select } from "../ui/Select";
 import { CommitModal } from "../git/CommitModal";
 import { collectSnippetRefs, getSnippetRefName, type SnippetDefinition } from '../../core/snippets';
 import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
+import { t, tn } from '../../i18n';
 
 // Re-usable column Card for the dashboard
 interface DashCardProps {
@@ -146,8 +147,8 @@ const SortableOutboundItem = ({
               {getSnippetRefName(ob)}
             </div>
             <div className="text-[10px] text-fuchsia-300/70 mt-0.5 font-mono truncate">
-              snippet — expanded by the panel
-            </div>
+              {t("snippet — expanded by the panel")}
+              </div>
           </>
         ) : (
           <>
@@ -184,7 +185,7 @@ const SortableOutboundItem = ({
           }}
           icon="PencilSimple"
           iconClassName="text-sm"
-          title="Edit"
+          title={t("Edit")}
           className="h-8 w-8 p-0 text-slate-500 hover:text-white hover:bg-transparent transition-all duration-300"
         />
         <Button
@@ -196,7 +197,7 @@ const SortableOutboundItem = ({
           }}
           icon="Trash"
           iconClassName="text-sm"
-          title="Delete"
+          title={t("Delete")}
           className="h-8 w-8 p-0 text-slate-500 hover:!text-rose-500 hover:bg-transparent transition-all duration-300"
         />
       </div>
@@ -342,8 +343,9 @@ export const ConfigDashboard = ({
               label is its heading, so both columns share one baseline. */}
           <div className="flex items-center justify-between w-full md:hidden">
             <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm">
-              <Icon name="SlidersHorizontal" /> Modules
-            </h2>
+              <Icon name="SlidersHorizontal" />
+{t("Modules")}
+</h2>
             <button
               onClick={() => setModulesVisible(!modulesVisible)}
               className="p-2 text-slate-400 hover:text-white transition-colors"
@@ -361,8 +363,9 @@ export const ConfigDashboard = ({
             {/* Core: everything that edits the config open in this editor. */}
             <div className="flex flex-col gap-1.5 w-full md:w-auto">
               <span className="label-xs flex items-center gap-1.5">
-                <Icon name="SlidersHorizontal" className="text-xs" /> Core
-              </span>
+                <Icon name="SlidersHorizontal" className="text-xs" />
+{t("Core")}
+</span>
               <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
                 <Button
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
@@ -370,50 +373,50 @@ export const ConfigDashboard = ({
                   onClick={onOpenSettings}
                   icon="Gear"
                 >
-                  Core Settings
-                </Button>
+                  {t("Core Settings")}
+                  </Button>
                 <Button
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
                   variant="secondary"
                   onClick={onOpenReverse}
                   icon="ArrowsLeftRight"
                 >
-                  Reverse Proxy
-                </Button>
+                  {t("Reverse Proxy")}
+                  </Button>
                 <Button
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
                   variant="secondary"
                   onClick={onOpenTopology}
                   icon="GitMerge"
                 >
-                  Topology
-                </Button>
+                  {t("Topology")}
+                  </Button>
                 <Button
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2"
                   variant="secondary"
                   onClick={onOpenGeoViewer}
                   icon="GlobeHemisphereWest"
                 >
-                  Geo Viewer
-                </Button>
+                  {t("Geo Viewer")}
+                  </Button>
                 <Button
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
                   variant="secondary"
                   onClick={onOpenConfigInspector}
                   icon="FileSearch"
                 >
-                  Config Inspector
-                </Button>
+                  {t("Config Inspector")}
+                  </Button>
                 {onOpenBuilder && (
                   <Button
                     className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
                     variant="secondary"
                     onClick={onOpenBuilder}
                     icon="Scales"
-                    title="Build a client config with a local balancer from a set of nodes"
+                    title={t("Build a client config with a local balancer from a set of nodes")}
                   >
-                    Local Balancer
-                  </Button>
+                    {t("Local Balancer")}
+                    </Button>
                 )}
               </div>
             </div>
@@ -424,8 +427,9 @@ export const ConfigDashboard = ({
                 <div className="hidden md:block w-px self-stretch bg-slate-800" />
                 <div className="flex flex-col gap-1.5 w-full md:w-auto">
                   <span className="label-xs flex items-center gap-1.5">
-                    <Icon name="Cloud" className="text-xs" /> Remnawave
-                  </span>
+                    <Icon name="Cloud" className="text-xs" />
+{t("Remnawave")}
+</span>
                   <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
                     {onOpenHosts && (
                       <Button
@@ -433,10 +437,10 @@ export const ConfigDashboard = ({
                         variant="secondary"
                         onClick={onOpenHosts}
                         icon="Broadcast"
-                        title="Edit the hosts in your panel: address, transport, inbound and template"
+                        title={t("Edit the hosts in your panel: address, transport, inbound and template")}
                       >
-                        Hosts
-                      </Button>
+                        {t("Hosts")}
+                        </Button>
                     )}
                     {onOpenTemplates && (
                       <Button
@@ -444,10 +448,10 @@ export const ConfigDashboard = ({
                         variant="secondary"
                         onClick={onOpenTemplates}
                         icon="FileText"
-                        title="Subscription templates — opens the balancer builder in template mode, where they are edited as a form or as JSON"
+                        title={t("Subscription templates — opens the balancer builder in template mode, where they are edited as a form or as JSON")}
                       >
-                        Templates
-                      </Button>
+                        {t("Templates")}
+                        </Button>
                     )}
                     {onOpenSnippets && (
                       <Button
@@ -456,7 +460,7 @@ export const ConfigDashboard = ({
                         onClick={onOpenSnippets}
                         icon="BracketsCurly"
                       >
-                        Snippets{snippetRefCount > 0 ? ` (${snippetRefCount})` : ""}
+                        {t("Snippets")}{snippetRefCount > 0 ? ` (${snippetRefCount})` : ""}
                       </Button>
                     )}
                   </div>
@@ -474,23 +478,23 @@ export const ConfigDashboard = ({
             <div className="flex items-center gap-1.5 shrink-0 animate-in fade-in">
               <span className="text-[10px] md:text-xs font-bold text-amber-400 bg-amber-950/60 border border-amber-500/40 px-2.5 py-1.5 md:py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
-                Uncommitted
-              </span>
+                {t("Uncommitted")}
+                </span>
               <div className="flex items-center rounded-lg bg-emerald-950/60 border border-emerald-500/50 overflow-hidden shadow-sm">
                 <button
                   type="button"
                   onClick={handleCommit}
                   className="px-2.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold text-emerald-300 hover:text-white hover:bg-emerald-900 transition-colors flex items-center gap-1 active:scale-95"
-                  title="Instant Commit (Ctrl+S). Shift+click for custom message"
+                  title={t("Instant Commit (Ctrl+S). Shift+click for custom message")}
                 >
                   <Icon name="GitCommit" className="text-xs text-emerald-400" />
-                  Commit
-                </button>
+                  {t("Commit")}
+                  </button>
                 <button
                   type="button"
                   onClick={() => setCommitModalOpen(true)}
                   className="px-1.5 py-1.5 md:py-2 text-[10px] md:text-xs text-emerald-400 hover:text-white hover:bg-emerald-900 border-l border-emerald-500/40 transition-colors"
-                  title="Commit with custom message..."
+                  title={t("Commit with custom message...")}
                 >
                   <Icon name="PencilSimple" className="text-[10px]" />
                 </button>
@@ -499,16 +503,16 @@ export const ConfigDashboard = ({
                 type="button"
                 onClick={revertToBaseline}
                 className="px-2.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-700/60 rounded-lg transition-all active:scale-95"
-                title="Revert working tree to HEAD (git reset --hard)"
+                title={t("Revert working tree to HEAD (git reset --hard)")}
               >
-                Reset
-              </button>
+                {t("Reset")}
+                </button>
             </div>
           ) : (
             <span className="text-[10px] md:text-xs font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-1.5 md:py-2 rounded-lg flex items-center gap-1.5 shrink-0 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              Clean (HEAD)
-            </span>
+              {t("Clean (HEAD)")}
+              </span>
           )}
 
           {/* History Timeline / Git Log */}
@@ -533,7 +537,7 @@ export const ConfigDashboard = ({
             icon={rawMode ? "Layout" : "Code"}
             className={`flex-1 md:flex-none text-[10px] md:text-xs py-1.5 md:py-2 ${rawMode ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : ""}`}
           >
-            {rawMode ? "UI Mode" : "JSON Mode"}
+            {rawMode ? t("UI Mode") : t("JSON Mode")}
           </Button>
         </div>
       </div>
@@ -542,7 +546,7 @@ export const ConfigDashboard = ({
       {rawMode ? (
         <div className="flex-1 min-h-0 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-4 shadow-2xl flex flex-col">
           <JsonField
-            label="Full Configuration (Auto-saved)"
+            label={t("Full Configuration (Auto-saved)")}
             value={config}
             onChange={(newConfig: any, rawText?: string) => {
               if (newConfig) setConfig(newConfig, rawText);
@@ -570,7 +574,7 @@ export const ConfigDashboard = ({
                     onClick={onOpenInboundJson}
                     icon="Code"
                     iconClassName="text-sm"
-                    title="View JSON"
+                    title={t("View JSON")}
                     className="h-9 w-9 p-0"
                   />
                   <Button
@@ -579,7 +583,7 @@ export const ConfigDashboard = ({
                     onClick={onAddInbound}
                     icon="Plus"
                     iconClassName="text-sm"
-                    title="Add Inbound"
+                    title={t("Add Inbound")}
                     className="h-9 w-9 p-0"
                   />
                 </div>
@@ -618,7 +622,7 @@ export const ConfigDashboard = ({
                       onClick={() => onEditInbound(ib, i)}
                       icon="PencilSimple"
                       iconClassName="text-sm"
-                      title="Edit"
+                      title={t("Edit")}
                       className="h-8 w-8 p-0 text-slate-500 hover:text-white hover:bg-transparent transition-all duration-300"
                     />
                     <Button
@@ -627,7 +631,7 @@ export const ConfigDashboard = ({
                       onClick={() => onDeleteInbound(i)}
                       icon="Trash"
                       iconClassName="text-sm"
-                      title="Delete"
+                      title={t("Delete")}
                       className="h-8 w-8 p-0 text-slate-500 hover:!text-rose-500 hover:bg-transparent transition-all duration-300"
                     />
                   </div>
@@ -637,7 +641,7 @@ export const ConfigDashboard = ({
 
             {/* Routing */}
             <DashCard
-              title="Routing"
+              title={t("Routing")}
               icon="ArrowsSplit"
               color="bg-purple-600"
               className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
@@ -649,7 +653,7 @@ export const ConfigDashboard = ({
                     onClick={onOpenRoutingJson}
                     icon="Code"
                     iconClassName="text-sm"
-                    title="View JSON"
+                    title={t("View JSON")}
                     className="h-9 w-9 p-0"
                   />
                   <Button
@@ -658,14 +662,14 @@ export const ConfigDashboard = ({
                     onClick={onEditRouting}
                     icon="PencilSimple"
                     iconClassName="text-sm"
-                    title="Edit Routing"
+                    title={t("Edit Routing")}
                     className="h-9 w-9 p-0"
                   />
                 </div>
               }
             >
               <div className="text-xs text-center text-purple-300 bg-purple-900/20 p-2 rounded mb-2 border border-purple-500/20 flex justify-between px-4 shrink-0">
-                <span className="opacity-70">Strategy:</span>
+                <span className="opacity-70">{t("Strategy:")}</span>
                 <span className="font-bold text-white">
                   {config.routing?.domainStrategy || "AsIs"}
                 </span>
@@ -698,13 +702,15 @@ export const ConfigDashboard = ({
                             <div className="flex justify-between items-center pr-2 gap-2">
                               <span className="text-sm font-bold truncate text-fuchsia-100">{snippetName}</span>
                               <span className="font-mono font-bold text-[10px] px-1.5 py-0.5 rounded bg-slate-950 border border-fuchsia-500/30 text-fuchsia-300 shrink-0">
-                                snippet
-                              </span>
+                                {t("snippet")}
+                                </span>
                             </div>
                             <div className="text-[10px] font-mono truncate opacity-80 mt-0.5">
                               {def && Array.isArray(def.snippet)
-                                ? <span className="text-slate-500">expands to {def.snippet.length} item(s)</span>
-                                : <span className="text-amber-400/80">body not loaded</span>}
+                                ? <span className="text-slate-500">
+                                    {tn(def.snippet.length, "expands to {n} item", "expands to {n} items")}
+                                  </span>
+                                : <span className="text-amber-400/80">{t("body not loaded")}</span>}
                             </div>
                           </div>
                         </div>
@@ -774,8 +780,8 @@ export const ConfigDashboard = ({
                   <div className="text-center text-slate-600 py-8 italic text-xs">
                     No routing rules.
                     <br />
-                    Traffic will follow the first outbound.
-                  </div>
+                    {t("Traffic will follow the first outbound.")}
+                    </div>
                 )}
                 {(config.routing?.rules || []).length > 20 && (
                   <div className="text-center text-xs text-slate-500 italic pt-2 border-t border-slate-800">
@@ -801,7 +807,7 @@ export const ConfigDashboard = ({
                       onClick={onOpenWarpModal}
                       icon="Lightning"
                       iconClassName="text-sm text-amber-400"
-                      title="Generate WARP Outbound"
+                      title={t("Generate WARP Outbound")}
                       className="h-9 w-9 p-0 text-amber-400 hover:bg-slate-800/60"
                     />
                     <Button
@@ -810,7 +816,7 @@ export const ConfigDashboard = ({
                       onClick={onBatchImport}
                       icon="Stack"
                       iconClassName="text-sm"
-                      title="Batch Import/Export"
+                      title={t("Batch Import/Export")}
                       className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
                     />
                     <Button
@@ -819,7 +825,7 @@ export const ConfigDashboard = ({
                       onClick={onOpenOutboundJson}
                       icon="Code"
                       iconClassName="text-sm"
-                      title="Raw JSON Mode"
+                      title={t("Raw JSON Mode")}
                       className="h-9 w-9 p-0 text-slate-400 hover:text-white hover:bg-slate-800/60"
                     />
                     <Button
@@ -828,7 +834,7 @@ export const ConfigDashboard = ({
                       onClick={onAddOutbound}
                       icon="Plus"
                       iconClassName="text-sm text-blue-400"
-                      title="Add Outbound"
+                      title={t("Add Outbound")}
                       className="h-9 w-9 p-0 text-blue-400 hover:bg-slate-800/60"
                     />
 
@@ -842,7 +848,7 @@ export const ConfigDashboard = ({
                     onClick={() => setIsSearchOpen((prev) => !prev)}
                     icon="MagnifyingGlass"
                     iconClassName="text-sm"
-                    title="Search Outbounds"
+                    title={t("Search Outbounds")}
                     className={`h-9 w-9 p-0 transition-all ${
                       isSearchOpen || obSearch
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
@@ -855,7 +861,7 @@ export const ConfigDashboard = ({
                     onClick={toggleSelectMode}
                     icon="ListChecks"
                     iconClassName="text-sm"
-                    title="Toggle Multi-select Mode"
+                    title={t("Toggle Multi-select Mode")}
                     className={`h-9 w-9 p-0 transition-all ${
                       showCheckboxes
                         ? "bg-blue-600/30 text-blue-400 border border-blue-500/40"
@@ -875,10 +881,10 @@ export const ConfigDashboard = ({
                       icon="Lightning"
                       iconClassName="text-xs text-amber-400"
                       className="flex-1 h-8 px-2.5 text-xs text-amber-400 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 font-bold rounded-xl leading-none transition-all shadow-[0_0_10px_rgba(245,158,11,0.1)]"
-                      title="Generate WARP Outbound"
+                      title={t("Generate WARP Outbound")}
                     >
-                      WARP
-                    </Button>
+                      {t("WARP")}
+                      </Button>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -886,10 +892,10 @@ export const ConfigDashboard = ({
                       icon="Stack"
                       iconClassName="text-xs text-sky-400"
                       className="flex-1 h-8 px-2.5 text-xs text-sky-400 border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 active:scale-95 font-bold rounded-xl leading-none transition-all shadow-[0_0_10px_rgba(56,189,248,0.1)]"
-                      title="Batch Import/Export"
+                      title={t("Batch Import/Export")}
                     >
-                      Batch
-                    </Button>
+                      {t("Batch")}
+                      </Button>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -897,7 +903,7 @@ export const ConfigDashboard = ({
                       icon="Code"
                       iconClassName="text-xs text-purple-400"
                       className="flex-1 h-8 px-2.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95 font-bold rounded-xl leading-none transition-all shadow-[0_0_10px_rgba(168,85,247,0.1)]"
-                      title="Raw JSON Mode"
+                      title={t("Raw JSON Mode")}
                     >
                       JSON
                     </Button>
@@ -908,10 +914,10 @@ export const ConfigDashboard = ({
                       icon="Plus"
                       iconClassName="text-xs text-white"
                       className="flex-1 h-8 px-3 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black rounded-xl leading-none transition-all shadow-md shadow-blue-500/20 border border-blue-400/30"
-                      title="Add New Outbound"
+                      title={t("Add New Outbound")}
                     >
-                      Add
-                    </Button>
+                      {t("Add")}
+                      </Button>
                   </div>
 
                   {/* Search Input Bar */}
@@ -930,7 +936,7 @@ export const ConfigDashboard = ({
                       <input
                         ref={searchInputRef}
                         className="w-full bg-slate-900 border border-slate-700/60 rounded-xl pl-9 pr-24 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
-                        placeholder="Filter IP, Tag, Protocol..."
+                        placeholder={t("Filter IP, Tag, Protocol...")}
                         value={obSearch}
                         onChange={(e) => setObSearch(e.target.value)}
                         onKeyDown={(e) => {
@@ -949,7 +955,7 @@ export const ConfigDashboard = ({
                           <button
                             onClick={() => setObSearch("")}
                             className="text-slate-400 hover:text-white p-0.5"
-                            title="Clear search"
+                            title={t("Clear search")}
                           >
                             <Icon name="X" className="text-xs" />
                           </button>
@@ -981,8 +987,8 @@ export const ConfigDashboard = ({
                       onClick={handleClearSelection}
                       className="text-xs text-slate-400 hover:text-white h-7 px-2"
                     >
-                      Cancel
-                    </Button>
+                      {t("Cancel")}
+                      </Button>
                     <Button
                       variant="danger"
                       size="sm"
@@ -1029,8 +1035,8 @@ export const ConfigDashboard = ({
                           className="mx-auto text-3xl mb-2"
                         />
                         <p className="text-xs">
-                          No outbounds match your search
-                        </p>
+                          {t("No outbounds match your search")}
+                          </p>
                       </div>
                     )}
                   </SortableContext>
@@ -1053,7 +1059,7 @@ export const ConfigDashboard = ({
                   onClick={onOpenDnsJson}
                   icon="Code"
                   iconClassName="text-sm"
-                  title="View JSON"
+                  title={t("View JSON")}
                   className="h-9 w-9 p-0"
                 />
                 <Button
@@ -1062,7 +1068,7 @@ export const ConfigDashboard = ({
                   onClick={onEditDns}
                   icon="PencilSimple"
                   iconClassName="text-sm"
-                  title="Edit DNS"
+                  title={t("Edit DNS")}
                   className="h-9 w-9 p-0"
                 />
               </div>
@@ -1073,16 +1079,16 @@ export const ConfigDashboard = ({
                 <div className="grid grid-cols-2 gap-2 text-xs flex-1">
                   <div className="bg-slate-900 p-2 rounded border border-slate-700/50 flex items-center justify-between px-4">
                     <span className="text-slate-500 block text-[10px] uppercase">
-                      Servers
-                    </span>
+                      {t("Servers")}
+                      </span>
                     <span className="text-white font-bold font-mono text-lg">
                       {config.dns.servers?.length || 0}
                     </span>
                   </div>
                   <div className="bg-slate-900 p-2 rounded border border-slate-700/50 flex items-center justify-between px-4">
                     <span className="text-slate-500 block text-[10px] uppercase">
-                      Hosts
-                    </span>
+                      {t("Hosts")}
+                      </span>
                     <span className="text-white font-bold font-mono text-lg">
                       {Object.keys(config.dns.hosts || {}).length}
                     </span>
@@ -1090,13 +1096,13 @@ export const ConfigDashboard = ({
                 </div>
                 <div className="text-xs text-slate-400 md:border-l border-slate-800 md:pl-4 flex flex-col gap-1 min-w-[200px]">
                   <div className="flex justify-between">
-                    <span>Strategy:</span>
+                    <span>{t("Strategy:")}</span>
                     <span className="text-indigo-300 font-bold">
                       {config.dns.queryStrategy || "UseIP"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Client IP:</span>
+                    <span>{t("Client IP:")}</span>
                     <span className="font-mono text-slate-500">
                       {config.dns.clientIp || "N/A"}
                     </span>
@@ -1105,8 +1111,8 @@ export const ConfigDashboard = ({
               </div>
             ) : (
               <div className="text-center py-4 text-slate-500 text-xs">
-                DNS not configured. Click Edit to initialize defaults.
-              </div>
+                {t("DNS not configured. Click Edit to initialize defaults.")}
+                </div>
             )}
           </DashCard>
         </div>

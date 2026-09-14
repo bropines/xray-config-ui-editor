@@ -10,6 +10,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DNS_RESOLVERS, DEFAULT_DNS_UPSTREAM } from '../../../core/presets/dns';
+import { t, tn } from '../../../i18n';
 
 // Компонент одного элемента (Sortable)
 const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
@@ -41,8 +42,8 @@ const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
                     <div className="text-sm font-mono font-bold text-slate-200 truncate">{address}</div>
                     {!isString && (
                         <div className="text-[10px] text-slate-500 flex gap-2">
-                            {domains > 0 && <span className="bg-slate-800 px-1 rounded text-slate-400 whitespace-nowrap">{domains} domains</span>}
-                            {server.skipFallback && <span className="text-orange-400 whitespace-nowrap">Skip Fallback</span>}
+                            {domains > 0 && <span className="bg-slate-800 px-1 rounded text-slate-400 whitespace-nowrap">{tn(domains, "{n} domain", "{n} domains")}</span>}
+                            {server.skipFallback && <span className="text-orange-400 whitespace-nowrap">{t("Skip Fallback")}</span>}
                         </div>
                     )}
                 </div>
@@ -74,10 +75,10 @@ export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder 
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex justify-between items-center">
-                <label className="label-xs">DNS Servers Priority List</label>
+                <label className="label-xs">{t("DNS Servers Priority List")}</label>
                 <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => onAdd(DEFAULT_DNS_UPSTREAM[0])} icon="Plus">Simple</Button>
-                    <Button variant="primary" size="sm" onClick={() => onAdd({ address: `https://${DEFAULT_DNS_UPSTREAM[0]}/dns-query`, domains: [] })} icon="Plus">Advanced</Button>
+                    <Button variant="secondary" size="sm" onClick={() => onAdd(DEFAULT_DNS_UPSTREAM[0])} icon="Plus">{t("Simple")}</Button>
+                    <Button variant="primary" size="sm" onClick={() => onAdd({ address: `https://${DEFAULT_DNS_UPSTREAM[0]}/dns-query`, domains: [] })} icon="Plus">{t("Advanced")}</Button>
                 </div>
             </div>
 
@@ -112,7 +113,7 @@ export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder 
                     </SortableContext>
                 </DndContext>
                 
-                {servers.length === 0 && <div className="text-center text-slate-600 text-xs py-8">No DNS servers defined.</div>}
+                {servers.length === 0 && <div className="text-center text-slate-600 text-xs py-8">{t("No DNS servers defined.")}</div>}
             </div>
         </div>
     );

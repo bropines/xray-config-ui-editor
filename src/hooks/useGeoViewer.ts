@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { getSharedProtoWorker } from '../utils/proto-worker';
 import { binaryCache, loadCachedData, saveCachedData, getDefaultGeoList } from '../utils/geo-data';
+import { t } from '../i18n';
 
 export interface GeoItem { code: string; count: number; }
 
@@ -127,7 +128,7 @@ export const useGeoViewer = () => {
                     setDeepSearchLoading(false);
                     worker.removeEventListener('message', handleMessage);
                 } else if (e.data.error) {
-                    toast.error("Deep search error", { description: e.data.error });
+                    toast.error(t("Deep search error"), { description: e.data.error });
                     setDeepSearchLoading(false);
                     worker.removeEventListener('message', handleMessage);
                 }
@@ -172,7 +173,7 @@ export const useGeoViewer = () => {
 
                 const worker = getSharedProtoWorker();
                 const handleMessage = (evt: MessageEvent) => {
-                    if (evt.data.error) toast.error("Failed to parse DAT", { description: evt.data.error });
+                    if (evt.data.error) toast.error(t("Failed to parse DAT"), { description: evt.data.error });
                     else if (evt.data.type === 'success') {
                         setCustomData(evt.data.data);
                         setViewTag(null);
@@ -186,7 +187,7 @@ export const useGeoViewer = () => {
                 worker.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
             }
         } catch (err: any) {
-            toast.error("File read error", { description: err.message });
+            toast.error(t("File read error"), { description: err.message });
             setCustomLoading(false);
         }
         e.target.value = '';
@@ -194,9 +195,9 @@ export const useGeoViewer = () => {
 
     const fetchCustomList = async () => {
         if (!customUrl || customUrl.includes('.')) { 
-            if (customFileBuffer) return toast.info("Local file already loaded");
+            if (customFileBuffer) return toast.info(t("Local file already loaded"));
         }
-        if (!customUrl.startsWith('http')) return toast.error("Please enter a valid URL");
+        if (!customUrl.startsWith('http')) return toast.error(t("Please enter a valid URL"));
         
         setCustomLoading(true);
         setCustomFileBuffer(null);
@@ -238,7 +239,7 @@ export const useGeoViewer = () => {
 
                 const worker = getSharedProtoWorker();
                 const handleMessage = async (e: MessageEvent) => {
-                    if (e.data.error) toast.error("Failed to parse DAT", { description: e.data.error });
+                    if (e.data.error) toast.error(t("Failed to parse DAT"), { description: e.data.error });
                     else if (e.data.type === 'success') {
                         await saveCachedData(customUrl, e.data.data, e.data.meta || { timestamp: Date.now() });
                         setCustomData(e.data.data);
@@ -253,7 +254,7 @@ export const useGeoViewer = () => {
                 worker.postMessage({ type: 'custom', fileBuffer: buffer, dataType: customFormat });
             }
         } catch (err: any) {
-            toast.error("Failed to fetch list", { description: err.message });
+            toast.error(t("Failed to fetch list"), { description: err.message });
             setCustomLoading(false);
         }
     };

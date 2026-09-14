@@ -7,6 +7,7 @@ import { Input } from '../../ui/Input';
 import { SnippetBodyEditor } from './SnippetBodyEditor';
 import { useSnippetsLibrary, type SnippetEntry } from '../../../hooks/useSnippetsLibrary';
 import type { SnippetSource } from '../../../core/snippets';
+import { t } from '../../../i18n';
 
 const KIND_LABEL: Record<string, string> = {
     rules: 'routing rules',
@@ -65,7 +66,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <Modal
-            title="Snippets & Templates"
+            title={t("Snippets & Templates")}
             onClose={onClose}
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
             hideFooter
@@ -86,7 +87,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                             <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
                             <input
                                 className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-fuchsia-500 transition-colors"
-                                placeholder="Search snippets..."
+                                placeholder={t("Search snippets...")}
                                 value={lib.search}
                                 onChange={e => lib.setSearch(e.target.value)}
                             />
@@ -100,8 +101,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 className="flex-1 text-[10px]"
                                 onClick={() => lib.startNew(lib.tab)}
                             >
-                                New
-                            </Button>
+                                {t("New")}
+                                </Button>
                             {lib.tab === 'panel' && (
                                 <Button
                                     variant="secondary"
@@ -112,8 +113,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                     onClick={lib.refresh}
                                     disabled={!lib.connected}
                                 >
-                                    Refresh
-                                </Button>
+                                    {t("Refresh")}
+                                    </Button>
                             )}
                         </div>
                     </div>
@@ -121,14 +122,13 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="flex-1 overflow-y-auto custom-scroll p-2">
                         {lib.tab === 'panel' && !lib.connected && (
                             <div className="text-[11px] text-slate-500 bg-slate-900 border border-slate-800 rounded-lg p-3 mb-2">
-                                Not connected to Remnawave. These are the last cached copies, and
-                                saving to the panel is disabled until you connect.
-                            </div>
+                                {t("Not connected to Remnawave. These are the last cached copies, and saving to the panel is disabled until you connect.")}
+                                </div>
                         )}
                         {lib.tab === 'panel' && lib.supported === false && (
                             <div className="text-[11px] text-amber-300 bg-amber-950/20 border border-amber-500/30 rounded-lg p-3 mb-2">
-                                This panel has no snippets API. Local templates still work.
-                            </div>
+                                {t("This panel has no snippets API. Local templates still work.")}
+                                </div>
                         )}
 
                         {lib.filteredEntries.map(entry => (
@@ -151,8 +151,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                         {lib.missingNames.length > 0 && (
                             <div className="mt-3 border-t border-slate-800 pt-3">
                                 <div className="text-[10px] uppercase tracking-widest text-amber-400/80 font-bold px-1 mb-1.5">
-                                    Referenced by this config, body not found
-                                </div>
+                                    {t("Referenced by this config, body not found")}
+                                    </div>
                                 {lib.missingNames.map(name => (
                                     <div
                                         key={name}
@@ -172,12 +172,10 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                     {!draft ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-600 p-6 text-center">
                             <Icon name="BracketsCurly" className="text-6xl mb-4 opacity-10" />
-                            <p className="text-sm">Select a snippet, or create one</p>
+                            <p className="text-sm">{t("Select a snippet, or create one")}</p>
                             <p className="text-[11px] text-slate-700 mt-2 max-w-sm">
-                                A snippet is a reusable array of routing rules or outbounds. Remnawave
-                                expands <span className="font-mono">{'{ "snippet": "NAME" }'}</span> into
-                                its body before a node ever sees the config.
-                            </p>
+                                {t("A snippet is a reusable array of routing rules or outbounds. Remnawave expands the reference into its body before a node ever sees the config.")}
+</p>
                         </div>
                     ) : (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scroll p-4 md:p-5 flex flex-col gap-4">
@@ -186,17 +184,17 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 icon="ArrowLeft"
                                 className="md:hidden w-full"
                                 onClick={() => lib.startNew(lib.tab)}
-                                title="Back to the library list"
+                                title={t("Back to the library list")}
                             >
-                                Back to the list
-                            </Button>
+                                {t("Back to the list")}
+                                </Button>
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge
                                     variant={draft.source === 'panel' ? 'primary' : 'info'}
                                     icon={draft.source === 'panel' ? 'BracketsCurly' : 'CardsThree'}
                                     size="sm"
                                 >
-                                    {draft.source === 'panel' ? 'Panel snippet' : 'Local template'}
+                                    {draft.source === 'panel' ? t("Panel snippet") : t("Local template")}
                                 </Badge>
                                 {lib.draftKind && (
                                     <Badge variant="default" size="sm">
@@ -204,25 +202,25 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                     </Badge>
                                 )}
                                 {!draft.originalName && (
-                                    <Badge variant="warning" size="sm" icon="PencilSimple">Unsaved draft</Badge>
+                                    <Badge variant="warning" size="sm" icon="PencilSimple">{t("Unsaved draft")}</Badge>
                                 )}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <Input
-                                    label="Name"
+                                    label={t("Name")}
                                     value={draft.name}
                                     error={lib.draftNameError || undefined}
                                     onChange={(e: any) => lib.updateDraft({ name: e.target.value })}
-                                    placeholder="Block Private"
-                                    hint="Letters, digits, spaces, _ - and / (folders)"
+                                    placeholder={t("Block Private")}
+                                    hint={t("Letters, digits, spaces, _ - and / (folders)")}
                                 />
                                 {draft.source === 'local' && (
                                     <Input
-                                        label="Note (local only)"
+                                        label={t("Note (local only)")}
                                         value={draft.description}
                                         onChange={(e: any) => lib.updateDraft({ description: e.target.value })}
-                                        placeholder="What this template is for"
+                                        placeholder={t("What this template is for")}
                                     />
                                 )}
                             </div>
@@ -230,7 +228,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                             <div className="flex flex-col">
                                 <SnippetBodyEditor
                                     key={`${draft.source}-${draft.originalName ?? 'new'}`}
-                                    label="Body — a JSON array of rules or outbounds"
+                                    label={t("Body — a JSON array of rules or outbounds")}
                                     value={draft.body}
                                     onChange={body => lib.updateDraft({ body })}
                                     onSyntaxError={lib.setBodySyntaxError}
@@ -253,22 +251,22 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 >
                                     {lib.confirmEmpty
                                         ? `Confirm: empty "${draft.name}"`
-                                        : draft.source === 'panel' ? 'Save to panel' : 'Save template'}
+                                        : draft.source === 'panel' ? t("Save to panel") : t("Save template")}
                                 </Button>
 
                                 {draft.source === 'panel' ? (
                                     <>
                                         <Button variant="secondary" icon="CardsThree" onClick={lib.copyToLocal}>
-                                            Copy to local
-                                        </Button>
+                                            {t("Copy to local")}
+                                            </Button>
                                         <Button
                                             variant={lib.confirmSync ? 'warning' : 'secondary'}
                                             icon={lib.confirmSync ? 'Warning' : 'Broadcast'}
                                             onClick={lib.syncDraft}
                                             disabled={!draft.originalName || !lib.connected}
-                                            title="Re-apply this snippet to every profile that references it (restarts affected nodes)"
+                                            title={t("Re-apply this snippet to every profile that references it (restarts affected nodes)")}
                                         >
-                                            {lib.confirmSync ? 'Confirm: re-apply and restart nodes' : 'Sync to profiles'}
+                                            {lib.confirmSync ? t("Confirm: re-apply and restart nodes") : t("Sync to profiles")}
                                         </Button>
                                     </>
                                 ) : (
@@ -278,30 +276,30 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                             icon="CloudArrowUp"
                                             onClick={lib.pushToPanel}
                                             disabled={!lib.canSave || !lib.connected}
-                                            title="Create or update this snippet in Remnawave"
+                                            title={t("Create or update this snippet in Remnawave")}
                                         >
-                                            Push to panel
-                                        </Button>
+                                            {t("Push to panel")}
+                                            </Button>
                                         <Button
                                             variant="secondary"
                                             icon="ArrowsSplit"
                                             onClick={lib.useCurrentRules}
-                                            title="Overwrites the body above with the plain rules from the open config"
+                                            title={t("Overwrites the body above with the plain rules from the open config")}
                                         >
-                                            Replace body with config rules
-                                        </Button>
+                                            {t("Replace body with config rules")}
+                                            </Button>
                                     </>
                                 )}
 
                                 {draft.originalName && (
                                     lib.confirmDelete ? (
                                         <Button variant="danger" icon="Warning" onClick={lib.removeDraftEntry}>
-                                            Confirm delete
-                                        </Button>
+                                            {t("Confirm delete")}
+                                            </Button>
                                     ) : (
                                         <Button variant="ghost" icon="Trash" onClick={() => lib.setConfirmDelete(true)}>
-                                            Delete
-                                        </Button>
+                                            {t("Delete")}
+                                            </Button>
                                     )
                                 )}
                             </div>
@@ -309,17 +307,19 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                             {/* Insertion into the open config */}
                             <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 flex flex-col gap-2.5">
                                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                                    <span className="label-xs">Insert into the open config</span>
+                                    <span className="label-xs">{t("Insert into the open config")}</span>
                                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
-                                        {(['rules', 'balancers', 'outbounds'] as const).map(t => (
+                                        {(['rules', 'balancers', 'outbounds'] as const).map(target => (
                                             <button
-                                                key={t}
-                                                onClick={() => lib.setTarget(t)}
+                                                key={target}
+                                                onClick={() => lib.setTarget(target)}
                                                 className={`px-3 py-2 md:py-1 text-[10px] font-bold rounded-md transition-all ${
-                                                    lib.target === t ? 'bg-slate-700 text-white' : 'text-slate-500'
+                                                    lib.target === target ? 'bg-slate-700 text-white' : 'text-slate-500'
                                                 }`}
                                             >
-                                                {t === 'rules' ? 'Rules' : t === 'balancers' ? 'Balancers' : 'Outbounds'}
+                                                {target === 'rules'
+                                                    ? t("Rules")
+                                                    : target === 'balancers' ? t("Balancers") : t("Outbounds")}
                                             </button>
                                         ))}
                                     </div>
@@ -334,8 +334,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                             ? 'Add a { snippet: NAME } reference the panel will expand'
                                             : 'Save the snippet first — a reference to an unsaved name expands to nothing'}
                                     >
-                                        Insert reference
-                                    </Button>
+                                        {t("Insert reference")}
+                                        </Button>
                                     <Button
                                         variant="secondary"
                                         icon="LinkBreak"
@@ -345,8 +345,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                             ? 'Paste the body in as ordinary items — no longer linked to the snippet'
                                             : 'Save this draft first — the copy is taken from the saved body'}
                                     >
-                                        Insert a detached copy
-                                    </Button>
+                                        {t("Insert a detached copy")}
+                                        </Button>
                                 </div>
                                 {lib.draftKind && ['rules', 'outbounds', 'balancers'].includes(lib.draftKind) && lib.draftKind !== lib.target && (
                                     <p className="text-[10px] text-amber-300/80">
@@ -355,9 +355,8 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                     </p>
                                 )}
                                 <p className="text-[10px] text-slate-500">
-                                    A reference stays managed by the panel. A detached copy is a one-off:
-                                    later changes to the snippet will not reach this config.
-                                </p>
+                                    {t("A reference stays managed by the panel. A detached copy is a one-off: later changes to the snippet will not reach this config.")}
+                                    </p>
                             </div>
                         </div>
                     )}

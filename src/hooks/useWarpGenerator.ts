@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { generateWarpAccount } from '../core/generators/warp';
 import { useConfigStore } from '../store/configStore';
 import { getPresets } from '../core/presets';
+import { t } from '../i18n';
 
 /**
  * Business logic for the WARP(WireGuard) outbound generator wizard:
@@ -97,12 +98,12 @@ export function useWarpGenerator(onGenerate: (outbound: any) => void, onClose: (
             baseOutbound.tag = `${prefix}-${Math.floor(Math.random() * 1000)}`;
 
             onGenerate(baseOutbound);
-            toast.success("Outbound profile generated successfully");
+            toast.success(t("Outbound profile generated successfully"));
             onClose();
 
         } catch (e: any) {
             console.error(e);
-            toast.error("Generation failed", {
+            toast.error(t("Generation failed"), {
                 description: e.message || "Network error or proxy timeout."
             });
         } finally {

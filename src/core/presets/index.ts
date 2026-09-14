@@ -20,6 +20,7 @@ export type { DnsResolverPreset } from './dns';
 import { generateUUID, generateRealityKeyPair } from '../generators/crypto';
 import { DEFAULT_DNS_UPSTREAM, DEFAULT_QUERY_STRATEGY } from './dns';
 import type { XrayConfig } from '../types';
+import { t } from '../../i18n';
 
 export interface Preset {
     name: string;
@@ -57,7 +58,7 @@ export const getPresets = (): Preset[] => {
     return [
         {
             name: 'WARP Profile A',
-            description: 'Cloudflare WARP connectivity with standard AmneziaWG optimization.',
+            description: t("Cloudflare WARP connectivity with standard AmneziaWG optimization."),
             icon: 'Cloud',
             config: {
                 log: { loglevel: 'warning' },
@@ -92,7 +93,7 @@ export const getPresets = (): Preset[] => {
         },
         {
             name: 'WARP Profile B',
-            description: 'Cloudflare WARP connectivity with alternative AmneziaWG optimization.',
+            description: t("Cloudflare WARP connectivity with alternative AmneziaWG optimization."),
             icon: 'CloudCheck',
             config: {
                 log: { loglevel: 'warning' },
@@ -127,7 +128,7 @@ export const getPresets = (): Preset[] => {
         },
         {
             name: 'WARP Profile C',
-            description: 'Cloudflare WARP connectivity with aggressive AmneziaWG optimization.',
+            description: t("Cloudflare WARP connectivity with aggressive AmneziaWG optimization."),
             icon: 'CloudFog',
             config: {
                 log: { loglevel: 'warning' },
@@ -163,7 +164,7 @@ export const getPresets = (): Preset[] => {
         },
         {
             name: 'Minimal (Skeleton)',
-            description: 'Basic structure with Direct & Block outbounds. Best for starting from scratch.',
+            description: t("Basic structure with Direct & Block outbounds. Best for starting from scratch."),
             icon: 'Square',
             config: {
                 log: { loglevel: 'warning' },
@@ -181,7 +182,7 @@ export const getPresets = (): Preset[] => {
         },
         {
             name: 'Standard Client',
-            description: 'Socks5/HTTP inbounds + VLESS Proxy. Includes basic routing rules.',
+            description: t("Socks5/HTTP inbounds + VLESS Proxy. Includes basic routing rules."),
             icon: 'Laptop',
             config: {
                 log: { loglevel: 'warning' },
@@ -240,7 +241,7 @@ export const getPresets = (): Preset[] => {
         },
         {
             name: 'Reality Server',
-            description: 'VLESS-Reality Inbound configuration for server side.',
+            description: t("VLESS-Reality Inbound configuration for server side."),
             icon: 'Server',
             config: {
                 log: {

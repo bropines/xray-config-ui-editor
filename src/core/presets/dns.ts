@@ -1,3 +1,5 @@
+import { t } from '../../i18n';
+
 // ============================================================
 // DNS defaults — src/core/presets/dns.ts
 // ============================================================
@@ -31,38 +33,38 @@ export interface DnsResolverPreset {
 export const DNS_RESOLVERS: DnsResolverPreset[] = [
     {
         id: 'cloudflare-google',
-        label: 'Cloudflare + Google',
-        hint: 'The common default: 1.1.1.1 with 8.8.8.8 as the second opinion.',
+        get label() { return t("Cloudflare + Google"); },
+        get hint() { return t("The common default: 1.1.1.1 with 8.8.8.8 as the second opinion."); },
         servers: ['1.1.1.1', '8.8.8.8'],
     },
     {
         id: 'cloudflare',
-        label: 'Cloudflare only',
-        hint: '1.1.1.1 and its secondary 1.0.0.1.',
+        get label() { return t("Cloudflare only"); },
+        get hint() { return t("1.1.1.1 and its secondary 1.0.0.1."); },
         servers: ['1.1.1.1', '1.0.0.1'],
     },
     {
         id: 'google',
-        label: 'Google only',
-        hint: '8.8.8.8 and 8.8.4.4.',
+        get label() { return t("Google only"); },
+        get hint() { return t("8.8.8.8 and 8.8.4.4."); },
         servers: ['8.8.8.8', '8.8.4.4'],
     },
     {
         id: 'quad9',
-        label: 'Quad9',
-        hint: '9.9.9.9 — filters known-malicious domains.',
+        get label() { return t("Quad9"); },
+        get hint() { return t("9.9.9.9 — filters known-malicious domains."); },
         servers: ['9.9.9.9', '149.112.112.112'],
     },
     {
         id: 'adguard',
-        label: 'AdGuard DNS',
-        hint: '94.140.14.14 — blocks ads and trackers at the DNS level.',
+        get label() { return t("AdGuard DNS"); },
+        get hint() { return t("94.140.14.14 — blocks ads and trackers at the DNS level."); },
         servers: ['94.140.14.14', '94.140.15.15'],
     },
     {
         id: 'system',
-        label: 'System resolver',
-        hint: 'Whatever the machine already uses. Answers come from the local network.',
+        get label() { return t("System resolver"); },
+        get hint() { return t("Whatever the machine already uses. Answers come from the local network."); },
         servers: ['localhost'],
     },
 ];

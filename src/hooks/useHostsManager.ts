@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useConfigStore } from '../store/configStore';
+import { t } from '../i18n';
 import {
     buildHostCreate,
     buildHostPatch,
@@ -141,7 +142,7 @@ export const useHostsManager = (initialHostUuid?: string) => {
                 if (created?.uuid) open(created.uuid);
             } else {
                 if (!pendingPatch) {
-                    toast.info('Nothing changed');
+                    toast.info(t("Nothing changed"));
                     return;
                 }
                 const ok = await updatePanelHost(pendingPatch as any);

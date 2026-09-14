@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from '../ui';
 import type { Preset } from '../../core/presets';
+import { t } from '../../i18n';
 
 interface WelcomeScreenProps {
     presets: Preset[];
@@ -24,10 +25,10 @@ export const WelcomeScreen = ({
     <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scroll">
         <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl text-white font-bold mb-3 tracking-tight">
-                Welcome to Xray GUI
-            </h1>
+                {t("Welcome to Xray GUI")}
+                </h1>
             <p className="text-slate-400 max-w-md mx-auto">
-                Drag &amp; Drop your <code>config.json</code> anywhere or choose a template to start.
+                {t("Drop your config.json anywhere, or choose a template to start.")}
             </p>
         </div>
 
@@ -52,7 +53,7 @@ export const WelcomeScreen = ({
         </div>
 
         <div className="mt-12 flex flex-col items-center gap-4 opacity-70 hover:opacity-100 transition-opacity pb-8">
-            <div className="text-sm text-slate-500">Or import from sources:</div>
+            <div className="text-sm text-slate-500">{t("Or import from sources:")}</div>
             <div className="flex gap-4">
                 <label className="text-sm text-slate-400 cursor-pointer flex items-center gap-2 hover:text-indigo-400 transition-colors bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
                     <Icon name="FolderOpen" /> Local File
@@ -62,16 +63,18 @@ export const WelcomeScreen = ({
                     onClick={onOpenRemnawave}
                     className="text-sm text-slate-400 cursor-pointer flex items-center gap-2 hover:text-indigo-400 transition-colors bg-slate-900 border border-slate-800 px-4 py-2 rounded-full"
                 >
-                    <Icon name="Cloud" /> Remnawave Panel
-                </button>
+                    <Icon name="Cloud" />
+{t("Remnawave Panel")}
+</button>
                 {onOpenBuilder && (
                     <button
                         onClick={onOpenBuilder}
                         className="text-sm text-slate-400 cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors bg-slate-900 border border-slate-800 px-4 py-2 rounded-full"
-                        title="Build a client config with a local balancer from a set of nodes"
+                        title={t("Build a client config with a local balancer from a set of nodes")}
                     >
-                        <Icon name="Scales" /> Local Balancer
-                    </button>
+                        <Icon name="Scales" />
+{t("Local Balancer")}
+</button>
                 )}
             </div>
         </div>

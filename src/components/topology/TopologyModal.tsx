@@ -6,6 +6,7 @@ import { GraphNode } from './GraphNode';
 import { useTopology } from '../../hooks/useTopology';
 import { Icon } from '../ui/Icon';
 import { Switch } from '../ui/Switch';
+import { t } from '../../i18n';
 
 const nodeTypes = { custom: GraphNode };
 
@@ -25,7 +26,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <Modal
-            title="Traffic Topology"
+            title={t("Traffic Topology")}
             onClose={onClose}
             onSave={onClose}
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
@@ -34,7 +35,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                     <Switch 
                         checked={hideUnused}
                         onChange={setHideUnused}
-                        label={<span className="text-[10px] font-bold text-slate-400 uppercase group-hover:text-slate-200 transition-colors">Hide Unused</span>}
+                        label={<span className="text-[10px] font-bold text-slate-400 uppercase group-hover:text-slate-200 transition-colors">{t("Hide Unused")}</span>}
                     />
                     
                     <div className="w-px h-4 bg-slate-800 mx-1 hidden sm:block"></div>
@@ -48,7 +49,9 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                     </button>
 
                     <div className="w-px h-4 bg-slate-800 mx-1 hidden sm:block"></div>
-                    <div className="text-[10px] text-slate-500 font-mono">Nodes: {nodes.length}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">
+                        {t("Nodes: {n}", { n: nodes.length })}
+                    </div>
                 </div>
             }
         >
@@ -102,7 +105,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
 
                 {/* Map Legend & Category Toggles */}
                 <div className="absolute bottom-4 right-4 bg-slate-900/95 p-3 sm:p-4 rounded-xl border border-slate-700/50 backdrop-blur-md shadow-2xl text-[10px] space-y-2 pointer-events-auto z-10 border-t-indigo-500/30">
-                    <div className="font-bold text-slate-400 uppercase tracking-[0.15em] text-[9px] mb-1">Toggle Map Layers</div>
+                    <div className="font-bold text-slate-400 uppercase tracking-[0.15em] text-[9px] mb-1">{t("Toggle Map Layers")}</div>
                     
                     {/* Inbounds */}
                     <div 
@@ -112,11 +115,11 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                                 ? 'bg-emerald-950/40 border-emerald-500/30 text-slate-200'
                                 : 'bg-slate-950/60 border-slate-800 text-slate-600 line-through'
                         }`}
-                        title="Click to toggle Inbound Portals"
+                        title={t("Click to toggle Inbound Portals")}
                     >
                         <div className="flex items-center gap-2">
                             <div className={`w-2.5 h-2.5 rounded-full ${!hiddenCategories.has('inbound') ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-700'}`}></div>
-                            <span className="font-medium">Inbound Portals</span>
+                            <span className="font-medium">{t("Inbound Portals")}</span>
                         </div>
                         <Icon name={!hiddenCategories.has('inbound') ? "Eye" : "EyeSlash"} className="text-xs text-slate-400" />
                     </div>
@@ -129,11 +132,11 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                                 ? 'bg-slate-800/60 border-slate-600 text-slate-200'
                                 : 'bg-slate-950/60 border-slate-800 text-slate-600 line-through'
                         }`}
-                        title="Click to toggle Routing Rules"
+                        title={t("Click to toggle Routing Rules")}
                     >
                         <div className="flex items-center gap-2">
                             <div className={`w-2.5 h-2.5 rounded ${!hiddenCategories.has('rule') ? 'bg-slate-500 border border-slate-400' : 'bg-slate-800'}`}></div>
-                            <span className="font-medium">Routing Rules</span>
+                            <span className="font-medium">{t("Routing Rules")}</span>
                         </div>
                         <Icon name={!hiddenCategories.has('rule') ? "Eye" : "EyeSlash"} className="text-xs text-slate-400" />
                     </div>
@@ -146,11 +149,11 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                                 ? 'bg-purple-950/40 border-purple-500/30 text-slate-200'
                                 : 'bg-slate-950/60 border-slate-800 text-slate-600 line-through'
                         }`}
-                        title="Click to toggle Load Balancers"
+                        title={t("Click to toggle Load Balancers")}
                     >
                         <div className="flex items-center gap-2">
                             <div className={`w-2.5 h-2.5 rounded-full ${!hiddenCategories.has('balancer') ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]' : 'bg-slate-700'}`}></div>
-                            <span className="font-medium">Load Balancers</span>
+                            <span className="font-medium">{t("Load Balancers")}</span>
                         </div>
                         <Icon name={!hiddenCategories.has('balancer') ? "Eye" : "EyeSlash"} className="text-xs text-slate-400" />
                     </div>
@@ -163,11 +166,11 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                                 ? 'bg-blue-950/40 border-blue-500/30 text-slate-200'
                                 : 'bg-slate-950/60 border-slate-800 text-slate-600 line-through'
                         }`}
-                        title="Click to toggle Outbound Nodes"
+                        title={t("Click to toggle Outbound Nodes")}
                     >
                         <div className="flex items-center gap-2">
                             <div className={`w-2.5 h-2.5 rounded-full ${!hiddenCategories.has('outbound') ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]' : 'bg-slate-700'}`}></div>
-                            <span className="font-medium">Outbound Nodes</span>
+                            <span className="font-medium">{t("Outbound Nodes")}</span>
                         </div>
                         <Icon name={!hiddenCategories.has('outbound') ? "Eye" : "EyeSlash"} className="text-xs text-slate-400" />
                     </div>

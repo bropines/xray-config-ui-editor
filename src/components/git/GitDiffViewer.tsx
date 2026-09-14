@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Change } from 'diff';
 import { Icon } from '../ui/Icon';
+import { t, tn } from '../../i18n';
 
 interface GitDiffViewerProps {
     changes: Change[];
@@ -132,7 +133,7 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5 font-bold text-slate-200">
                         <Icon name="GitDiff" className="text-indigo-400 text-sm" />
-                        <span>Diff View</span>
+                        <span>{t("Diff View")}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[11px] font-mono">
                         <span className="text-emerald-400 font-bold">+{stats.additions}</span>
@@ -151,10 +152,10 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
                                     ? 'bg-indigo-600 text-white shadow'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                             }`}
-                            title="Show only changes + 10 lines of context"
+                            title={t("Show only changes + 10 lines of context")}
                         >
-                            Compact (+10 context)
-                        </button>
+                            {t("Compact (+10 context)")}
+                            </button>
                         <button
                             type="button"
                             onClick={() => setViewMode('full')}
@@ -163,10 +164,10 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
                                     ? 'bg-indigo-600 text-white shadow'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                             }`}
-                            title="Show entire file"
+                            title={t("Show entire file")}
                         >
-                            Full File
-                        </button>
+                            {t("Full File")}
+                            </button>
                     </div>
 
                     <div className="hidden sm:flex items-center gap-3">
@@ -185,8 +186,8 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
             <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-0.5 select-text">
                 {flatLines.length === 0 ? (
                     <div className="py-12 text-center text-slate-500 italic text-xs">
-                        No changes detected between versions
-                    </div>
+                        {t("No changes detected between versions")}
+                        </div>
                 ) : viewMode === 'full' ? (
                     // FULL FILE MODE
                     flatLines.map(line => (
@@ -215,11 +216,14 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
                                         <span className="flex items-center gap-2">
                                             <Icon name="ArrowsDownUp" className="text-indigo-400 group-hover:scale-110 transition-transform" />
                                             <span>
-                                                @@ {collapsedCount} unchanged line{collapsedCount > 1 ? 's' : ''} hidden (lines {collapsedStart + 1}–{collapsedEnd + 1}) @@
+                                                {tn(collapsedCount,
+                                                    "@@ {n} unchanged line hidden (lines {from}–{to}) @@",
+                                                    "@@ {n} unchanged lines hidden (lines {from}–{to}) @@",
+                                                    { from: collapsedStart + 1, to: collapsedEnd + 1 })}
                                             </span>
                                         </span>
                                         <span className="text-[10px] font-bold text-slate-500 group-hover:text-indigo-300">
-                                            {isExpanded ? 'Click to collapse' : 'Click to expand'}
+                                            {isExpanded ? t("Click to collapse") : t("Click to expand")}
                                         </span>
                                     </div>
                                 );
@@ -255,11 +259,14 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
                                     <span className="flex items-center gap-2">
                                         <Icon name="ArrowsDownUp" className="text-indigo-400 group-hover:scale-110 transition-transform" />
                                         <span>
-                                            @@ {collapsedCount} unchanged line{collapsedCount > 1 ? 's' : ''} hidden (lines {collapsedStart + 1}–{collapsedEnd + 1}) @@
+                                            {tn(collapsedCount,
+                                                "@@ {n} unchanged line hidden (lines {from}–{to}) @@",
+                                                "@@ {n} unchanged lines hidden (lines {from}–{to}) @@",
+                                                { from: collapsedStart + 1, to: collapsedEnd + 1 })}
                                         </span>
                                     </span>
                                     <span className="text-[10px] font-bold text-slate-500 group-hover:text-indigo-300">
-                                        {isExpanded ? 'Click to collapse' : 'Click to expand'}
+                                        {isExpanded ? t("Click to collapse") : t("Click to expand")}
                                     </span>
                                 </div>
                             );

@@ -3,6 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { SnippetBodyEditor } from '../snippets/SnippetBodyEditor';
+import { t, tn } from '../../../i18n';
 import {
     classifySnippet,
     getSnippetRefName,
@@ -74,9 +75,8 @@ export const SnippetRefEditor = ({
                 <div className="min-w-0 flex-1">
                     <h3 className="text-white font-bold text-base truncate">{name}</h3>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                        Snippet reference. Remnawave replaces it with the snippet body before the
-                        config reaches a node, so there is nothing to configure here.
-                    </p>
+                        {t("Snippet reference. Remnawave replaces it with the snippet body before the config reaches a node, so there is nothing to configure here.")}
+                        </p>
                 </div>
             </div>
 
@@ -88,19 +88,24 @@ export const SnippetRefEditor = ({
                 <Icon name={body ? 'Check' : 'Warning'} weight="fill" className="shrink-0" />
                 {body ? (
                     <span>
-                        Resolved from {definition!.source === 'panel' ? 'the panel' : 'a local template'} —{' '}
-                        <b>{body.length}</b> {kind === 'outbounds' ? 'outbound(s)' : 'entry(ies)'}
-                        {kind === 'mixed' && ' (mixed rules and outbounds)'}
+                        {definition!.source === 'panel'
+                            ? t("Resolved from the panel")
+                            : t("Resolved from a local template")}
+                        {" — "}
+                        {kind === 'outbounds'
+                            ? tn(body.length, "{n} outbound", "{n} outbounds")
+                            : tn(body.length, "{n} entry", "{n} entries")}
+                        {kind === 'mixed' && ` ${t("(mixed rules and outbounds)")}`}
                     </span>
                 ) : (
                     <span>
-                        Body not loaded. Open the snippet library and refresh to fetch it from the panel.
-                    </span>
+                        {t("Body not loaded. Open the snippet library and refresh to fetch it from the panel.")}
+                        </span>
                 )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <label className="label-xs">Referenced snippet</label>
+                <label className="label-xs">{t("Referenced snippet")}</label>
                 <div className="flex gap-2">
                     <div className="flex-1 min-w-0">
                         <Input
@@ -109,7 +114,7 @@ export const SnippetRefEditor = ({
                             onChange={(e: any) => setDraftName(e.target.value)}
                             onBlur={commitName}
                             onKeyDown={(e: any) => { if (e.key === 'Enter') commitName(); }}
-                            placeholder="Snippet name"
+                            placeholder={t("Snippet name")}
                         />
                         <datalist id="snippet-names">
                             {knownNames.map(n => <option key={n} value={n} />)}
@@ -121,8 +126,8 @@ export const SnippetRefEditor = ({
                         onClick={commitName}
                         disabled={!!nameError || draftName.trim() === name || !draftName.trim()}
                     >
-                        Apply
-                    </Button>
+                        {t("Apply")}
+                        </Button>
                 </div>
                 {nameError && <span className="text-[10px] text-rose-400">{nameError}</span>}
             </div>
@@ -130,23 +135,22 @@ export const SnippetRefEditor = ({
             {body && (
                 <div className="flex flex-col">
                     <SnippetBodyEditor
-                        label="Snippet body (read-only)"
+                        label={t("Snippet body (read-only)")}
                         value={body}
                         readOnly
                         heightClass="h-[240px] md:h-[32vh]"
                     />
                     <p className="text-[10px] text-slate-500 mt-1.5">
-                        Edit this body in the snippet library — it is shared by every profile that
-                        references it.
-                    </p>
+                        {t("Edit this body in the snippet library — it is shared by every profile that references it.")}
+                        </p>
                 </div>
             )}
 
             <div className="flex flex-wrap gap-2 pt-1">
                 {onOpenSnippets && (
                     <Button variant="secondary" icon="BracketsCurly" onClick={onOpenSnippets}>
-                        Open snippet library
-                    </Button>
+                        {t("Open snippet library")}
+                        </Button>
                 )}
                 {onInlineCopy && body && (
                     confirmInline ? (
@@ -154,20 +158,19 @@ export const SnippetRefEditor = ({
                             <Button variant="warning" icon="Warning" onClick={() => { onInlineCopy(name); setConfirmInline(false); }}>
                                 Confirm: inline {body.length} item(s) and drop the link
                             </Button>
-                            <Button variant="ghost" onClick={() => setConfirmInline(false)}>Cancel</Button>
+                            <Button variant="ghost" onClick={() => setConfirmInline(false)}>{t("Cancel")}</Button>
                         </>
                     ) : (
                         <Button variant="secondary" icon="LinkBreak" onClick={() => setConfirmInline(true)}>
-                            Inline a copy
-                        </Button>
+                            {t("Inline a copy")}
+                            </Button>
                     )
                 )}
             </div>
             {confirmInline && (
                 <p className="text-[10px] text-amber-300/80 -mt-2">
-                    The reference is replaced by a copy of its contents. Later changes to the panel
-                    snippet will no longer reach this profile.
-                </p>
+                    {t("The reference is replaced by a copy of its contents. Later changes to the panel snippet will no longer reach this profile.")}
+                    </p>
             )}
         </div>
     );

@@ -8,13 +8,14 @@ import { Select } from '../ui/Select';
 import { useGeoViewer } from '../../hooks/useGeoViewer';
 import { useTagDetails } from '../../hooks/useTagDetails';
 import { VList } from 'virtua';
+import { t } from '../../i18n';
 
 const CUSTOM_PRESETS = [
-    { label: '🌍 V2Fly GeoSite', format: 'geosite', url: 'https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat' },
-    { label: '🌍 V2Fly GeoIP', format: 'geoip', url: 'https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat' },
-    { label: '🇷🇺 Zapret (.dat)', format: 'geosite', url: 'https://github.com/kutovoys/ru_gov_zapret/releases/latest/download/zapret.dat' },
-    { label: '🇷🇺 Runet GeoSite', format: 'geosite', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geosite.dat' },
-    { label: '🇷🇺 Runet GeoIP', format: 'geoip', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat' },
+    { label: "🌍 V2Fly GeoSite", format: 'geosite', url: 'https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat' },
+    { label: "🌍 V2Fly GeoIP", format: 'geoip', url: 'https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat' },
+    { label: "🇷🇺 Zapret (.dat)", format: 'geosite', url: 'https://github.com/kutovoys/ru_gov_zapret/releases/latest/download/zapret.dat' },
+    { label: "🇷🇺 Runet GeoSite", format: 'geosite', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geosite.dat' },
+    { label: "🇷🇺 Runet GeoIP", format: 'geoip', url: 'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat' },
 ];
 
 const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClose }: { tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null, onClose: () => void }) => {
@@ -28,15 +29,15 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
                     <span className="text-sm font-bold text-slate-200 truncate pr-2">{tag}</span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={handleCopy} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors" title="Copy raw text"><Icon name="Copy" /></button>
-                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors" title="Close panel"><Icon name="X" /></button>
+                    <button onClick={handleCopy} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors" title={t("Copy raw text")}><Icon name="Copy" /></button>
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors" title={t("Close panel")}><Icon name="X" /></button>
                 </div>
             </div>
             <div className="flex-1 relative bg-slate-950 p-1 min-h-0 overflow-hidden">
                 {loading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
                         <Icon name="Spinner" className="animate-spin text-3xl mb-3 text-indigo-500" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Extracting...</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t("Extracting...")}</span>
                     </div>
                 ) : (
                     <div className="h-full w-full overflow-hidden">
@@ -78,7 +79,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     } = useGeoViewer();
 
     const handleCopyAll = async () => {
-        if (displayData.length === 0) return toast.warning("Nothing to copy");
+        if (displayData.length === 0) return toast.warning(t("Nothing to copy"));
         const prefix = activeTab === 'geosite' ? 'geosite:' : activeTab === 'geoip' ? 'geoip:' : '';
         const textToCopy = displayData.map(d => `${prefix}${d.code}`).join('\n');
         
@@ -90,7 +91,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
             }
             toast.success(`Copied ${displayData.length} items`);
-        } catch { toast.error("Failed to copy data"); }
+        } catch { toast.error(t("Failed to copy data")); }
     };
 
     const renderItem = (item: any) => {
@@ -124,12 +125,12 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
     }, [displayData]);
 
     return (
-        <Modal title="Geo Data Viewer" onClose={onClose} onSave={onClose} className="max-w-7xl"
+        <Modal title={t("Geo Data Viewer")} onClose={onClose} onSave={onClose} className="max-w-7xl"
             extraButtons={
                 <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 h-11 items-center">
-                    <button onClick={() => handleTabChange('geosite')} className={`px-4 h-full text-xs font-bold rounded-lg transition-all ${activeTab === 'geosite' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>GeoSite</button>
-                    <button onClick={() => handleTabChange('geoip')} className={`px-4 h-full text-xs font-bold rounded-lg transition-all ${activeTab === 'geoip' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>GeoIP</button>
-                    <button onClick={() => handleTabChange('custom')} className={`px-4 h-full text-xs font-bold rounded-lg transition-all ${activeTab === 'custom' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}>Custom Source</button>
+                    <button onClick={() => handleTabChange('geosite')} className={`px-4 h-full text-xs font-bold rounded-lg transition-all ${activeTab === 'geosite' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>{t("GeoSite")}</button>
+                    <button onClick={() => handleTabChange('geoip')} className={`px-4 h-full text-xs font-bold rounded-lg transition-all ${activeTab === 'geoip' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>{t("GeoIP")}</button>
+                    <button onClick={() => handleTabChange('custom')} className={`px-4 h-full text-xs font-bold rounded-lg transition-all ${activeTab === 'custom' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}>{t("Custom Source")}</button>
                 </div>
             }
         >
@@ -138,7 +139,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 {activeTab === 'custom' && (
                     <div className="flex flex-col gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800 shrink-0 animate-in fade-in slide-in-from-top-2">
                         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mr-1">Quick Presets:</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mr-1">{t("Quick Presets:")}</span>
                             {CUSTOM_PRESETS.map((p, i) => (
                                 <button key={i} onClick={() => { setCustomUrl(p.url); setCustomFormat(p.format as any); }} className="px-2.5 py-1 text-[10px] font-bold bg-slate-950 border border-slate-700 text-slate-300 rounded hover:border-indigo-500 hover:bg-indigo-600/10 hover:text-indigo-300 transition-colors">
                                     {p.label}
@@ -151,9 +152,9 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                                 value={customFormat} 
                                 onChange={val => setCustomFormat(val as any)}
                                 options={[
-                                    { value: "geoip", label: "GeoIP (.dat)" },
-                                    { value: "geosite", label: "GeoSite (.dat)" },
-                                    { value: "text", label: "Raw Text (.txt)" },
+                                    { value: "geoip", label: t("GeoIP (.dat)") },
+                                    { value: "geosite", label: t("GeoSite (.dat)") },
+                                    { value: "text", label: t("Raw Text (.txt)") },
                                 ]}
                                 className="w-full md:w-48"
                             />
@@ -161,18 +162,18 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                             <div className="flex-1 flex gap-2">
                                 <div className="flex-1 relative h-11">
                                     <Icon name="Link" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                    <input className="w-full h-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono" placeholder="Paste URL or select local file..." value={customUrl} onChange={e => setCustomUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchCustomList()} />
+                                    <input className="w-full h-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono" placeholder={t("Paste URL or select local file...")} value={customUrl} onChange={e => setCustomUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchCustomList()} />
                                 </div>
                                 
                                 <input type="file" ref={fileInputRef} className="hidden" accept=".dat,.txt" onChange={handleFileUpload} />
-                                <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="shrink-0 h-11 w-11 p-0" title="Upload Local File">
+                                <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="shrink-0 h-11 w-11 p-0" title={t("Upload Local File")}>
                                     <Icon name="UploadSimple" />
                                 </Button>
                             </div>
 
                             <Button variant="success" onClick={fetchCustomList} disabled={customLoading} className="h-11 px-6">
                                 {customLoading ? <Icon name="Spinner" className="animate-spin" /> : <Icon name="DownloadSimple" />}
-                                <span className="hidden md:inline">Fetch</span>
+                                <span className="hidden md:inline">{t("Fetch")}</span>
                             </Button>
                         </div>
                     </div>
@@ -194,17 +195,17 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                             <button 
                                 onClick={() => setIsDeepSearch(!isDeepSearch)}
                                 className={`px-4 h-11 text-xs font-bold rounded-lg border transition-all flex items-center gap-2 shrink-0 ${isDeepSearch ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-900'}`}
-                                title="Search inside domains/IPs instead of category names"
+                                title={t("Search inside domains/IPs instead of category names")}
                             >
-                                Deep Search
-                            </button>
+                                {t("Deep Search")}
+                                </button>
                         ) : null}
                     </div>
                     <div className="flex items-center gap-3 w-full md:w-auto justify-between h-11">
                         <div className="text-xs text-slate-400 font-mono bg-slate-950 px-4 h-full flex items-center rounded-lg border border-slate-800">
                             Showing: <span className="text-white font-bold ml-1">{displayData.length}</span>
                         </div>
-                        <Button variant="secondary" onClick={handleCopyAll} icon="Copy" className="h-full px-4">Copy All</Button>
+                        <Button variant="secondary" onClick={handleCopyAll} icon="Copy" className="h-full px-4">{t("Copy All")}</Button>
                     </div>
                 </div>
 
@@ -213,12 +214,12 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                         {loading && activeTab !== 'custom' ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10 bg-slate-950/50 backdrop-blur-sm">
                                 <Icon name="Spinner" className="text-4xl animate-spin mb-4 text-indigo-500" />
-                                <p className="font-bold tracking-widest text-[10px] uppercase">Validating Database...</p>
+                                <p className="font-bold tracking-widest text-[10px] uppercase">{t("Validating Database...")}</p>
                             </div>
                         ) : displayData.length === 0 ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
                                 <Icon name="Database" className="text-6xl mb-4 opacity-10" />
-                                <p className="text-sm">{isDeepSearch ? "No matching domains/IPs found." : "No items found."}</p>
+                                <p className="text-sm">{isDeepSearch ? t("No matching domains/IPs found.") : t("No items found.")}</p>
                             </div>
                         ) : (
                             <VList className="h-full w-full custom-scroll" style={{ overflowY: 'auto' }}>

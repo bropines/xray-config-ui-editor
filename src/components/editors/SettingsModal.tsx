@@ -14,6 +14,7 @@ import { BurstObservatoryEditor } from './settings/BurstObservatoryEditor';
 
 import { useSettingsEditor } from '../../hooks/useSettingsEditor';
 import { useConfigStore } from '../../store/configStore';
+import { t } from '../../i18n';
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
     const { warpWorkerUrl, setWarpWorkerUrl, rawConfigText } = useConfigStore();
@@ -36,22 +37,22 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
 
     const tabs = (
         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
-            <button onClick={() => setActiveTab('general')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Log & API</button>
-            <button onClick={() => setActiveTab('policy')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'policy' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Policy</button>
-            <button onClick={() => setActiveTab('observatory')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'observatory' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Observatory</button>
+            <button onClick={() => setActiveTab('general')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Log & API")}</button>
+            <button onClick={() => setActiveTab('policy')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'policy' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Policy")}</button>
+            <button onClick={() => setActiveTab('observatory')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'observatory' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Observatory")}</button>
         </div>
     );
 
     const extraButtons = (
         <>
             {!rawMode && tabs}
-            <Button variant="success" className="text-xs py-1" onClick={downloadCoreJson} icon="DownloadSimple">Export</Button>
+            <Button variant="success" className="text-xs py-1" onClick={downloadCoreJson} icon="DownloadSimple">{t("Export")}</Button>
         </>
     );
 
     return (
         <EditorLayout
-            title="General Settings"
+            title={t("General Settings")}
             local={coreSettings}
             setLocal={handleRawUpdate}
             rawText={rawText}
@@ -69,20 +70,20 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             <div className="max-w-3xl mx-auto space-y-6">
                 {activeTab === 'general' && (
                     <>
-                        <Card title="Core Compatibility & Generators" icon="Cpu">
+                        <Card title={t("Core Compatibility & Generators")} icon="Cpu">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Select 
-                                    label="Target Xray-core Version"
-                                    hint="Adjusts UI fields and validation based on core features."
+                                    label={t("Target Xray-core Version")}
+                                    hint={t("Adjusts UI fields and validation based on core features.")}
                                     value={coreVersion}
                                     onChange={val => setCoreVersion(val)}
                                     options={[
-                                        { value: "v1.8.10", label: "Latest (v1.8.10+)" },
-                                        { value: "v1.8.0", label: "Stable (v1.8.0)" },
-                                        { value: "v1.5.0", label: "Legacy (v1.5.0)" },
+                                        { value: "v1.8.10", label: t("Latest (v1.8.10+)") },
+                                        { value: "v1.8.0", label: t("Stable (v1.8.0)") },
+                                        { value: "v1.5.0", label: t("Legacy (v1.5.0)") },
                                     ]}
                                 />
-                                <FormField label="WARP Worker URL" help="Optional: Your private Cloudflare Worker URL for CORS-safe registration.">
+                                <FormField label={t("WARP Worker URL")} help={t("Optional: Your private Cloudflare Worker URL for CORS-safe registration.")}>
                                     <input 
                                         className="input-base"
                                         placeholder="https://your-worker.workers.dev"
@@ -121,7 +122,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="space-y-6">
                         <div className="p-3 bg-indigo-900/10 border border-indigo-500/20 rounded-xl text-[11px] text-indigo-300 flex items-start gap-2">
                             <Icon name="Info" className="shrink-0 mt-0.5" />
-                            <span>Use <b>Observatory</b> for standard periodic checks, or <b>Burst Observatory</b> for randomized stealth checks. Choose one based on your balancers setup.</span>
+                            <span>{t("Use Observatory for steady periodic checks, or Burst Observatory for randomised stealth checks. Pick one based on how your balancers are set up.")}</span>
                         </div>
                         
                         <ObservatoryEditor 

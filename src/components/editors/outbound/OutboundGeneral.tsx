@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../../ui/Card';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { OutboundSchema, OutboundProtocolSchema } from '../../../core/xray/schemas';
+import { t } from '../../../i18n';
 
 export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors = {} }: any) => {
     const handleFormChange = (newOutbound: any) => {
@@ -25,7 +26,7 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
     };
 
     return (
-        <Card title="Outbound Protocol" icon="PaperPlaneTilt">
+        <Card title={t("Outbound Protocol")} icon="PaperPlaneTilt">
             <SchemaForm
                 schema={OutboundSchema}
                 value={outbound}
@@ -34,13 +35,13 @@ export const OutboundGeneral = ({ outbound, onChange, onProtocolChange, errors =
                 excludeKeys={['sendIP', 'streamSettings', 'settings', 'mux', 'proxySettings', 'targetStrategy']}
                 fieldConfigs={{
                     protocol: {
-                        label: "Protocol",
-                        help: "Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria, etc.",
+                        label: t("Protocol"),
+                        help: t("Xray supports VLESS, VMess, Trojan, Shadowsocks, Hysteria, etc."),
                         options: OutboundProtocolSchema.options as unknown as string[]
                     },
                     tag: {
-                        label: "Tag",
-                        help: "Unique name for this outbound (used in routing rules)."
+                        label: t("Tag"),
+                        help: t("Unique name for this outbound (used in routing rules).")
                     }
                 }}
             />

@@ -14,6 +14,7 @@ import { OutboundServer } from './outbound/OutboundServer';
 import { OutboundWireguard } from './outbound/OutboundWireguard';
 import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 import { TransportSettings } from './shared/TransportSettings';
+import { t } from '../../i18n';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const { config, addItem, rawConfigText } = useConfigStore();
@@ -41,7 +42,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
             toast.success(`Imported ${parsed.outbounds.length} outbounds (chained)`);
         } else {
             setLocal(parsed);
-            toast.success("Configuration imported successfully");
+            toast.success(t("Configuration imported successfully"));
         }
         setRawMode(false);
     };
@@ -49,21 +50,21 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const handleCopyLink = () => {
         const link = generateXrayLink(local);
         if (!link) {
-            toast.error("Error generating link", { description: "Protocol might not be supported." });
+            toast.error(t("Error generating link"), { description: t("Protocol might not be supported.") });
             return;
         }
-        navigator.clipboard.writeText(link).then(() => toast.success("Copied to clipboard!"));
+        navigator.clipboard.writeText(link).then(() => toast.success(t("Copied to clipboard!")));
     };
 
     const extraButtons = (
         <Button variant="success" className="text-xs py-1 px-3" onClick={handleCopyLink} icon="Copy">
-            Copy Link
-        </Button>
+            {t("Copy Link")}
+            </Button>
     );
 
     return (
         <EditorLayout
-            title="Outbound Editor"
+            title={t("Outbound Editor")}
             local={local}
             setLocal={setLocal}
             rawText={rawText}
@@ -94,10 +95,8 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
                                 Snippet reference: {getSnippetRefName(local)}
                             </p>
                             <p className="text-[11px] text-fuchsia-200/70 mt-1">
-                                Remnawave replaces this entry with the snippet's outbounds before the
-                                config reaches a node. Edit the body in Snippets — filling in the
-                                fields below would turn the reference into an ordinary outbound.
-                            </p>
+                                {t("Remnawave replaces this entry with the snippet's outbounds before the config reaches a node. Edit the body in Snippets — filling in the fields below would turn the reference into an ordinary outbound.")}
+                                </p>
                         </div>
                     </div>
                 )}

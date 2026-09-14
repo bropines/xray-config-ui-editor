@@ -13,6 +13,7 @@ import { BalancerEditor } from './routing/BalancerEditor';
 import { useRoutingEditor } from '../../hooks/useRoutingEditor';
 import { useGeoData } from '../../hooks/useGeoData';
 import { useSidebarResizer } from '../../hooks/useSidebarResizer';
+import { t, tn } from '../../i18n';
 
 export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
     const { config, updateSection } = useConfigStore();
@@ -58,7 +59,7 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
 
     return (
         <Modal
-            title="Routing Manager"
+            title={t("Routing Manager")}
             onClose={handleClose}
             onSave={handleClose}
             className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
@@ -67,27 +68,27 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                     <button
                         onClick={() => { setActiveTab('rules'); setMobileEditMode(false); }}
                         className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'rules' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
-                    >Rules</button>
+                    >{t("Rules")}</button>
                     <button
                         onClick={() => { setActiveTab('balancers'); setMobileEditMode(false); }}
                         className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'balancers' ? 'bg-purple-600 text-white' : 'text-slate-400'}`}
-                    >Balancers</button>
+                    >{t("Balancers")}</button>
                 </div>
             }
         >
             <div className="mb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
                 {mobileEditMode && (
-                    <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">Back</Button>
+                    <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">{t("Back")}</Button>
                 )}
                 <div className={`flex flex-col w-full md:w-64 ${mobileEditMode ? 'hidden md:flex' : ''}`}>
                     <Select
-                        label="Domain Strategy"
+                        label={t("Domain Strategy")}
                         value={config?.routing?.domainStrategy || "AsIs"}
                         onChange={val => updateSection('routing', { ...config?.routing, domainStrategy: val })}
                         options={[
-                            { value: "AsIs", label: "AsIs", description: "Use domain as provided" },
-                            { value: "IPIfNonMatch", label: "IPIfNonMatch", description: "Resolve if no domain match" },
-                            { value: "IPOnDemand", label: "IPOnDemand", description: "Resolve before matching" },
+                            { value: "AsIs", label: t("AsIs"), description: t("Use domain as provided") },
+                            { value: "IPIfNonMatch", label: t("IPIfNonMatch"), description: t("Resolve if no domain match") },
+                            { value: "IPOnDemand", label: t("IPOnDemand"), description: t("Resolve before matching") },
                         ]}
                     />
                 </div>
@@ -99,7 +100,7 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                         onClick={() => setRawMode(!rawMode)}
                         icon={rawMode ? "Layout" : "Code"}
                     >
-                        {rawMode ? "UI Mode" : "JSON"}
+                        {rawMode ? t("UI Mode") : t("JSON")}
                     </Button>
                 )}
             </div>
@@ -110,11 +111,13 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                         <Icon name="WarningOctagon" weight="fill" className="text-rose-400 text-xl shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                             <p className="text-rose-200 font-bold text-sm mb-1">
-                                Cannot close — {brokenRules.length} rule{brokenRules.length > 1 ? 's have' : ' has'} errors that will crash Xray
+                                {tn(brokenRules.length,
+                                    "Cannot close — {n} rule has errors that will crash Xray",
+                                    "Cannot close — {n} rules have errors that will crash Xray")}
                             </p>
                             <p className="text-rose-300/60 text-[11px] mb-2">
-                                Click a rule below to jump to it and fix the issue.
-                            </p>
+                                {t("Click a rule below to jump to it and fix the issue.")}
+                                </p>
                             <ul className="space-y-1">
                                 {brokenRules.map(r => (
                                     <li key={r.idx}>
@@ -130,7 +133,7 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                                                 <b className="text-rose-200">{r.label}</b>
                                                 {" — "}
                                                 {r.errors[0].message}
-                                                {r.errors.length > 1 && <span className="text-rose-400/60"> (+{r.errors.length - 1} more)</span>}
+                                                {r.errors.length > 1 && <span className="text-rose-400/60">{t(" (+{n} more)", { n: r.errors.length - 1 })}</span>}
                                             </span>
                                         </button>
                                     </li>
@@ -150,14 +153,14 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full min-h-0 shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50 shrink-0">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Rules</span>
+                                    <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">{t("Rules")}</span>
                                     <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddRule} />
                                 </div>
                                 <div className="relative">
                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
                                     <input
                                         className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500 transition-colors"
-                                        placeholder="Search by name, domain, ip..."
+                                        placeholder={t("Search by name, domain, ip...")}
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
                                     />
@@ -200,14 +203,14 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                         <div className={`w-full md:w-[var(--sidebar-width)] bg-slate-950 border-r border-slate-800 flex flex-col h-full min-h-0 shrink-0 ${mobileEditMode ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50 shrink-0">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">Balancers</span>
+                                    <span className="text-xs font-bold text-slate-400 pl-2 uppercase tracking-widest">{t("Balancers")}</span>
                                     <Button variant="ghost" icon="Plus" className="py-1 px-2" onClick={handleAddBalancer} />
                                 </div>
                                 <div className="relative">
                                     <Icon name="MagnifyingGlass" className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
                                     <input
                                         className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500 transition-colors"
-                                        placeholder="Search by tag, strategy, target..."
+                                        placeholder={t("Search by tag, strategy, target...")}
                                         value={balancerSearchQuery}
                                         onChange={e => setBalancerSearchQuery(e.target.value)}
                                     />

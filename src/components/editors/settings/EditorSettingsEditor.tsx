@@ -6,6 +6,7 @@ import { FormField } from '../../ui/FormField';
 import { Switch } from '../../ui/Switch';
 import { useConfigStore } from '../../../store/configStore';
 import { toast } from 'sonner';
+import { t } from '../../../i18n';
 
 export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => void }) => {
     const {
@@ -37,7 +38,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
     const [editName, setEditName] = useState("");
 
     const handleCreate = () => {
-        if (!newProfileName.trim()) return toast.error("Please enter a profile name");
+        if (!newProfileName.trim()) return toast.error(t("Please enter a profile name"));
         createProfile(newProfileName.trim());
         setNewProfileName("");
     };
@@ -58,20 +59,20 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
         <div className="space-y-6">
             {/* Local Config Profiles */}
             <Card
-                title="Config Profiles (Local Storage)"
+                title={t("Config Profiles (Local Storage)")}
                 icon="FolderUser"
                 action={
                     <div className="flex gap-2">
                         <input
                             className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1 text-xs text-white outline-none focus:border-indigo-500 transition-colors w-44"
-                            placeholder="New profile name..."
+                            placeholder={t("New profile name...")}
                             value={newProfileName}
                             onChange={e => setNewProfileName(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleCreate()}
                         />
                         <Button variant="indigo" className="text-xs py-1" onClick={handleCreate} icon="Plus">
-                            New
-                        </Button>
+                            {t("New")}
+                            </Button>
                     </div>
                 }
             >
@@ -86,8 +87,8 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                             {remnawave.profiles?.find(p => p.uuid === remnawave.activeProfileUuid)?.name || 'Remnawave Cloud'}
                                         </span>
                                         <span className="text-[9px] bg-sky-600/30 text-sky-300 border border-sky-500/30 px-1.5 py-0.2 rounded font-mono font-bold uppercase">
-                                            ACTIVE CLOUD
-                                        </span>
+                                            {t("ACTIVE CLOUD")}
+                                            </span>
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-mono mt-0.5">
                                         Remnawave Cloud Profile ({remnawave.activeProfileUuid.substring(0, 8)})
@@ -100,8 +101,8 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                 onClick={() => switchProfile(activeProfileId)}
                                 icon="Laptop"
                             >
-                                Switch to Local
-                            </Button>
+                                {t("Switch to Local")}
+                                </Button>
                         </div>
                     )}
 
@@ -152,8 +153,8 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                                 </span>
                                                 {isActive && (
                                                     <span className="text-[9px] bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-mono font-bold uppercase">
-                                                        Active
-                                                    </span>
+                                                        {t("Active")}
+                                                        </span>
                                                 )}
                                             </div>
                                             <div className="text-[10px] text-slate-500 font-mono">
@@ -170,8 +171,8 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                             onClick={() => switchProfile(profile.id)}
                                             className="px-2.5 py-1 text-[11px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/50 rounded-lg border border-indigo-800/40 transition-colors"
                                         >
-                                            Switch
-                                        </button>
+                                            {t("Switch")}
+                                            </button>
                                     )}
                                     {isActive && (
                                         <button
@@ -179,14 +180,15 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                             onClick={saveActiveProfile}
                                             className="px-2.5 py-1 text-[11px] font-bold text-emerald-400 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/50 rounded-lg border border-emerald-800/40 transition-colors flex items-center gap-1"
                                         >
-                                            <Icon name="FloppyDisk" /> Save
-                                        </button>
+                                            <Icon name="FloppyDisk" />
+{t("Save")}
+</button>
                                     )}
                                     <button
                                         type="button"
                                         onClick={() => handleStartRename(profile.id, profile.name)}
                                         className="p-1.5 text-slate-400 hover:text-white transition-colors"
-                                        title="Rename"
+                                        title={t("Rename")}
                                     >
                                         <Icon name="PencilSimple" />
                                     </button>
@@ -194,7 +196,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                         type="button"
                                         onClick={() => duplicateProfile(profile.id)}
                                         className="p-1.5 text-slate-400 hover:text-white transition-colors"
-                                        title="Duplicate"
+                                        title={t("Duplicate")}
                                     >
                                         <Icon name="Copy" />
                                     </button>
@@ -207,7 +209,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                                 }
                                             }}
                                             className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors"
-                                            title="Delete"
+                                            title={t("Delete")}
                                         >
                                             <Icon name="Trash" />
                                         </button>
@@ -220,11 +222,11 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
             </Card>
 
             {/* Version Control & History Depth */}
-            <Card title="Local Version History (Git-like Snapshots)" icon="GitBranch">
+            <Card title={t("Local Version History (Git-like Snapshots)")} icon="GitBranch">
                 <div className="space-y-4">
                     <FormField
-                        label="History Depth (Max Snapshots)"
-                        help="Number of rollback snapshots saved locally in browser memory (10 – 1000)."
+                        label={t("History Depth (Max Snapshots)")}
+                        help={t("Number of rollback snapshots saved locally in browser memory (10 – 1000).")}
                     >
                         <div className="space-y-2">
                             <div className="flex items-center gap-4">
@@ -252,7 +254,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                             </div>
                             {/* Quick-select presets */}
                             <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] text-slate-500 font-bold mr-1">Quick:</span>
+                                <span className="text-[10px] text-slate-500 font-bold mr-1">{t("Quick:")}</span>
                                 {[25, 50, 100, 250, 500, 1000].map(preset => (
                                     <button
                                         key={preset}
@@ -271,15 +273,15 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                             {historyLimit > 100 && (
                                 <p className="text-[10px] text-amber-400/80 flex items-center gap-1">
                                     <Icon name="Warning" className="text-amber-400 shrink-0" />
-                                    Large history (≥100 snapshots) may use significant browser memory.
-                                </p>
+                                    {t("Large history (≥100 snapshots) may use significant browser memory.")}
+                                    </p>
                             )}
                         </div>
                     </FormField>
 
                     <FormField
-                        label="Auto-Save Profile on Edit"
-                        help="Automatically update active local profile when changes are made."
+                        label={t("Auto-Save Profile on Edit")}
+                        help={t("Automatically update active local profile when changes are made.")}
                         horizontal
                     >
                         <Switch checked={autoSave} onChange={setAutoSave} />
@@ -288,14 +290,15 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                     <div className="pt-2 flex flex-wrap items-center justify-between border-t border-slate-800 gap-2">
                         <div className="text-xs text-slate-400 flex items-center gap-2">
                             <Icon name="ClockCounterClockwise" className="text-indigo-400" />
-                            Current History Size: <b>{history.length} / {historyLimit}</b> snapshots stored.
-                        </div>
+                            Current History Size: <b>{history.length} / {historyLimit}</b>
+{t("snapshots stored.")}
+</div>
 
                         <div className="flex gap-2">
                             {onOpenHistory && (
                                 <Button variant="indigo" className="text-xs py-1.5" onClick={onOpenHistory} icon="GitBranch">
-                                    Open History Timeline
-                                </Button>
+                                    {t("Open History Timeline")}
+                                    </Button>
                             )}
                             {history.length > 0 && (
                                 <Button
@@ -308,8 +311,8 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                                     }}
                                     icon="Trash"
                                 >
-                                    Clear History
-                                </Button>
+                                    {t("Clear History")}
+                                    </Button>
                             )}
                         </div>
                     </div>

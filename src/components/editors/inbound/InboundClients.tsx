@@ -8,6 +8,7 @@ import { generateUUID, generateShortId } from '../../../core/generators';
 import { useField, useArrayField } from '../../../hooks/useField';
 
 import { useConfigStore } from '../../../store/configStore';
+import { t } from '../../../i18n';
 
 export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
     const { remnawave } = useConfigStore();
@@ -36,11 +37,10 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
             <div className="bg-indigo-900/10 border border-indigo-500/20 p-4 rounded-xl mt-4 flex items-start gap-3">
                 <Icon name="Cloud" className="text-indigo-400 text-lg shrink-0 mt-0.5" />
                 <div>
-                    <h4 className="text-xs font-bold text-indigo-300 uppercase mb-1">Managed by Remnawave</h4>
+                    <h4 className="text-xs font-bold text-indigo-300 uppercase mb-1">{t("Managed by Remnawave")}</h4>
                     <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                        User management for this inbound is handled dynamically by your Remnawave panel.
-                        Manually adding clients here is not required.
-                    </p>
+                        {t("User management for this inbound is handled dynamically by your Remnawave panel. Manually adding clients here is not required.")}
+                        </p>
                 </div>
             </div>
         );
@@ -52,34 +52,35 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
         return (
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-                    <Icon name="Key" /> {is2022 ? 'SS-2022' : 'Shadowsocks'} Credentials
-                    {remnawave.connected && <span className="text-[10px] text-indigo-400 ml-auto flex items-center gap-1 font-normal"><Icon name="Cloud" /> Remnawave Active</span>}
+                    <Icon name="Key" />{" "}
+                    {t("{protocol} credentials", { protocol: is2022 ? 'SS-2022' : 'Shadowsocks' })}
+                    {remnawave.connected && <span className="text-[10px] text-indigo-400 ml-auto flex items-center gap-1 font-normal"><Icon name="Cloud" /> {t("Remnawave Active")}</span>}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
-                            label="Method"
-                            hint="Encryption algorithm for Shadowsocks."
+                            label={t("Method")}
+                            hint={t("Encryption algorithm for Shadowsocks.")}
                             value={method.value || (is2022 ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
                             onChange={val => method.onChange(val)}
                             options={!is2022 ? [
-                                { value: "aes-256-gcm", label: "aes-256-gcm" },
-                                { value: "aes-128-gcm", label: "aes-128-gcm" },
-                                { value: "chacha20-ietf-poly1305", label: "chacha20-ietf-poly1305" },
-                                { value: "xchacha20-ietf-poly1305", label: "xchacha20-ietf-poly1305" },
-                                { value: "2022-blake3-aes-128-gcm", label: "2022-blake3-aes-128-gcm" },
-                                { value: "2022-blake3-aes-256-gcm", label: "2022-blake3-aes-256-gcm" },
-                                { value: "2022-blake3-chacha20-poly1305", label: "2022-blake3-chacha20-poly1305" },
+                                { value: "aes-256-gcm", label: t("aes-256-gcm") },
+                                { value: "aes-128-gcm", label: t("aes-128-gcm") },
+                                { value: "chacha20-ietf-poly1305", label: t("chacha20-ietf-poly1305") },
+                                { value: "xchacha20-ietf-poly1305", label: t("xchacha20-ietf-poly1305") },
+                                { value: "2022-blake3-aes-128-gcm", label: t("2022-blake3-aes-128-gcm") },
+                                { value: "2022-blake3-aes-256-gcm", label: t("2022-blake3-aes-256-gcm") },
+                                { value: "2022-blake3-chacha20-poly1305", label: t("2022-blake3-chacha20-poly1305") },
                             ] : [
-                                { value: "2022-blake3-aes-128-gcm", label: "2022-blake3-aes-128-gcm" },
-                                { value: "2022-blake3-aes-256-gcm", label: "2022-blake3-aes-256-gcm" },
-                                { value: "2022-blake3-chacha20-poly1305", label: "2022-blake3-chacha20-poly1305" },
+                                { value: "2022-blake3-aes-128-gcm", label: t("2022-blake3-aes-128-gcm") },
+                                { value: "2022-blake3-aes-256-gcm", label: t("2022-blake3-aes-256-gcm") },
+                                { value: "2022-blake3-chacha20-poly1305", label: t("2022-blake3-chacha20-poly1305") },
                             ]}
                         />
                     <div>
                         <label className="label-xs flex items-center justify-between">
-                            <span>Password / Pre-shared Key</span>
+                            <span>{t("Password / Pre-shared Key")}</span>
                             <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-slate-500 font-bold uppercase">Length:</span>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase">{t("Length:")}</span>
                                 <input
                                     type="number"
                                     className="w-10 bg-transparent border-none text-[10px] text-indigo-400 font-bold p-0 focus:ring-0"
@@ -112,13 +113,14 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
             <div className="space-y-4 mt-4">
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                     <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-                        <Icon name="Gauge" /> Bandwidth & Global Settings
-                    </h4>
+                        <Icon name="Gauge" />
+{t("Bandwidth & Global Settings")}
+</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <label className="label-xs flex items-center">
                                 Up (Mbps)
-                                <Help>Maximum upload speed in Mbps for Hysteria 2 protocol.</Help>
+                                <Help>{t("Maximum upload speed in Mbps for Hysteria 2 protocol.")}</Help>
                             </label>
                             <input type="number" className="input-base font-mono"
                                 value={upMbps.value || ""}
@@ -127,7 +129,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                         <div>
                             <label className="label-xs flex items-center">
                                 Down (Mbps)
-                                <Help>Maximum download speed in Mbps for Hysteria 2 protocol.</Help>
+                                <Help>{t("Maximum download speed in Mbps for Hysteria 2 protocol.")}</Help>
                             </label>
                             <input type="number" className="input-base font-mono"
                                 value={downMbps.value || ""}
@@ -137,9 +139,9 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             <Switch
                                 checked={ignoreClientBandwidth.value === true}
                                 onChange={checked => ignoreClientBandwidth.onChange(checked)}
-                                label="Ignore Client Bandwidth"
+                                label={t("Ignore Client Bandwidth")}
                             />
-                            <Help>If enabled, the server will ignore the bandwidth limits requested by the client.</Help>
+                            <Help>{t("If enabled, the server will ignore the bandwidth limits requested by the client.")}</Help>
                         </div>
                     </div>
                 </div>
@@ -147,16 +149,17 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                            <Icon name="Users" /> Hysteria 2 Users
-                        </h4>
-                        <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => hysteriaUsers.add({ password: generateShortId() })} icon="Plus">Add</Button>
+                            <Icon name="Users" />
+{t("Hysteria 2 Users")}
+</h4>
+                        <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => hysteriaUsers.add({ password: generateShortId() })} icon="Plus">{t("Add")}</Button>
                     </div>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scroll pr-1">
                         {users.map((u, i) => (
                             <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group flex items-center gap-3">
                                 <Icon name="Key" className="text-indigo-400 shrink-0" />
                                 <input className="input-base py-1.5 text-xs font-mono"
-                                    placeholder="Password"
+                                    placeholder={t("Password")}
                                     value={u.password || ""}
                                     onChange={e => hysteriaUsers.update(i, { password: e.target.value })}
                                 />
@@ -184,12 +187,12 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {proto === 'socks' && (
                             <Select
-                                label="Auth Type"
+                                label={t("Auth Type")}
                                 value={auth.value || "noauth"}
                                 onChange={val => auth.onChange(val)}
                                 options={[
-                                    { value: "noauth", label: "No Auth" },
-                                    { value: "password", label: "Password" },
+                                    { value: "noauth", label: t("No Auth") },
+                                    { value: "password", label: t("Password") },
                                 ]}
                             />
                         )}
@@ -200,9 +203,9 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                                         id="socks-udp"
                                         checked={udp.value === true}
                                         onChange={checked => udp.onChange(checked)}
-                                        label="UDP Support"
+                                        label={t("UDP Support")}
                                     />
-                                    <Help>Enable UDP associate for SOCKS5.</Help>
+                                    <Help>{t("Enable UDP associate for SOCKS5.")}</Help>
                                 </div>
                             )}
                             {proto === 'http' && (
@@ -211,9 +214,9 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                                         id="http-transparent"
                                         checked={allowTransparent.value === true}
                                         onChange={checked => allowTransparent.onChange(checked)}
-                                        label="Allow Transparent"
+                                        label={t("Allow Transparent")}
                                     />
-                                    <Help>Allow transparent proxying for HTTP.</Help>
+                                    <Help>{t("Allow transparent proxying for HTTP.")}</Help>
                                 </div>
                             )}
                         </div>
@@ -226,27 +229,27 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
                                 <Icon name="Users" /> {proto.toUpperCase()} Accounts
                             </h4>
-                            <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => accounts.add({ user: 'admin', pass: generateShortId() })} icon="Plus">Add Account</Button>
+                            <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => accounts.add({ user: 'admin', pass: generateShortId() })} icon="Plus">{t("Add Account")}</Button>
                         </div>
                         <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scroll pr-1">
                             {accountItems.map((acc, i) => (
                                 <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group flex flex-col md:flex-row items-end gap-3 hover:border-slate-600 transition-colors">
                                     <div className="flex-1 w-full">
-                                        <label className="label-xs">Username</label>
+                                        <label className="label-xs">{t("Username")}</label>
                                         <input className="input-base py-1.5 text-xs"
                                             value={acc.user || ""}
                                             onChange={e => accounts.update(i, { user: e.target.value })}
                                         />
                                     </div>
                                     <div className="flex-1 w-full">
-                                        <label className="label-xs">Password</label>
+                                        <label className="label-xs">{t("Password")}</label>
                                         <div className="flex gap-2">
                                             <input className="input-base py-1.5 text-xs font-mono"
                                                 value={acc.pass || ""}
                                                 onChange={e => accounts.update(i, { pass: e.target.value })}
                                             />
                                             <button onClick={() => accounts.update(i, { pass: generateShortId() })}
-                                                title="Generate Password"
+                                                title={t("Generate Password")}
                                                 className="bg-slate-800 p-2 rounded text-slate-400 hover:text-white transition-colors">
                                                 <Icon name="DiceFive" />
                                             </button>
@@ -254,14 +257,17 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                                     </div>
                                     <button onClick={() => accounts.remove(i)}
                                         className="bg-slate-800/50 p-2 rounded text-slate-600 hover:text-rose-500 transition-colors shrink-0"
-                                        title="Remove Account">
+                                        title={t("Remove Account")}>
                                         <Icon name="Trash" />
                                     </button>
                                 </div>
                             ))}
                             {accountItems.length === 0 && (
                                 <div className="text-center text-slate-600 text-xs py-6 italic border border-dashed border-slate-800 rounded-lg">
-                                    No accounts defined. {proto === 'http' ? 'Auth is disabled.' : 'Add one to enable password auth.'}
+                                    {t("No accounts defined.")}{" "}
+                                    {proto === 'http'
+                                        ? t("Auth is disabled.")
+                                        : t("Add one to enable password auth.")}
                                 </div>
                             )}
                         </div>
@@ -288,9 +294,10 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
             <div className="flex justify-between items-center mb-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                    <Icon name="Users" /> Clients / Users
-                </h4>
-                <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addClient} icon="Plus">Add</Button>
+                    <Icon name="Users" />
+{t("Clients / Users")}
+</h4>
+                <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addClient} icon="Plus">{t("Add")}</Button>
             </div>
 
             {errors.clients && (
@@ -308,7 +315,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                         {/* Адаптивный грид клиентов */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
                             <div>
-                                <label className="label-xs">Email</label>
+                                <label className="label-xs">{t("Email")}</label>
                                 <input className="input-base py-1.5 text-xs"
                                     value={c.email || ""}
                                     onChange={e => clients.update(i, { email: e.target.value })}
@@ -329,12 +336,12 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                             </div>
                             {proto === 'vless' && (
                                     <Select
-                                        label="Flow"
+                                        label={t("Flow")}
                                         value={c.flow || ""}
                                         onChange={val => clients.update(i, { flow: val })}
                                         options={[
-                                            { value: "", label: "None" },
-                                            { value: "xtls-rprx-vision", label: "xtls-rprx-vision" },
+                                            { value: "", label: t("None") },
+                                            { value: "xtls-rprx-vision", label: t("xtls-rprx-vision") },
                                         ]}
                                     />
                             )}
@@ -342,7 +349,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
                     </div>
                 ))}
                 {clientItems.length === 0 && (
-                    <div className="text-center text-slate-600 text-xs py-4 italic">No users defined. Click Add to create one.</div>
+                    <div className="text-center text-slate-600 text-xs py-4 italic">{t("No users defined. Click Add to create one.")}</div>
                 )}
             </div>
         </div>

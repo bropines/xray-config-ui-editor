@@ -1,6 +1,7 @@
 import React from 'react';
 import { Switch, Card, OutboundSelector, SchemaForm } from '../../ui';
 import { PingConfigSchema } from '../../../core/xray/schemas/observatory.schema';
+import { t } from '../../../i18n';
 
 export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, outboundTags = [] }: any) => {
     const enabled = !!burstObservatory;
@@ -15,7 +16,7 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
 
     return (
         <Card 
-            title="Burst Observatory" 
+            title={t("Burst Observatory")} 
             icon="Lightning"
             headerExtra={
                 <Switch 
@@ -27,7 +28,7 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                 />
             }
         >
-            <p className="text-xs text-slate-500 -mt-2 mb-4">Advanced stealth health checks for balancers</p>
+            <p className="text-xs text-slate-500 -mt-2 mb-4">{t("Advanced stealth health checks for balancers")}</p>
 
             {enabled && (
                 <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2 border-t border-slate-800/50">
@@ -37,32 +38,32 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                         onChange={pingConfig => update('pingConfig', pingConfig)}
                         fieldConfigs={{
                             destination: {
-                                label: 'Destination URL',
-                                help: 'URL used for probing, should return HTTP 204.',
+                                label: t("Destination URL"),
+                                help: t("URL used for probing, should return HTTP 204."),
                                 placeholder: 'https://connectivitycheck.gstatic.com/generate_204'
                             },
                             connectivity: {
-                                label: 'Connectivity Check URL (Optional)',
-                                help: 'URL for local connectivity check. Empty = disabled.',
+                                label: t("Connectivity Check URL (Optional)"),
+                                help: t("URL for local connectivity check. Empty = disabled."),
                                 placeholder: 'https://connectivitycheck.gstatic.com/generate_204'
                             },
                             interval: {
-                                label: 'Interval',
-                                help: 'Average probe interval per outbound. Min 10s.',
+                                label: t("Interval"),
+                                help: t("Average probe interval per outbound. Min 10s."),
                                 placeholder: '1m'
                             },
                             timeout: {
-                                label: 'Timeout',
-                                help: 'Probe timeout.',
+                                label: t("Timeout"),
+                                help: t("Probe timeout."),
                                 placeholder: '5s'
                             },
                             sampling: {
-                                label: 'Sampling Count',
-                                help: 'Number of recent probe results to keep.'
+                                label: t("Sampling Count"),
+                                help: t("Number of recent probe results to keep.")
                             },
                             httpMethod: {
-                                label: 'HTTP Method',
-                                help: 'HTTP method for probing.',
+                                label: t("HTTP Method"),
+                                help: t("HTTP method for probing."),
                                 options: ['HEAD', 'GET', 'POST']
                             }
                         }}
@@ -70,12 +71,12 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
                     
                     <div className="mt-4 pt-4 border-t border-slate-800/50">
                         <OutboundSelector 
-                            label="Subject Selector (Outbounds to Watch)"
-                            help="Select outbound tags or enter prefix filters (e.g. 'vless-', 'proxy-') for burst stealth health checks."
+                            label={t("Subject Selector (Outbounds to Watch)")}
+                            help={t("Select outbound tags or enter prefix filters (e.g. 'vless-', 'proxy-') for burst stealth health checks.")}
                             availableTags={outboundTags}
                             selected={localObs.subjectSelector || []}
                             onChange={v => update('subjectSelector', v)}
-                            placeholder="e.g. 'vless-', 'node-', 'direct'..."
+                            placeholder={t("e.g. 'vless-', 'node-', 'direct'...")}
                             colorScheme="indigo"
                         />
                     </div>
@@ -83,4 +84,4 @@ export const BurstObservatoryEditor = ({ burstObservatory, onChange, onToggle, o
             )}
         </Card>
     );
-};
+};

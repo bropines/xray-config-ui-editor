@@ -3,6 +3,7 @@ import { useNodesState, useEdgesState } from '@xyflow/react';
 import { useConfigStore } from '../store/configStore';
 import { getLayoutedElements } from '../utils/graph-layout';
 import { getSnippetRefName, isSnippetRef } from '../core/snippets';
+import { t } from '../i18n';
 
 export const useTopology = () => {
     const { config } = useConfigStore();
@@ -181,7 +182,7 @@ export const useTopology = () => {
                 nodes.push({
                     id: defaultId,
                     type: 'custom',
-                    data: { type: 'rule', labelType: 'Fallback', label: 'Default Route', details: 'If no match' },
+                    data: { type: 'rule', labelType: 'Fallback', label: t("Default Route"), details: 'If no match' },
                     position: { x: 0, y: 0 }
                 });
 

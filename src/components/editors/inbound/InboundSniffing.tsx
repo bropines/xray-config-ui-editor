@@ -4,6 +4,7 @@ import { FormField } from '../../ui/FormField';
 import { Switch } from '../../ui/Switch';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { SniffingSchema } from '../../../core/xray/schemas';
+import { t } from '../../../i18n';
 
 interface InboundSniffingProps {
     sniffing: any;
@@ -38,9 +39,9 @@ export const InboundSniffing = ({ sniffing = {}, onChange, errors = [] }: Inboun
     };
 
     return (
-        <Card title="Traffic Sniffing" icon="MagnifyingGlass" className="mt-4">
+        <Card title={t("Traffic Sniffing")} icon="MagnifyingGlass" className="mt-4">
             <div className="space-y-4">
-                <FormField label="Enable Sniffing" help="Analyze traffic to determine destination domain and protocol." horizontal>
+                <FormField label={t("Enable Sniffing")} help={t("Analyze traffic to determine destination domain and protocol.")} horizontal>
                     <Switch 
                         checked={enabled} 
                         onChange={handleToggleEnabled} 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from '../../ui/Icon';
 import { getSnippetRefName } from '../../../core/snippets';
+import { t, tn } from '../../../i18n';
 
 export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snippets = [] }: any) => {
     const bodyFor = (name: string) => {
@@ -31,14 +32,16 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snipp
                                 </div>
                                 <div className="text-[10px] mt-0.5 font-mono">
                                     {body
-                                        ? <span className="text-fuchsia-300/70">snippet &middot; {body.length} balancer(s)</span>
-                                        : <span className="text-amber-400/80">snippet &middot; body not loaded</span>}
+                                        ? <span className="text-fuchsia-300/70">
+                                            {t("snippet")} &middot; {tn(body.length, "{n} balancer", "{n} balancers")}
+                                        </span>
+                                        : <span className="text-amber-400/80">{t("snippet · body not loaded")}</span>}
                                 </div>
                             </div>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onDelete(i); }}
                                 className="md:opacity-0 md:group-hover:opacity-100 p-2 shrink-0 hover:bg-rose-900/50 rounded-md text-slate-500 hover:text-rose-400 transition-all"
-                                title="Remove this snippet reference"
+                                title={t("Remove this snippet reference")}
                             >
                                 <Icon name="Trash" className="text-base" />
                             </button>
@@ -55,10 +58,12 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snipp
                                 <div className={`font-bold truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>{b.tag}</div>
                                 {/* ИКОНКА ОШИБКИ */}
                                 {(!b.selector || b.selector.length === 0) && (
-                                    <Icon name="Warning" className="text-rose-500 animate-bounce" weight="fill" title="Empty selector!" />
+                                    <Icon name="Warning" className="text-rose-500 animate-bounce" weight="fill" title={t("Empty selector!")} />
                                 )}
                             </div>
-                            <div className="text-[10px] text-slate-500 mt-0.5">Strategy: {b.strategy?.type || 'random'}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                                {t("Strategy:")} {b.strategy?.type || 'random'}
+                            </div>
                         </div>
                         {/* Кнопка удаления */}
                         <button 
@@ -72,8 +77,8 @@ export const BalancerList = ({ balancers, activeIndex, onSelect, onDelete, snipp
             })}
             {balancers.length === 0 && (
                 <div className="py-8 text-center text-xs text-slate-500 italic">
-                    No balancers found
-                </div>
+                    {t("No balancers found")}
+                    </div>
             )}
         </div>
     );

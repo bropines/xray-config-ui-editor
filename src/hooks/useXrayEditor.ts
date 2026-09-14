@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { produce } from 'immer';
 import type { ValidationError } from '../core/validators';
 import { toast } from 'sonner';
+import { t } from '../i18n';
 
 interface UseXrayEditorOptions<T> {
     data: T;
@@ -68,7 +69,7 @@ export const useXrayEditor = <T extends Record<string, any>>({
         const validationErrors = validate(local);
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
-            toast.error("Please fix validation errors before saving");
+            toast.error(t("Please fix validation errors before saving"));
             return;
         }
         // `rawText` is only non-null when it's still in sync with `local` —

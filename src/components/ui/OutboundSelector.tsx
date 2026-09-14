@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Icon } from './Icon';
+import { t } from '../../i18n';
 
 export interface OutboundSelectorProps {
     availableTags: string[];
@@ -204,15 +205,15 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
                                     : 'text-indigo-300 hover:text-white bg-indigo-950/60 border-indigo-800/60 hover:bg-indigo-900/60'
                             }`}
                         >
-                            Select All
-                        </button>
+                            {t("Select All")}
+                            </button>
                         <button
                             type="button"
                             onClick={handleDeselectAll}
                             className="text-[11px] font-bold text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 hover:bg-slate-850 px-2.5 py-1 rounded-md transition-colors"
                         >
-                            Deselect All
-                        </button>
+                            {t("Deselect All")}
+                            </button>
                     </div>
 
                     {availableTags.length > 4 && (
@@ -220,7 +221,7 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
                             <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
                             <input
                                 className="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-6 py-1 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
-                                placeholder="Filter nodes..."
+                                placeholder={t("Filter nodes...")}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
@@ -242,15 +243,15 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
             <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 mb-3 bg-slate-950/40 px-2.5 py-1.5 rounded-lg border border-slate-800/40">
                 <span className="flex items-center gap-1">
                     <span className={`w-2 h-2 rounded-full ${isPurple ? 'bg-purple-500' : 'bg-indigo-500'}`} />
-                    <span>Exact match</span>
+                    <span>{t("Exact match")}</span>
                 </span>
                 <span className="flex items-center gap-1">
                     <Icon name="GitMerge" className={isPurple ? 'text-purple-400' : 'text-indigo-400'} />
-                    <span>Prefix match</span>
+                    <span>{t("Prefix match")}</span>
                 </span>
                 <span className="flex items-center gap-1">
                     <Icon name="Eye" className="text-amber-400 animate-pulse" />
-                    <span className="text-amber-400/90">Preview (typing)</span>
+                    <span className="text-amber-400/90">{t("Preview (typing)")}</span>
                 </span>
             </div>
 
@@ -290,7 +291,7 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
 
                 {filteredOutbounds.length === 0 && (
                     <div className="col-span-full py-4 text-center text-xs text-slate-500 italic">
-                        {availableTags.length === 0 ? 'No outbounds available' : 'No outbounds match filter'}
+                        {availableTags.length === 0 ? t("No outbounds available") : t("No outbounds match filter")}
                     </div>
                 )}
             </div>
@@ -299,11 +300,11 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
             <div className="mt-4 pt-3.5 border-t border-slate-800/80">
                 <div className="flex justify-between items-center mb-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Add Prefix or Tag Filter
-                    </label>
+                        {t("Add Prefix or Tag Filter")}
+                        </label>
                     <span className="text-[10px] text-slate-500">
-                        Press Enter to add
-                    </span>
+                        {t("Press Enter to add")}
+                        </span>
                 </div>
                 <div className="flex gap-2 items-center">
                     <input
@@ -319,14 +320,14 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
                         disabled={!inputValue.trim()}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${addBtnClass}`}
                     >
-                        Add
-                    </button>
+                        {t("Add")}
+                        </button>
                 </div>
 
                 {/* Active Selectors / Prefixes List */}
                 {currentSelected.length > 0 && (
                     <div className="mt-3">
-                        <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Active Selectors:</div>
+                        <div className="text-[10px] font-semibold text-slate-500 mb-1.5">{t("Active Selectors:")}</div>
                         <div className="flex flex-wrap gap-1.5">
                             {currentSelected.map((sel: string) => {
                                 const isExact = availableTags.includes(sel);

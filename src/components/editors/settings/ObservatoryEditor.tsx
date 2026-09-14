@@ -1,6 +1,7 @@
 import React from 'react';
 import { Switch, Card, OutboundSelector, SchemaForm } from '../../ui';
 import { ObservatorySchema } from '../../../core/xray/schemas/observatory.schema';
+import { t } from '../../../i18n';
 
 export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTags = [] }: any) => {
     const enabled = !!observatory;
@@ -16,7 +17,7 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
 
     return (
         <Card 
-            title="Observatory" 
+            title={t("Observatory")} 
             icon="Eye"
             headerExtra={
                 <Switch 
@@ -29,7 +30,7 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
                 />
             }
         >
-            <p className="text-xs text-slate-500 -mt-2 mb-4">Health checks for Load Balancers</p>
+            <p className="text-xs text-slate-500 -mt-2 mb-4">{t("Health checks for Load Balancers")}</p>
 
             {enabled && (
                 <div className="animate-in fade-in slide-in-from-top-2 space-y-4 pt-2 border-t border-slate-800/50">
@@ -40,30 +41,30 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
                         excludeKeys={['subjectSelector']}
                         fieldConfigs={{
                             probeUrl: {
-                                label: 'Probe URL',
-                                help: 'URL used for probing outbound connectivity.',
+                                label: t("Probe URL"),
+                                help: t("URL used for probing outbound connectivity."),
                                 placeholder: 'https://www.google.com/generate_204'
                             },
                             probeInterval: {
-                                label: 'Probe Interval',
+                                label: t("Probe Interval"),
                                 help: 'Probe interval (e.g. "10s", "1m", "2h").',
                                 placeholder: '1m'
                             },
                             enableConcurrency: {
-                                label: 'Enable Concurrency',
-                                help: 'Enable concurrent probing of all matched outbounds.'
+                                label: t("Enable Concurrency"),
+                                help: t("Enable concurrent probing of all matched outbounds.")
                             }
                         }}
                     />
                     
                     <div className="mt-4 pt-4 border-t border-slate-800/50">
                         <OutboundSelector 
-                            label="Subject Selector (Outbounds to Watch)"
-                            help="Select outbound tags or enter prefix filters (e.g. 'vless-', 'proxy-') to monitor health status. Required for leastPing balancers."
+                            label={t("Subject Selector (Outbounds to Watch)")}
+                            help={t("Select outbound tags or enter prefix filters (e.g. 'vless-', 'proxy-') to monitor health status. Required for leastPing balancers.")}
                             availableTags={outboundTags}
                             selected={localObs.subjectSelector || []}
                             onChange={v => update('subjectSelector', v)}
-                            placeholder="e.g. 'vless-', 'node-', 'direct'..."
+                            placeholder={t("e.g. 'vless-', 'node-', 'direct'...")}
                             colorScheme="indigo"
                         />
                     </div>
@@ -71,4 +72,4 @@ export const ObservatoryEditor = ({ observatory, onChange, onToggle, outboundTag
             )}
         </Card>
     );
-};
+};

@@ -9,6 +9,7 @@ import { DurationInput, type TimeUnit } from './DurationInput';
 import { Icon } from './Icon';
 import { generateRealityShortIds, generateX25519Keys } from '../../core/generators';
 import { toast } from 'sonner';
+import { t } from '../../i18n';
 
 // Helper to inspect the Zod type at runtime
 export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
@@ -249,7 +250,7 @@ export const SchemaField = ({
                     <SmartTagInput
                         label=""
                         prefix=""
-                        placeholder={placeholder ?? (isNumber ? "e.g. 100, 200..." : "Type and press Enter or Comma...")}
+                        placeholder={placeholder ?? (isNumber ? t("e.g. 100, 200...") : t("Type and press Enter or Comma..."))}
                         value={displayValue}
                         onChange={handleArrayChange}
                         allowedPattern={allowedPattern}
@@ -273,7 +274,7 @@ export const SchemaField = ({
                 const keys = generateX25519Keys();
                 onChange(keys.privateKey);
                 setGenPublicKey(keys.publicKey);
-                toast.success("Keys Pair Generated!");
+                toast.success(t("Keys Pair Generated!"));
             } : undefined;
 
             const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -350,7 +351,7 @@ export const SchemaField = ({
                                     <button
                                         type="button"
                                         onClick={handleAction}
-                                        title={isPrivateKey ? "Gen Keys Pair" : "Gen Short ID"}
+                                        title={isPrivateKey ? t("Gen Keys Pair") : t("Gen Short ID")}
                                         className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-full w-[24px]"
                                     >
                                         <Icon name="DiceFive" weight="bold" className="text-sm" />
@@ -362,17 +363,18 @@ export const SchemaField = ({
                     {isPrivateKey && genPublicKey && (
                         <div className="bg-emerald-950/20 border border-emerald-500/50 p-3 rounded-lg animate-in fade-in duration-200">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Generated Public Key</span>
+                                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">{t("Generated Public Key")}</span>
                                 <button
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(genPublicKey);
-                                        toast.success("Public Key copied!");
+                                        toast.success(t("Public Key copied!"));
                                     }}
                                     className="text-emerald-400 hover:text-emerald-300 text-[10px] flex items-center gap-1 cursor-pointer font-bold"
                                 >
-                                    <Icon name="Copy" className="text-xs" /> Copy
-                                </button>
+                                    <Icon name="Copy" className="text-xs" />
+{t("Copy")}
+</button>
                             </div>
                             <code className="block bg-black/40 p-2 rounded text-xs font-mono break-all text-emerald-200">{genPublicKey}</code>
                         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import { t } from '../../i18n';
 
 export interface SelectOption<T extends string = string> {
     value: T;
@@ -141,7 +142,7 @@ export function Select<T extends string = string>({
                         <Icon name="MagnifyingGlass" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs" />
                         <input
                             className="w-full bg-slate-900 border border-slate-700/50 rounded-md pl-8 pr-6 py-1.5 text-[11px] text-white outline-none focus:border-indigo-500/50 transition-colors"
-                            placeholder="Search..."
+                            placeholder={t("Search...")}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             onClick={e => e.stopPropagation()}
@@ -164,7 +165,7 @@ export function Select<T extends string = string>({
             )}
             <div className="max-h-[260px] overflow-y-auto custom-scroll p-1.5 space-y-0.5 bg-[#0f172a] opacity-100">
                 {filteredOptions.length === 0 ? (
-                    <div className="p-3 text-xs text-slate-600 text-center italic">No options found</div>
+                    <div className="p-3 text-xs text-slate-600 text-center italic">{t("No options found")}</div>
                 ) : (
                     filteredOptions.map((opt) => {
                         const isActive = opt.value === value;

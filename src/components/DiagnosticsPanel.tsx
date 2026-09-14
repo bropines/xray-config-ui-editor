@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './ui/Icon';
 import type { Diagnostic, DiagnosticSeverity } from '../core/diagnostics';
+import { t } from '../i18n';
 
 interface Props {
     diagnostics: Diagnostic[];
@@ -30,8 +31,8 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
                             <Icon name="ShieldCheck" className="text-2xl" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white tracking-tight">System Diagnostics</h2>
-                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mt-0.5">Xray Configuration Audit</p>
+                            <h2 className="text-xl font-bold text-white tracking-tight">{t("System Diagnostics")}</h2>
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mt-0.5">{t("Xray Configuration Audit")}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-500 transition-colors">
@@ -46,8 +47,8 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
                             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 border border-emerald-500/20">
                                 <Icon name="CheckCircle" className="text-4xl text-emerald-500" weight="duotone" />
                             </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Configuration is Perfect!</h3>
-                            <p className="text-sm text-slate-500 max-w-xs">No issues or potential conflicts detected in your current setup.</p>
+                            <h3 className="text-lg font-bold text-white mb-2">{t("Configuration is Perfect!")}</h3>
+                            <p className="text-sm text-slate-500 max-w-xs">{t("No issues or potential conflicts detected in your current setup.")}</p>
                         </div>
                     ) : (
                         <>
@@ -55,15 +56,15 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
                             <div className="grid grid-cols-3 gap-4 mb-2">
                                 <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-xl text-center">
                                     <div className="text-xl font-black text-rose-500">{criticals.length}</div>
-                                    <div className="text-[10px] uppercase font-bold text-slate-500">Critical</div>
+                                    <div className="text-[10px] uppercase font-bold text-slate-500">{t("Critical")}</div>
                                 </div>
                                 <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-xl text-center">
                                     <div className="text-xl font-black text-amber-500">{warnings.length}</div>
-                                    <div className="text-[10px] uppercase font-bold text-slate-500">Warnings</div>
+                                    <div className="text-[10px] uppercase font-bold text-slate-500">{t("Warnings")}</div>
                                 </div>
                                 <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-xl text-center">
                                     <div className="text-xl font-black text-blue-500">{infos.length}</div>
-                                    <div className="text-[10px] uppercase font-bold text-slate-500">Hints</div>
+                                    <div className="text-[10px] uppercase font-bold text-slate-500">{t("Hints")}</div>
                                 </div>
                             </div>
 
@@ -113,8 +114,8 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
                 {/* Footer */}
                 <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
                     <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all shadow-lg active:scale-95">
-                        Got it
-                    </button>
+                        {t("Got it")}
+                        </button>
                 </div>
             </div>
         </div>

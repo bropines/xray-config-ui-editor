@@ -4,6 +4,7 @@ import { getDefaultGeoList } from '../../../utils/geo-data';
 import { DnsServerObjectSchema } from '../../../core/xray/schemas/dns.schema';
 import { useField } from '../../../hooks/useField';
 import type { FieldPath } from '../../../hooks/useField';
+import { t } from '../../../i18n';
 
 export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     const isString = typeof server === 'string';
@@ -47,21 +48,21 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     if (isString) {
         return (
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
-                <h3 className="text-sm font-bold text-white">Simple DNS Server</h3>
+                <h3 className="text-sm font-bold text-white">{t("Simple DNS Server")}</h3>
                 <div>
-                    <label className="label-xs">Address</label>
+                    <label className="label-xs">{t("Address")}</label>
                     <input className="input-base font-mono" 
                         value={server} 
                         onChange={e => onChange(e.target.value)} 
-                        placeholder="8.8.8.8 or https://..."
+                        placeholder={t("8.8.8.8 or https://...")}
                     />
                 </div>
                 <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50 text-center">
-                    <p className="text-xs text-slate-400 mb-3">Need domains filtering or specific IPs?</p>
-                    <Button variant="secondary" className="text-xs w-full" onClick={convertToAdvanced}>Convert to Advanced Object</Button>
+                    <p className="text-xs text-slate-400 mb-3">{t("Need domains filtering or specific IPs?")}</p>
+                    <Button variant="secondary" className="text-xs w-full" onClick={convertToAdvanced}>{t("Convert to Advanced Object")}</Button>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="ghost" onClick={onCancel}>Done</Button>
+                    <Button variant="ghost" onClick={onCancel}>{t("Done")}</Button>
                 </div>
             </div>
         );
@@ -70,8 +71,8 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     return (
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-4 h-full flex flex-col">
             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 className="text-sm font-bold text-indigo-400">Advanced Server Config</h3>
-                <Button variant="ghost" onClick={() => onChange(local)}>Save & Close</Button>
+                <h3 className="text-sm font-bold text-indigo-400">{t("Advanced Server Config")}</h3>
+                <Button variant="ghost" onClick={() => onChange(local)}>{t("Save & Close")}</Button>
             </div>
 
             <div className="overflow-y-auto custom-scroll flex-1 space-y-4 pr-2">
@@ -82,69 +83,69 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
                     excludeKeys={['domains', 'expectIPs']}
                     fieldConfigs={{
                         address: {
-                            label: 'Server Address',
-                            help: 'DNS server address. E.g. 8.8.8.8, https://dns.google/dns-query, udp://1.1.1.1',
+                            label: t("Server Address"),
+                            help: t("DNS server address. E.g. 8.8.8.8, https://dns.google/dns-query, udp://1.1.1.1"),
                             placeholder: '8.8.8.8'
                         },
                         port: {
-                            label: 'Port',
-                            help: 'DNS server port (default 53).',
+                            label: t("Port"),
+                            help: t("DNS server port (default 53)."),
                             placeholder: '53'
                         },
                         unexpectedIPs: {
-                            label: 'Unexpected IPs (Optional)',
-                            help: 'List of unexpected IPs (e.g. geoip:cn) that trigger fallback.',
-                            placeholder: 'geoip:cn'
+                            label: t("Unexpected IPs (Optional)"),
+                            help: t("List of unexpected IPs (e.g. geoip:cn) that trigger fallback."),
+                            placeholder: t("geoip:cn")
                         },
                         skipFallback: {
-                            label: 'Skip Fallback',
-                            help: 'Skip this server when other servers\' expectIPs match failed.'
+                            label: t("Skip Fallback"),
+                            help: t("Skip this server when other servers' expectIPs match failed.")
                         },
                         finalQuery: {
-                            label: 'Final Query',
-                            help: 'If enabled, always query even if other servers already matched.'
+                            label: t("Final Query"),
+                            help: t("If enabled, always query even if other servers already matched.")
                         },
                         timeoutMs: {
-                            label: 'Timeout',
-                            help: 'Per-server query timeout in milliseconds.',
+                            label: t("Timeout"),
+                            help: t("Per-server query timeout in milliseconds."),
                             placeholder: 'e.g. 5000'
                         },
                         clientIp: {
-                            label: 'Client IP (ECS)',
-                            help: 'Client IP for EDNS Client Subnet (ECS) on this server.',
+                            label: t("Client IP (ECS)"),
+                            help: t("Client IP for EDNS Client Subnet (ECS) on this server."),
                             placeholder: 'e.g. 1.2.3.4'
                         },
                         queryStrategy: {
-                            label: 'Query Strategy',
-                            help: 'Per-server query strategy: UseIP (dual-stack), UseIPv4, UseIPv6.',
+                            label: t("Query Strategy"),
+                            help: t("Per-server query strategy: UseIP (dual-stack), UseIPv4, UseIPv6."),
                             options: ['UseIP', 'UseIPv4', 'UseIPv6']
                         },
                         disableCache: {
-                            label: 'Disable Cache',
-                            help: 'Disable DNS cache for this server.'
+                            label: t("Disable Cache"),
+                            help: t("Disable DNS cache for this server.")
                         },
                         serveStale: {
-                            label: 'Serve Stale',
-                            help: 'Serve stale/expired cache entries from this server.'
+                            label: t("Serve Stale"),
+                            help: t("Serve stale/expired cache entries from this server.")
                         },
                         serveExpiredTTL: {
-                            label: 'Serve Expired TTL',
-                            help: 'Extended TTL for stale cache entries in seconds.',
+                            label: t("Serve Expired TTL"),
+                            help: t("Extended TTL for stale cache entries in seconds."),
                             placeholder: 'e.g. 86400'
                         },
                         tag: {
-                            label: 'Server Tag',
-                            help: 'Unique tag for this server, used in DNS routing.',
-                            placeholder: 'e.g. google-dns'
+                            label: t("Server Tag"),
+                            help: t("Unique tag for this server, used in DNS routing."),
+                            placeholder: t("e.g. google-dns")
                         }
                     }}
                 />
 
                 <div className="pt-4 border-t border-slate-800">
                     <SmartTagInput
-                        label="Domains (Routing)"
+                        label={t("Domains (Routing)")}
                         prefix="geosite:"
-                        placeholder="geosite:cn, google.com..."
+                        placeholder={t("geosite:cn, google.com...")}
                         value={domains.value || []}
                         onChange={domains.onChange}
                         suggestions={geoSites}
@@ -154,9 +155,9 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
 
                 <div>
                     <SmartTagInput
-                        label="Expect IPs (Optional)"
+                        label={t("Expect IPs (Optional)")}
                         prefix="geoip:"
-                        placeholder="geoip:cn..."
+                        placeholder={t("geoip:cn...")}
                         value={expectIPs.value || []}
                         onChange={expectIPs.onChange}
                         suggestions={geoIps}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
 import { parseJsonc, stringifyJsonc, stripJsoncComments } from "../../utils/jsonc";
+import { t } from '../../i18n';
 
 interface JsonFieldProps {
     label?: string;
@@ -155,7 +156,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                     <label className="text-xs uppercase font-bold text-slate-500">
                         {label}
                     </label>
-                    {error && <span className="text-rose-500 font-bold text-[10px] animate-pulse">Invalid JSON Syntax</span>}
+                    {error && <span className="text-rose-500 font-bold text-[10px] animate-pulse">{t("Invalid JSON Syntax")}</span>}
                 </div>
             )}
             

@@ -9,6 +9,7 @@ import { InboundSniffing } from './inbound/InboundSniffing';
 import { InboundTun } from './inbound/InboundTun';
 import { InboundAllocate } from './inbound/InboundAllocate';
 import { TransportSettings } from './shared/TransportSettings';
+import { t } from '../../i18n';
 
 export const InboundModal = ({ data, onSave, onClose }: any) => {
     const rawConfigText = useConfigStore(state => state.rawConfigText);
@@ -27,7 +28,7 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
 
     return (
         <EditorLayout
-            title="Inbound Editor"
+            title={t("Inbound Editor")}
             local={local}
             setLocal={setLocal}
             rawText={rawText}
@@ -85,8 +86,8 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                 {/* Extended Settings */}
                 <section className="relative z-0">
                     <ExtendedSection
-                        title="Extended Inbound Settings"
-                        description="Port hopping/rotation (allocate) and advanced listener options."
+                        title={t("Extended Inbound Settings")}
+                        description={t("Port hopping/rotation (allocate) and advanced listener options.")}
                         hasActiveValues={!!local.allocate}
                         activeCount={local.allocate ? 1 : 0}
                     >

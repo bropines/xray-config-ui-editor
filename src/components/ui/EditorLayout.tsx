@@ -3,6 +3,7 @@ import { Modal } from './Modal';
 import { Button } from './Button';
 import { JsonField } from './JsonField';
 import { Icon } from './Icon';
+import { t } from '../../i18n';
 
 interface EditorLayoutProps {
     title: string;
@@ -50,7 +51,7 @@ export const EditorLayout = ({
                 onClick={() => setRawMode(!rawMode)} 
                 icon={rawMode ? "Layout" : "Code"}
             >
-                {rawMode ? "UI Mode" : "JSON Mode"}
+                {rawMode ? t("UI Mode") : t("JSON Mode")}
             </Button>
         </div>
     );
@@ -67,8 +68,8 @@ export const EditorLayout = ({
                 <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-xl text-rose-200 text-xs animate-in fade-in slide-in-from-top-2 shrink-0">
                     <div className="flex items-center gap-2 mb-1 font-bold">
                         <Icon name="WarningCircle" className="text-rose-500" />
-                        Validation Errors
-                    </div>
+                        {t("Validation Errors")}
+                        </div>
                     <ul className="list-disc pl-5 space-y-0.5 opacity-80">
                         {errors.map((err, i) => <li key={i}>{err.message}</li>)}
                     </ul>
@@ -78,7 +79,7 @@ export const EditorLayout = ({
             {rawMode ? (
                 <div className="flex-1 min-h-0 h-full flex flex-col">
                     <JsonField
-                        label="Source Configuration"
+                        label={t("Source Configuration")}
                         value={local}
                         onChange={(val: any, raw?: string) => setLocal(val, raw)}
                         schemaMode={schemaMode}

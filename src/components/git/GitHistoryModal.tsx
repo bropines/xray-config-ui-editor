@@ -5,6 +5,7 @@ import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { GitDiffViewer } from './GitDiffViewer';
 import { computeJsonDiff } from '../../core/git/gitEngine';
+import { t } from '../../i18n';
 
 export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
     const {
@@ -107,8 +108,8 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                             onClick={deduplicateHistory}
                             icon="Broom"
                         >
-                            Clean up duplicates
-                        </Button>
+                            {t("Clean up duplicates")}
+                            </Button>
                     )}
                     {history.length > 0 && (
                         <Button
@@ -117,8 +118,8 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                             onClick={handleClear}
                             icon="Trash"
                         >
-                            Purge Commit Log
-                        </Button>
+                            {t("Purge Commit Log")}
+                            </Button>
                     )}
                 </div>
             }
@@ -129,8 +130,8 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                     <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
                         <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                             <Icon name="GitCommit" className="text-indigo-400 text-sm" />
-                            Git Commits
-                        </span>
+                            {t("Git Commits")}
+                            </span>
                         <div className="text-[10px] text-slate-500 font-mono">
                             {history.length} commits
                         </div>
@@ -140,8 +141,8 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                         {history.length === 0 ? (
                             <div className="py-12 text-center text-slate-500 italic text-xs">
                                 No git commits recorded yet.<br />
-                                Save or edit your config to create commits.
-                            </div>
+                                {t("Save or edit your config to create commits.")}
+                                </div>
                         ) : (
                             history.map((commit, index) => {
                                 const isSelected = commit.id === selectedCommitId;
@@ -170,15 +171,15 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 {isLatest && (
                                                     <span className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-[9px] font-bold text-emerald-400">
-                                                        HEAD
-                                                    </span>
+                                                        {t("HEAD")}
+                                                        </span>
                                                 )}
                                                 {/* Delete single commit button */}
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleDeleteCommit(e, commit.id)}
                                                     className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-400 transition-opacity rounded hover:bg-slate-800"
-                                                    title="Delete this commit"
+                                                    title={t("Delete this commit")}
                                                 >
                                                     <Icon name="Trash" className="text-xs" />
                                                 </button>
@@ -233,10 +234,10 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                         className="text-xs py-1.5 px-2.5 text-rose-300 hover:text-white"
                                         onClick={(e) => handleDeleteCommit(e, selectedSnapshot.id)}
                                         icon="Trash"
-                                        title="Delete this commit"
+                                        title={t("Delete this commit")}
                                     >
-                                        Delete
-                                    </Button>
+                                        {t("Delete")}
+                                        </Button>
                                     <Button
                                         variant="indigo"
                                         className="text-xs py-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-bold shadow-lg shadow-emerald-950/50"
@@ -259,7 +260,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-600 p-6 text-center">
                             <Icon name="GitCommit" className="text-5xl mb-3 opacity-20" />
-                            <p className="text-sm">Select a git commit from the left log to inspect visual diff and rollback</p>
+                            <p className="text-sm">{t("Select a git commit from the left log to inspect visual diff and rollback")}</p>
                         </div>
                     )}
                 </div>
