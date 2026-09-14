@@ -242,8 +242,8 @@ export const RuleEditor = ({
                             else update('outboundTag', val);
                         }}
                         options={[
-                            ...outboundTags.map((t: string) => ({ value: t, label: t, description: t("Outbound") })),
-                            ...balancerTags.map((t: string) => ({ value: `bal:${t}`, label: `⚡ ${t}`, description: t("Load Balancer") }))
+                            ...outboundTags.map((tag: string) => ({ value: tag, label: tag, description: t("Outbound") })),
+                            ...balancerTags.map((tag: string) => ({ value: `bal:${tag}`, label: `⚡ ${tag}`, description: t("Load Balancer") }))
                         ]}
                     />
                     <input

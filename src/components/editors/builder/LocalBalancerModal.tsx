@@ -700,8 +700,8 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     options={[
                                         { value: '', label: t("Create a new template") },
                                         ...b.panelTemplateItems
-                                            .filter((t: any) => t.templateType === 'XRAY_JSON')
-                                            .map((t: any) => ({ value: t.uuid, label: `Update: ${t.name}` })),
+                                            .filter((tpl: any) => tpl.templateType === 'XRAY_JSON')
+                                            .map((tpl: any) => ({ value: tpl.uuid, label: `Update: ${tpl.name}` })),
                                     ]}
                                 />
                                 {b.templateTargetUuid && (

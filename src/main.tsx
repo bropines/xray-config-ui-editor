@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { App } from "./App";
 import { useLang } from "./i18n";
+import { warmCyrillicSubsets } from "./utils/fonts";
 
 /**
  * Remounts the app when the language changes.
@@ -16,6 +17,8 @@ const I18nRoot = () => {
     const lang = useLang();
     return <App key={lang} />;
 };
+
+warmCyrillicSubsets();
 
 const rootElement = document.getElementById("app");
 if (rootElement) {

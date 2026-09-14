@@ -130,6 +130,26 @@ describe('i18n imports', () => {
         }
         expect(broken).toEqual([]);
     });
+
+    it('never shadows t with a local binding', () => {
+        // `.map((t: string) => ({ description: t("Outbound") }))` type-checks —
+        // `t` is a string, and calling it is only an error at runtime — so a
+        // single-letter loop variable silently turns every translation in that
+        // callback into a TypeError. Nothing but this catches it.
+        const binds = [
+            /\(\s*t\s*[:,)]/,          // (t) => , (t: string) => , (t, i) =>
+            /\b(?:const|let|var)\s+t\s*[=:]/,
+            /\.\s*(?:map|flatMap|filter|find|findIndex|findLast|some|every|forEach|reduce|sort)\(\s*t\s*=>/,
+        ];
+        const broken: string[] = [];
+        for (const file of sourceFiles('src')) {
+            if (/[\\/]i18n[\\/]/.test(file)) continue;
+            const text = readFileSync(file, 'utf8');
+            if (!/\bt\(\s*["']/.test(text)) continue;
+            if (binds.some(re => re.test(text))) broken.push(file);
+        }
+        expect(broken).toEqual([]);
+    });
 });
 
 describe('russian coverage', () => {

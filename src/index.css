@@ -5,6 +5,13 @@
 @theme {
     --color-dark: #0f172a;
     --color-surface: #1e293b;
+
+    /* `font-mono` used to fall through to Tailwind's default stack while the
+       code editor forced JetBrains Mono, so a mono input and the editor beside
+       it rendered in two different fonts. Both stacks end in faces that
+       actually carry Cyrillic, so a fallback is still monospaced. */
+    --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', Menlo, monospace;
 }
 
 code, pre, .font-mono, .cm-editor {
@@ -20,7 +27,7 @@ html {
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     @apply bg-slate-950 text-slate-200;
     min-height: 100dvh;
     overflow-x: hidden;

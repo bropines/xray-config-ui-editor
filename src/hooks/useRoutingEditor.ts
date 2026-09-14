@@ -71,7 +71,7 @@ export const useRoutingEditor = (onClose: () => void) => {
                 rule.balancerTag?.toLowerCase().includes(q) ||
                 rule.domain?.some((d: string) => d.toLowerCase().includes(q)) ||
                 rule.ip?.some((ip: string) => ip.toLowerCase().includes(q)) ||
-                rule.inboundTag?.some((t: string) => t.toLowerCase().includes(q)) ||
+                rule.inboundTag?.some((tag: string) => tag.toLowerCase().includes(q)) ||
                 rule.protocol?.some((p: string) => p.toLowerCase().includes(q))
             );
         }), [rules, searchQuery]);

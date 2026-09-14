@@ -404,7 +404,7 @@ export const ConfigDashboard = ({
                   className="w-full md:w-auto whitespace-nowrap text-[10px] md:text-xs py-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
                   variant="secondary"
                   onClick={onOpenConfigInspector}
-                  icon="FileSearch"
+                  icon="FileMagnifyingGlass"
                 >
                   {t("Config Inspector")}
                   </Button>

@@ -18,7 +18,7 @@ import { t } from '../../i18n';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const { config, addItem, rawConfigText } = useConfigStore();
-    const allOutboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter((t: any) => t);
+    const allOutboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter((tag: any) => tag);
 
     const {
         local,

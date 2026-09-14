@@ -73,7 +73,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                             label={t("Layer Type")}
                                                             value={currentType}
                                                             onChange={val => changeType(netType, index, val)}
-                                                            options={TYPES.map(t => ({ value: t, label: t }))}
+                                                            options={TYPES.map(type => ({ value: type, label: type }))}
                                                             className="flex-1"
                                                         />
 

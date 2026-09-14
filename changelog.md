@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-09-14
+
+### Fixed
+- **Opening a routing rule crashed the app** (`t is not a function`). The rule editor built its target dropdown with `outboundTags.map((t: string) => …)`, and that `t` shadowed the translate function, so calling it called a string instead. Every local binding named `t` is renamed, and a test now fails if a file both calls `t()` and shadows it — TypeScript cannot catch this, since a string genuinely is what `t` holds inside that callback.
+- **Four icons rendered as a red "?"** — `FileSearch`, `FileJson`, `NoEntry` and `Server` are not names this icon set exports. `Icon` resolves its component from a string, so a wrong name fails silently at runtime; a test now checks every literal icon name against the icon set.
+- **Cyrillic changed font mid-line in the code editor.** JetBrains Mono's Cyrillic subset only downloads when a Cyrillic glyph is first painted, and CodeMirror measures one character's width at startup to build its cursor and selection geometry — so Cyrillic arrived after the measurement, rendered in a fallback at a different width, and pushed the caret off the text. The Cyrillic subsets are now warmed at boot, and the editor re-measures once fonts settle. The font request was also duplicated in `index.html` (once with `display=block`, once with `swap`), which doubled every `@font-face`.
+- `font-mono` fell through to Tailwind's default stack while the editor forced JetBrains Mono, so a mono input and the editor beside it rendered in two different fonts. Both stacks are now named once in the theme, ending in faces that actually carry Cyrillic.
+
+### Changed
+- **Field hints are real tooltips instead of the browser's native `title`.** They match the rest of the UI, appear without the native half-second delay, respond to keyboard focus, and flip above or below the icon depending on the room available. Tapping the icon toggles the hint, which is the only way to read one on a phone.
+- **The language picker is a dropdown.** The EN/RU pair only stayed readable for exactly two languages and spent header width on the option you were not using.
+
 ## [1.1.0] - 2026-09-14
 
 ### Added

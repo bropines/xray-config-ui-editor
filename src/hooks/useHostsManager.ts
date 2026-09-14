@@ -79,7 +79,7 @@ export const useHostsManager = (initialHostUuid?: string) => {
     })), [panelCatalog.inbounds]);
 
     const templateOptions = useMemo(
-        () => (panelTemplates.items || []).filter((t: any) => t.templateType === 'XRAY_JSON'),
+        () => (panelTemplates.items || []).filter((tpl: any) => tpl.templateType === 'XRAY_JSON'),
         [panelTemplates.items]
     );
 

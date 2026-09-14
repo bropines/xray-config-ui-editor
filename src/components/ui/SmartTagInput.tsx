@@ -287,7 +287,7 @@ export const SmartTagInput = ({
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
-        const itemIds = value.map((t, i) => `${t}-${i}`);
+        const itemIds = value.map((tag, i) => `${tag}-${i}`);
         const oldIndex = itemIds.indexOf(active.id);
         const newIndex = itemIds.indexOf(over.id);
 
@@ -354,7 +354,7 @@ export const SmartTagInput = ({
             ? 'border-amber-500/50 focus-within:border-amber-400 focus-within:ring-amber-400/20'
             : 'border-slate-700 focus-within:border-indigo-500 focus-within:ring-indigo-500/50';
 
-    const itemIds = value.map((t, i) => `${t}-${i}`);
+    const itemIds = value.map((tag, i) => `${tag}-${i}`);
 
     return (
         <div className="flex flex-col gap-2" ref={wrapperRef}>

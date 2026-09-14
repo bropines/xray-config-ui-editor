@@ -331,7 +331,7 @@ export const OutboundSelector: React.FC<OutboundSelectorProps> = ({
                         <div className="flex flex-wrap gap-1.5">
                             {currentSelected.map((sel: string) => {
                                 const isExact = availableTags.includes(sel);
-                                const matchCount = availableTags.filter(t => t.startsWith(sel)).length;
+                                const matchCount = availableTags.filter(tag => tag.startsWith(sel)).length;
                                 
                                 return (
                                     <span

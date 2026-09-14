@@ -8,7 +8,7 @@ import { useField } from '../../../hooks/useField';
 import { t } from '../../../i18n';
 
 export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
-    const availableProxies = allTags.filter((t: string) => t !== outbound.tag);
+    const availableProxies = allTags.filter((tag: string) => tag !== outbound.tag);
 
     // `outbound` is the editor's `local` state and `onChange` is its
     // `updateField(path, value)` (see OutboundModal.tsx).

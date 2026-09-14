@@ -54,8 +54,11 @@
         <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-        <link rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=block">
+        <!-- One request, not two: the same families were requested twice, once
+             with display=block (invisible text for up to 3s) and once with
+             display=swap, which doubled every @font-face. Cyrillic subsets are
+             warmed from src/i18n so CodeMirror measures a real glyph width. -->
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap">
 

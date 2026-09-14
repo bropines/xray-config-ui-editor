@@ -638,7 +638,17 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
         viewRef.current = view;
 
+        // CodeMirror derives its cursor and selection geometry from one
+        // character measured at startup. A web font that arrives afterwards
+        // changes that width, so re-measure rather than leave the caret
+        // drifting away from the text it is sitting in.
+        let cancelled = false;
+        document.fonts?.ready.then(() => {
+            if (!cancelled) view.requestMeasure();
+        }).catch(() => {});
+
         return () => {
+            cancelled = true;
             view.destroy();
         };
     }, [schemaMode, readOnly]); 
@@ -658,7 +668,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
         >
             <style>{`
                 .cm-editor { height: 100% !important; outline: none !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
-                .cm-scroller { font-family: 'JetBrains Mono', monospace !important; line-height: 1.5 !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
+                .cm-scroller { font-family: var(--font-mono) !important; line-height: 1.5 !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
                 .cm-content { padding-bottom: 100px !important; font-variant-ligatures: none !important; font-feature-settings: "calt" 0, "liga" 0 !important; }
                 .cm-gutterElement { font-size: 11px; opacity: 0.5; }
                 /* Исправление отображения ошибок */

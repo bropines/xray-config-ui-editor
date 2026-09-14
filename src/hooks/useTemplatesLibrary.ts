@@ -70,8 +70,8 @@ export const useTemplatesLibrary = () => {
     const items = useMemo(() => {
         const q = search.trim().toLowerCase();
         return (panelTemplates.items || [])
-            .filter((t: any) => typeFilter === 'all' || t.templateType === typeFilter)
-            .filter((t: any) => !q || String(t.name || '').toLowerCase().includes(q))
+            .filter((tpl: any) => typeFilter === 'all' || tpl.templateType === typeFilter)
+            .filter((tpl: any) => !q || String(tpl.name || '').toLowerCase().includes(q))
             .sort((a: any, b: any) => String(a.name).localeCompare(String(b.name)));
     }, [panelTemplates.items, search, typeFilter]);
 

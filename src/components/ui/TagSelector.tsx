@@ -22,7 +22,7 @@ export const TagSelector = ({ availableTags, selected, onChange, multi = false, 
     const handleClick = (tag: string) => {
         if (multi && Array.isArray(selected)) {
             // Toggle logic for array
-            if (selected.includes(tag)) onChange(selected.filter(t => t !== tag));
+            if (selected.includes(tag)) onChange(selected.filter(other => other !== tag));
             else onChange([...selected, tag]);
         } else {
             // Single select logic

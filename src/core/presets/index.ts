@@ -242,7 +242,7 @@ export const getPresets = (): Preset[] => {
         {
             name: 'Reality Server',
             description: t("VLESS-Reality Inbound configuration for server side."),
-            icon: 'Server',
+            icon: 'HardDrives',
             config: {
                 log: {
                     loglevel: 'warning',

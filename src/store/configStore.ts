@@ -1313,7 +1313,7 @@ export const useConfigStore = create(
                 }
 
                 const existing = get().snippetLibrary.local;
-                const collides = existing.some(t => t.name === trimmed && t.name !== previousName);
+                const collides = existing.some(tpl => tpl.name === trimmed && tpl.name !== previousName);
                 if (collides) {
                     toast.error(t("A template with this name already exists"));
                     return false;
@@ -1328,7 +1328,7 @@ export const useConfigStore = create(
                         updatedAt: Date.now(),
                         ...(description ? { description } : {}),
                     };
-                    const idx = list.findIndex(t => t.name === (previousName || trimmed));
+                    const idx = list.findIndex(tpl => tpl.name === (previousName || trimmed));
                     if (idx >= 0) list[idx] = entry;
                     else list.push(entry);
                 }));
@@ -1339,7 +1339,7 @@ export const useConfigStore = create(
             deleteLocalTemplate: (name) => {
                 set(produce((state: any) => {
                     state.snippetLibrary.local = state.snippetLibrary.local.filter(
-                        (t: SnippetDefinition) => t.name !== name
+                        (snippet: SnippetDefinition) => snippet.name !== name
                     );
                 }));
                 toast.info(`Template "${name}" deleted`);

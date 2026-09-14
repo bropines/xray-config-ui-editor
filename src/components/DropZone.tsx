@@ -38,7 +38,7 @@ export const DropZone = ({ onFileLoaded }: DropZoneProps) => {
                  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
              }}
         >
-            <Icon name="FileJson" className="text-8xl mb-4 text-slate-700" />
+            <Icon name="FileCode" className="text-8xl mb-4 text-slate-700" />
             <h1 className="text-2xl text-white font-bold mb-2">{t("Xray Config Editor")}</h1>
             <p className="mb-6">{t("Drop config.json here")}</p>
             <div className="flex gap-4">

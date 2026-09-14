@@ -225,7 +225,7 @@ export const HostsModal = ({ onClose, initialHostUuid, onOpenTemplates }: {
                                     onChange={v => h.update({ xrayJsonTemplateUuid: v })}
                                     options={[
                                         { value: '', label: t("None — plain host") },
-                                        ...h.templateOptions.map((t: any) => ({ value: t.uuid, label: t.name })),
+                                        ...h.templateOptions.map((tpl: any) => ({ value: tpl.uuid, label: tpl.name })),
                                     ]}
                                     hint={t("Attach one and subscribers of this host get that whole config, balancer included")}
                                 />

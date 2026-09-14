@@ -42,7 +42,7 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
 
     if (isBlackhole) {
         return (
-            <Card title={t("Blackhole Settings")} icon="NoEntry" className="mt-4">
+            <Card title={t("Blackhole Settings")} icon="Prohibit" className="mt-4">
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg mb-4">
                     <p className="text-[11px] text-slate-400 leading-relaxed italic">
                         {t("The Blackhole outbound drops all outgoing traffic. Route specific domains or IPs here to block them — for ad-blocking, or to stop telemetry.")}
