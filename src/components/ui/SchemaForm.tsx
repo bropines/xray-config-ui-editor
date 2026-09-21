@@ -229,9 +229,14 @@ const standardFieldConfigs = perLanguage((): Record<string, FieldConfig> => ({
         label: t("Show Debug Logs"),
         help: t("Print Reality keys and debug info to server log on startup."),
     },
+    target: {
+        label: t("Handshake Target"),
+        help: t("The real TLS server REALITY forwards unrecognised traffic to (domain:port). Setting it is what puts REALITY in server mode. `dest` is the older name for this same field — set one, not both."),
+        placeholder: t("ads.x5.ru:443")
+    },
     dest: {
-        label: t("Destination Target"),
-        help: t("The target TLS server to mimic (domain:port). E.g. ads.x5.ru:443."),
+        label: t("Handshake Target (dest)"),
+        help: t("The older name for `target`, still accepted by the core. Configs written by panels usually use this one. Set either, not both."),
         placeholder: t("ads.x5.ru:443")
     },
     xver: {

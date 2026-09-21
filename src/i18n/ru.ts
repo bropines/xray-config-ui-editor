@@ -1194,9 +1194,6 @@ export const ru: Record<string, string> = {
     'Show Debug Logs': 'Показывать отладочные логи',
     'Print Reality keys and debug info to server log on startup.':
         'Печатать ключи REALITY и отладочные данные в лог сервера при запуске.',
-    'Destination Target': 'Цель маскировки (dest)',
-    'The target TLS server to mimic (domain:port). E.g. ads.x5.ru:443.':
-        'TLS-сервер, под который маскируемся (домен:порт). Например, ads.x5.ru:443.',
     'PROXY Protocol Version (xver)': 'Версия PROXY protocol (xver)',
     'Sends PROXY protocol header to destination. 0: disable, 1: PROXY v1, 2: PROXY v2.':
         'Отправляет заголовок PROXY protocol на целевой сервер. 0 — выключено, 1 — PROXY v1, 2 — PROXY v2.',
@@ -1969,4 +1966,14 @@ export const ru: Record<string, string> = {
         'Добавлен {n} shortId|Добавлено {n} shortId|Добавлено {n} shortId',
     '{n} in the list|{n} in the list': '{n} в списке|{n} в списке|{n} в списке',
     'Add a generated shortId': 'Добавить сгенерированный shortId',
+    'Handshake Target': 'Цель хендшейка',
+    'The real TLS server REALITY forwards unrecognised traffic to (domain:port). Setting it is what puts REALITY in server mode. `dest` is the older name for this same field — set one, not both.':
+        'Настоящий TLS-сервер, которому REALITY переадресует нераспознанный трафик (домен:порт). Именно его наличие включает серверный режим REALITY. `dest` — старое имя этого же поля: задавайте одно из двух, не оба.',
+    'Handshake Target (dest)': 'Цель хендшейка (dest)',
+    'The older name for `target`, still accepted by the core. Configs written by panels usually use this one. Set either, not both.':
+        'Старое имя поля `target`, ядро его по-прежнему принимает. Конфиги из панелей обычно используют именно его. Задавайте одно из двух, не оба.',
+    'client-side fields on a server inbound. Xray never reads them here, so they change nothing. They are shown because they are in your config: clear them if they were copied in by mistake.':
+        'клиентские поля на серверном inbound. Xray их здесь не читает, они ни на что не влияют. Показаны потому, что лежат в вашем конфиге: очистите, если попали туда случайно.',
+    'server-side fields on a client outbound. Xray never reads them here, so they change nothing. They are shown because they are in your config: clear them if they were copied in by mistake.':
+        'серверные поля на клиентском outbound. Xray их здесь не читает, они ни на что не влияют. Показаны потому, что лежат в вашем конфиге: очистите, если попали туда случайно.',
 };

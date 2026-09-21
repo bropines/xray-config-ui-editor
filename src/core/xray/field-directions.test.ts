@@ -6,6 +6,7 @@ import {
     TLS_FIELDS,
     auditDirections,
     hiddenKeysFor,
+    foreignFieldsIn,
 } from './field-directions';
 
 const realityKeys = Object.keys(RealitySchema.shape);
@@ -68,5 +69,35 @@ describe('field directions', () => {
                 expect(basic.filter(k => advanced.includes(k))).toEqual([]);
             }
         }
+    });
+});
+
+describe('fields already in the config', () => {
+    it('shows a client field on a server when the config carries one', () => {
+        // Panels copy fingerprint and spiderX from client templates into server
+        // inbounds. Hiding a key that is in the data would leave it invisible,
+        // unremovable, and still written back on every save.
+        const value = { privateKey: 'k', spiderX: '/', fingerprint: 'firefox' };
+        const hidden = hiddenKeysFor(realityKeys, REALITY_FIELDS, 'inbound', 'basic', value);
+        expect(hidden).not.toContain('spiderX');
+        expect(hidden).not.toContain('fingerprint');
+        // Still hidden when the config does not mention them.
+        expect(hiddenKeysFor(realityKeys, REALITY_FIELDS, 'inbound', 'basic', { privateKey: 'k' }))
+            .toContain('spiderX');
+    });
+
+    it('treats empty values as absent', () => {
+        for (const value of [{ spiderX: '' }, { serverNames: [] }, { show: undefined }]) {
+            expect(hiddenKeysFor(realityKeys, REALITY_FIELDS, 'inbound', 'basic', value))
+                .toContain('spiderX');
+        }
+    });
+
+    it('names the fields this side will not read', () => {
+        expect(foreignFieldsIn(REALITY_FIELDS, 'inbound', { spiderX: '/', fingerprint: 'firefox', privateKey: 'k' }).sort())
+            .toEqual(['fingerprint', 'spiderX']);
+        expect(foreignFieldsIn(REALITY_FIELDS, 'outbound', { privateKey: 'k', serverName: 'a.com' }))
+            .toEqual(['privateKey']);
+        expect(foreignFieldsIn(REALITY_FIELDS, 'inbound', { privateKey: 'k' })).toEqual([]);
     });
 });

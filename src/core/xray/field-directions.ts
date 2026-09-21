@@ -113,25 +113,60 @@ export const TLS_FIELDS: Record<string, FieldSpec> = {
 const visibleOn = (spec: FieldSpec, side: Side): boolean =>
     spec.direction === 'both' || spec.direction === (side === 'inbound' ? 'server' : 'client');
 
+/** Whether a settings object actually carries something under `key`. */
+const hasValue = (value: Record<string, unknown> | undefined, key: string): boolean => {
+    const held = value?.[key];
+    if (held === undefined || held === null || held === '') return false;
+    if (Array.isArray(held)) return held.length > 0;
+    return true;
+};
+
 /**
  * Keys a form should hide for one side and one disclosure level.
  *
- * Anything the table does not declare is shown rather than hidden: a field
- * nobody has classified yet is better surfaced than silently unreachable,
- * which is how several TLS fields became impossible to set outside raw JSON.
+ * Two rules, and the second matters more than it looks:
+ *
+ * 1. Anything the table does not declare is shown rather than hidden. A field
+ *    nobody has classified yet is better surfaced than silently unreachable,
+ *    which is how several TLS fields became impossible to set outside JSON.
+ * 2. A field that already holds a value is always shown, whichever side it
+ *    belongs to. Panels do write client keys into server inbounds — a
+ *    `fingerprint` and a `spiderX` copied across from a client template is
+ *    common in the wild — and hiding a key that is present in the data leaves
+ *    the user unable to see it or delete it while the app keeps writing it
+ *    back. Direction decides what an empty form offers, never what an existing
+ *    config is allowed to show.
  */
 export const hiddenKeysFor = (
     schemaKeys: string[],
     fields: Record<string, FieldSpec>,
     side: Side,
     level: 'basic' | 'advanced' = 'basic',
+    value?: Record<string, unknown>,
 ): string[] =>
     schemaKeys.filter(key => {
         const spec = fields[key];
         if (!spec) return false;
-        if (!visibleOn(spec, side)) return true;
+        const foreign = !visibleOn(spec, side);
+        // A foreign field with a value is surfaced at the basic level, where
+        // the warning above the form points at it.
+        if (foreign) return hasValue(value, key) ? level !== 'basic' : true;
         return level === 'basic' ? !!spec.advanced : !spec.advanced;
     });
+
+/**
+ * Fields present in the config that this side's core never reads.
+ *
+ * Worth saying out loud rather than just rendering: the value is real, it is
+ * saved, and it does nothing — which is a confusing thing to discover from a
+ * config that "has" a setting that never took effect.
+ */
+export const foreignFieldsIn = (
+    fields: Record<string, FieldSpec>,
+    side: Side,
+    value: Record<string, unknown> | undefined,
+): string[] =>
+    Object.keys(fields).filter(key => !visibleOn(fields[key]!, side) && hasValue(value, key));
 
 export interface DirectionAudit {
     /** In the schema, with no declared direction — shown on both sides. */

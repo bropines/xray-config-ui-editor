@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-09-21
+
+### Fixed
+- **A field already in your config is never hidden.** 1.3.0 split the TLS and REALITY forms by side, which was right for an empty form and wrong for an existing one: panels write client keys such as `fingerprint` and `spiderX` into server inbounds, and hiding a key that is *in the data* left it invisible, unremovable, and still written back on every save. Those fields now appear whenever they hold a value, with a note saying which side's core will actually read them — so a value copied in by mistake can be seen and cleared instead of quietly riding along.
+- **`target` had no label and no hint**, so it rendered bare next to `dest`, its own older alias, with no way to tell what either was for. Both are labelled now and both say they are the same field and that only one should be set.
+
 ## [1.3.0] - 2026-09-21
 
 ### Added

@@ -3,7 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { generateRealitySpiderX, generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
-import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor } from '../../../core/xray/field-directions';
+import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor, foreignFieldsIn } from '../../../core/xray/field-directions';
 import { SockoptEditor } from './SockoptEditor';
 import { TagSelector } from '../../ui/TagSelector';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
@@ -61,6 +61,31 @@ function parseTransportErrors(errors: TransportProps['errors']) {
     return { realityErrors, tlsErrors };
 }
 
+/**
+ * Names fields the config carries that this side's core will not read.
+ *
+ * They stay editable — the value is in the config and hiding it would make it
+ * unremovable — but silently rendering a client key on a server form would
+ * suggest it does something. Panels copy `fingerprint` and `spiderX` from
+ * client templates into server inbounds often enough that this is worth
+ * spelling out.
+ */
+const ForeignFieldNotice = ({ fields, side }: { fields: string[]; side: 'inbound' | 'outbound' }) => {
+    if (fields.length === 0) return null;
+    return (
+        <div className="flex gap-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-950/20 text-[11px] text-amber-200/90 mb-3">
+            <Icon name="Warning" weight="fill" className="shrink-0 mt-0.5 text-amber-400" />
+            <div>
+                <span className="font-mono font-bold">{fields.join(', ')}</span>
+                {' — '}
+                {side === 'inbound'
+                    ? t("client-side fields on a server inbound. Xray never reads them here, so they change nothing. They are shown because they are in your config: clear them if they were copied in by mistake.")
+                    : t("server-side fields on a client outbound. Xray never reads them here, so they change nothing. They are shown because they are in your config: clear them if they were copied in by mistake.")}
+            </div>
+        </div>
+    );
+};
+
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
     // Which security fields belong to which side is declared once, in
     // core/xray/field-directions. These used to be five hand-written
@@ -71,8 +96,8 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
     const side = isClient ? 'outbound' : 'inbound';
     const realityKeys = Object.keys(RealitySchema.shape);
     const tlsKeys = Object.keys(TlsSchema.shape);
-    const shownIn = (keys: string[], fields: typeof REALITY_FIELDS, level: 'basic' | 'advanced') =>
-        keys.filter(key => !hiddenKeysFor(keys, fields, side, level).includes(key));
+    const shownIn = (keys: string[], fields: typeof REALITY_FIELDS, level: 'basic' | 'advanced', value?: any) =>
+        keys.filter(key => !hiddenKeysFor(keys, fields, side, level, value).includes(key));
     const hasAnyValue = (value: any, keys: string[]) =>
         keys.some(key => {
             const v = value?.[key];
@@ -553,26 +578,31 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         </div>
                     )}
 
+                    <ForeignFieldNotice
+                        fields={foreignFieldsIn(REALITY_FIELDS, side, realitySettings.value)}
+                        side={side}
+                    />
+
                     <SchemaForm
                         schema={RealitySchema}
                         value={realitySettings.value || {}}
                         onChange={val => realitySettings.onChange(val)}
                         errors={realityErrors}
-                        excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'basic')}
+                        excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'basic', realitySettings.value)}
                     />
 
                     {/* REALITY EXTENDED SECTION */}
                     <ExtendedSection
                         title={t("Extended REALITY Settings")}
                         description={t("Post-quantum signature verification, master key logs, and server debug options.")}
-                        hasActiveValues={hasAnyValue(realitySettings.value, shownIn(realityKeys, REALITY_FIELDS, 'advanced'))}
+                        hasActiveValues={hasAnyValue(realitySettings.value, shownIn(realityKeys, REALITY_FIELDS, 'advanced', realitySettings.value))}
                     >
                         <SchemaForm
                             schema={RealitySchema}
                             value={realitySettings.value || {}}
                             onChange={val => realitySettings.onChange(val)}
                             errors={realityErrors}
-                            excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'advanced')}
+                            excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'advanced', realitySettings.value)}
                         />
                     </ExtendedSection>
                 </div>
@@ -597,26 +627,31 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         </div>
                     )}
 
+                    <ForeignFieldNotice
+                        fields={foreignFieldsIn(TLS_FIELDS, side, tlsSettings.value)}
+                        side={side}
+                    />
+
                     <SchemaForm
                         schema={TlsSchema}
                         value={tlsSettings.value || {}}
                         onChange={val => tlsSettings.onChange(val)}
                         errors={tlsErrors}
-                        excludeKeys={hiddenKeysFor(tlsKeys, TLS_FIELDS, side, 'basic')}
+                        excludeKeys={hiddenKeysFor(tlsKeys, TLS_FIELDS, side, 'basic', tlsSettings.value)}
                     />
 
                     {/* TLS EXTENDED SECTION */}
                     <ExtendedSection
                         title={t("Extended TLS Settings")}
                         description={t("Cipher suites, session resumption, certificate pinning, and SSLKEYLOGFILE.")}
-                        hasActiveValues={hasAnyValue(tlsSettings.value, shownIn(tlsKeys, TLS_FIELDS, 'advanced'))}
+                        hasActiveValues={hasAnyValue(tlsSettings.value, shownIn(tlsKeys, TLS_FIELDS, 'advanced', tlsSettings.value))}
                     >
                         <SchemaForm
                             schema={TlsSchema}
                             value={tlsSettings.value || {}}
                             onChange={val => tlsSettings.onChange(val)}
                             errors={tlsErrors}
-                            excludeKeys={hiddenKeysFor(tlsKeys, TLS_FIELDS, side, 'advanced')}
+                            excludeKeys={hiddenKeysFor(tlsKeys, TLS_FIELDS, side, 'advanced', tlsSettings.value)}
                         />
                     </ExtendedSection>
                 </div>
