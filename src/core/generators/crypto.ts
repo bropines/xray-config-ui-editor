@@ -85,20 +85,6 @@ export const publicKeyFromPrivateKey = (privateKey: string): string | null => {
  */
 export const generateX25519Keys = generateRealityKeyPair;
 
-/**
- * Generates a random Reality spiderX path.
- * Usually a / followed by 4-8 random chars.
- */
-export const generateRealitySpiderX = (): string => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '/';
-    const len = 4 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < len; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-};
-
 /** Longest shortId REALITY accepts: 8 bytes, so 16 hex characters. */
 export const MAX_SHORT_ID_LENGTH = 16;
 

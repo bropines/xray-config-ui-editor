@@ -276,7 +276,7 @@ const standardFieldConfigs = perLanguage((): Record<string, FieldConfig> => ({
     },
     spiderX: {
         label: t("SpiderX Path"),
-        help: t("Web spider crawl path to authenticate handshake."),
+        help: t("Path the client requests on the target site after the handshake. A path the target actually serves is best — the dice only makes one that looks real."),
         placeholder: '/'
     },
     shortId: {

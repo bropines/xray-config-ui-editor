@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
-import { generateRealitySpiderX, generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
+import { generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
 import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor, foreignFieldsIn } from '../../../core/xray/field-directions';
 import { SockoptEditor } from './SockoptEditor';
 import { TagSelector } from '../../ui/TagSelector';

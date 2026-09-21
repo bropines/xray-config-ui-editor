@@ -7,7 +7,7 @@ import { SmartTagInput } from './SmartTagInput';
 import { NumberInput } from './NumberInput';
 import { DurationInput, type TimeUnit } from './DurationInput';
 import { Icon } from './Icon';
-import { generateRealityShortIds, generateX25519Keys, generateRealitySpiderX } from '../../core/generators';
+import { generateRealityShortIds, generateX25519Keys, generateSpiderPath } from '../../core/generators';
 import { toast } from 'sonner';
 import { t } from '../../i18n';
 
@@ -278,7 +278,9 @@ export const SchemaField = ({
                 const generated = generateRealityShortIds(1)[0];
                 onChange(generated);
             } : isSpiderX ? () => {
-                onChange(generateRealitySpiderX());
+                // Passing the current value keeps a second click from handing
+                // back what is already in the field.
+                onChange(generateSpiderPath({ avoid: typeof value === 'string' ? value : undefined }));
             } : isPrivateKey ? () => {
                 const keys = generateX25519Keys();
                 onChange(keys.privateKey);

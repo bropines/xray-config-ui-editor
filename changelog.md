@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-09-21
+
+### Changed
+- **spiderX generates a path a browser would actually request.** It used to emit `/xzga` — a slash and four random letters, which is the one shape no real site serves. The dice now builds pages (`/docs/getting-started`, `/blog/2024/06/release-notes`), build assets (`/static/js/runtime.5bf2f13f.js`, `/assets/css/main.min.css`) and API calls (`/api/v2/users/me`), weighted towards what a browser spends most of its requests on. Clicking twice never hands back the value already in the field.
+  - No query strings. xray-core parses spiderX as a URL and reads the spider's own tuning ranges out of its query, so a decorative `?q=...` is not decoration — it would be consumed as configuration.
+  - The hint on the field now says what spiderX actually is — the path the client requests on the target site after the handshake — and that a path the target really serves beats a generated one, because nothing in here can know what the target has.
+
 ## [1.4.0] - 2026-09-21
 
 ### Changed

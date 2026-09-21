@@ -2,11 +2,14 @@ export {
     generateUUID,
     generateShortId,
     generateRealityKeyPair,
-    generateRealitySpiderX,
     generateRealityShortIds,
     generateX25519Keys,
     publicKeyFromPrivateKey,
 } from './crypto';
+// spiderX is a browsing path, not a secret — see spider-path for why it is
+// built out of words rather than random characters.
+export { generateSpiderPath } from './spider-path';
+export type { SpiderPathShape, SpiderPathOptions } from './spider-path';
 export { generateWarpAccount } from './warp';
 export type { WarpAccount } from './warp';
 export {

@@ -1207,8 +1207,8 @@ export const ru: Record<string, string> = {
     'TLS Client Hello fingerprint to simulate standard browser behavior.':
         'Отпечаток TLS Client Hello, чтобы соединение выглядело как из обычного браузера.',
     'SpiderX Path': 'Путь SpiderX',
-    'Web spider crawl path to authenticate handshake.':
-        'Путь обхода, по которому подтверждается рукопожатие.',
+    'Path the client requests on the target site after the handshake. A path the target actually serves is best — the dice only makes one that looks real.':
+        'Путь, который клиент запрашивает на сайте-цели после рукопожатия. Лучше всего — путь, который на цели действительно есть: кубик делает только правдоподобный на вид.',
     'Short ID': 'Короткий идентификатор',
     'Specific short ID matching the server list.':
         'Конкретный shortId из списка на сервере.',
