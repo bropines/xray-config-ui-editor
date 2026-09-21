@@ -3,6 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { generateRealitySpiderX, generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
+import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor } from '../../../core/xray/field-directions';
 import { SockoptEditor } from './SockoptEditor';
 import { TagSelector } from '../../ui/TagSelector';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
@@ -16,7 +17,8 @@ import { SchemaForm } from '../../ui/SchemaForm';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useField } from '../../../hooks/useField';
 import type { FieldPath } from '../../../hooks/useField';
-import { t } from '../../../i18n';
+import { toast } from 'sonner';
+import { t, tn } from '../../../i18n';
 
 interface TransportProps {
     streamSettings: any;
@@ -60,6 +62,22 @@ function parseTransportErrors(errors: TransportProps['errors']) {
 }
 
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
+    // Which security fields belong to which side is declared once, in
+    // core/xray/field-directions. These used to be five hand-written
+    // arrays that nothing checked against the schema, so a new field
+    // appeared on both sides and several were hidden from every form at
+    // once — reachable only by editing raw JSON.
+    const [shortIdBatch, setShortIdBatch] = React.useState(3);
+    const side = isClient ? 'outbound' : 'inbound';
+    const realityKeys = Object.keys(RealitySchema.shape);
+    const tlsKeys = Object.keys(TlsSchema.shape);
+    const shownIn = (keys: string[], fields: typeof REALITY_FIELDS, level: 'basic' | 'advanced') =>
+        keys.filter(key => !hiddenKeysFor(keys, fields, side, level).includes(key));
+    const hasAnyValue = (value: any, keys: string[]) =>
+        keys.some(key => {
+            const v = value?.[key];
+            return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '' && v !== false;
+        });
     const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
 
     const { realityErrors, tlsErrors } = parseTransportErrors(errors);
@@ -500,9 +518,38 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         </span>
                     </div>
 
-                    {isClient && (
+                    {isClient ? (
                         <div className="flex flex-wrap gap-2 mb-2">
                             <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>{t("Gen SpiderX Path")}</Button>
+                        </div>
+                    ) : (
+                        // A server usually wants a handful of shortIds at once —
+                        // one per client group — and generating them one dice
+                        // click at a time is the tedious way to get there.
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="label-xs">{t("Generate shortIds")}</span>
+                            <div className="w-20">
+                                <NumberInput value={shortIdBatch} onChange={v => setShortIdBatch(v ?? 1)} min={1} max={32} />
+                            </div>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="!py-0.5 !px-2 !text-[10px]"
+                                icon="DiceFive"
+                                onClick={() => {
+                                    const existing: string[] = realitySettings.value?.shortIds || [];
+                                    const made = generateRealityShortIds(shortIdBatch, { existing });
+                                    update(['realitySettings', 'shortIds'], [...existing, ...made]);
+                                    toast.success(tn(made.length, "Added {n} shortId", "Added {n} shortIds"));
+                                }}
+                            >
+                                {t("Add")}
+                            </Button>
+                            {(realitySettings.value?.shortIds?.length ?? 0) > 0 && (
+                                <span className="text-[10px] text-slate-500">
+                                    {tn(realitySettings.value.shortIds.length, "{n} in the list", "{n} in the list")}
+                                </span>
+                            )}
                         </div>
                     )}
 
@@ -511,65 +558,21 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         value={realitySettings.value || {}}
                         onChange={val => realitySettings.onChange(val)}
                         errors={realityErrors}
-                        excludeKeys={
-                            isClient
-                                ? [
-                                      'show',
-                                      'target',
-                                      'dest',
-                                      'xver',
-                                      'serverNames',
-                                      'privateKey',
-                                      'minClientVer',
-                                      'maxClientVer',
-                                      'maxTimeDiff',
-                                      'shortIds',
-                                      'mldsa65Seed',
-                                      'limitFallbackUpload',
-                                      'limitFallbackDownload',
-                                      'mldsa65Verify',
-                                      'password',
-                                      'masterKeyLog'
-                                  ]
-                                : [
-                                      'target',
-                                      'serverName',
-                                      'fingerprint',
-                                      'password',
-                                      'publicKey',
-                                      'shortId',
-                                      'mldsa65Verify',
-                                      'spiderX',
-                                      'show',
-                                      'mldsa65Seed',
-                                      'maxTimeDiff',
-                                      'limitFallbackUpload',
-                                      'limitFallbackDownload',
-                                      'masterKeyLog'
-                                  ]
-                        }
+                        excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'basic')}
                     />
 
                     {/* REALITY EXTENDED SECTION */}
                     <ExtendedSection
                         title={t("Extended REALITY Settings")}
                         description={t("Post-quantum signature verification, master key logs, and server debug options.")}
-                        hasActiveValues={
-                            isClient
-                                ? !!realitySettings.value?.mldsa65Verify || !!realitySettings.value?.masterKeyLog
-                                : !!realitySettings.value?.show || !!realitySettings.value?.mldsa65Seed || !!realitySettings.value?.maxTimeDiff || !!realitySettings.value?.masterKeyLog
-                        }
+                        hasActiveValues={hasAnyValue(realitySettings.value, shownIn(realityKeys, REALITY_FIELDS, 'advanced'))}
                     >
                         <SchemaForm
                             schema={RealitySchema}
                             value={realitySettings.value || {}}
                             onChange={val => realitySettings.onChange(val)}
                             errors={realityErrors}
-                            excludeKeys={
-                                isClient
-                                    ? Object.keys(RealitySchema.shape).filter(k => !['mldsa65Verify', 'masterKeyLog'].includes(k))
-                                    : Object.keys(RealitySchema.shape).filter(k => !['show', 'mldsa65Seed', 'maxTimeDiff', 'masterKeyLog'].includes(k))
-                            }
+                            excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'advanced')}
                         />
                     </ExtendedSection>
                 </div>
@@ -599,47 +602,21 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         value={tlsSettings.value || {}}
                         onChange={val => tlsSettings.onChange(val)}
                         errors={tlsErrors}
-                        excludeKeys={[
-                            'certificates',
-                            'echSockopt',
-                            'pinnedPeerCertSha256',
-                            'masterKeyLog',
-                            'cipherSuites',
-                            'disableSystemRoot',
-                            'enableSessionResumption',
-                            'echServerKeys',
-                            'echConfigList',
-                            'verifyPeerCertByName',
-                            'curvePreferences',
-                            ...(isClient ? ['rejectUnknownSni'] : ['allowInsecure', 'fingerprint'])
-                        ]}
+                        excludeKeys={hiddenKeysFor(tlsKeys, TLS_FIELDS, side, 'basic')}
                     />
 
                     {/* TLS EXTENDED SECTION */}
                     <ExtendedSection
                         title={t("Extended TLS Settings")}
                         description={t("Cipher suites, session resumption, certificate pinning, and SSLKEYLOGFILE.")}
-                        hasActiveValues={
-                            !!tlsSettings.value?.masterKeyLog ||
-                            !!tlsSettings.value?.pinnedPeerCertSha256 ||
-                            !!tlsSettings.value?.cipherSuites ||
-                            !!tlsSettings.value?.disableSystemRoot ||
-                            !!tlsSettings.value?.enableSessionResumption ||
-                            (!isClient && !!tlsSettings.value?.rejectUnknownSni)
-                        }
+                        hasActiveValues={hasAnyValue(tlsSettings.value, shownIn(tlsKeys, TLS_FIELDS, 'advanced'))}
                     >
                         <SchemaForm
                             schema={TlsSchema}
                             value={tlsSettings.value || {}}
                             onChange={val => tlsSettings.onChange(val)}
                             errors={tlsErrors}
-                            excludeKeys={
-                                Object.keys(TlsSchema.shape).filter(k =>
-                                    isClient
-                                        ? !['pinnedPeerCertSha256', 'masterKeyLog', 'cipherSuites', 'disableSystemRoot', 'enableSessionResumption'].includes(k)
-                                        : !['rejectUnknownSni', 'masterKeyLog', 'cipherSuites', 'enableSessionResumption', 'disableSystemRoot'].includes(k)
-                                )
-                            }
+                            excludeKeys={hiddenKeysFor(tlsKeys, TLS_FIELDS, side, 'advanced')}
                         />
                     </ExtendedSection>
                 </div>

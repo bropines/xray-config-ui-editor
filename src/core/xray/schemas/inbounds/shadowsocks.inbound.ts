@@ -27,4 +27,6 @@ export const ShadowsocksInboundSettingsSchema = z.object({
   email: z.string().optional(),
   /** Additional users (multi-user mode, 2022-blake3-* only) */
   users: z.array(ShadowsocksInboundUserSchema).optional(),
+  /** Alias for users, accepted by the core. */
+  clients: z.array(ShadowsocksInboundUserSchema).optional(),
 }).passthrough();

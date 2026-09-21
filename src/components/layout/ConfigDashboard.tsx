@@ -15,6 +15,11 @@ import { CommitModal } from "../git/CommitModal";
 import { collectSnippetRefs, getSnippetRefName, type SnippetDefinition } from '../../core/snippets';
 import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
 import { t, tn } from '../../i18n';
+import { summariseOutboundRouting } from '../../core/routing/outbound-routing';
+import { OutboundRoutingBadge } from './OutboundRoutingBadge';
+import { BatchEditModal } from '../editors/batch/BatchEditModal';
+import type { EndpointDirection } from '../../core/generators/endpoint-factory';
+import { useConfigStore } from '../../store/configStore';
 import { dndAccessibility } from '../ui/dndAccessibility';
 
 // Re-usable column Card for the dashboard
@@ -60,6 +65,7 @@ const DashCard = ({
 
 const SortableOutboundItem = ({
   ob,
+  routing,
   index,
   filteredIndex,
   isSelected,
@@ -169,6 +175,7 @@ const SortableOutboundItem = ({
                 </>
               )}
             </div>
+            <OutboundRoutingBadge summary={routing} />
           </>
         )}
       </div>
@@ -317,6 +324,27 @@ export const ConfigDashboard = ({
     onDeleteOutbound,
     onDeleteOutbounds,
     onMoveOutbound
+  );
+
+  // One change across many endpoints. The selection is carried in so the
+  // outbounds card's own multi-select can hand over what is already picked.
+  const [batch, setBatch] = React.useState<{ direction: EndpointDirection; selection: number[] } | null>(null);
+  const applyBatchResult = React.useCallback((next: any[]) => {
+    if (!batch) return;
+    useConfigStore.getState().updateSection(
+      batch.direction === 'inbound' ? 'inbounds' : 'outbounds',
+      next,
+    );
+    setBatch(null);
+  }, [batch]);
+
+  // Which rules and balancers reach each outbound, and at which layer.
+  // Computed once for the whole list rather than per card: every summary walks
+  // all the rules, and a config with a hundred outbounds would walk them a
+  // hundred times.
+  const outboundRouting = React.useMemo(
+    () => summariseOutboundRouting(config),
+    [config?.outbounds, config?.routing]
   );
 
   // How many `{ "snippet": "NAME" }` references the open config carries, and
@@ -577,6 +605,16 @@ export const ConfigDashboard = ({
                     iconClassName="text-sm"
                     title={t("View JSON")}
                     className="h-9 w-9 p-0"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBatch({ direction: 'inbound', selection: [] })}
+                    icon="Stack"
+                    iconClassName="text-sm"
+                    title={t("Batch edit inbounds")}
+                    className="h-9 w-9 p-0"
+                    disabled={(config.inbounds?.length || 0) === 0}
                   />
                   <Button
                     variant="ghost"
@@ -991,13 +1029,22 @@ export const ConfigDashboard = ({
                       {t("Cancel")}
                       </Button>
                     <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setBatch({ direction: 'outbound', selection: [...selectedIndices] })}
+                      icon="Stack"
+                      className="text-xs py-1 px-2.5 font-bold"
+                    >
+                      {tn(selectedIndices.size, "Edit {n}", "Edit {n}")}
+                    </Button>
+                    <Button
                       variant="danger"
                       size="sm"
                       onClick={handleDeleteSelected}
                       icon="Trash"
                       className="text-xs py-1 px-2.5 font-bold shadow-md"
                     >
-                      Delete ({selectedIndices.size})
+                      {tn(selectedIndices.size, "Delete {n}", "Delete {n}")}
                     </Button>
                   </div>
                 </div>
@@ -1018,6 +1065,7 @@ export const ConfigDashboard = ({
                         <SortableOutboundItem
                           key={item.originalIndex}
                           ob={item.ob}
+                          routing={outboundRouting.get(item.ob?.tag)}
                           index={item.originalIndex}
                           filteredIndex={filteredIdx}
                           isSelected={selectedIndices.has(item.originalIndex)}
@@ -1118,6 +1166,16 @@ export const ConfigDashboard = ({
             )}
           </DashCard>
         </div>
+      )}
+
+      {batch && (
+        <BatchEditModal
+          direction={batch.direction}
+          items={(batch.direction === 'inbound' ? config.inbounds : config.outbounds) || []}
+          initialSelection={batch.selection}
+          onApply={applyBatchResult}
+          onClose={() => setBatch(null)}
+        />
       )}
     </div>
   );

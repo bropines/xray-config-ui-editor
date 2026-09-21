@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-09-21
+
+### Added
+- **One factory for inbounds and outbounds.** They were built by two functions with two switch statements, so the two sides of a protocol drifted apart unnoticed — the outbound learned `vnext` while the inbound kept `clients`, and only one of them ever got a new default. `createEndpoint(direction, protocol, options)` describes each protocol once with a builder per side, so a gap shows up in the source instead of in a config someone is debugging. `createDefaultInbound` / `createDefaultOutbound` remain as direction-bound wrappers.
+  - The same options build both ends: passing one `uuid` gives a server and a client that can actually talk to each other, which is what building a client config from a panel host needs.
+  - `protocolsFor(direction)`, `supportsProtocol()` and `bidirectionalProtocols()` replace the hardcoded protocol lists.
+  - Fixed on the way through: a generated VLESS outbound carried `security: 'auto'`, which is a VMess field and does nothing in VLESS. It now carries `encryption: 'none'`.
+- **Every outbound says how traffic reaches it, and at which layer.** Each card now shows whether a rule names it directly or a balancer selects it, how many rules reach it, and whether those rules decide at the transport layer (addresses and ports, always available) or the application layer (domains and protocols, which only exist once the inbound has sniffed the traffic). An L7 rule on an inbound with sniffing off matches nothing, and nothing used to say so.
+  - Outbounds that no rule can reach are marked, as is the first outbound, which quietly receives everything unmatched.
+  - Balancer selectors are matched by prefix, as the core does, so a selector of `proxy` correctly claims `proxy-2`.
+- **Batch editing for inbounds and outbounds.** Transport, security layer, tag prefix and suffix, sniffing and port renumbering with a step for inbounds, Mux and dialer chaining for outbounds, plus arbitrary dotted paths.
+  - Every batch shows exactly what it will change, field by field as `before → after`, and what it will refuse and why, before anything is written. Setting a transport on a WireGuard outbound or a port on a TUN inbound is skipped with a reason rather than written and discovered when the core will not start.
+  - An outbound asked to chain through itself is refused: the core will not run a dialer loop.
+  - Reachable from the Inbounds card and from the Outbounds multi-select, which now offers Edit alongside Delete.
+- **shortIds are generated in batches.** A count next to the REALITY key tools generates that many at once, all distinct and distinct from the ids already in the list.
+
+### Fixed
+- **The shortId dice button replaced the whole list with three fresh ids**, discarding shortIds that clients in the field were already handshaking with. It appends one now.
+- **The client UUID is no longer asked for when building a panel template.** A template has no single subscriber — the panel substitutes each one's own credentials when it renders the subscription — so the field only appears for a client config, which really does belong to one person.
+- **Schema drift against Xray-core, found by a new audit** (`bun run schema:audit`, which compares the zod schemas the forms are built from against the types generated from the core's own `infra/conf`):
+  - `clients` was missing from the VLESS, VMess, Trojan and Shadowsocks inbound schemas — the field every server config is written with, and the one this app itself emits.
+  - `vnext` / `servers` were missing from the matching outbound schemas, likewise.
+  - REALITY was missing `masterKeyLog` and `type`; `masterKeyLog` was nonetheless referenced by the form's exclude lists, so the Extended section tested a field the form could never render.
+  - Also added: VLESS inbound `flow`, VLESS outbound `email` and `seed`, VMess outbound `email`, Trojan outbound `flow`.
+- **Several TLS fields could not be set anywhere in the UI.** `certificates`, `verifyPeerCertByName`, `curvePreferences`, `echConfigList`, `echServerKeys` and `echSockopt` were excluded from the basic form and from the Extended section both, leaving raw JSON as the only way to reach them.
+
+### Changed
+- **Which security fields belong to which side is declared once**, in `core/xray/field-directions`, instead of in five hand-written `excludeKeys` arrays that nothing checked against the schema. A field added to the schema used to appear on both sides; a field removed from it left a stale entry behind. A test now fails if any schema key has no declared direction, or if a declared field is reachable from no form at all.
+
 ## [1.2.0] - 2026-09-14
 
 ### Added

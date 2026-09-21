@@ -10,11 +10,20 @@ export {
 export { generateWarpAccount } from './warp';
 export type { WarpAccount } from './warp';
 export {
-    createDefaultInbound,
-    createDefaultOutbound,
     createDefaultRoutingRule,
     createDefaultBalancer,
 } from './protocol-factories';
+
+// One factory for both sides of a protocol — see endpoint-factory for why.
+export {
+    createEndpoint,
+    createDefaultInbound,
+    createDefaultOutbound,
+    protocolsFor,
+    supportsProtocol,
+    bidirectionalProtocols,
+} from './endpoint-factory';
+export type { EndpointDirection, EndpointOptions, Endpoint } from './endpoint-factory';
 
 // Client-config builder (local balancer over a set of nodes)
 export {

@@ -16,7 +16,9 @@ export const TrojanInboundUserSchema = z.object({
 }).passthrough();
 
 export const TrojanInboundSettingsSchema = z.object({
-  /** List of authorized users */
+  /** List of authorized users. The documented spelling; `users` is an alias. */
+  clients: z.array(TrojanInboundUserSchema).optional(),
+  /** Alias for clients, accepted by the core. */
   users: z.array(TrojanInboundUserSchema).optional(),
   /** Fallback configurations */
   fallbacks: z.array(FallbackObjectSchema).optional(),

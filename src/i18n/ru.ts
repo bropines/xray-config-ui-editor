@@ -62,9 +62,6 @@ export const ru: Record<string, string> = {
         'Взять proxy-outbound’ы из конфига, открытого в редакторе',
     'From config': 'Из конфига',
     'Read settings from the open config': 'Прочитать настройки из открытого конфига',
-    'Client UUID — only to add hosts as nodes': 'UUID клиента — нужен только чтобы добавить хосты как узлы',
-    'Needed only by Add, which mirrors hosts into client outbounds. Editing a host needs no UUID.':
-        'Нужен только кнопке «Добавить», которая переносит хосты в клиентские outbound’ы. Для редактирования хоста UUID не требуется.',
     'Not connected to Remnawave — connect from the header first.':
         'Нет подключения к Remnawave — сначала подключитесь в шапке.',
     'Search hosts, profiles, addresses…': 'Поиск по хостам, профилям, адресам…',
@@ -1908,4 +1905,68 @@ export const ru: Record<string, string> = {
     'unrecognised contents': 'нераспознанное содержимое',
     'This body looks like {kind} — inserting it into {target} will not do what you expect.':
         'Похоже, в теле {kind} — вставка этого в {target} сработает не так, как вы ожидаете.',
+
+    // ── Batch editing ───────────────────────────────────────────────────────
+    'Batch edit inbounds': 'Пакетное изменение inbound’ов',
+    'Batch edit outbounds': 'Пакетное изменение outbound’ов',
+    'Nothing to apply': 'Применять нечего',
+    'Apply to {n} item|Apply to {n} items':
+        'Применить к {n} элементу|Применить к {n} элементам|Применить к {n} элементам',
+    'Select all': 'Выбрать все',
+    'skip': 'пропуск',
+    'Applied to streamSettings.network. Protocols that carry no transport — WireGuard, TUN, freedom, blackhole — are skipped rather than broken.':
+        'Записывается в streamSettings.network. Протоколы без транспорта — WireGuard, TUN, freedom, blackhole — пропускаются, а не ломаются.',
+    'Leave unchanged': 'Не менять',
+    'Tag suffix': 'Суффикс тега',
+    'First port': 'Первый порт',
+    'Port step': 'Шаг порта',
+    'Each further inbound gets the previous port plus this, so a renumbered block does not collide.':
+        'Каждый следующий inbound получает предыдущий порт плюс это значение, чтобы перенумерованный блок не конфликтовал сам с собой.',
+    'Turn sniffing on': 'Включить sniffing',
+    'Enable Mux': 'Включить Mux',
+    'Chain through outbound': 'Пустить через outbound',
+    'Written to streamSettings.sockopt.dialerProxy. An outbound naming itself is refused: the core will not run a dialer loop.':
+        'Записывается в streamSettings.sockopt.dialerProxy. Outbound, указывающий сам на себя, отклоняется: ядро не запустит такую петлю.',
+    'What this will change': 'Что именно изменится',
+    'Pick the items to change on the left.': 'Выберите слева, что менять.',
+    'Set a field above and the exact changes appear here before anything is written.':
+        'Задайте поле выше — и здесь появятся точные изменения ещё до записи.',
+    'Every selected item already has these values.': 'У всех выбранных элементов уже такие значения.',
+    'Edit {n}|Edit {n}': 'Изменить {n}|Изменить {n}|Изменить {n}',
+    'Delete {n}|Delete {n}': 'Удалить {n}|Удалить {n}|Удалить {n}',
+
+    // ── Routing shown on an outbound ────────────────────────────────────────
+    'Transport-layer routing: matches on addresses and ports, which are always available.':
+        'Маршрутизация транспортного уровня: по адресам и портам, которые доступны всегда.',
+    'Application-layer routing: matches on domains or protocols, which only exist once the inbound has sniffed the traffic. Without sniffing these rules never match.':
+        'Маршрутизация прикладного уровня: по доменам или протоколам, которые появляются только после sniffing на inbound. Без sniffing такие правила не сработают никогда.',
+    'Both layers: some rules match on addresses and ports, others need the traffic sniffed first.':
+        'Оба уровня: часть правил работает по адресам и портам, части нужен предварительный sniffing.',
+    'No routing rule sends traffic here, and it is not the first outbound, so nothing reaches it.':
+        'Сюда не ведёт ни одно правило, и это не первый outbound — значит, трафик не дойдёт.',
+    'unreachable': 'недостижим',
+    'The first outbound: Xray sends it everything no rule matched.':
+        'Первый outbound: Xray отправляет туда всё, что не совпало ни с одним правилом.',
+    'default': 'по умолчанию',
+    'L4+L7': 'L4+L7',
+    'Reached through a balancer rather than by name — the rule points at the balancer, which selects this outbound by tag prefix.':
+        'Достигается через балансировщик, а не по имени: правило указывает на балансировщик, а тот выбирает этот outbound по префиксу тега.',
+    '{n} rule|{n} rules': '{n} правило|{n} правила|{n} правил',
+
+    // ── Client UUID in the balancer builder ─────────────────────────────────
+    "No client UUID here: the panel fills in each subscriber's own credentials when it renders this template. Select hosts to say which ones make up the pool.":
+        'UUID клиента тут не нужен: собирая шаблон, панель подставит учётные данные каждого подписчика сама. Хосты выбирайте, чтобы задать состав пула.',
+    'Client UUID': 'UUID клиента',
+    "The id from one user's vless:// link in the panel. It is baked into the config this builds, so that config belongs to that one person — which is why the panel-template mode does not ask for it.":
+        'Это id из ссылки vless:// конкретного пользователя в панели. Он зашивается в собираемый конфиг, поэтому такой конфиг принадлежит одному человеку — и поэтому в режиме шаблона панели его не спрашивают.',
+    'Needed only by Add, which mirrors hosts into client outbounds.':
+        'Нужен только кнопке «Добавить», которая переносит хосты в клиентские outbound’ы.',
+    'Add {n}|Add {n}': 'Добавить {n}|Добавить {n}|Добавить {n}',
+
+    // ── shortIds ────────────────────────────────────────────────────────────
+    'Generate shortIds': 'Сгенерировать shortId',
+    'Added {n} shortId|Added {n} shortIds':
+        'Добавлен {n} shortId|Добавлено {n} shortId|Добавлено {n} shortId',
+    '{n} in the list|{n} in the list': '{n} в списке|{n} в списке|{n} в списке',
+    'Add a generated shortId': 'Добавить сгенерированный shortId',
 };

@@ -17,6 +17,8 @@ export const RealitySchema = z.object({
   target: z.string().optional(),
   /** Alias for target (legacy) */
   dest: z.string().optional(),
+  /** Network of the handshake target: "tcp" or "unix". Default: "tcp" */
+  type: z.string().optional(),
   xver: z.number().int().optional(),
   serverNames: z.array(z.string()).optional(),
   privateKey: z.string().optional(),
@@ -38,4 +40,8 @@ export const RealitySchema = z.object({
   shortId: z.string().optional(),
   mldsa65Verify: z.string().optional(),
   spiderX: z.string().optional(),
+
+  // --- Both sides ---
+  /** SSLKEYLOGFILE path for decrypting captures. Read on either side. */
+  masterKeyLog: z.string().optional(),
 }).passthrough();

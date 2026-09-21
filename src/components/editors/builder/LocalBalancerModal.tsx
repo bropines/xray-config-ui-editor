@@ -245,13 +245,25 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                             </>
                         ) : (
                             <>
-                                <Input
-                                    label={t("Client UUID — only to add hosts as nodes")}
-                                    value={b.panelUserId}
-                                    onChange={(e: any) => b.setPanelUserId(e.target.value)}
-                                    placeholder={t("9bed733f-b58f-4d23-9ca2-6397e8debedf")}
-                                    hint={t("Needed only by Add, which mirrors hosts into client outbounds. Editing a host needs no UUID.")}
-                                />
+                                {/* A template carries no identity: the panel substitutes each
+                                    subscriber's own credentials when it renders the subscription,
+                                    so asking for one UUID here would be asking for whose. It is
+                                    only a client config — one file for one person — that has to
+                                    name an id. */}
+                                {isTemplate ? (
+                                    <p className="text-[10px] text-slate-500 bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2">
+                                        {t("No client UUID here: the panel fills in each subscriber's own credentials when it renders this template. Select hosts to say which ones make up the pool.")}
+                                    </p>
+                                ) : (
+                                    <Input
+                                        label={t("Client UUID")}
+                                        value={b.panelUserId}
+                                        onChange={(e: any) => b.setPanelUserId(e.target.value)}
+                                        placeholder={t("9bed733f-b58f-4d23-9ca2-6397e8debedf")}
+                                        help={t("The id from one user's vless:// link in the panel. It is baked into the config this builds, so that config belongs to that one person — which is why the panel-template mode does not ask for it.")}
+                                        hint={t("Needed only by Add, which mirrors hosts into client outbounds.")}
+                                    />
+                                )}
                                 <div className="flex gap-2">
                                     <Button
                                         variant="primary"
@@ -264,16 +276,18 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                                     >
                                         {b.panelFetchedAt ? t("Refresh hosts") : t("Load hosts")}
                                     </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        icon="Plus"
-                                        className="flex-1 text-[11px]"
-                                        onClick={b.addSelectedFromPanel}
-                                        disabled={b.panelSelection.size === 0}
-                                    >
-                                        Add {b.panelSelection.size || ''}
-                                    </Button>
+                                    {!isTemplate && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            icon="Plus"
+                                            className="flex-1 text-[11px]"
+                                            onClick={b.addSelectedFromPanel}
+                                            disabled={b.panelSelection.size === 0}
+                                        >
+                                            {tn(b.panelSelection.size, "Add {n}", "Add {n}")}
+                                        </Button>
+                                    )}
                                 </div>
                                 {!b.panelConnected && (
                                     <p className="text-[10px] text-amber-300/80">

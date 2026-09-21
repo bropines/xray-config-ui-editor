@@ -15,7 +15,9 @@ export const VmessInboundUserSchema = z.object({
 }).passthrough();
 
 export const VmessInboundSettingsSchema = z.object({
-  /** List of authorized users */
+  /** List of authorized users. The documented spelling; `users` is an alias. */
+  clients: z.array(VmessInboundUserSchema).optional(),
+  /** Alias for clients, accepted by the core. */
   users: z.array(VmessInboundUserSchema).optional(),
   /** Default policy settings */
   default: z.object({

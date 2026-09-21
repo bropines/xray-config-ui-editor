@@ -240,9 +240,12 @@ export const SchemaField = ({
 
             const allowedPattern = isIpField ? /[^0-9a-zA-Z./:, ]/g : undefined;
 
+            // Appends rather than replaces: the old behaviour overwrote the
+            // whole list with three fresh ids, throwing away shortIds that
+            // clients in the field are already handshaking with.
             const handleAction = isShortIds ? () => {
-                const generated = generateRealityShortIds(3);
-                handleArrayChange(generated);
+                const existing = displayValue;
+                handleArrayChange([...existing, ...generateRealityShortIds(1, { existing })]);
             } : undefined;
 
             return (
@@ -255,7 +258,7 @@ export const SchemaField = ({
                         onChange={handleArrayChange}
                         allowedPattern={allowedPattern}
                         actionIcon={isShortIds ? "DiceFive" : undefined}
-                        actionTooltip={isShortIds ? "Gen Short IDs List" : undefined}
+                        actionTooltip={isShortIds ? t("Add a generated shortId") : undefined}
                         onActionClick={handleAction}
                     />
                 </FormField>

@@ -99,9 +99,47 @@ export const generateRealitySpiderX = (): string => {
     return result;
 };
 
+/** Longest shortId REALITY accepts: 8 bytes, so 16 hex characters. */
+export const MAX_SHORT_ID_LENGTH = 16;
+
+export interface ShortIdOptions {
+    /** Hex characters per id. Clamped to 1…16. Omit for a mix of 8 and 16. */
+    length?: number;
+    /** Ids to keep and not collide with. */
+    existing?: string[];
+}
+
 /**
- * Generates a list of Reality shortIds.
+ * Generates a batch of REALITY shortIds.
+ *
+ * Distinct by construction: a server matches a client by its shortId, so two
+ * identical entries in `shortIds` are one wasted slot and a confusing config
+ * rather than an error the core will report.
+ *
+ * `existing` lets a caller extend a list without colliding with what is
+ * already in it, which is what "generate a few more" has to mean — replacing
+ * the list would throw away ids that clients are already using.
  */
-export const generateRealityShortIds = (count = 1): string[] => {
-    return Array.from({ length: count }, () => generateShortId(Math.random() > 0.5 ? 8 : 16));
+export const generateRealityShortIds = (count = 1, options: ShortIdOptions = {}): string[] => {
+    const wanted = Math.max(0, Math.floor(count));
+    const fixed = options.length === undefined
+        ? undefined
+        : Math.min(MAX_SHORT_ID_LENGTH, Math.max(1, Math.floor(options.length)));
+
+    const taken = new Set((options.existing ?? []).map(id => id.toLowerCase()));
+    const made: string[] = [];
+
+    // 16 hex characters is 2^64 values, so a collision needs many attempts to
+    // be worth worrying about — but a 1-character length has 16, and looping
+    // forever on an impossible request is not an option.
+    let attempts = 0;
+    const budget = wanted * 50 + 100;
+    while (made.length < wanted && attempts < budget) {
+        attempts += 1;
+        const id = generateShortId(fixed ?? (Math.random() > 0.5 ? 8 : MAX_SHORT_ID_LENGTH));
+        if (taken.has(id)) continue;
+        taken.add(id);
+        made.push(id);
+    }
+    return made;
 };

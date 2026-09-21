@@ -26,8 +26,12 @@ export const VlessInboundUserSchema = z.object({
 }).passthrough();
 
 export const VlessInboundSettingsSchema = z.object({
-  /** List of authorized users */
+  /** List of authorized users. The documented spelling; `users` is an alias. */
+  clients: z.array(VlessInboundUserSchema).optional(),
+  /** Alias for clients, accepted by the core. */
   users: z.array(VlessInboundUserSchema).optional(),
+  /** Default flow applied to clients that do not set their own. */
+  flow: VlessFlowSchema.optional(),
   /** Decryption method. Must be "none" */
   decryption: z.string().optional(),
   /** Fallback configurations for active probing resistance */
