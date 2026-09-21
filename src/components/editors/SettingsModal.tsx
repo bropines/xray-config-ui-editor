@@ -11,6 +11,7 @@ import { ApiStatsEditor } from './settings/ApiStatsEditor';
 import { PolicyEditor } from './settings/PolicyEditor';
 import { ObservatoryEditor } from './settings/ObservatoryEditor';
 import { BurstObservatoryEditor } from './settings/BurstObservatoryEditor';
+import { SpiderPathsEditor } from './settings/SpiderPathsEditor';
 
 import { useSettingsEditor } from '../../hooks/useSettingsEditor';
 import { useConfigStore } from '../../store/configStore';
@@ -93,8 +94,10 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                                 </FormField>
                             </div>
                         </Card>
-                        
-                        <LogEditor 
+
+                        <SpiderPathsEditor />
+
+                        <LogEditor
                             log={config?.log} 
                             onChange={(v: any) => updateSection('log', v)} 
                             onToggle={(d: any) => toggleSection('log', d)} 

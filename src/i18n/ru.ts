@@ -2009,4 +2009,23 @@ export const ru: Record<string, string> = {
     '{n} already in the list|{n} already in the list':
         '{n} уже в списке|{n} уже в списке|{n} уже в списке',
     'Generate a spiderX path': 'Сгенерировать путь spiderX',
+
+    // ── spiderX path list ───────────────────────────────────────────────────
+    'SpiderX Paths': 'Пути SpiderX',
+    'spiderX is walked on the target site itself, so a path that site really serves is the only kind that does not 404. Paste a sitemap, a HAR export, the page\'s HTML, or just a list of paths — whatever is in there gets read.':
+        'По spiderX клиент ходит на самом сайте-цели, поэтому не отдаст 404 только тот путь, который у цели действительно есть. Вставьте sitemap, выгрузку HAR, HTML страницы или просто список путей — разберётся всё, что там лежит.',
+    'Absolute URLs from other hosts are dropped: their paths live on someone else\'s server. Query strings are dropped too — xray-core reads the spider\'s own tuning out of spiderX\'s query, so they are not decoration.':
+        'Абсолютные ссылки на чужие хосты отбрасываются: их пути лежат на чужом сервере. Query-строки тоже — xray-core вычитывает из query у spiderX собственные настройки паука, так что это не украшение.',
+    'Read paths': 'Разобрать пути',
+    'No paths found in that text.': 'В этом тексте путей не нашлось.',
+    'Every path in there is already on the list.': 'Все пути оттуда уже в списке.',
+    'Until there is a list here, the dice builds a plausible-looking path instead.':
+        'Пока список пуст, кубик собирает правдоподобный путь сам.',
+    'New paths are appended; the ones already stored are kept.':
+        'Новые пути добавляются к сохранённым, старые остаются.',
+    'Added {n} path|Added {n} paths':
+        'Добавлен {n} путь|Добавлено {n} пути|Добавлено {n} путей',
+    '{n} path · the dice uses it|{n} paths · the dice uses them':
+        '{n} путь · кубик берёт его|{n} пути · кубик берёт из них|{n} путей · кубик берёт из них',
+    'Take a path from your list ({n})': 'Взять путь из вашего списка ({n})',
 };

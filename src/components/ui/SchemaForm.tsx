@@ -391,6 +391,12 @@ interface SchemaFormProps {
     errors?: Record<string, string | undefined>;
     fieldConfigs?: Record<string, FieldConfig>;
     excludeKeys?: string[];
+    /**
+     * Real paths on the REALITY target, forwarded to the spiderX field's
+     * generator. Threaded through as a prop because this folder may not read
+     * the store.
+     */
+    spiderPaths?: string[];
 }
 
 export const SchemaForm = ({
@@ -399,7 +405,8 @@ export const SchemaForm = ({
     onChange,
     errors = {},
     fieldConfigs = {},
-    excludeKeys = []
+    excludeKeys = [],
+    spiderPaths
 }: SchemaFormProps) => {
     const shape = schema.shape;
     const keys = Object.keys(shape).filter(k => !excludeKeys.includes(k));
@@ -455,6 +462,7 @@ export const SchemaForm = ({
                                     defaultUnit={customConfig.defaultUnit ?? standardConfig.defaultUnit}
                                     durationMode={customConfig.durationMode ?? standardConfig.durationMode}
                                     baseUnit={customConfig.baseUnit ?? standardConfig.baseUnit}
+                                    spiderPaths={spiderPaths}
                                 />
                             </div>
                         );
@@ -493,6 +501,7 @@ export const SchemaForm = ({
                                     defaultUnit={customConfig.defaultUnit ?? standardConfig.defaultUnit}
                                     durationMode={customConfig.durationMode ?? standardConfig.durationMode}
                                     baseUnit={customConfig.baseUnit ?? standardConfig.baseUnit}
+                                    spiderPaths={spiderPaths}
                                 />
                             </div>
                         );

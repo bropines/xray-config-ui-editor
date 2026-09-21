@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2] - 2026-09-22
+
+### Added
+- **A list of real paths from the target, for spiderX to draw on.** The generator can only produce paths that *look* real; the target's own paths are the ones that will not 404, and they are always a paste away. General Settings now takes a sitemap, a HAR export, a page's HTML, or a plain list of paths, and reads the paths out of whatever it is given — no need to say which. With a list stored, the spiderX dice draws from it instead of inventing anything, and says so.
+  - Absolute URLs from other hosts are dropped. A paste always carries an XML namespace, an analytics beacon or a font CDN, and their paths exist on someone else's server — keeping them would fill the list with guaranteed 404s. The site is whichever host appears most.
+  - Query strings and fragments are dropped, trailing slashes and duplicates collapse, and non-ASCII paths are percent-encoded once. Parsing the same text twice adds nothing the second time.
+  - The list is stored per browser and survives a reload; paths can be removed one at a time or all at once.
+
 ## [1.4.1] - 2026-09-21
 
 ### Changed

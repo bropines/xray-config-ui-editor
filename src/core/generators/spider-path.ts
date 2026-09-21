@@ -32,6 +32,12 @@ export interface SpiderPathOptions {
     shape?: SpiderPathShape;
     /** A value not to return, so clicking the dice always changes something. */
     avoid?: string;
+    /**
+     * Real paths to draw from instead of building one. A path the target
+     * actually serves is the right answer; anything generated here is a
+     * stand-in for not having one.
+     */
+    pool?: readonly string[];
 }
 
 const pick = <T>(items: readonly T[]): T => items[Math.floor(Math.random() * items.length)]!;
@@ -143,10 +149,141 @@ const randomShape = (): SpiderPathShape => {
  */
 export const generateSpiderPath = (options: SpiderPathOptions = {}): string => {
     const avoid = options.avoid?.trim();
+    const pool = (options.pool ?? []).filter(path => typeof path === 'string' && path.startsWith('/'));
     let path = '';
     for (let attempt = 0; attempt < 12; attempt++) {
-        path = BUILDERS[options.shape ?? randomShape()]();
+        // A supplied path wins over an invented one, always.
+        path = pool.length > 0 ? pick(pool) : BUILDERS[options.shape ?? randomShape()]();
         if (path !== avoid) break;
     }
     return path;
+};
+
+// ── Reading paths out of whatever was pasted ────────────────────────────────
+
+/**
+ * The honest answer to "what should spiderX be" is "a path the target really
+ * serves", and those paths always live in text somewhere: a sitemap, a HAR
+ * export, a copied network tab, the page's own HTML, or a list written by
+ * hand. Rather than asking which of those this is, take them all and keep
+ * whatever survives normalisation.
+ */
+const ATTRIBUTE_PATTERN = /\b(?:href|src|url)\s*[=:]\s*["']([^"']+)["']/gi;
+const ABSOLUTE_URL_PATTERN = /\bhttps?:\/\/[^\s"'<>)\]]+/gi;
+
+/** Longer than this is a data URI or a tracking blob, not a browsing path. */
+const MAX_PATH_LENGTH = 200;
+const DEFAULT_LIMIT = 500;
+
+const normalisePath = (raw: string): string | null => {
+    const candidate = raw.trim();
+    // A leading # is a comment in every hand-written list.
+    if (!candidate || candidate.startsWith('#')) return null;
+    if (!/^(?:https?:\/\/|\/)/i.test(candidate)) return null;
+    if (/[\s<>"'\\]/.test(candidate)) return null;
+
+    let path: string;
+    try {
+        // Resolving against a base normalises both absolute URLs and bare
+        // paths, percent-encodes non-ASCII once, and drops query and fragment
+        // — which spiderX cannot carry as decoration anyway.
+        path = new URL(candidate, 'https://spider.invalid').pathname;
+    } catch {
+        return null;
+    }
+
+    path = path.replace(/\/{2,}/g, '/');
+    if (path.length > 1) path = path.replace(/\/+$/, '');
+    return path.length <= MAX_PATH_LENGTH ? path : null;
+};
+
+const hostOf = (raw: string): string | null => {
+    if (!/^https?:\/\//i.test(raw.trim())) return null;
+    try {
+        return new URL(raw.trim()).host || null;
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Picks the site the pasted text is about.
+ *
+ * Any real paste carries URLs that are not the site: an XML namespace, an
+ * analytics beacon, a font CDN. Their paths exist on someone else's server,
+ * and spiderX is walked on the target — so keeping them would fill the list
+ * with paths guaranteed to 404. The site is whichever host appears most,
+ * first-seen winning a tie.
+ */
+const dominantHost = (hosts: readonly (string | null)[]): string | null => {
+    const counts = new Map<string, number>();
+    for (const host of hosts) {
+        if (host) counts.set(host, (counts.get(host) ?? 0) + 1);
+    }
+    let best: string | null = null;
+    let bestCount = 0;
+    for (const [host, count] of counts) {
+        if (count > bestCount) {
+            best = host;
+            bestCount = count;
+        }
+    }
+    return best;
+};
+
+/**
+ * Extracts spiderX-usable paths from pasted text, in the order they appear,
+ * without duplicates. Returns an empty array when there is nothing usable,
+ * which the caller should report rather than treat as success.
+ */
+export const parseSpiderPaths = (input: string, options: { limit?: number } = {}): string[] => {
+    if (!input) return [];
+    const limit = Math.max(0, options.limit ?? DEFAULT_LIMIT);
+
+    const candidates: string[] = [];
+    // HTML attributes and HAR-style "url": "…" entries.
+    for (const match of input.matchAll(ATTRIBUTE_PATTERN)) if (match[1]) candidates.push(match[1]);
+    // Bare absolute URLs: sitemaps, copied request lists, access logs.
+    for (const match of input.matchAll(ABSOLUTE_URL_PATTERN)) candidates.push(match[0]);
+    // Whatever is left is a hand-written list, one path per line.
+    for (const line of input.split(/\r?\n/)) candidates.push(line);
+
+    const hosts = candidates.map(hostOf);
+    const site = dominantHost(hosts);
+
+    const paths: string[] = [];
+    const seen = new Set<string>();
+    for (const [index, candidate] of candidates.entries()) {
+        if (paths.length >= limit) break;
+        // A relative path came from the page itself, so it is already the
+        // site's; an absolute one has to belong to the site to be usable.
+        const host = hosts[index];
+        if (host && host !== site) continue;
+        const path = normalisePath(candidate);
+        if (!path || seen.has(path)) continue;
+        seen.add(path);
+        paths.push(path);
+    }
+    return paths;
+};
+
+/**
+ * Adds parsed paths to a stored list, keeping the existing order and dropping
+ * what is already there — the same "extend, do not replace" rule the shortId
+ * generator follows, for the same reason.
+ */
+export const mergeSpiderPaths = (
+    existing: readonly string[],
+    incoming: readonly string[],
+    limit = DEFAULT_LIMIT,
+): string[] => {
+    const seen = new Set(existing);
+    const merged = [...existing];
+    for (const path of incoming) {
+        if (merged.length >= limit) break;
+        if (seen.has(path)) continue;
+        seen.add(path);
+        merged.push(path);
+    }
+    return merged;
 };

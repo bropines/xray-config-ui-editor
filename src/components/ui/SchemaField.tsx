@@ -136,6 +136,12 @@ export interface SchemaFieldProps {
     defaultUnit?: TimeUnit;
     durationMode?: 'string' | 'number';
     baseUnit?: TimeUnit;
+    /**
+     * Real paths on the REALITY target, when the user has supplied any. The
+     * spiderX dice draws from them in preference to inventing one. Passed in
+     * rather than read from the store: this folder stays store-independent.
+     */
+    spiderPaths?: string[];
 }
 
 export const SchemaField = ({
@@ -152,10 +158,11 @@ export const SchemaField = ({
     unitOptions,
     defaultUnit,
     durationMode,
-    baseUnit
+    baseUnit,
+    spiderPaths
 }: SchemaFieldProps) => {
     const [genPublicKey, setGenPublicKey] = React.useState<string | null>(null);
-    
+
     // Check if explicitly configured as duration or recognized by field name
     const isDuration = type === 'duration' || name in DURATION_FIELD_SPECS || !!durationMode;
     const fieldLabel = label ?? name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
@@ -279,8 +286,12 @@ export const SchemaField = ({
                 onChange(generated);
             } : isSpiderX ? () => {
                 // Passing the current value keeps a second click from handing
-                // back what is already in the field.
-                onChange(generateSpiderPath({ avoid: typeof value === 'string' ? value : undefined }));
+                // back what is already in the field. The user's own paths, if
+                // they pasted any, beat anything generated here.
+                onChange(generateSpiderPath({
+                    avoid: typeof value === 'string' ? value : undefined,
+                    pool: spiderPaths,
+                }));
             } : isPrivateKey ? () => {
                 const keys = generateX25519Keys();
                 onChange(keys.privateKey);
@@ -362,7 +373,11 @@ export const SchemaField = ({
                                     <button
                                         type="button"
                                         onClick={handleAction}
-                                        title={isPrivateKey ? t("Gen Keys Pair") : isSpiderX ? t("Generate a spiderX path") : t("Gen Short ID")}
+                                        title={isPrivateKey ? t("Gen Keys Pair")
+                                            : isSpiderX ? (spiderPaths && spiderPaths.length > 0
+                                                ? t("Take a path from your list ({n})", { n: spiderPaths.length })
+                                                : t("Generate a spiderX path"))
+                                            : t("Gen Short ID")}
                                         className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-full w-[24px]"
                                     >
                                         <Icon name="DiceFive" weight="bold" className="text-sm" />

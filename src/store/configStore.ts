@@ -156,6 +156,13 @@ interface ConfigState {
     // UI & Generator Settings
     warpWorkerUrl: string;
     setWarpWorkerUrl: (url: string) => void;
+    /**
+     * Real paths on the REALITY target, pasted by the user. The spiderX dice
+     * draws from these when there are any, because a path the target actually
+     * serves beats anything the generator can invent.
+     */
+    spiderPaths: string[];
+    setSpiderPaths: (paths: string[]) => void;
 
     // Remnawave Actions
 
@@ -268,6 +275,8 @@ export const useConfigStore = create(
             
             warpWorkerUrl: '',
             setWarpWorkerUrl: (url: string) => set({ warpWorkerUrl: url }),
+            spiderPaths: [],
+            setSpiderPaths: (paths: string[]) => set({ spiderPaths: paths }),
 
             // --- Panel catalog ---
             panelCatalog: {
@@ -1495,6 +1504,9 @@ export const useConfigStore = create(
                 rawConfigText: state.rawConfigText,
                 coreVersion: state.coreVersion,
                 warpWorkerUrl: state.warpWorkerUrl,
+                // A list gathered from a real site is work; it should not be
+                // lost on reload the way a generated path can be.
+                spiderPaths: state.spiderPaths,
                 remnawave: { 
                     url: state.remnawave.url, 
                     token: state.remnawave.token, 

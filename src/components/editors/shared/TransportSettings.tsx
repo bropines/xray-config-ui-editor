@@ -15,6 +15,7 @@ import { DurationInput } from '../../ui/DurationInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { ExtendedSection } from '../../ui/ExtendedSection';
+import { useConfigStore } from '../../../store/configStore';
 import { useField } from '../../../hooks/useField';
 import type { FieldPath } from '../../../hooks/useField';
 import { toast } from 'sonner';
@@ -104,6 +105,9 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '' && v !== false;
         });
     const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
+    // Paths the user collected from the real REALITY target. The spiderX
+    // generator prefers them to anything it can invent.
+    const spiderPaths = useConfigStore(state => state.spiderPaths);
 
     const { realityErrors, tlsErrors } = parseTransportErrors(errors);
 
@@ -584,6 +588,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         onChange={val => realitySettings.onChange(val)}
                         errors={realityErrors}
                         excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'basic', realitySettings.value)}
+                        spiderPaths={spiderPaths}
                     />
 
                     {/* REALITY EXTENDED SECTION */}
@@ -598,6 +603,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             onChange={val => realitySettings.onChange(val)}
                             errors={realityErrors}
                             excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'advanced', realitySettings.value)}
+                            spiderPaths={spiderPaths}
                         />
                     </ExtendedSection>
                 </div>
