@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-09-21
+
+### Changed
+- **The DNS card shows the DNS block, not a count of it.** It used to display a server count, a host count, a strategy, and a `clientIp` that read "N/A" in every config anyone has — four numbers you cannot act on. It now shows the upstream resolvers themselves, how many are scoped to a domain list (which is what makes DNS split), static hosts, FakeDNS pools, and whether a routing rule actually sends queries to the dns outbound.
+  - It also names the things that look configured and do nothing: a DNS block with no upstreams, a `dns` outbound no rule routes to, FakeDNS pools no inbound sniffs for, and `UseIPv6` when every upstream is reached over IPv4. Those are silent no-ops, which is exactly why they are worth saying out loud.
+  - `clientIp` appears only when it is set, labelled ECS, since that is what it is for.
+- **The shortId batch control is a normal-sized control** instead of a 10px button wedged between a label and a number box.
+
+### Added
+- **spiderX generates from its own field**, with a dice like `shortId` and `privateKey` already had — so it is there wherever spiderX renders, including a server inbound that already carries one. The separate "Gen SpiderX Path" button above the form is gone; it only ever appeared for clients.
+
+### Fixed
+- **`password` in a REALITY client had no label and no explanation.** It is the server's public key — newer xray-core renamed the field from `publicKey` — and a field called "password" sitting in a VLESS form with no hint invites people to invent one. Both spellings are now labelled "Server Public Key", each saying it is the same field under two names and that only one should be set. Same treatment `target`/`dest` got in 1.3.1.
+
 ## [1.3.1] - 2026-09-21
 
 ### Fixed

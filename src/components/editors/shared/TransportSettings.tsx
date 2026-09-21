@@ -543,24 +543,19 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         </span>
                     </div>
 
-                    {isClient ? (
-                        <div className="flex flex-wrap gap-2 mb-2">
-                            <Button variant="secondary" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => update(['realitySettings', 'spiderX'], generateRealitySpiderX())}>{t("Gen SpiderX Path")}</Button>
-                        </div>
-                    ) : (
+                    {!isClient && (
                         // A server usually wants a handful of shortIds at once —
                         // one per client group — and generating them one dice
                         // click at a time is the tedious way to get there.
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <span className="label-xs">{t("Generate shortIds")}</span>
-                            <div className="w-20">
+                        <div className="flex flex-wrap items-end gap-3 mb-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                            <div className="w-24">
+                                <span className="label-xs">{t("How many")}</span>
                                 <NumberInput value={shortIdBatch} onChange={v => setShortIdBatch(v ?? 1)} min={1} max={32} />
                             </div>
                             <Button
                                 variant="secondary"
-                                size="sm"
-                                className="!py-0.5 !px-2 !text-[10px]"
                                 icon="DiceFive"
+                                className="h-11 px-4"
                                 onClick={() => {
                                     const existing: string[] = realitySettings.value?.shortIds || [];
                                     const made = generateRealityShortIds(shortIdBatch, { existing });
@@ -568,13 +563,13 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                                     toast.success(tn(made.length, "Added {n} shortId", "Added {n} shortIds"));
                                 }}
                             >
-                                {t("Add")}
+                                {t("Generate shortIds")}
                             </Button>
-                            {(realitySettings.value?.shortIds?.length ?? 0) > 0 && (
-                                <span className="text-[10px] text-slate-500">
-                                    {tn(realitySettings.value.shortIds.length, "{n} in the list", "{n} in the list")}
-                                </span>
-                            )}
+                            <span className="text-[11px] text-slate-500 pb-3">
+                                {(realitySettings.value?.shortIds?.length ?? 0) > 0
+                                    ? tn(realitySettings.value.shortIds.length, "{n} already in the list", "{n} already in the list")
+                                    : t("appended to the list below")}
+                            </span>
                         </div>
                     )}
 

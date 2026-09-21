@@ -254,9 +254,14 @@ const standardFieldConfigs = perLanguage((): Record<string, FieldConfig> => ({
         help: t("Reality private key (x25519). Keep this secret!"),
         placeholder: t("xNz35zN9FfsM7e27mvyPdLIEuzKnSpoqd7qjjJJHxIw")
     },
+    password: {
+        label: t("Server Public Key"),
+        help: t("The server's REALITY public key (x25519) — the half that pairs with its private key. Newer xray-core renamed the field from `publicKey` to `password`; it is not a passphrase and there is nothing to invent here. Set this or `publicKey`, not both."),
+        placeholder: t("xNz35zN9FfsM...")
+    },
     publicKey: {
-        label: t("Public Key"),
-        help: t("Reality public key (x25519) to match private key."),
+        label: t("Server Public Key (publicKey)"),
+        help: t("The older name for `password`, still accepted by the core. Links and configs written before the rename use this one. Set either, not both."),
         placeholder: t("xNz35zN9FfsM...")
     },
     shortIds: {

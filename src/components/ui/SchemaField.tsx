@@ -7,7 +7,7 @@ import { SmartTagInput } from './SmartTagInput';
 import { NumberInput } from './NumberInput';
 import { DurationInput, type TimeUnit } from './DurationInput';
 import { Icon } from './Icon';
-import { generateRealityShortIds, generateX25519Keys } from '../../core/generators';
+import { generateRealityShortIds, generateX25519Keys, generateRealitySpiderX } from '../../core/generators';
 import { toast } from 'sonner';
 import { t } from '../../i18n';
 
@@ -269,10 +269,16 @@ export const SchemaField = ({
             const isPortField = name.toLowerCase().includes('port');
             const isShortId = name === 'shortId';
             const isPrivateKey = name === 'privateKey';
+            // The generator sits on the field rather than in a toolbar above
+            // the form, so it is present wherever spiderX renders — including
+            // a server inbound that already carries one.
+            const isSpiderX = name === 'spiderX';
             
             const handleAction = isShortId ? () => {
                 const generated = generateRealityShortIds(1)[0];
                 onChange(generated);
+            } : isSpiderX ? () => {
+                onChange(generateRealitySpiderX());
             } : isPrivateKey ? () => {
                 const keys = generateX25519Keys();
                 onChange(keys.privateKey);
@@ -326,7 +332,7 @@ export const SchemaField = ({
                         <div className="relative flex items-center w-full">
                             <input
                                 type="text"
-                                className={`input-base font-mono ${isPortField || isShortId || isPrivateKey ? 'pr-12' : ''}`}
+                                className={`input-base font-mono ${isPortField || isShortId || isPrivateKey || isSpiderX ? 'pr-12' : ''}`}
                                 placeholder={placeholder}
                                 value={value !== undefined && value !== null ? value : ''}
                                 onChange={handleChange}
@@ -349,12 +355,12 @@ export const SchemaField = ({
                                     </button>
                                 </div>
                             )}
-                            {(isShortId || isPrivateKey) && (
+                            {(isShortId || isPrivateKey || isSpiderX) && (
                                 <div className="absolute right-1 flex items-center h-[34px] border-l border-slate-800/80 pl-2 pr-1.5 select-none">
                                     <button
                                         type="button"
                                         onClick={handleAction}
-                                        title={isPrivateKey ? t("Gen Keys Pair") : t("Gen Short ID")}
+                                        title={isPrivateKey ? t("Gen Keys Pair") : isSpiderX ? t("Generate a spiderX path") : t("Gen Short ID")}
                                         className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-full w-[24px]"
                                     >
                                         <Icon name="DiceFive" weight="bold" className="text-sm" />

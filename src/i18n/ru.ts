@@ -205,7 +205,6 @@ export const ru: Record<string, string> = {
     'Key': 'Ключ',
     'Reality: A TLS extension for mimicking popular websites to bypass firewalls.':
         'REALITY: расширение TLS, которое маскирует соединение под популярные сайты, обходя блокировки.',
-    'Gen SpiderX Path': 'Сгенерировать путь SpiderX',
     'Extended REALITY Settings': 'Расширенные настройки REALITY',
     'Post-quantum signature verification, master key logs, and server debug options.':
         'Постквантовая проверка подписи, логи мастер-ключей и отладочные опции сервера.',
@@ -266,7 +265,6 @@ export const ru: Record<string, string> = {
     'Clear search': 'Очистить поиск',
     'No outbounds match your search': 'Ни один outbound не подходит под поиск',
     'Edit DNS': 'Изменить DNS',
-    'Client IP:': 'IP клиента:',
     'DNS not configured. Click Edit to initialize defaults.':
         'DNS не настроен. Нажмите «Изменить», чтобы создать значения по умолчанию.',
     'expands to {n} item|expands to {n} items':
@@ -1202,8 +1200,6 @@ export const ru: Record<string, string> = {
         'Имена серверов (SNI), которые сервер разрешает использовать клиентам.',
     'Reality private key (x25519). Keep this secret!':
         'Приватный ключ REALITY (x25519). Держите его в секрете!',
-    'Reality public key (x25519) to match private key.':
-        'Публичный ключ REALITY (x25519), парный к приватному.',
     'Short IDs': 'Короткие идентификаторы (shortIds)',
     'Hexadecimal strings used to authenticate clients. CSV or comma separated.':
         'Шестнадцатеричные строки для аутентификации клиентов, через запятую.',
@@ -1964,7 +1960,6 @@ export const ru: Record<string, string> = {
     'Generate shortIds': 'Сгенерировать shortId',
     'Added {n} shortId|Added {n} shortIds':
         'Добавлен {n} shortId|Добавлено {n} shortId|Добавлено {n} shortId',
-    '{n} in the list|{n} in the list': '{n} в списке|{n} в списке|{n} в списке',
     'Add a generated shortId': 'Добавить сгенерированный shortId',
     'Handshake Target': 'Цель хендшейка',
     'The real TLS server REALITY forwards unrecognised traffic to (domain:port). Setting it is what puts REALITY in server mode. `dest` is the older name for this same field — set one, not both.':
@@ -1976,4 +1971,42 @@ export const ru: Record<string, string> = {
         'клиентские поля на серверном inbound. Xray их здесь не читает, они ни на что не влияют. Показаны потому, что лежат в вашем конфиге: очистите, если попали туда случайно.',
     'server-side fields on a client outbound. Xray never reads them here, so they change nothing. They are shown because they are in your config: clear them if they were copied in by mistake.':
         'серверные поля на клиентском outbound. Xray их здесь не читает, они ни на что не влияют. Показаны потому, что лежат в вашем конфиге: очистите, если попали туда случайно.',
+    // ── DNS card ────────────────────────────────────────────────────────────
+    'No upstream servers — this DNS block resolves nothing.':
+        'Нет вышестоящих серверов — этот блок DNS ничего не резолвит.',
+    'A dns outbound exists, but no routing rule sends queries to it, so the DNS block is not in the path.':
+        'Outbound dns есть, но ни одно правило не отправляет в него запросы — блок DNS не попадает в путь трафика.',
+    'FakeDNS pools are configured, but no inbound sniffs for fakedns — the pools are never used.':
+        'Пулы FakeDNS заданы, но ни один inbound не снифает fakedns — пулы не используются.',
+    'Query strategy is UseIPv6 while every upstream is reached over IPv4.':
+        'Стратегия запросов UseIPv6, хотя все вышестоящие серверы доступны по IPv4.',
+    'no upstream servers': 'вышестоящих серверов нет',
+    '+{n} more': 'ещё {n}',
+    'A server restricted to a domain list only answers for those domains — that is what makes DNS split.':
+        'Сервер, ограниченный списком доменов, отвечает только за них — это и есть split-DNS.',
+    'A routing rule sends queries to the dns outbound, so the DNS block is actually in the path.':
+        'Правило маршрутизации отправляет запросы в outbound dns — значит блок DNS действительно в пути трафика.',
+    'routed': 'в маршруте',
+    'ECS:': 'ECS:',
+    '{n} scoped to domains|{n} scoped to domains':
+        '{n} ограничен доменами|{n} ограничены доменами|{n} ограничены доменами',
+    '{n} static host|{n} static hosts':
+        '{n} статическая запись|{n} статические записи|{n} статических записей',
+    'FakeDNS · {n} pool|FakeDNS · {n} pools':
+        'FakeDNS · {n} пул|FakeDNS · {n} пула|FakeDNS · {n} пулов',
+
+    // ── REALITY key naming ──────────────────────────────────────────────────
+    'Server Public Key': 'Публичный ключ сервера',
+    "The server's REALITY public key (x25519) — the half that pairs with its private key. Newer xray-core renamed the field from `publicKey` to `password`; it is not a passphrase and there is nothing to invent here. Set this or `publicKey`, not both.":
+        'Публичный ключ REALITY сервера (x25519) — половина пары к его приватному ключу. В свежих xray-core поле переименовали из `publicKey` в `password`; это не пароль, придумывать тут нечего. Задавайте это поле или `publicKey`, не оба.',
+    'Server Public Key (publicKey)': 'Публичный ключ сервера (publicKey)',
+    'The older name for `password`, still accepted by the core. Links and configs written before the rename use this one. Set either, not both.':
+        'Старое имя поля `password`, ядро его по-прежнему принимает. Ссылки и конфиги, созданные до переименования, используют именно его. Задавайте одно из двух, не оба.',
+
+    // ── shortId / spiderX generation ────────────────────────────────────────
+    'How many': 'Сколько',
+    'appended to the list below': 'добавятся в список ниже',
+    '{n} already in the list|{n} already in the list':
+        '{n} уже в списке|{n} уже в списке|{n} уже в списке',
+    'Generate a spiderX path': 'Сгенерировать путь spiderX',
 };

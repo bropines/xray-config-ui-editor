@@ -16,6 +16,7 @@ import { collectSnippetRefs, getSnippetRefName, type SnippetDefinition } from '.
 import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
 import { t, tn } from '../../i18n';
 import { summariseOutboundRouting } from '../../core/routing/outbound-routing';
+import { summariseDns, type DnsIssueCode } from '../../core/dns/dns-summary';
 import { OutboundRoutingBadge } from './OutboundRoutingBadge';
 import { BatchEditModal } from '../editors/batch/BatchEditModal';
 import type { EndpointDirection } from '../../core/generators/endpoint-factory';
@@ -62,6 +63,14 @@ const DashCard = ({
     </div>
   </div>
 );
+
+/** Wording for each DNS problem, kept here so the scanner sees the literals. */
+const dnsIssueText = (code: DnsIssueCode): string => ({
+  'no-servers': t("No upstream servers — this DNS block resolves nothing."),
+  'dns-outbound-unrouted': t("A dns outbound exists, but no routing rule sends queries to it, so the DNS block is not in the path."),
+  'fakedns-unsniffed': t("FakeDNS pools are configured, but no inbound sniffs for fakedns — the pools are never used."),
+  'ipv6-strategy-ipv4-upstreams': t("Query strategy is UseIPv6 while every upstream is reached over IPv4."),
+})[code];
 
 const SortableOutboundItem = ({
   ob,
@@ -337,6 +346,10 @@ export const ConfigDashboard = ({
     );
     setBatch(null);
   }, [batch]);
+
+  // The DNS block's actual shape, and whether its pieces are wired to each
+  // other. A server count alone said nothing you could act on.
+  const dns = React.useMemo(() => summariseDns(config), [config]);
 
   // Which rules and balancers reach each outbound, and at which layer.
   // Computed once for the whole list rather than per card: every summary walks
@@ -1124,40 +1137,100 @@ export const ConfigDashboard = ({
               </div>
             }
           >
-            {config.dns ? (
-              <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
-                <div className="grid grid-cols-2 gap-2 text-xs flex-1">
-                  <div className="bg-slate-900 p-2 rounded border border-slate-700/50 flex items-center justify-between px-4">
-                    <span className="text-slate-500 block text-[10px] uppercase">
-                      {t("Servers")}
-                      </span>
-                    <span className="text-white font-bold font-mono text-lg">
-                      {config.dns.servers?.length || 0}
-                    </span>
-                  </div>
-                  <div className="bg-slate-900 p-2 rounded border border-slate-700/50 flex items-center justify-between px-4">
-                    <span className="text-slate-500 block text-[10px] uppercase">
-                      {t("Hosts")}
-                      </span>
-                    <span className="text-white font-bold font-mono text-lg">
-                      {Object.keys(config.dns.hosts || {}).length}
-                    </span>
-                  </div>
+            {dns.configured ? (
+              <div className="flex flex-col gap-3">
+                {/* The upstreams themselves, not a count of them. */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {dns.servers.length === 0 ? (
+                    <span className="text-[11px] text-rose-300 italic">{t("no upstream servers")}</span>
+                  ) : (
+                    <>
+                      {dns.servers.slice(0, 4).map((server, i) => (
+                        <span
+                          key={`${server}-${i}`}
+                          className="px-2 py-1 rounded-md bg-slate-900 border border-slate-700/60 font-mono text-[11px] text-slate-200 max-w-[220px] truncate"
+                          title={server}
+                        >
+                          {server}
+                        </span>
+                      ))}
+                      {dns.servers.length > 4 && (
+                        <span className="text-[11px] text-slate-500">
+                          {t("+{n} more", { n: dns.servers.length - 4 })}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
-                <div className="text-xs text-slate-400 md:border-l border-slate-800 md:pl-4 flex flex-col gap-1 min-w-[200px]">
-                  <div className="flex justify-between">
-                    <span>{t("Strategy:")}</span>
-                    <span className="text-indigo-300 font-bold">
-                      {config.dns.queryStrategy || "UseIP"}
+
+                {/* The facts that change how resolution behaves. */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+                  <span className="text-slate-400">
+                    {t("Strategy:")}{' '}
+                    <span className="text-indigo-300 font-bold font-mono">{dns.strategy}</span>
+                  </span>
+
+                  {dns.scopedServers > 0 && (
+                    <span
+                      className="text-slate-400"
+                      title={t("A server restricted to a domain list only answers for those domains — that is what makes DNS split.")}
+                    >
+                      {tn(dns.scopedServers, "{n} scoped to domains", "{n} scoped to domains")}
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>{t("Client IP:")}</span>
-                    <span className="font-mono text-slate-500">
-                      {config.dns.clientIp || "N/A"}
+                  )}
+
+                  {dns.hosts > 0 && (
+                    <span className="text-slate-400">
+                      {tn(dns.hosts, "{n} static host", "{n} static hosts")}
                     </span>
-                  </div>
+                  )}
+
+                  {dns.fakeDns.enabled && (
+                    <span className={`px-1.5 py-0.5 rounded border font-bold ${
+                      dns.fakeDns.sniffed
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                        : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                    }`}>
+                      {tn(dns.fakeDns.pools, "FakeDNS · {n} pool", "FakeDNS · {n} pools")}
+                    </span>
+                  )}
+
+                  {dns.routedToDnsOutbound && (
+                    <span
+                      className="px-1.5 py-0.5 rounded border font-bold bg-sky-500/10 text-sky-300 border-sky-500/30"
+                      title={t("A routing rule sends queries to the dns outbound, so the DNS block is actually in the path.")}
+                    >
+                      {t("routed")}
+                    </span>
+                  )}
+
+                  {dns.clientIp && (
+                    <span className="text-slate-400">
+                      {t("ECS:")} <span className="font-mono text-slate-300">{dns.clientIp}</span>
+                    </span>
+                  )}
                 </div>
+
+                {/* Things that look configured but do nothing. */}
+                {dns.issues.length > 0 && (
+                  <div className="flex flex-col gap-1 pt-2 border-t border-slate-800">
+                    {dns.issues.map((issue, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-start gap-2 text-[11px] ${
+                          issue.severity === 'error' ? 'text-rose-300' : 'text-amber-300/90'
+                        }`}
+                      >
+                        <Icon
+                          name={issue.severity === 'error' ? 'WarningOctagon' : 'Warning'}
+                          weight="fill"
+                          className="shrink-0 mt-0.5 text-[11px]"
+                        />
+                        <span>{dnsIssueText(issue.code)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-4 text-slate-500 text-xs">
