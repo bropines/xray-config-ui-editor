@@ -93,10 +93,10 @@ export const Modal = ({
   // where `vh` does not. A caller that declares its own `md:` height keeps it;
   // only one that declares none gets the shrink-to-content default.
   const sizing = isFullScreen
-    ? 'h-[100dvh] md:rounded-none'
+    ? 'h-[calc(100dvh-var(--keyboard-inset,0px))] md:rounded-none'
     : classes.some((c: string) => anyHeight.test(c))
-      ? 'h-[100dvh] md:rounded-2xl'
-      : 'h-[100dvh] md:h-auto md:max-h-[92dvh] md:rounded-2xl';
+      ? 'h-[calc(100dvh-var(--keyboard-inset,0px))] md:rounded-2xl'
+      : 'h-[calc(100dvh-var(--keyboard-inset,0px))] md:h-auto md:max-h-[92dvh] md:rounded-2xl';
 
   // The caller may ask desktop not to scroll (it manages its own panes), but
   // on mobile the single column always scrolls — that is the fallback that

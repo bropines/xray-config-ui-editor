@@ -4,8 +4,13 @@ import { I18nRoot } from "./I18nRoot";
 import { warmCyrillicSubsets } from "./utils/fonts";
 import { watchInstallPrompt } from "./core/pwa/install-prompt";
 import { ensureManifestLink } from "./core/pwa/manifest-link";
+import { watchKeyboardInset } from "./core/layout/keyboard-inset";
 
 warmCyrillicSubsets();
+
+// Safari draws the keyboard over the page instead of resizing it, so a
+// full-screen sheet has to be told how much of the screen is left.
+watchKeyboardInset();
 
 // The build puts `<link rel="manifest">` in index.html and the deployed file
 // carries it, yet on some Android browsers it is gone from the DOM by the time

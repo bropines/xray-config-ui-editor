@@ -167,6 +167,13 @@ describe('ModalBottomBar', () => {
         expect(bottomBar()!.contains(screen.getByText('Back'))).toBe(true);
     });
 
+    it('leaves the keyboard the room it takes', () => {
+        // Safari draws the keyboard over the page rather than resizing it, so
+        // a sheet claiming the whole screen puts its footer underneath.
+        at(PHONE, <Modal title="Editor" onClose={() => {}}><p>body</p></Modal>);
+        expect(panel().className).toContain('--keyboard-inset');
+    });
+
     it('does not keep the sheet from being the panel it was', () => {
         at(PHONE, <Modal title="Editor" onClose={() => {}}><p>body</p></Modal>);
         expect(panel().className).toContain('flex-col');

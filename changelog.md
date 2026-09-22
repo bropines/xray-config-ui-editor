@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.0] - 2026-09-22
+
+### Fixed
+- **On iOS the keyboard covered the buttons it was being used to reach.** `index.html` asks the browser to shrink the page when the keyboard opens, and Chrome on Android does; Safari ignores it and draws the keyboard over the top instead. A full-screen sheet therefore still believed it had the whole screen, putting Close and Save — and often the field being typed into — underneath. The sheet now subtracts what the visual viewport says is covered, so its footer sits on the keyboard rather than behind it. Where the browser already resizes the page the difference is zero, so nothing changes on Android or a desktop.
+
 ## [1.17.0] - 2026-09-22
 
 ### Changed
