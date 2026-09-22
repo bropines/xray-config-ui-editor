@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-09-22
+
+### Fixed
+- **Opening the Git log froze the app for two minutes.** It computed a full line diff for *every* commit in the history, on open, on the main thread — up to fifty alignments of two 200 kB configs. Measured on a 203 kB config with 30 commits: **131 seconds**. Every snapshot already carries the counts from when it was committed, so nothing needs computing; anything older falls back to a line tally, which is O(n). The same 34,860 changed lines now take **97 ms**.
+  - It was not the storage. Serialising the whole persisted store with 50 snapshots measured 29 ms and writing those 16 MB to IndexedDB measured 40 ms — both fine. `diffLines` is O(N·D), and on ~7,000-line configs that is 6 ms for one changed rule, 1.2 s for sixty, and **16 s** when everything changed.
+- **Every diff now has a time budget.** The commit badge and the stats line get 150 ms; the diff you are actually looking at gets 1.5 s. Past that the library bails out instead of finishing, counts still arrive from the tally, and the viewer says the change is too large to line up rather than showing nothing.
+
+### Changed
+- **The dashboard shows every routing rule.** It stopped at 20 with a "+N more" note. Desktop shows all of them and the card scrolls as it always did; a phone gets a windowed list with contained overscroll, since the section otherwise grows to the length of the whole rule set.
+
 ## [1.8.0] - 2026-09-22
 
 ### Added

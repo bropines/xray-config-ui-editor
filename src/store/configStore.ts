@@ -15,7 +15,7 @@ import {
 } from '../core/snippets';
 import { XrayConfigSchema } from '../core/xray/schemas';
 import { createDefaultDns } from '../core/presets/dns';
-import { diffLines } from 'diff';
+import { diffCounts } from '../core/git/bounded-diff';
 import { parseJsonc, stringifyJsonc } from '../utils/jsonc';
 import { idbStorage } from '../utils/indexedDbStorage';
 
@@ -767,17 +767,15 @@ export const useConfigStore = create(
                 const prevJson = prevConfig ? JSON.stringify(prevConfig) : '';
                 if (currentJson === prevJson) return null;
 
-                // Count line-level additions/deletions on pretty-printed JSON
+                // Line counts for the commit badge, on a short budget: an
+                // exact alignment of two 7,000-line configs can take sixteen
+                // seconds, and this runs while the user waits for the commit.
                 let additions = 0;
                 let deletions = 0;
                 try {
                     const prettyCurrent = rawConfigText || JSON.stringify(config, null, 2);
                     const prettyPrev = history[0]?.rawConfigText || (prevConfig ? JSON.stringify(prevConfig, null, 2) : '');
-                    const changes = diffLines(prettyPrev, prettyCurrent);
-                    changes.forEach((c) => {
-                        if (c.added) additions += c.count || 1;
-                        if (c.removed) deletions += c.count || 1;
-                    });
+                    ({ additions, deletions } = diffCounts(prettyPrev, prettyCurrent));
                 } catch { /* ignore */ }
 
                 const inbounds = config.inbounds?.length || 0;

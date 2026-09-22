@@ -5,6 +5,7 @@ import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { GitDiffViewer } from './GitDiffViewer';
 import { computeJsonDiff } from '../../core/git/gitEngine';
+import { tallyLineChanges } from '../../core/git/bounded-diff';
 import { t } from '../../i18n';
 
 export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
@@ -41,23 +42,29 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
     // Compute diff between selected snapshot and its parent (or empty)
     const diffChanges = React.useMemo(() => {
         if (!selectedSnapshot) return [];
+        // Null when the diff ran out of budget; the viewer says so.
         const parentSnapshot = selectedIdx < history.length - 1 ? history[selectedIdx + 1] : null;
         return computeJsonDiff(parentSnapshot?.config || null, selectedSnapshot.config);
     }, [selectedSnapshot, selectedIdx, history]);
 
-    // Compute exact formatted line stats (+N -N) for every commit card
+    // Line stats for every commit card.
+    //
+    // This used to run a full diff per commit — up to fifty alignments of two
+    // 200 kB configs, on open, on the main thread. That is where "the git log
+    // freezes the app for two minutes" came from. Every snapshot already
+    // carries the counts from when it was committed; anything older falls back
+    // to a line tally, which is O(n) and close enough for a badge.
     const commitStatsMap = React.useMemo(() => {
         const map = new Map<string, { additions: number; deletions: number }>();
         history.forEach((commit, idx) => {
+            if (typeof commit.additions === 'number' && typeof commit.deletions === 'number') {
+                map.set(commit.id, { additions: commit.additions, deletions: commit.deletions });
+                return;
+            }
             const parent = idx < history.length - 1 ? history[idx + 1] : null;
-            const changes = computeJsonDiff(parent?.config || null, commit.config);
-            let additions = 0;
-            let deletions = 0;
-            changes.forEach((c) => {
-                if (c.added) additions += c.count || 1;
-                if (c.removed) deletions += c.count || 1;
-            });
-            map.set(commit.id, { additions, deletions });
+            const before = parent?.rawConfigText ?? (parent ? JSON.stringify(parent.config, null, 2) : '');
+            const after = commit.rawConfigText ?? JSON.stringify(commit.config, null, 2);
+            map.set(commit.id, tallyLineChanges(before, after));
         });
         return map;
     }, [history]);

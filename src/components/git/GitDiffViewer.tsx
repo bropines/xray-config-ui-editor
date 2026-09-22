@@ -4,7 +4,8 @@ import { Icon } from '../ui/Icon';
 import { t, tn } from '../../i18n';
 
 interface GitDiffViewerProps {
-    changes: Change[];
+    /** Null when the diff could not be produced within its time budget. */
+    changes: Change[] | null;
     titleOld?: string;
     titleNew?: string;
     contextSize?: number; // default 10 lines
@@ -29,6 +30,7 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
 
     // 1. Flatten changes into indexed lines
     const flatLines = useMemo(() => {
+        if (!changes) return [] as FlatLine[];
         let lineNoOld = 1;
         let lineNoNew = 1;
         const result: FlatLine[] = [];
@@ -127,6 +129,20 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
             return next;
         });
     };
+
+    if (!changes) {
+        // Aligning two configs this different takes longer than anyone will
+        // wait, and a diff nobody sees is worth less than saying so.
+        return (
+            <div className="flex flex-col items-center justify-center h-full gap-2 bg-slate-950 border border-slate-800 rounded-xl p-6 text-center">
+                <Icon name="GitDiff" className="text-3xl text-slate-700" />
+                <div className="text-sm font-bold text-slate-300">{t("This change is too large to diff")}</div>
+                <div className="text-[11px] text-slate-500 max-w-sm leading-relaxed">
+                    {t("Lining up two configs that differ this much takes longer than it is worth. The commit is intact — restore it or open its JSON to see the whole thing.")}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-xl overflow-hidden font-mono text-xs shadow-2xl">

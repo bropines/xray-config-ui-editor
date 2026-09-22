@@ -2066,6 +2066,11 @@ export const ru: Record<string, string> = {
     // ── Нижняя панель действий на телефоне ──────────────────────────────────
     'Open': 'Открыть',
     'Local File': 'Локальный файл',
+
+    // ── Диффы, которые слишком велики ───────────────────────────────────────
+    'This change is too large to diff': 'Это изменение слишком велико для диффа',
+    'Lining up two configs that differ this much takes longer than it is worth. The commit is intact — restore it or open its JSON to see the whole thing.':
+        'Выравнивать два настолько разных конфига дольше, чем это того стоит. Коммит цел: восстановите его или откройте JSON, чтобы увидеть всё целиком.',
     'Cloud': 'Облако',
     'About': 'О нас',
 

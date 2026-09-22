@@ -1,4 +1,5 @@
-import { diffLines, type Change } from 'diff';
+import { type Change } from 'diff';
+import { boundedDiff, diffCounts } from './bounded-diff';
 import type { XrayConfig } from '../types';
 
 export interface GitCommit {
@@ -29,25 +30,25 @@ export function calculateConfigStats(oldConfig: XrayConfig | null, newConfig: Xr
     const oldStr = oldConfig ? JSON.stringify(oldConfig, null, 2) : '';
     const newStr = JSON.stringify(newConfig, null, 2);
 
-    const changes = diffLines(oldStr, newStr);
-    let additions = 0;
-    let deletions = 0;
-
-    changes.forEach((change: Change) => {
-        if (change.added) additions += change.count || 1;
-        if (change.removed) deletions += change.count || 1;
-    });
+    // Counts only, on a short budget: this feeds a line in a dialog, and an
+    // exact alignment of two 7,000-line configs can take sixteen seconds.
+    const { additions, deletions, approximate } = diffCounts(oldStr, newStr);
 
     const inbounds = newConfig.inbounds?.length || 0;
     const outbounds = newConfig.outbounds?.length || 0;
     const rules = newConfig.routing?.rules?.length || 0;
-    const summary = `${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules (${additions > 0 ? `+${additions}` : ''}${deletions > 0 ? ` -${deletions}` : ''})`;
+    const approx = approximate ? '~' : '';
+    const summary = `${inbounds} inbounds, ${outbounds} outbounds, ${rules} rules (${additions > 0 ? `${approx}+${additions}` : ''}${deletions > 0 ? ` ${approx}-${deletions}` : ''})`;
 
-    return { additions, deletions, summary, changes };
+    return { additions, deletions, summary, approximate };
 }
 
-export function computeJsonDiff(configA: any, configB: any): Change[] {
+/**
+ * The diff the user is looking at. Null when it could not be produced within
+ * the budget — the caller is expected to say so rather than show nothing.
+ */
+export function computeJsonDiff(configA: any, configB: any): Change[] | null {
     const strA = configA ? JSON.stringify(configA, null, 2) : '';
     const strB = configB ? JSON.stringify(configB, null, 2) : '';
-    return diffLines(strA, strB);
+    return boundedDiff(strA, strB).changes;
 }
