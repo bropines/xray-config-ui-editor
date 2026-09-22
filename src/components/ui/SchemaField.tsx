@@ -351,18 +351,18 @@ export const SchemaField = ({
                                 onChange={handleChange}
                             />
                             {isPortField && (
-                                <div className="absolute right-1 flex flex-col h-[34px] justify-between border-l border-slate-800/80 pl-2 pr-1.5 select-none">
+                                <div className="absolute right-1 flex flex-col h-[40px] md:h-[34px] justify-between border-l border-slate-800/80 pl-3 pr-2 md:pl-2 md:pr-1.5 select-none">
                                     <button
                                         type="button"
                                         onClick={handleIncrement}
-                                        className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[14px]"
+                                        className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[20px] md:h-[14px]"
                                     >
                                         <Icon name="CaretUp" weight="bold" className="text-[10px]" />
                                     </button>
                                     <button
                                         type="button"
                                         onClick={handleDecrement}
-                                        className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[14px]"
+                                        className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[20px] md:h-[14px]"
                                     >
                                         <Icon name="CaretDown" weight="bold" className="text-[10px]" />
                                     </button>

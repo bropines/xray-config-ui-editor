@@ -93,7 +93,7 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
                             <Switch
                                 checked={extra.noGRPCHeader === true}
                                 onChange={checked => update(['extra', 'noGRPCHeader'], checked)}
@@ -233,7 +233,7 @@ export const XhttpSettingsEditor = ({ xhttpSettings = {}, onChange, isClient = f
                                         <Icon name="ShieldCheck" />
 {t("Download Security")}
 </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <Select 
                                             value={extra.downloadSettings?.security || "tls"}
                                             onChange={val => update(['extra', 'downloadSettings', 'security'], val)}

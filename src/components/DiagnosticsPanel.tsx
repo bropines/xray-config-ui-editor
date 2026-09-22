@@ -53,7 +53,7 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
                     ) : (
                         <>
                             {/* Summary Stats */}
-                            <div className="grid grid-cols-3 gap-4 mb-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
                                 <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-xl text-center">
                                     <div className="text-xl font-black text-rose-500">{criticals.length}</div>
                                     <div className="text-[10px] uppercase font-bold text-slate-500">{t("Critical")}</div>

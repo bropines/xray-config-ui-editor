@@ -14,14 +14,14 @@ interface FormFieldProps {
 export const FormField = ({ label, help, error, children, className = "", horizontal = false }: FormFieldProps) => {
     if (horizontal) {
         return (
-            <div className={`flex items-center justify-between gap-4 py-1 ${className}`}>
-                <div className="flex items-center gap-2">
+            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 py-1 ${className}`}>
+                <div className="flex items-center gap-2 min-w-0">
                     <label className="text-xs text-slate-400 font-bold uppercase tracking-wider cursor-pointer">
                         {label}
                     </label>
                     {help && <Help>{help}</Help>}
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-start sm:items-end shrink-0">
                     {children}
                     {error && <span className="text-[10px] text-rose-500 mt-1 font-medium">{error}</span>}
                 </div>
@@ -31,8 +31,8 @@ export const FormField = ({ label, help, error, children, className = "", horizo
 
     return (
         <div className={`flex flex-col gap-1.5 ${className}`}>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0">
                     <label className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">
                         {label}
                     </label>

@@ -53,6 +53,10 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
         extractAllFromSelected,
     } = useConfigInspector(setModal);
 
+    // One pane at a time on a phone: the index, or the board for the source
+    // picked from it. Same switch DnsModal and LocalBalancerModal already use.
+    const [mobilePane, setMobilePane] = React.useState<'index' | 'board'>('index');
+
     return (
         <Modal title={t("Config Harvester & Inspector")} onClose={onClose} className="max-w-[95vw] 2xl:max-w-[1600px]" hideSave>
             <div className="flex-1 min-h-0 flex flex-col md:min-h-[600px]">
@@ -267,9 +271,9 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                             </Button>
                     </div>
                 ) : (
-                    <div className="flex-1 flex overflow-hidden gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden gap-3 md:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Sidebar: Navigation */}
-                        <div className="w-80 shrink-0 flex flex-col bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className={`${mobilePane === 'board' ? 'hidden md:flex' : 'flex'} w-full md:w-80 shrink-0 min-h-0 flex-col bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl`}>
                             <div className="p-4 border-b border-slate-800/60 bg-slate-950/40 flex justify-between items-center">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">{t("Source Index")}</span>
@@ -306,7 +310,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                 {parsedConfigs.map((c, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => setSelectedIndex(i)}
+                                        onClick={() => { setSelectedIndex(i); setMobilePane('board'); }}
                                         className={`w-full text-left p-4 rounded-2xl transition-all border ${
                                             selectedIndex === i 
                                             ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 border-indigo-500 text-white shadow-xl scale-[1.02]' 
@@ -331,7 +335,15 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                         </div>
 
                         {/* Content: Harvesting Board */}
-                        <div className="flex-1 flex flex-col min-w-0 gap-6">
+                        <div className={`${mobilePane === 'index' ? 'hidden md:flex' : 'flex'} flex-1 flex-col min-w-0 min-h-0 gap-3 md:gap-6`}>
+                            <Button
+                                variant="secondary"
+                                icon="ArrowLeft"
+                                className="md:hidden shrink-0"
+                                onClick={() => setMobilePane('index')}
+                            >
+                                {t("Back to the index")}
+                            </Button>
                             {/* Dashboard Header */}
                             <div className="bg-slate-900/60 border border-slate-800/60 p-5 rounded-3xl flex justify-between items-center shadow-xl backdrop-blur-xl">
                                 <div className="min-w-0 flex items-center gap-4">

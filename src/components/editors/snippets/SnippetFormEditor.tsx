@@ -191,7 +191,7 @@ export const SnippetFormEditor = ({ kind, body, onChange }: Props) => {
                                         e.stopPropagation();
                                         removeAt(i);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 md:opacity-0 text-slate-600 hover:text-rose-400 p-1 transition-all"
+                                    className="md:opacity-0 md:group-hover:opacity-100 text-slate-600 hover:text-rose-400 p-2 md:p-1 transition-all"
                                     title={t("Delete")}
                                 >
                                     <Icon name="Trash" />

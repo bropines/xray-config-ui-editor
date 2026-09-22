@@ -293,7 +293,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         {tcpHeaderType.value === 'http' && (
                             <div className="col-span-full space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
                                 <label className="label-xs text-yellow-500">{t("HTTP Request (Legacy Obfuscation)")}</label>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                     <input className="input-base text-xs font-mono" placeholder={t("Path (e.g. /)")}
                                         value={tcpHeaderPath.value?.[0] || "/"}
                                         onChange={e => tcpHeaderPath.onChange([e.target.value])} />

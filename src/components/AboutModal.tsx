@@ -67,7 +67,7 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto custom-scroll space-y-6 pr-1">
-                    <div className="grid grid-cols-2 gap-3 shrink-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
                         <a href="https://github.com/bropines/xray-config-ui-editor" target="_blank" className="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center gap-1.5 hover:border-indigo-500/50 transition-all hover:bg-indigo-500/5 group">
                             <Icon name="GithubLogo" className="text-2xl text-slate-400 group-hover:text-white transition-colors" />
                             <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">{t("Repository")}</span>
@@ -76,15 +76,15 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
                             <Icon name="Heart" weight="fill" className="text-2xl text-rose-500 group-hover:scale-110 transition-transform" />
                             <span className="text-[10px] font-bold text-slate-500 group-hover:text-rose-200">{t("Support Dev")}</span>
                         </a>
-                        <a href="https://t.me/xcue_dev" target="_blank" rel="noopener noreferrer" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-sky-500/50 transition-all hover:bg-sky-500/5 group">
+                        <a href="https://t.me/xcue_dev" target="_blank" rel="noopener noreferrer" className="sm:col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-sky-500/50 transition-all hover:bg-sky-500/5 group">
                             <Icon name="TelegramLogo" weight="bold" className="text-lg text-sky-400 group-hover:scale-110 transition-transform" />
                             <span className="text-[10px] font-bold text-slate-400 group-hover:text-sky-200">{t("Telegram Channel (@xcue_dev)")}</span>
                         </a>
-                        <a href="https://xtls.github.io/" target="_blank" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-blue-500/50 transition-all hover:bg-blue-500/5 group">
+                        <a href="https://xtls.github.io/" target="_blank" className="sm:col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-blue-500/50 transition-all hover:bg-blue-500/5 group">
                             <Icon name="BookOpen" className="text-lg text-slate-400 group-hover:text-white transition-colors" />
                             <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-200">{t("Official Xray-core Documentation")}</span>
                         </a>
-                        <a href="https://warp-generator.github.io/" target="_blank" className="col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-amber-500/50 transition-all hover:bg-amber-500/5 group">
+                        <a href="https://warp-generator.github.io/" target="_blank" className="sm:col-span-2 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-center gap-2 hover:border-amber-500/50 transition-all hover:bg-amber-500/5 group">
                             <Icon name="Lightning" className="text-lg text-amber-400 group-hover:scale-110 transition-transform" />
                             <span className="text-[10px] font-bold text-slate-500 group-hover:text-amber-200">{t("WARP Engine by warp-generator.github.io")}</span>
                         </a>

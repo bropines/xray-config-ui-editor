@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from "react";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, drawSelection, highlightActiveLine, dropCursor,
          rectangularSelection, highlightSpecialChars, crosshairCursor,
          lineNumbers, highlightActiveLineGutter } from "@codemirror/view";
@@ -626,6 +626,15 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             );
         }
 
+        // A phone cannot scroll horizontally past the gutter to read the end
+        // of a long value, so a narrow viewport wraps. Desktop keeps one line
+        // per line, which is what makes a line number or a lint marker point
+        // at something. A compartment rather than a boot-time check, so a
+        // rotated phone or a resized window changes its mind.
+        const narrow = window.matchMedia('(max-width: 767px)');
+        const wrapping = new Compartment();
+        extensions.push(wrapping.of(narrow.matches ? EditorView.lineWrapping : []));
+
         const state = EditorState.create({
             doc: value,
             extensions
@@ -647,8 +656,14 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             if (!cancelled) view.requestMeasure();
         }).catch(() => {});
 
+        const syncWrapping = () => view.dispatch({
+            effects: wrapping.reconfigure(narrow.matches ? EditorView.lineWrapping : []),
+        });
+        narrow.addEventListener('change', syncWrapping);
+
         return () => {
             cancelled = true;
+            narrow.removeEventListener('change', syncWrapping);
             view.destroy();
         };
     }, [schemaMode, readOnly]); 

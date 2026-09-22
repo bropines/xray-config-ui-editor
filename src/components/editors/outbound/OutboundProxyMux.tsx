@@ -79,7 +79,7 @@ export const OutboundProxyMux = ({ outbound, onChange, allTags }: any) => {
 
                     {outbound.mux?.enabled && (
                         <div className="space-y-3 animate-in fade-in">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <div>
                                     <label className="label-xs">{t("TCP Concurrency")}</label>
                                     <input type="number" className="input-base"

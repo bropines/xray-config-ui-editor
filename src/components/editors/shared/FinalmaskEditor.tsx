@@ -145,7 +145,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                     )}
 
                                                     {['salamander', 'mkcp-aes128gcm', 'sudoku'].includes(currentType) && (
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <input className="input-base text-xs font-mono" placeholder={t("Password")} value={layer.settings?.password || ""} onChange={e => updateSetting(netType, index, 'password', e.target.value)} />
                                                             {currentType === 'sudoku' && (
                                                                 <input className="input-base text-xs font-mono" placeholder={t("ASCII")} value={layer.settings?.ascii || ""} onChange={e => updateSetting(netType, index, 'ascii', e.target.value)} />
@@ -154,13 +154,13 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                     )}
 
                                                     {['header-dns', 'xdns'].includes(currentType) && (
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <input className="input-base text-xs font-mono" placeholder={t("Domain")} value={layer.settings?.domain || ""} onChange={e => updateSetting(netType, index, 'domain', e.target.value)} />
                                                         </div>
                                                     )}
 
                                                     {currentType === 'xicmp' && (
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <input className="input-base text-xs font-mono" placeholder={t("Listen IP (0.0.0.0)")} value={layer.settings?.listenIp || "0.0.0.0"} onChange={e => updateSetting(netType, index, 'listenIp', e.target.value)} />
                                                             <input className="input-base text-xs font-mono" type="number" placeholder={t("ID")} value={layer.settings?.id || 0} onChange={e => updateSetting(netType, index, 'id', Number(e.target.value))} />
                                                         </div>
@@ -179,7 +179,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                         <span className="text-[10px] text-blue-400 uppercase font-bold flex items-center gap-1.5">
                             QUIC Parameters <Help>{t("Experimental. Controls BBR/Brutal congestion and limits.")}</Help>
                         </span>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[9px] uppercase font-bold text-slate-600 ml-1">{t("Max Idle Timeout")}</label>
                                 <DurationInput

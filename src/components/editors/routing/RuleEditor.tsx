@@ -228,11 +228,11 @@ export const RuleEditor = ({
             </div>
 
             <div className={`bg-slate-900 border p-4 rounded-xl shadow-lg ${missingTarget ? 'border-rose-500/60' : 'border-slate-800'}`}>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex flex-wrap justify-between items-center gap-x-3 gap-y-1 mb-2">
                     <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{t("Traffic Destination")}</label>
                     <div className="text-[10px] text-slate-500 font-mono">{t("Where to send traffic")}</div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <Select
                         className="flex-1"
                         value={currentTarget}
@@ -247,7 +247,7 @@ export const RuleEditor = ({
                         ]}
                     />
                     <input
-                        className={`w-1/3 input-base text-slate-300 ${missingTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
+                        className={`w-full sm:w-1/3 input-base text-slate-300 ${missingTarget ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         placeholder={t("Custom tag...")}
                         value={rule.outboundTag || rule.balancerTag || ""}
                         onChange={e => update('outboundTag', e.target.value)}
@@ -262,7 +262,7 @@ export const RuleEditor = ({
 
             <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                         <SmartTagInput
                             label={<span className="flex items-center">{t("Domains (GeoSite)")} <Help>{t("List of domains to match. Use geosite:google for predefined groups.")}</Help></span>}
                             prefix="geosite:"
@@ -276,7 +276,7 @@ export const RuleEditor = ({
                             onTagClick={setViewTag}
                         />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                         <SmartTagInput
                             label={<span className="flex items-center">{t("IPs (GeoIP & CIDR)")} <Help>{t("List of IP addresses or CIDR ranges. Use geoip:cn for country-based matching.")}</Help></span>}
                             prefix="geoip:"
@@ -297,7 +297,7 @@ export const RuleEditor = ({
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block border-b border-slate-800 pb-2">
                         {t("Advanced Matchers")}
                         </label>
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <TagSelector
                                 label={<span className="flex items-center">{t("Inbound Source")} <Help>{t("Filter traffic by the tag of the inbound connection.")}</Help></span>}
@@ -342,7 +342,7 @@ export const RuleEditor = ({
                             />
                         </div>
 
-                        <div className="col-span-2 pt-6 mt-2 border-t border-slate-800/50">
+                        <div className="md:col-span-2 pt-6 mt-2 border-t border-slate-800/50">
                             <SchemaForm
                                 schema={RoutingRuleSchema}
                                 value={rule}

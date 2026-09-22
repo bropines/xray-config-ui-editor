@@ -2028,4 +2028,7 @@ export const ru: Record<string, string> = {
     '{n} path · the dice uses it|{n} paths · the dice uses them':
         '{n} путь · кубик берёт его|{n} пути · кубик берёт из них|{n} путей · кубик берёт из них',
     'Take a path from your list ({n})': 'Взять путь из вашего списка ({n})',
+
+    // ── Мобильная навигация внутри редакторов ───────────────────────────────
+    'Back to the index': 'Назад к списку',
 };

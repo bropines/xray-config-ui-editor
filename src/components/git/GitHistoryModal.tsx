@@ -178,7 +178,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleDeleteCommit(e, commit.id)}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-400 transition-opacity rounded hover:bg-slate-800"
+                                                    className="md:opacity-0 md:group-hover:opacity-100 p-2 md:p-1 text-slate-400 hover:text-rose-400 transition-opacity rounded hover:bg-slate-800"
                                                     title={t("Delete this commit")}
                                                 >
                                                     <Icon name="Trash" className="text-xs" />

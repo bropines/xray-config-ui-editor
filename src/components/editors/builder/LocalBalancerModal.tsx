@@ -506,7 +506,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                         isTemplate && templateView === 'json' ? 'hidden' : 'grid'
                     }`}>
                         <Section title={t("Balancer")}>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <Input
                                     label={t("Tag prefix")}
                                     value={options.proxyTagPrefix}
