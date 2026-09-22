@@ -23,7 +23,7 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80dvh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">

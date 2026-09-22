@@ -64,7 +64,7 @@ export const BatchEditModal = ({ direction, items, initialSelection, onApply, on
                 ? tn(preview.changes.length, "Apply to {n} item", "Apply to {n} items")
                 : t("Nothing to apply")}
             saveIcon="Check"
-            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
+            className="md:h-[88vh] md:max-h-[92dvh] overflow-hidden"
         >
             <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-3">
                 {/* ─── Pick the targets ──────────────────────────────── */}

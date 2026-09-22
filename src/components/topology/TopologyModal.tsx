@@ -29,7 +29,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
             title={t("Traffic Topology")}
             onClose={onClose}
             onSave={onClose}
-            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
+            className="md:h-[88vh] md:max-h-[92dvh] overflow-hidden"
             extraButtons={
                 <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-1 px-2 rounded-lg border border-slate-800">
                     <Switch 

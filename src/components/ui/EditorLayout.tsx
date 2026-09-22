@@ -62,7 +62,7 @@ export const EditorLayout = ({
             onClose={onClose} 
             onSave={onSave}
             extraButtons={modalButtons}
-            className="h-full overflow-hidden"
+            className="md:h-full overflow-hidden"
         >
             {errors.length > 0 && (
                 <div className="mb-4 p-3 bg-rose-900/20 border border-rose-500/50 rounded-xl text-rose-200 text-xs animate-in fade-in slide-in-from-top-2 shrink-0">

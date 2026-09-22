@@ -37,7 +37,7 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
         <Modal
             title={t("Local history timeline ({used}/{limit})", { used: history.length, limit: historyLimit })}
             onClose={onClose}
-            className="max-w-5xl h-[85vh]"
+            className="max-w-5xl md:h-[85dvh]"
             extraButtons={
                 <div className="flex items-center gap-2">
                     {history.length > 0 && (

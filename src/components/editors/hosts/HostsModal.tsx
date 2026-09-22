@@ -55,7 +55,7 @@ export const HostsModal = ({ onClose, initialHostUuid, onOpenTemplates }: {
             onSave={draft ? h.save : undefined}
             saveText={h.saving ? t("Saving…") : (h.isNew ? t("Create host") : t("Save host"))}
             saveIcon="CloudArrowUp"
-            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
+            className="md:h-[88vh] md:max-h-[92dvh] overflow-hidden"
             extraButtons={draft && !h.isNew ? (
                 h.confirmDelete ? (
                     <Button variant="danger" icon="Warning" onClick={h.remove}>

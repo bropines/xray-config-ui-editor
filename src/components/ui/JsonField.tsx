@@ -160,7 +160,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                 </div>
             )}
             
-            <div className={`flex-1 min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#282c34] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
+            <div className={`flex-1 min-h-[45dvh] md:min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#282c34] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
                 <div className="absolute inset-0">
                     <JsonEditor
                         value={text}

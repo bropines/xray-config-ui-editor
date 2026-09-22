@@ -143,7 +143,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                     : (templateView === 'json' && editingSavedTemplate ? t("Save JSON to panel") : t("Save to panel")))
                 : (multi ? t("Load shown config") : t("Load into editor"))}
             saveIcon={isTemplate ? 'CloudArrowUp' : 'ArrowSquareIn'}
-            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
+            className="md:h-[88vh] md:max-h-[92dvh] overflow-hidden"
             extraButtons={
                 <>
                     <Button variant="secondary" icon="FileArrowDown" onClick={b.download} disabled={!b.outputJson}>

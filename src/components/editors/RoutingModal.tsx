@@ -62,7 +62,7 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
             title={t("Routing Manager")}
             onClose={handleClose}
             onSave={handleClose}
-            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
+            className="md:h-[88vh] md:max-h-[92dvh] overflow-hidden"
             extraButtons={
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
                     <button

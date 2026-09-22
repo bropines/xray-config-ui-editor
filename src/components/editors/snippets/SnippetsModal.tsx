@@ -84,7 +84,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
         <Modal
             title={t("Snippets & Templates")}
             onClose={onClose}
-            className="h-[90vh] md:h-[88vh] max-h-[92vh] overflow-hidden"
+            className="md:h-[88vh] md:max-h-[92dvh] overflow-hidden"
             hideFooter
         >
             <RemnawaveGuide module="snippets" />

@@ -98,7 +98,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         <Modal
             title={t("Git log — {name} ({count} commits)", { name: profileName, count: history.length })}
             onClose={onClose}
-            className="max-w-6xl h-[88vh]"
+            className="max-w-6xl md:h-[88dvh]"
             extraButtons={
                 <div className="flex items-center gap-2">
                     {history.length > 1 && (

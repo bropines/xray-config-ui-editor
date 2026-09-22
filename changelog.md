@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **Editors no longer collapse to a strip on a phone.** `Modal` emitted `h-auto` while every caller passed its own `h-[90vh] md:h-[88vh]`. Both are plain classes, so stylesheet order decided the winner — and below `md` that was `h-auto`. The box then sized to its content, every `flex-1 min-h-0` beneath it resolved against an indefinite height, and what was left was the chrome that happens to be `shrink-0`, with `overflow-hidden` leaving nothing to scroll to the rest. Measured on a 412×380 viewport: the routing editor's panel was **644px tall inside a 380px screen**, with 16px of it reachable.
+  - Height now belongs to the shell. A phone gets a full-screen sheet (`100dvh`, square corners, no backdrop gutter); callers keep only their desktop height, breakpoint-scoped so it cannot apply on a phone. At 412×700 the rule list went from 265px to 321px and the panel stops overflowing the screen at any height.
+  - `dvh` instead of `vh` throughout the modals: `vh` is the *large* viewport and ignores both the browser's collapsing toolbar and the keyboard, which is why the footer kept ending up under them.
+  - Below `md` the modal body always scrolls, whatever the caller asked for. That is the fallback that keeps content reachable when an inner flex chain misbehaves, instead of hiding it.
+  - The tab strip sits above the action row instead of below it, so Close and Save stay where a thumb is.
+- **`hide-scrollbar` / `no-scrollbar` were never defined.** Six places used them to make a horizontal tab strip scroll cleanly; without the rule the scrollbar took height on desktop and the strip just looked clipped.
+- `min-h-[600px]` on the config inspector and `h-[80vh]` panes inside the inspector and geo viewer now fill the shell instead of re-deriving a height taller than the phone they are on.
+
 ## [1.4.2] - 2026-09-22
 
 ### Added

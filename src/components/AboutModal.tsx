@@ -46,7 +46,7 @@ export const AboutModal = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in" onClick={onClose}>
-            <div className="bg-slate-900 border border-slate-700/50 rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-900 border border-slate-700/50 rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6 shrink-0">
                     <div className="flex items-center gap-3">

@@ -78,6 +78,22 @@ input[type="number"] {
     }
 }
 
+/* Полоса прокрутки есть, но не видна — для горизонтальных лент вкладок и
+   навигации. Классы `hide-scrollbar` и `no-scrollbar` использовались в шести
+   местах и не были объявлены нигде: ленты прокручивались, но выглядели как
+   обрезанные, потому что скроллбар на десктопе съедал часть высоты, а на
+   мобиле не было ни его, ни подсказки, что там есть что листать. */
+.hide-scrollbar,
+.no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
 /* Скроллбар - Оптимизация для десктопа */
 .custom-scroll {
     scrollbar-width: thin;

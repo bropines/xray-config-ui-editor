@@ -134,7 +134,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
             }
         >
-            <div className="h-[80vh] flex flex-col gap-4 relative">
+            <div className="flex-1 min-h-0 flex flex-col gap-4 relative">
                 
                 {activeTab === 'custom' && (
                     <div className="flex flex-col gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800 shrink-0 animate-in fade-in slide-in-from-top-2">
