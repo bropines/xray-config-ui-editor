@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Icon } from './Icon';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { t } from '../../i18n';
 
 export const Modal = ({
@@ -19,6 +20,10 @@ export const Modal = ({
   isSecondary = false
 }: any) => {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
+
+  // A full-screen sheet that swallows the system Back gesture turns "out of
+  // this" into "out of everything you were doing".
+  useBackToClose(true, onClose);
 
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {

@@ -12,6 +12,7 @@ import { DnsHosts } from './dns/DnsHosts';
 import { DnsFakedns } from './dns/DnsFakedns';
 
 import { useDnsEditor } from '../../hooks/useDnsEditor';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { t } from '../../i18n';
 
 export const DnsModal = ({ onClose }: any) => {
@@ -35,6 +36,9 @@ export const DnsModal = ({ onClose }: any) => {
         updateHosts,
         updateFakedns
     } = useDnsEditor();
+
+    // Back steps out of a server's detail pane before it closes the editor.
+    useBackToClose(mobileEditMode, () => setMobileEditMode(false));
 
     const [localRawText, setLocalRawText] = useState<string | null>(null);
     const rawConfigText = useConfigStore(state => state.rawConfigText);

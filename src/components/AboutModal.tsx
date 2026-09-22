@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from './ui/Icon';
 import { Button } from './ui/Button';
+import { useBackToClose } from '../hooks/useBackToClose';
 import { t } from '../i18n';
 
 interface Commit {
@@ -16,6 +17,7 @@ interface Commit {
 }
 
 export const AboutModal = ({ onClose }: { onClose: () => void }) => {
+    useBackToClose(true, onClose);
     const [commits, setCommits] = useState<Commit[]>([]);
     const [loading, setLoading] = useState(true);
 

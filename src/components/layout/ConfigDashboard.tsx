@@ -21,6 +21,7 @@ import { OutboundRoutingBadge } from './OutboundRoutingBadge';
 import { BatchEditModal } from '../editors/batch/BatchEditModal';
 import type { EndpointDirection } from '../../core/generators/endpoint-factory';
 import { useConfigStore } from '../../store/configStore';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { dndAccessibility } from '../ui/dndAccessibility';
 
 // Re-usable column Card for the dashboard
@@ -328,6 +329,10 @@ export const ConfigDashboard = ({
   onOpenHosts,
   snippetDefs = [],
 }: ConfigDashboardProps) => {
+  // The modules strip is a sheet on a phone; Back should lower it rather than
+  // leave the app.
+  useBackToClose(modulesVisible, () => setModulesVisible(false));
+
   const {
     isModified,
     history,

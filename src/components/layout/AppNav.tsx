@@ -4,6 +4,7 @@ import { Button } from '../ui';
 import { Select } from '../ui/Select';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { useAppNavLogic } from '../../hooks/useAppNavLogic';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { t } from '../../i18n';
 
 interface AppNavProps {
@@ -57,6 +58,7 @@ export const AppNav = ({
     const { selectorOptions, currentOptionValue, handleSelectChange } = useAppNavLogic();
 
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+    useBackToClose(mobileMenuOpen, () => setMobileMenuOpen(false));
 
     return (
         <>

@@ -13,6 +13,7 @@ import { BalancerEditor } from './routing/BalancerEditor';
 import { useRoutingEditor } from '../../hooks/useRoutingEditor';
 import { useGeoData } from '../../hooks/useGeoData';
 import { useSidebarResizer } from '../../hooks/useSidebarResizer';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { t, tn } from '../../i18n';
 
 export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
@@ -53,6 +54,10 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
         handleInlineSnippet,
         handleInlineBalancerSnippet
     } = useRoutingEditor(onClose);
+
+    // List → detail is a level of its own: Back returns to the list of rules
+    // before it closes the editor.
+    useBackToClose(mobileEditMode, () => setMobileEditMode(false));
 
     const { geoSites, geoIps, loadingGeo } = useGeoData();
     const { sidebarWidth, startResizing } = useSidebarResizer();

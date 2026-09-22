@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './ui/Icon';
 import type { Diagnostic, DiagnosticSeverity } from '../core/diagnostics';
+import { useBackToClose } from '../hooks/useBackToClose';
 import { t } from '../i18n';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
+    useBackToClose(true, onClose);
     const criticals = diagnostics.filter(d => d.severity === 'critical');
     const warnings = diagnostics.filter(d => d.severity === 'warning');
     const infos = diagnostics.filter(d => d.severity === 'info');
