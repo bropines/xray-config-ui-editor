@@ -1,6 +1,7 @@
 import React from 'react';
 import { Toaster } from 'sonner';
 import { UpdatePrompt } from './components/pwa/UpdatePrompt';
+import { MobileActionBar } from './components/layout/MobileActionBar';
 import { useAppLogic } from './hooks/useAppLogic';
 import { getPresets } from './core/presets';
 import { t } from './i18n';
@@ -105,6 +106,20 @@ export const App = () => {
                 onOpenEditorSettings={onOpenEditorSettings}
                 onOpenHistory={onOpenHistory}
                 onClearConfig={() => setConfig(null as any)}
+            />
+
+            {/* The same verbs the top bar carries on a desktop, moved to where
+                a thumb reaches. Hidden from md up, where the toolbar has room
+                for them. */}
+            <MobileActionBar
+                hasConfig={!!config}
+                connected={remnawave.connected}
+                pushStage={pushStage}
+                onFileUpload={handleFileUpload}
+                onDownload={downloadConfig}
+                onPush={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush}
+                onOpenRemnawave={() => setRemnawaveModalOpen(true)}
+                onOpenAbout={() => setAboutOpen(true)}
             />
 
             <main className="flex-1 min-h-0 flex flex-col p-3 md:p-4 max-w-[1800px] mx-auto w-full overflow-hidden">

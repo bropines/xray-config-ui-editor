@@ -66,7 +66,7 @@ export const AppNav = ({
                     <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/20 shrink-0">
                         <Icon name="Planet" weight="fill" className="text-xl" />
                     </div>
-                    <div className="flex flex-col leading-tight hidden sm:flex">
+                    <div className="flex flex-col leading-tight min-w-0">
                         <span className="font-black text-sm tracking-tight text-white uppercase">{t("Xray GUI")}</span>
                         {connected ? (
                             <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
@@ -197,35 +197,6 @@ export const AppNav = ({
                         </div>
                     )}
 
-                    {/* Mobile Center: Remnawave Cloud Control */}
-                    <div className="flex md:hidden items-center justify-center shrink-0">
-                        {connected ? (
-                            <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl p-1 gap-1 h-11">
-                                <button
-                                    onClick={onPush}
-                                    className={`flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg font-bold text-xs transition-all ${
-                                        pushStage === 'confirm'
-                                            ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-bounce'
-                                            : 'bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white'
-                                    }`}
-                                >
-                                    <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" />
-                                    <span>{pushStage === 'confirm' ? t("Confirm?") : t("Push Cloud")}</span>
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800">
-                                <Button
-                                    variant="secondary"
-                                    onClick={onOpenRemnawave}
-                                    className="h-9 px-3 text-xs font-bold rounded-lg border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 shadow-none"
-                                    title={t("Connect Cloud")}
-                                >
-                                    <Icon name="Cloud" /> <span>{t("Connect Cloud")}</span>
-                                </Button>
-                            </div>
-                        )}
-                    </div>
                 </div>
 
                 {/* Right: Load/Download + Mobile Menu trigger + Combined TG & Xray Docs + About (Very Right End) */}
@@ -241,8 +212,8 @@ export const AppNav = ({
                         </button>
                     </div>
 
-                    {/* File / Download */}
-                    <div className="flex gap-1 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    {/* File / Download — on a phone these are in the bottom bar. */}
+                    <div className="hidden md:flex gap-1 h-11 items-center bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                         <label
                             className="bg-slate-800/80 hover:bg-slate-700 text-slate-200 w-9 h-9 rounded-lg cursor-pointer transition-all border border-slate-700/60 flex items-center justify-center text-sm"
                             title={t("Load JSON")}
@@ -293,8 +264,10 @@ export const AppNav = ({
 
                     <div className="w-px h-8 bg-slate-800/50 mx-0.5 hidden sm:block shrink-0" />
 
-                    {/* Language + About / Repository at the VERY RIGHT END */}
-                    <div className="flex items-center gap-1 h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
+                    {/* Language + About / Repository at the VERY RIGHT END.
+                        On a phone: About is in the bottom bar, the language
+                        switcher in the drawer. */}
+                    <div className="hidden md:flex items-center gap-1 h-11 bg-slate-950/50 p-1 rounded-xl border border-slate-800 shrink-0">
                         <LanguageSwitcher className="hidden sm:flex h-9" />
                         <button
                             onClick={onOpenAbout}

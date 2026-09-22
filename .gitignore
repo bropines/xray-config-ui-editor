@@ -87,5 +87,11 @@ cobase*
 *.tar.gz
 /DebugScreens/
 /screenshots/
+
+# ...кроме иконок приложения. Они генерируются из favicon.svg, но лежат в
+# public/ и должны попадать в сборку: без них манифест ссылается на 404,
+# и Chrome отвечает «это приложение нельзя установить».
+!public/*.png
+!public/*.ico
 xray_docs/
 docs_temp/

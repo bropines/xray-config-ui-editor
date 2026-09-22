@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2026-09-22
+
+### Fixed
+- **The app could not actually be installed.** `.gitignore` carries a blanket `*.png` / `*.ico` rule, so the generated icons were never committed: the deploy shipped a perfectly valid manifest pointing at files that 404'd, and Chrome answered "this app cannot be installed" with nothing in the console to say why. Nothing in a build, a type check or a test noticed — only fetching the deployed files did. There is now a test that checks every icon the manifest and the page name exists **and is not ignored by git**, and it fails when the files are removed.
+
+### Changed
+- **The dashboard is one scroll on a phone.** Four sections, each a fixed-height box with its own scrollbar, stacked inside the page scroller: four independent scroll regions in one viewport, each showing a few rows and clipping the next one mid-line. Below `md` a section grows to fit instead, the page is the only thing that scrolls, and tapping a section header folds it away to reach the one under it. Measured at 412×700: one scrollable region where there were four.
+- **The verbs moved to the bottom of the screen.** The top bar was six controls of equal weight, one of them carrying a text label — so "push to cloud" took 40% of the width and the rest were squeezed into what was left. Open, Save, Cloud and About are a bottom bar now, where a thumb reaches; the top bar keeps identity, diagnostics and the drawer. The bar hides when you scroll down and returns when you scroll up, because in a browser tab the address bar is often along the same edge.
+
 ## [1.6.0] - 2026-09-22
 
 ### Added

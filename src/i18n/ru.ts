@@ -2062,4 +2062,9 @@ export const ru: Record<string, string> = {
     'Reloading applies it. Anything unsaved in the editor is lost, so finish what you are doing first.':
         'Она применится после перезагрузки. Несохранённое в редакторе при этом потеряется — сначала доделайте начатое.',
     'Reload': 'Перезагрузить',
+
+    // ── Нижняя панель действий на телефоне ──────────────────────────────────
+    'Open': 'Открыть',
+    'Cloud': 'Облако',
+    'About': 'О нас',
 };
