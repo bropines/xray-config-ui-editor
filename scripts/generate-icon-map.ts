@@ -1,0 +1,156 @@
+/**
+ * Writes the icon data `Icon` renders from.
+ *
+ * `Icon` resolves its component from a string, so the component imported the
+ * whole Phosphor namespace — about 1,500 icons, 5 MB of a 7.5 MB bundle, for
+ * the couple of hundred this app draws. A namespace import is also the one
+ * shape a bundler cannot tree-shake, since any string could index it.
+ *
+ * Importing only the used icons fixed the tree-shaking and still shipped
+ * 429 kB: every Phosphor icon component carries a switch over all six weights
+ * plus the context and ref machinery around it. None of that survives to the
+ * screen — what reaches the DOM is a handful of `<path>` elements.
+ *
+ * So this renders each icon once, at build time, and keeps the markup. The
+ * app ships path data instead of components.
+ *
+ * The scan deliberately over-collects: every quoted string anywhere in `src`
+ * that happens to name a Phosphor icon is included, not only the ones in an
+ * `icon=` position. Names reach `Icon` through data tables, ternaries and
+ * props passed down two components, and an icon missing from the map renders
+ * as a red "?" at runtime, where no compiler will see it. A few extra icons
+ * cost bytes; a missing one is a visible defect.
+ *
+ * Run via `bun run icons:generate`. `Icon.test.ts` fails if the checked-in
+ * file is out of date.
+ */
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import { join, relative } from 'path';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import * as PhosphorIcons from '@phosphor-icons/react';
+
+const SRC = 'src';
+const OUT = join('src', 'components', 'ui', 'icon-map.generated.ts');
+
+/** Things Phosphor exports that are not icon components. */
+const NOT_ICONS = new Set(['IconContext', 'IconBase', 'SSR', 'default']);
+
+/**
+ * The weights this app actually asks for. Phosphor ships six; shipping the
+ * two nobody uses would be a third of the data for nothing.
+ */
+export const WEIGHTS = ['regular', 'bold', 'fill', 'duotone'] as const;
+export type Weight = (typeof WEIGHTS)[number];
+
+const sourceFiles = (dir: string): string[] => {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) out.push(...sourceFiles(full));
+        else if (/\.tsx?$/.test(entry) && !full.endsWith(OUT)) out.push(full);
+    }
+    return out;
+};
+
+/** Mirrors the kebab-case handling in `Icon`. */
+export const toPascal = (name: string): string =>
+    name.includes('-')
+        ? name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')
+        : name.charAt(0).toUpperCase() + name.slice(1);
+
+const available = new Set(
+    Object.keys(PhosphorIcons).filter(key => !NOT_ICONS.has(key) && /^[A-Z]/.test(key)),
+);
+
+export const collectIconNames = (): string[] => {
+    const found = new Set<string>();
+    for (const file of sourceFiles(SRC)) {
+        const text = readFileSync(file, 'utf8');
+        for (const match of text.matchAll(/['"`]([A-Za-z][A-Za-z0-9-]{1,40})['"`]/g)) {
+            const pascal = toPascal(match[1]!);
+            if (available.has(pascal)) found.add(pascal);
+        }
+    }
+    return [...found].sort();
+};
+
+/** Renders one icon at one weight and keeps only what goes inside the `<svg>`. */
+const bodyFor = (name: string, weight: Weight): string => {
+    const Component = (PhosphorIcons as Record<string, any>)[name];
+    const markup = renderToStaticMarkup(createElement(Component, { weight }));
+    const inner = markup.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+    // Phosphor draws a transparent hit-area rect first; it is dead weight once
+    // the wrapper sets its own size.
+    return inner
+        .replace(/<rect width="256" height="256" fill="none"\s*\/?>/g, '')
+        // `</path>` is seven dead bytes on every path, and there are hundreds.
+        .replace(/><\/path>/g, '/>');
+};
+
+/**
+ * Bodies repeat across icons and weights — pairs like arrows and carets share
+ * geometry, and `bold` sometimes equals `regular`. Pooling them lets the same
+ * string be referenced instead of repeated.
+ */
+export const renderIconMap = (names: string[]): string => {
+    const pool: string[] = [];
+    const indexOf = new Map<string, number>();
+    const rows: string[] = [];
+
+    for (const name of names) {
+        const indices = WEIGHTS.map(weight => {
+            const body = bodyFor(name, weight);
+            let index = indexOf.get(body);
+            if (index === undefined) {
+                index = pool.length;
+                pool.push(body);
+                indexOf.set(body, index);
+            }
+            return index;
+        });
+        rows.push(`    ${name}: [${indices.join(',')}],`);
+    }
+
+    const poolLiteral = pool.map(body => `    ${JSON.stringify(body)},`).join('\n');
+    return `// GENERATED by scripts/generate-icon-map.ts — do not edit by hand.
+//
+// Path data for the ${names.length} icons this app draws, at the ${WEIGHTS.length} weights it
+// asks for. The components these came from carry a switch over all six
+// weights and the context machinery around it; none of that reaches the DOM.
+// Run \`bun run icons:generate\` after adding an icon — Icon.test.ts fails
+// while this file is stale.
+export const WEIGHTS = [${WEIGHTS.map(w => `'${w}'`).join(', ')}] as const;
+
+export type IconWeight = (typeof WEIGHTS)[number];
+
+/** Bodies are pooled: icons and weights share geometry more often than not. */
+const BODIES: string[] = [
+${poolLiteral}
+];
+
+/** Icon name -> one index into BODIES per weight, in WEIGHTS order. */
+const INDEX: Record<string, readonly number[]> = {
+${rows.join('\n')}
+};
+
+export const iconBody = (name: string, weight: string): string | undefined => {
+    const row = INDEX[name];
+    if (!row) return undefined;
+    const at = WEIGHTS.indexOf(weight as IconWeight);
+    return BODIES[row[at === -1 ? 0 : at]!];
+};
+
+export const iconNames = (): string[] => Object.keys(INDEX);
+
+export const hasIcon = (name: string): boolean => name in INDEX;
+`;
+};
+
+if (import.meta.main) {
+    const names = collectIconNames();
+    const output = renderIconMap(names);
+    writeFileSync(OUT, output, 'utf8');
+    const kb = (Buffer.byteLength(output) / 1024).toFixed(1);
+    console.log(`${names.length} icons x ${WEIGHTS.length} weights -> ${relative('.', OUT)} (${kb} kB)`);
+}

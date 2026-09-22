@@ -20,6 +20,17 @@ const I18nRoot = () => {
 
 warmCyrillicSubsets();
 
+/**
+ * Ask the browser to keep this origin's storage.
+ *
+ * Everything the editor remembers lives in IndexedDB, and browsers evict that
+ * under pressure — Safari after seven days without a visit. Chrome and Firefox
+ * grant this for an installed or frequently-used site; Safari refuses it
+ * outright, which is why Settings has an export for the whole store rather
+ * than only this.
+ */
+navigator.storage?.persist?.().catch(() => {});
+
 const rootElement = document.getElementById("app");
 if (rootElement) {
     const root = createRoot(rootElement);

@@ -2049,9 +2049,17 @@ export const ru: Record<string, string> = {
         'Загрузка заменит всё, что сейчас лежит в этом браузере. Если ещё не выгружали — выгрузите сначала.',
     'panel connection': 'подключение к панели',
     'Replace and reload': 'Заменить и перезагрузить',
+    'On iOS, an app added to the home screen gets its own storage — it will not see anything saved here in Safari. Export first, install through Share → Add to Home Screen, then import inside the installed app.':
+        'На iOS у приложения с домашнего экрана своё собственное хранилище — оно не увидит ничего из того, что сохранено здесь, в Safari. Сначала выгрузите, потом установите через «Поделиться» → «На экран „Домой“», и уже внутри установленного приложения загрузите копию.',
     'Exported {n} profile|Exported {n} profiles':
         'Выгружен {n} профиль|Выгружено {n} профиля|Выгружено {n} профилей',
     '{n} profile|{n} profiles': '{n} профиль|{n} профиля|{n} профилей',
     '{n} snapshot|{n} snapshots': '{n} снимок|{n} снимка|{n} снимков',
     '{n} spiderX path|{n} spiderX paths': '{n} путь spiderX|{n} пути spiderX|{n} путей spiderX',
+
+    // ── Обновление установленного приложения ────────────────────────────────
+    'A new version is ready.': 'Готова новая версия.',
+    'Reloading applies it. Anything unsaved in the editor is lost, so finish what you are doing first.':
+        'Она применится после перезагрузки. Несохранённое в редакторе при этом потеряется — сначала доделайте начатое.',
+    'Reload': 'Перезагрузить',
 };

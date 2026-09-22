@@ -52,7 +52,20 @@
         </script>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <!-- The site is served from a project subpath, so a root-relative
+             icon href resolved to the wrong origin path. Vite rewrites these
+             against `base`. -->
+        <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+        <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="48x48" />
+        <!-- iOS has no manifest icon support worth relying on, and no
+             beforeinstallprompt: the home-screen icon comes from here. -->
+        <link rel="apple-touch-icon" href="./apple-touch-icon-180x180.png" />
+        <meta name="theme-color" content="#020617" />
+        <!-- `apple-mobile-web-app-capable` is deprecated and warns in Chrome;
+             the status bar style has no manifest equivalent, so it stays. -->
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Xray Editor" />
 
         <!-- One request, not two: the same families were requested twice, once
              with display=block (invisible text for up to 3s) and once with
