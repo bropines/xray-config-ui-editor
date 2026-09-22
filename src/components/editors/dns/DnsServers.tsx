@@ -16,8 +16,8 @@ interface SortableDnsItemProps {
     server: any;
     id: string;
     isActive: boolean;
-    onClick: () => void;
-    onDelete: () => void;
+    onClick: (index: number) => void;
+    onDelete: (index: number) => void;
 }
 
 const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }: SortableDnsItemProps) => {
@@ -66,7 +66,7 @@ const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }: SortableDn
 interface DnsServersProps {
     servers?: any[];
     onSelect: (index: number) => void;
-    onAdd: () => void;
+    onAdd: (initial?: any) => void;
     onDelete: (index: number) => void;
     onReorder: (servers: any[]) => void;
 }

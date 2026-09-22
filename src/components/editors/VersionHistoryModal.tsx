@@ -126,7 +126,7 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                     </p>
                                 </div>
                                 <Button
-                                    variant="indigo"
+                                    variant="primary"
                                     className="text-xs py-1.5"
                                     onClick={() => handleRestore(selectedSnapshot.id)}
                                     icon="ArrowCounterClockwise"

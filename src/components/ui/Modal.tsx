@@ -34,7 +34,7 @@ export const Modal = ({
   }, [onClose]);
 
   const classes = className.split(' ').filter(Boolean);
-  const modalWidthClass = classes.find(c => c.startsWith('max-w-')) || 'max-w-[95vw] xl:max-w-[75vw] 2xl:max-w-[1400px]';
+  const modalWidthClass = classes.find((c: string) => c.startsWith('max-w-')) || 'max-w-[95vw] xl:max-w-[75vw] 2xl:max-w-[1400px]';
 
   // Height is the shell's business, not each caller's.
   //
@@ -50,7 +50,7 @@ export const Modal = ({
   // Breakpoint-scoped heights are the caller's desktop layout and pass
   // through; an unprefixed one would apply on a phone too, which is the whole
   // bug, so it is dropped rather than silently competing.
-  const passThrough = classes.filter(c => !c.startsWith('max-w-') && !mobileHeight.test(c));
+  const passThrough = classes.filter((c: string) => !c.startsWith('max-w-') && !mobileHeight.test(c));
 
   // A phone gets the whole screen: there is no useful "dialog floating over
   // context" at 400px, and `dvh` follows the browser's collapsing toolbar
@@ -58,7 +58,7 @@ export const Modal = ({
   // only one that declares none gets the shrink-to-content default.
   const sizing = isFullScreen
     ? 'h-[100dvh] md:rounded-none'
-    : classes.some(c => anyHeight.test(c))
+    : classes.some((c: string) => anyHeight.test(c))
       ? 'h-[100dvh] md:rounded-2xl'
       : 'h-[100dvh] md:h-auto md:max-h-[92dvh] md:rounded-2xl';
 

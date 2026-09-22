@@ -25,9 +25,14 @@ interface IconProps {
      * real now rather than a lie the types happened to allow.
      */
     size?: number;
+    /**
+     * Native tooltip. Three call sites passed this and it went nowhere, so
+     * the tooltip they meant to show never appeared.
+     */
+    title?: string;
 }
 
-export const Icon = ({ name, className = "", weight = "regular", size }: IconProps) => {
+export const Icon = ({ name, className = "", weight = "regular", size, title }: IconProps) => {
     // Преобразуем kebab-case в PascalCase (pencil-simple -> PencilSimple)
     // И обрабатываем случай, если имя уже в PascalCase
     const componentName = name.includes('-')
@@ -49,7 +54,7 @@ export const Icon = ({ name, className = "", weight = "regular", size }: IconPro
             height={size ?? '1em'}
             fill="currentColor"
             className={clsx("inline-block shrink-0", className)}
-            dangerouslySetInnerHTML={{ __html: body }}
+            dangerouslySetInnerHTML={{ __html: title ? `<title>${title}</title>${body}` : body }}
         />
     );
 };

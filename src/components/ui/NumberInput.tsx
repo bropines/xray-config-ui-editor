@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon } from './Icon';
 import { cn } from '../../utils/cn';
 
-interface NumberInputProps {
+export interface NumberInputProps {
     value: number | undefined | '';
     onChange: (val: number | undefined) => void;
     placeholder?: string;

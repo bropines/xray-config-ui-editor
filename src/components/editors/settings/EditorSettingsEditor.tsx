@@ -72,7 +72,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
                             onChange={e => setNewProfileName(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleCreate()}
                         />
-                        <Button variant="indigo" className="text-xs py-1" onClick={handleCreate} icon="Plus">
+                        <Button variant="primary" className="text-xs py-1" onClick={handleCreate} icon="Plus">
                             {t("New")}
                             </Button>
                     </div>
@@ -298,7 +298,7 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
 
                         <div className="flex gap-2">
                             {onOpenHistory && (
-                                <Button variant="indigo" className="text-xs py-1.5" onClick={onOpenHistory} icon="GitBranch">
+                                <Button variant="primary" className="text-xs py-1.5" onClick={onOpenHistory} icon="GitBranch">
                                     {t("Open History Timeline")}
                                     </Button>
                             )}

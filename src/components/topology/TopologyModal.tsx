@@ -1,5 +1,5 @@
 import React from 'react';
-import { ReactFlow, Background, Controls } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Modal } from '../ui/Modal';
 import { GraphNode } from './GraphNode';
@@ -73,7 +73,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                         style: { strokeWidth: 1.5, stroke: '#334155' }
                     }}
                 >
-                    <Background color="#334155" gap={30} size={1} variant="lines" className="opacity-20" />
+                    <Background color="#334155" gap={30} size={1} variant={BackgroundVariant.Lines} className="opacity-20" />
                     <Controls 
                         showInteractive={false}
                         className="!bg-slate-900 !border-slate-700 !shadow-2xl !rounded-lg !overflow-hidden !m-4" 

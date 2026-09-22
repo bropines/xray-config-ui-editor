@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-09-22
+
+### Added
+- **The system Back gesture closes the sheet instead of the app.** Every editor here is full-screen on a phone, and a full-screen view that swallows Back turns "out of this" into "out of everything you were doing". One history entry per open layer; the topmost closes, and a sheet closed by its own button leaves no stray entry behind. List and detail are separate levels, so Back steps out of a rule or a DNS server before it closes the editor.
+
+### Fixed
+- **Props that did not exist, so the things they asked for never happened.** The project builds with esbuild, which does not typecheck, so none of this ever surfaced:
+  - `Icon` took a `size` at eight call sites and ignored every one — those icons drew at the inherited 1em rather than the pixel size asked for. It also took a `title` that went nowhere, so three tooltips never appeared.
+  - `Card` took an `action` at three call sites and dropped it: the profile toolbar in Editor Settings had not been rendering at all.
+  - Four buttons asked for `variant="indigo"`, which the Button has never had, and rendered with no variant styling.
+- **The link parser could crash on a malformed link.** It reads pasted VLESS/VMess/Shadowsocks links — untrusted input by definition — and indexed `split()` results without checking. A link with no scheme threw; one with no `:` in its userinfo passed `undefined` on as a method and password. All 33 of its type errors were that shape.
+- The diff viewer indexed lines past the end of its array, the commit dialog read a config it is typed to accept as null, and two path-walking `update()` helpers indexed with a possibly-undefined segment.
+
+### Changed
+- Lint warnings 126 → 66 and type errors 141 → 43, with a `typecheck` script so the rest stay visible. Dead code went with them: a REALITY key generator nothing called, a schema lookup whose result was discarded, 31 catch bindings nothing read.
+
 ## [1.7.1] - 2026-09-22
 
 ### Fixed
