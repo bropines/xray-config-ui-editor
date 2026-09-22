@@ -10,22 +10,22 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     const isString = typeof server === 'string';
     const [local, setLocal] = useState(isString ? { address: server } : { ...server });
 
-    const [geoSites, setGeoSites] = useState<any[]>([]);
-    const [geoIps, setGeoIps] = useState<any[]>([]);
-    const [loadingGeo, setLoadingGeo] = useState(false);
+    // One arrival, so one piece of state: "still loading" is an object server
+    // with nothing fetched yet, not a flag to keep in step with two lists.
+    const [geo, setGeo] = useState<{ sites: any[]; ips: any[] } | null>(null);
+    const geoSites = geo?.sites ?? [];
+    const geoIps = geo?.ips ?? [];
+    const loadingGeo = !isString && geo === null;
 
     useEffect(() => {
         if (!isString) { 
             let isMounted = true;
-            setLoadingGeo(true);
             Promise.all([
                 getDefaultGeoList('geosite'),
                 getDefaultGeoList('geoip')
             ]).then(([sites, ips]) => {
                 if (isMounted) {
-                    setGeoSites(sites);
-                    setGeoIps(ips);
-                    setLoadingGeo(false);
+                    setGeo({ sites, ips });
                 }
             });
             return () => { isMounted = false; };

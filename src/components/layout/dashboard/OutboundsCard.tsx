@@ -68,7 +68,7 @@ config,
     // them a hundred times.
     const outboundRouting = React.useMemo(
         () => summariseOutboundRouting(config),
-        [config?.outbounds, config?.routing],
+        [config],
     );
 
     return (
@@ -312,10 +312,8 @@ config,
                   isSelected={selectedIndices.has(item.originalIndex)}
                   isAnySelected={selectedIndices.size > 0}
                   showCheckboxes={showCheckboxes}
-                  totalCount={config.outbounds?.length || 0}
                   onEdit={onEditOutbound}
                   onDelete={onDeleteOutbound}
-                  onMove={onMoveOutbound}
                   onItemClick={handleItemClick}
                 />
               ))

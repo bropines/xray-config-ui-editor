@@ -18,7 +18,8 @@ export const useGeoViewer = () => {
     
     const [geoSites, setGeoSites] = useState<GeoItem[]>([]);
     const [geoIps, setGeoIps] = useState<GeoItem[]>([]);
-    const [loading, setLoading] = useState(false);
+    // The first render already has a fetch in flight.
+    const [loading, setLoading] = useState(true);
     const [customLoading, setCustomLoading] = useState(false);
     
     const [search, setSearch] = useState("");
@@ -46,7 +47,6 @@ export const useGeoViewer = () => {
     // Load initial data
     useEffect(() => {
         let isMounted = true;
-        setLoading(true);
 
         const loadData = async () => {
             try {
@@ -84,6 +84,9 @@ export const useGeoViewer = () => {
     // Deep Search Logic
     useEffect(() => {
         if (!isDeepSearch || debouncedSearch.length < 2) {
+            // Clearing is the first half of "start a new search"; the query
+            // that triggers it only exists once the debounce has settled.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDeepSearchResults(null);
             setDeepSearchLoading(false);
             return;

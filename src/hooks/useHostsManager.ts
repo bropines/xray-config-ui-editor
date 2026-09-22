@@ -45,7 +45,7 @@ export const useHostsManager = (initialHostUuid?: string) => {
         if (panelTemplates.items.length === 0) fetchTemplates().catch(() => {});
     }, [connected, panelCatalog.fetchedAt, panelTemplates.items.length, fetchPanelCatalog, fetchTemplates]);
 
-    const hosts = panelCatalog.hosts || [];
+    const hosts = useMemo(() => panelCatalog.hosts || [], [panelCatalog.hosts]);
 
     const rows = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -107,6 +107,9 @@ export const useHostsManager = (initialHostUuid?: string) => {
     /** Opened from elsewhere (the builder's host list) — select that host once. */
     useEffect(() => {
         if (!initialHostUuid || draft || hosts.length === 0) return;
+        // Selecting a host is a response to the list arriving, which happens
+        // after this component has already rendered without it.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         open(initialHostUuid);
     }, [initialHostUuid, draft, hosts.length, open]);
 

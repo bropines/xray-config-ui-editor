@@ -16,8 +16,10 @@ export const useRoutingEditor = (onClose: () => void) => {
         () => [...snippetLibrary.local, ...snippetLibrary.panel],
         [snippetLibrary.local, snippetLibrary.panel]
     );
-    const rules = config?.routing?.rules || [];
-    const balancers = config?.routing?.balancers || [];
+    // `|| []` mints a new array on every render; memoising it is what makes
+    // the memos below it actually memoise.
+    const rules = useMemo(() => config?.routing?.rules || [], [config?.routing?.rules]);
+    const balancers = useMemo(() => config?.routing?.balancers || [], [config?.routing?.balancers]);
     
     const outboundTags = useMemo(() => (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean), [config?.outbounds]);
     const inboundTags = useMemo(() => (config?.inbounds || []).map((i: any) => i.tag).filter(Boolean), [config?.inbounds]);

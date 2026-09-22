@@ -18,28 +18,41 @@ interface Commit {
 
 export const AboutModal = ({ onClose }: { onClose: () => void }) => {
     useBackToClose(true, onClose);
-    const [commits, setCommits] = useState<Commit[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Session storage answers synchronously, so a cached changelog is the
+    // initial state rather than something an effect fills in a render later.
+    // It can throw or hold junk — a private window, a half-written value — and
+    // a broken cache should mean a fetch, not a blank dialog.
+    const [cached] = useState<Commit[] | null>(() => {
+        try {
+            const raw = sessionStorage.getItem('changelog-cache');
+            const parsed = raw ? JSON.parse(raw) : null;
+            return Array.isArray(parsed) ? parsed : null;
+        } catch {
+            return null;
+        }
+    });
+
+    const [commits, setCommits] = useState<Commit[]>(cached ?? []);
+    const [loading, setLoading] = useState(!cached);
 
     useEffect(() => {
-        const cached = sessionStorage.getItem('changelog-cache');
-        if (cached) {
-            setCommits(JSON.parse(cached));
-            setLoading(false);
-            return;
-        }
+        if (cached) return;
 
         fetch('https://api.github.com/repos/bropines/xray-config-ui-editor/commits?per_page=10')
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
                     setCommits(data);
-                    sessionStorage.setItem('changelog-cache', JSON.stringify(data));
+                    try {
+                        sessionStorage.setItem('changelog-cache', JSON.stringify(data));
+                    } catch {
+                        /* a full or unavailable store just means no cache */
+                    }
                 }
             })
             .catch(err => console.error("Failed to fetch changelog", err))
             .finally(() => setLoading(false));
-    }, []);
+    }, [cached]);
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);

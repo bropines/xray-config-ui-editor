@@ -7,7 +7,8 @@ import { Help } from "../../ui/Help";
 import { TemplateJsonView } from "./TemplateJsonView";
 import { LOCAL_BALANCER_PRESETS } from "../../../core/generators/local-balancer";
 import { DNS_RESOLVERS, matchResolverPreset } from "../../../core/presets/dns";
-import { Section, entryFieldLabel } from "./builder-parts";
+import { Section } from "./builder-parts";
+import { entryFieldLabel } from "./entry-field-label";
 import { t, tn } from "../../../i18n";
 
 /** The options, and the JSON they produce. */

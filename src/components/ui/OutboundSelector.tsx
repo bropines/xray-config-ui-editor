@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Icon } from './Icon';
+import { checkOutboundMatch } from './outbound-match';
 import { t } from '../../i18n';
 
 export interface OutboundSelectorProps {
@@ -13,39 +14,6 @@ export interface OutboundSelectorProps {
     colorScheme?: 'indigo' | 'purple';
     className?: string;
     maxGridHeight?: string;
-}
-
-export interface MatchResult {
-    exact: boolean;
-    prefixMatch: boolean;
-    pendingMatch: boolean;
-    matchedPrefix?: string;
-}
-
-export function checkOutboundMatch(
-    tag: string,
-    selected: string[],
-    pendingInput: string = ''
-): MatchResult {
-    const exact = selected.includes(tag);
-    let matchedPrefix: string | undefined;
-
-    const prefixMatch = !exact && selected.some(s => {
-        if (s && tag.startsWith(s)) {
-            matchedPrefix = s;
-            return true;
-        }
-        return false;
-    });
-
-    const cleanInput = pendingInput.trim();
-    const pendingMatch =
-        !exact &&
-        !prefixMatch &&
-        cleanInput.length > 0 &&
-        tag.startsWith(cleanInput);
-
-    return { exact, prefixMatch, pendingMatch, matchedPrefix };
 }
 
 export const OutboundSelector: React.FC<OutboundSelectorProps> = ({

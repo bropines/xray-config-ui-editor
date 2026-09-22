@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'bun:test';
-import { checkOutboundMatch } from './OutboundSelector';
+import { checkOutboundMatch } from './outbound-match';
 
 describe('OutboundSelector — prefix & exact matching logic', () => {
-    const availableTags = ['direct', 'block', 'vless-us-01', 'vless-us-02', 'vless-eu-01', 'trojan-jp'];
-
     it('identifies exact matches correctly', () => {
         const selected = ['direct', 'trojan-jp'];
         

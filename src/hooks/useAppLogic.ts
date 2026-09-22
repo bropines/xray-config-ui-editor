@@ -163,7 +163,8 @@ export const useAppLogic = () => {
         a.href = "data:text/json;charset=utf-8," + encodeURIComponent(contentToDownload);
         a.download = "config.json";
         a.click();
-    }, [config]);
+        // Reads the store directly, so it does not depend on the render's copy.
+    }, []);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();

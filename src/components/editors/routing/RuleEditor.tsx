@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm, ExtendedSection } from '../../ui';
 import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
@@ -13,13 +13,21 @@ const AttrsEditor = ({ value, onChange }: any) => {
     const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
     const [error, setError] = useState(false);
 
-    useEffect(() => {
-        const currentText = value ? JSON.stringify(value, null, 2) : "";
+    // Re-fill the box when the value changes underneath it — unless what is
+    // typed already means that value, which is the case on every keystroke
+    // the box itself caused. Adjusted during render rather than in an effect,
+    // so the box never shows the previous rule's attributes for a frame.
+    const [synced, setSynced] = useState(value);
+    if (value !== synced) {
+        setSynced(value);
+        let alreadyShown = false;
         try {
-            if (JSON.stringify(parseJsonc(text)) === JSON.stringify(value)) return;
-        } catch { }
-        setText(currentText);
-    }, [value]);
+            alreadyShown = JSON.stringify(parseJsonc(text)) === JSON.stringify(value);
+        } catch {
+            /* unparseable: it does not represent anything, so replace it */
+        }
+        if (!alreadyShown) setText(value ? JSON.stringify(value, null, 2) : "");
+    }
 
     const handleChange = (v: string) => {
         setText(v);

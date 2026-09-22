@@ -10,17 +10,8 @@ import { OutboundModal } from '../OutboundModal';
 import { useConfigStore } from '../../../store/configStore';
 import { useGeoData } from '../../../hooks/useGeoData';
 import { createDefaultRoutingRule, createDefaultBalancer, createDefaultOutbound } from '../../../core/generators';
+import type { SnippetKind } from '../../../core/snippets';
 import { t } from '../../../i18n';
-
-export type SnippetKind = 'rules' | 'outbounds' | 'balancers' | 'mixed' | 'empty' | 'unknown';
-
-/**
- * Kinds this editor can render as a form. `empty` is included because a new
- * snippet starts empty, and sending someone to raw JSON to write their first
- * entry defeats the point — it asks what they are building instead.
- * `mixed` stays out: there is no single editor for a body of two kinds.
- */
-export const FORM_EDITABLE: SnippetKind[] = ['rules', 'outbounds', 'balancers', 'empty'];
 
 interface Props {
     kind: SnippetKind;

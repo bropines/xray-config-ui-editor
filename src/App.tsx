@@ -160,7 +160,6 @@ export const App = () => {
                         onOpenTopology={() => setModal({ type: 'topology', data: null, index: null })}
                         onOpenGeoViewer={() => setGeoViewerOpen(true)}
                         onOpenConfigInspector={() => setConfigInspectorOpen(true)}
-                        onOpenEditorSettings={onOpenEditorSettings}
                         onOpenSnippets={onOpenSnippets}
                         onOpenBuilder={onOpenBuilder}
                         onOpenTemplates={onOpenTemplates}

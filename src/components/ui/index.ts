@@ -22,8 +22,10 @@ export type { InputProps } from './Input';
 export { NumberInput } from './NumberInput';
 export type { NumberInputProps } from './NumberInput';
 
-export { DurationInput, parseDuration } from './DurationInput';
-export type { DurationInputProps, TimeUnit } from './DurationInput';
+export { DurationInput } from './DurationInput';
+export type { DurationInputProps } from './DurationInput';
+export { parseDuration } from './duration';
+export type { TimeUnit } from './duration';
 
 export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
@@ -67,4 +69,6 @@ export { SchemaField } from './SchemaField';
 export { SchemaForm } from './SchemaForm';
 export { ExtendedSection } from './ExtendedSection';
 export { OutboundSelector } from './OutboundSelector';
-export type { OutboundSelectorProps, MatchResult } from './OutboundSelector';
+export type { OutboundSelectorProps } from './OutboundSelector';
+export { checkOutboundMatch } from './outbound-match';
+export type { MatchResult } from './outbound-match';

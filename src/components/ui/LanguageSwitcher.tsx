@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LANGUAGES, setLang, useLang } from '../../i18n';
 import { Icon } from './Icon';
@@ -20,11 +20,15 @@ export const LanguageSwitcher = ({ className = '' }: { className?: string }) => 
 
     const active = LANGUAGES.find(l => l.code === lang) ?? LANGUAGES[0]!;
 
+    // The menu renders only once it has been measured, so the measurement has
+    // to go when it does — otherwise the next open paints at the old place.
+    const close = useCallback(() => {
+        setOpen(false);
+        setCoords(null);
+    }, []);
+
     useLayoutEffect(() => {
-        if (!open) {
-            setCoords(null);
-            return;
-        }
+        if (!open) return;
         const rect = triggerRef.current?.getBoundingClientRect();
         if (rect) setCoords({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
     }, [open]);
@@ -34,10 +38,9 @@ export const LanguageSwitcher = ({ className = '' }: { className?: string }) => 
         const onPointerDown = (e: MouseEvent) => {
             if (triggerRef.current?.contains(e.target as Node)) return;
             if (menuRef.current?.contains(e.target as Node)) return;
-            setOpen(false);
+            close();
         };
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-        const close = () => setOpen(false);
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
         document.addEventListener('mousedown', onPointerDown);
         document.addEventListener('keydown', onKey);
         window.addEventListener('resize', close);
@@ -48,7 +51,7 @@ export const LanguageSwitcher = ({ className = '' }: { className?: string }) => 
             window.removeEventListener('resize', close);
             window.removeEventListener('scroll', close, true);
         };
-    }, [open]);
+    }, [open, close]);
 
     return (
         <>

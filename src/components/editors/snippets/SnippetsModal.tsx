@@ -9,7 +9,8 @@ import { useSnippetsLibrary, type SnippetEntry } from '../../../hooks/useSnippet
 import type { SnippetSource } from '../../../core/snippets';
 import { perLanguage, t } from '../../../i18n';
 import { RemnawaveGuide } from '../remnawave/RemnawaveGuide';
-import { SnippetFormEditor, FORM_EDITABLE } from './SnippetFormEditor';
+import { SnippetFormEditor } from './SnippetFormEditor';
+import { FORM_EDITABLE } from './form-editable';
 
 // perLanguage, not a plain const: a module-level table of labels is built once
 // at import and would keep whatever language was active then.

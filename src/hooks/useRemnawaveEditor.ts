@@ -37,6 +37,9 @@ export const useRemnawaveEditor = (onClose: () => void) => {
 
     useEffect(() => {
         if (remnawave.connected) {
+            // The connection settles asynchronously; the step it implies
+            // cannot be computed during the render that preceded it.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setStep('select');
             handleRefreshProfiles();
         }

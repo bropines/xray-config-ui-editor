@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -35,16 +35,19 @@ export const BatchOutboundModal = ({ onClose }: { onClose: () => void }) => {
         return newId;
     });
 
-    useEffect(() => {
-        if (mode === 'export') {
-            const links: string[] = [];
-            config?.outbounds?.forEach((ob: any) => {
-                const link = generateXrayLink(ob);
-                if (link) links.push(link);
-            });
-            setText(links.join('\n'));
-        }
-    }, [mode, config]);
+    // Export is a view of the config, not a draft: it was written into the
+    // same buffer the import side types into, which meant the box held
+    // whichever of the two ran last.
+    const exportText = React.useMemo(() => {
+        const links: string[] = [];
+        config?.outbounds?.forEach((ob: any) => {
+            const link = generateXrayLink(ob);
+            if (link) links.push(link);
+        });
+        return links.join('\n');
+    }, [config]);
+
+    const shownText = mode === 'export' ? exportText : text;
 
 const sanitizeUrl = (url: string): string => {
     let clean = url.trim();
@@ -248,7 +251,7 @@ const handleFetchSub = async () => {
                     </div>
                 )}
 
-                <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[30dvh] md:h-[280px]' : 'h-[38dvh] md:h-[380px]'}`} placeholder={t("Nodes will appear here after Fetching or Paste manual links...")} value={text} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
+                <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[30dvh] md:h-[280px]' : 'h-[38dvh] md:h-[380px]'}`} placeholder={t("Nodes will appear here after Fetching or Paste manual links...")} value={shownText} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
                 
                 {mode === 'import' && text.trim() && (
                     <Button className="w-full" onClick={() => {

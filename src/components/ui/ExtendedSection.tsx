@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Icon } from './Icon';
 
 interface ExtendedSectionProps {
@@ -22,14 +22,14 @@ export const ExtendedSection: React.FC<ExtendedSectionProps> = ({
     children,
     className = ""
 }) => {
-    const shouldDefaultOpen = defaultOpen || hasActiveValues || (activeCount !== undefined && activeCount > 0);
-    const [isOpen, setIsOpen] = useState(shouldDefaultOpen);
+    const hasContent = hasActiveValues || (activeCount !== undefined && activeCount > 0);
+    const shouldDefaultOpen = defaultOpen || hasContent;
 
-    useEffect(() => {
-        if (hasActiveValues || (activeCount !== undefined && activeCount > 0)) {
-            setIsOpen(true);
-        }
-    }, [hasActiveValues, activeCount]);
+    // Null until the reader takes a side; up to then the section follows its
+    // own content, which is what the effect here used to chase a render late.
+    const [chosen, setChosen] = useState<boolean | null>(null);
+    const isOpen = chosen ?? shouldDefaultOpen;
+    const setIsOpen = setChosen;
 
     return (
         <div className={`border border-slate-800/80 bg-slate-950/40 rounded-xl overflow-hidden transition-all duration-200 ${isOpen ? 'ring-1 ring-indigo-500/20' : 'hover:border-slate-700/80'} ${className}`}>

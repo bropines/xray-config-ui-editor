@@ -5,14 +5,14 @@ import { getSharedProtoWorker } from '../utils/proto-worker';
 export const useGeoData = () => {
     const [geoSites, setGeoSites] = useState<string[]>([]);
     const [geoIps, setGeoIps] = useState<string[]>([]);
-    const [loadingGeo, setLoadingGeo] = useState(false);
+    // The fetch starts on mount, so the first render is already a loading one.
+    const [loadingGeo, setLoadingGeo] = useState(true);
 
     useEffect(() => {
         // Ensure shared worker is initialized if needed
         getSharedProtoWorker();
 
         let isMounted = true;
-        setLoadingGeo(true);
         Promise.all([
             getDefaultGeoList('geosite'),
             getDefaultGeoList('geoip')

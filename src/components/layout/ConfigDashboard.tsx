@@ -48,7 +48,6 @@ interface ConfigDashboardProps {
   onOpenGeoViewer: () => void;
   onOpenConfigInspector: () => void;
   onOpenHistory?: () => void;
-  onOpenEditorSettings?: () => void;
   onOpenSnippets?: () => void;
   onOpenBuilder?: () => void;
   onOpenTemplates?: () => void;
@@ -89,7 +88,6 @@ export const ConfigDashboard = ({
   onOpenGeoViewer,
   onOpenConfigInspector,
   onOpenHistory,
-  onOpenEditorSettings,
   onOpenSnippets,
   onOpenBuilder,
   onOpenTemplates,

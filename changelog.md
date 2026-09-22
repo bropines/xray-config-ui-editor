@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.0] - 2026-09-22
+
+### Fixed
+- **Lint warnings 66 to 5, and several of them were describing real behaviour.** The five left are in the JSON editor, which is being reworked next.
+  - **Nine components set state from an effect to catch up with something they already knew.** Each one rendered the stale value first: the About dialog showed a spinner for a frame before the changelog it had cached synchronously, the section JSON editor showed the previous section, a duration field showed the wrong unit, an extended section rendered closed before opening itself. They compute it now, or adjust during render the way React documents.
+  - **A dropdown that reopened where it used to be.** The select, the language menu and the tooltip cleared their measured position from an effect, a render after closing — so reopening could paint one frame at the old coordinates with the old filter still typed in. Closing does it now, which is also the only place that knows it happened.
+  - **The DNS hosts editor guarded itself with a ref read during render**, which React does not allow and which would have gone wrong under concurrent rendering. It remembers what it wrote instead of a boolean that says "the next change is mine".
+  - **Eighteen dependency warnings were one mistake made five times:** `config?.routing?.rules || []` mints a new array on every render, so every memo listing it re-ran on every render. The editors for routing, DNS, reverse proxy, hosts and the Git log memoise it now.
+- **Fast Refresh works on the shared UI again.** Six modules exported a component *and* something else — a zod reader, a duration parser, a matcher, a list of kinds — which turns every edit to them into a full page reload with the open editor lost. The non-components moved to files of their own. `SnippetKind` was also declared twice, in the editor and in `core/snippets`, with nothing keeping the two in sync.
+
 ## [1.14.0] - 2026-09-22
 
 ### Changed

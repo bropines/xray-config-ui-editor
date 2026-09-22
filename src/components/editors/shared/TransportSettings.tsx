@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
-import { generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
+import { generateRealityShortIds } from '../../../core/generators';
 import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor, foreignFieldsIn } from '../../../core/xray/field-directions';
 import { SockoptEditor } from './SockoptEditor';
 import { FinalmaskEditor } from './FinalmaskEditor';

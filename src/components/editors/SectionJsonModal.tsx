@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { JsonField } from '../ui/JsonField';
 import { useConfigStore } from '../../store/configStore';
@@ -17,10 +17,14 @@ export const SectionJsonModal = ({ title, data, onClose, onSave, schemaMode }: S
     const [localRawText, setLocalRawText] = useState<string | null>(null);
     const rawConfigText = useConfigStore(state => state.rawConfigText);
 
-    useEffect(() => {
+    // Open on a different section and the draft starts over. Adjusted during
+    // render rather than in an effect, so the stale section is never shown.
+    const [editing, setEditing] = useState(data);
+    if (data !== editing) {
+        setEditing(data);
         setLocalData(data);
         setLocalRawText(null);
-    }, [data]);
+    }
 
     const handleChange = (newData: any, rawText?: string) => {
         setLocalData(newData);

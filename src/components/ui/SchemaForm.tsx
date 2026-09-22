@@ -1,7 +1,8 @@
 import React from 'react';
 import { z } from 'zod';
-import { SchemaField, getSchemaTypeAndDetails } from './SchemaField';
-import type { TimeUnit } from './DurationInput';
+import { SchemaField } from './SchemaField';
+import { getSchemaTypeAndDetails } from './schema-introspection';
+import type { TimeUnit } from './duration';
 import { perLanguage, t } from '../../i18n';
 
 export interface FieldConfig {

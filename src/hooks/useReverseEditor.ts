@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useConfigStore } from '../store/configStore';
 
 export const useReverseEditor = () => {
     const { config, updateSection } = useConfigStore();
-    const reverse = config?.reverse || { bridges: [], portals: [] };
+    // Memoised so the callbacks below keep their identity between renders.
+    const reverse = useMemo(() => config?.reverse || { bridges: [], portals: [] }, [config?.reverse]);
     const [activeTab, setActiveTab] = useState<'bridges' | 'portals'>('bridges');
 
     const updateList = useCallback((type: 'bridges' | 'portals', newList: any[]) => {

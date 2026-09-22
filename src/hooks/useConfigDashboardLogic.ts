@@ -133,7 +133,11 @@ export function useOutboundSelection(
 ): OutboundSelection {
   const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(new Set());
   const [lastClickedFilteredIdx, setLastClickedFilteredIdx] = React.useState<number | null>(null);
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [searchToggled, setSearchToggled] = React.useState(false);
+  // Open because it was opened, or because there is a query in it — the
+  // second half used to be an effect setting the flag a render later.
+  const isSearchOpen = searchToggled || obSearch !== '';
+  const setIsSearchOpen = setSearchToggled;
   const [isSelectMode, setIsSelectMode] = React.useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -144,12 +148,6 @@ export function useOutboundSelection(
       searchInputRef.current.focus();
     }
   }, [isSearchOpen]);
-
-  React.useEffect(() => {
-    if (obSearch && !isSearchOpen) {
-      setIsSearchOpen(true);
-    }
-  }, [obSearch]);
 
   const handleItemClick = (
     e: React.MouseEvent,

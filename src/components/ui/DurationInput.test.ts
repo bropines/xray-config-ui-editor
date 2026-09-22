@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { parseDuration } from './DurationInput';
+import { parseDuration } from './duration';
 
 describe('parseDuration helper', () => {
     it('parses empty or undefined values gracefully', () => {

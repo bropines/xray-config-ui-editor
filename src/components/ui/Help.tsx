@@ -55,26 +55,30 @@ export const Help = ({ children, position = 'top' }: HelpProps) => {
         setBox({ top, left, side });
     }, [position]);
 
+    // Closing forgets where the bubble was, so reopening next to a different
+    // trigger cannot paint one frame at the old coordinates.
+    const hide = useCallback(() => {
+        if (timer.current) clearTimeout(timer.current);
+        setOpen(false);
+        setBox(null);
+    }, []);
+
     // useLayoutEffect, not useEffect: the bubble has to be measured and moved
     // before the browser paints. Positioning it after a paint puts one frame of
     // it in the top-left corner, and with an enter animation running that frame
     // reads as the tooltip flying in from the corner of the screen.
     useLayoutEffect(() => {
-        if (!open) {
-            setBox(null);
-            return;
-        }
+        if (!open) return;
         place();
         // A tooltip anchored to fixed coordinates has to go away rather than
         // float over unrelated content once the page moves under it.
-        const close = () => setOpen(false);
-        window.addEventListener('scroll', close, true);
-        window.addEventListener('resize', close);
+        window.addEventListener('scroll', hide, true);
+        window.addEventListener('resize', hide);
         return () => {
-            window.removeEventListener('scroll', close, true);
-            window.removeEventListener('resize', close);
+            window.removeEventListener('scroll', hide, true);
+            window.removeEventListener('resize', hide);
         };
-    }, [open, place]);
+    }, [open, place, hide]);
 
     useEffect(() => () => {
         if (timer.current) clearTimeout(timer.current);
@@ -83,11 +87,6 @@ export const Help = ({ children, position = 'top' }: HelpProps) => {
     const show = () => {
         if (timer.current) clearTimeout(timer.current);
         timer.current = setTimeout(() => setOpen(true), SHOW_DELAY);
-    };
-
-    const hide = () => {
-        if (timer.current) clearTimeout(timer.current);
-        setOpen(false);
     };
 
     return (

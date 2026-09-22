@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { isValidDomain, isValidHostDestination } from '../core/validators';
 
 /**
@@ -24,26 +24,32 @@ export function useDnsHostsEditor(hosts: Record<string, any> = {}, onChange: (re
         }))
     );
 
-    const isInternalChange = useRef(false);
+    // What this editor last wrote, so the same object coming back through the
+    // store is not mistaken for someone else's change. It has to be a value
+    // and not a ref: the check below runs during render, where refs may not
+    // be read — and a written set differs from the rows on screen whenever a
+    // row is still half-typed, which is exactly what must not be wiped.
+    const [writtenJson, setWrittenJson] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (isInternalChange.current) {
-            isInternalChange.current = false;
-            return;
+    // Adopt a hosts object that changed elsewhere — a profile switch, an undo,
+    // a JSON edit. Done during render rather than in an effect, so the old
+    // list is never shown for a frame.
+    const [seenHosts, setSeenHosts] = useState(hosts);
+    if (hosts !== seenHosts) {
+        setSeenHosts(hosts);
+        if (writtenJson !== null && JSON.stringify(hosts) === writtenJson) {
+            setWrittenJson(null);
+        } else {
+            const incomingEntries = Object.entries(hosts);
+            const currentValidCount = entries.filter(e => e.domain.trim() !== "").length;
+            if (incomingEntries.length !== currentValidCount) {
+                setEntries(incomingEntries.map(([domain, ips]) => ({
+                    domain,
+                    ips: Array.isArray(ips) ? [...ips] : [ips],
+                })));
+            }
         }
-
-        const incomingEntries = Object.entries(hosts);
-        const currentValidCount = entries.filter(e => e.domain.trim() !== "").length;
-
-        if (incomingEntries.length !== currentValidCount) {
-            const newEntries = incomingEntries.map(([domain, ips]) => ({
-                domain,
-                ips: Array.isArray(ips) ? [...ips] : [ips],
-            }));
-            setEntries(newEntries);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hosts]);
+    }
 
     const saveToStore = (currentEntries: DnsHostEntry[]) => {
         const result: Record<string, any> = {};
@@ -58,7 +64,7 @@ export function useDnsHostsEditor(hosts: Record<string, any> = {}, onChange: (re
             result[domain] = validIps.length === 1 ? validIps[0] : validIps;
         });
 
-        isInternalChange.current = true;
+        setWrittenJson(JSON.stringify(result));
         onChange(result);
     };
 

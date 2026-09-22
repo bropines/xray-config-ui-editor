@@ -671,6 +671,7 @@ export const useLocalBalancerBuilder = (initialTemplateUuid?: string, initialMod
         autoLoaded.current = true;
         // Opened straight into template mode: pull in what that mode reads,
         // exactly as picking the mode by hand would.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (initialMode === 'template') setSource('panel');
         if (remnawaveConnected) {
             fetchSubscriptionTemplates().catch(() => {});

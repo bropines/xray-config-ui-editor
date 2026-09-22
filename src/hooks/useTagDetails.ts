@@ -5,12 +5,18 @@ import { binaryCache, loadCachedData, saveCachedData } from '../utils/geo-data';
 import { t } from '../i18n';
 
 export const useTagDetails = (tag: string, customUrl?: string, customFormat?: string, customFileBuffer?: ArrayBuffer | null) => {
-    const [text, setText] = useState("");
-    const [loading, setLoading] = useState(true);
+    // Which request the text in hand belongs to. Anything else is still
+    // loading by definition, so there is no flag to keep in step and no
+    // window where the last tag's records sit under the new tag's name.
+    const request = `${tag}|${customUrl ?? ''}|${customFormat ?? ''}|${customFileBuffer ? 'buf' : ''}`;
+    const [loaded, setLoaded] = useState<{ request: string; text: string } | null>(null);
+    const done = loaded?.request === request;
+    const text = done ? loaded.text : "";
+    const loading = !done;
+    const setText = useCallback((next: string) => setLoaded({ request, text: next }), [request]);
 
     useEffect(() => {
         let isCancelled = false;
-        setLoading(true);
         const isGeosite = tag.toLowerCase().startsWith('geosite:');
         
         const targetCode = tag.replace(/^(geosite:|geoip:)/i, '').toUpperCase();
@@ -60,7 +66,6 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                         if (!isCancelled) {
                             toast.error(t("Failed to download database for extraction"));
                             setText("Network error.");
-                            setLoading(false);
                         }
                         return;
                     }
@@ -83,7 +88,6 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                     // In a production app, we'd use a unique ID.
                     setText(e.data.data || "No records found.");
                 }
-                setLoading(false);
                 worker.removeEventListener('message', handleMessage);
             };
             
@@ -104,7 +108,7 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
             isCancelled = true;
             // Do NOT terminate the shared worker
         };
-    }, [tag, customUrl, customFormat, customFileBuffer]);
+    }, [tag, customUrl, customFormat, customFileBuffer, setText]);
 
     const handleCopy = useCallback(async () => {
         try {

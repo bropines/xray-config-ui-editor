@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useConfigStore } from '../store/configStore';
 
 export const useDnsEditor = () => {
     const { config, updateSection } = useConfigStore();
-    const dns = config?.dns || {};
-    const fakedns = config?.fakedns || [];
+    // Memoised so the callbacks below keep their identity between renders.
+    const dns = useMemo(() => config?.dns || {}, [config?.dns]);
+    const fakedns = useMemo(() => config?.fakedns || [], [config?.fakedns]);
 
     const [activeTab, setActiveTab] = useState<'general' | 'servers' | 'hosts' | 'fakedns'>('servers');
     const [editingServerIdx, setEditingServerIdx] = useState<number | null>(null);

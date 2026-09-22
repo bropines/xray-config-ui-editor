@@ -16,9 +16,7 @@ export const SortableOutboundItem = ({
   showCheckboxes,
   onEdit,
   onDelete,
-  onMove,
   onItemClick,
-  totalCount,
 }: any) => {
   const {
     attributes,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { z } from 'zod';
-import { getSchemaTypeAndDetails } from './SchemaField';
+import { getSchemaTypeAndDetails } from './schema-introspection';
 import { InboundProtocolSchema, OutboundProtocolSchema } from '../../core/xray/schemas/primitives';
 
 describe('getSchemaTypeAndDetails', () => {

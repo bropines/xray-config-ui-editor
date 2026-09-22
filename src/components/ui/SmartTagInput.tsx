@@ -262,7 +262,7 @@ export const SmartTagInput = ({
                 else if (elemBottom > containerBottom) container.scrollTop = elemBottom - container.clientHeight;
             }
         }
-    }, [focusedIndex, showSuggest]);
+    }, [focusedIndex, showSuggest, suggestionsRef]);
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
         e.preventDefault();
@@ -282,7 +282,7 @@ export const SmartTagInput = ({
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
-    }, []);
+    }, [wrapperRef, setShowSuggest, setFocusedIndex]);
 
     const handleDragEnd = (event: any) => {
         const { active, over } = event;

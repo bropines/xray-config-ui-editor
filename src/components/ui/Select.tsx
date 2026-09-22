@@ -48,6 +48,15 @@ export function Select<T extends string = string>({
 
     const selectedOption = options.find(opt => opt.value === value);
 
+    // Closing drops what the dropdown had measured and typed. Doing it here
+    // rather than in an effect is what keeps the next open from painting one
+    // frame at the old coordinates with the old filter still applied.
+    const close = React.useCallback(() => {
+        setIsOpen(false);
+        setIsPositioned(false);
+        setSearchQuery("");
+    }, []);
+
     const updateCoords = () => {
         if (buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
@@ -94,8 +103,6 @@ export function Select<T extends string = string>({
                 window.visualViewport?.removeEventListener('resize', handleScrollOrResize);
                 window.visualViewport?.removeEventListener('scroll', handleScrollOrResize);
             };
-        } else {
-            setIsPositioned(false);
         }
     }, [isOpen]);
 
@@ -106,24 +113,18 @@ export function Select<T extends string = string>({
                 buttonRef.current && !buttonRef.current.contains(target) &&
                 dropdownRef.current && !dropdownRef.current.contains(target)
             ) {
-                setIsOpen(false);
+                close();
             }
         };
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (!isOpen) {
-            setSearchQuery("");
-        }
-    }, [isOpen]);
+    }, [isOpen, close]);
 
     const handleSelect = (val: T) => {
         onChange(val);
-        setIsOpen(false);
+        close();
     };
 
     const handleToggleOpen = () => {
@@ -132,7 +133,7 @@ export function Select<T extends string = string>({
             updateCoords();
             setIsOpen(true);
         } else {
-            setIsOpen(false);
+            close();
         }
     };
 

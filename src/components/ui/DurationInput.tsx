@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from './Icon';
 import { cn } from '../../utils/cn';
+import { parseDuration, TO_SECONDS, type TimeUnit } from './duration';
 import { perLanguage, t } from '../../i18n';
-
-export type TimeUnit = 'ms' | 's' | 'm' | 'h';
 
 export interface DurationInputProps {
     value: string | number | undefined | null;
@@ -26,27 +25,6 @@ const unitLabels = perLanguage((): Record<TimeUnit, { short: string; label: stri
     h: { short: 'h', label: t("Hours") }
 }));
 
-const TO_SECONDS: Record<TimeUnit, number> = {
-    ms: 0.001,
-    s: 1,
-    m: 60,
-    h: 3600
-};
-
-export function parseDuration(raw: string | number | undefined | null, fallbackUnit: TimeUnit = 's'): { amount: string; unit: TimeUnit } {
-    if (raw === undefined || raw === null || raw === '') {
-        return { amount: '', unit: fallbackUnit };
-    }
-    const str = String(raw).trim();
-    const match = str.match(/^([+-]?\d+(?:\.\d+)?)\s*(ms|s|m|h)?$/i);
-    if (match) {
-        const numStr = match[1]!;
-        const unitStr = (match[2]?.toLowerCase() as TimeUnit) || fallbackUnit;
-        return { amount: numStr, unit: unitStr };
-    }
-    return { amount: str, unit: fallbackUnit };
-}
-
 export const DurationInput: React.FC<DurationInputProps> = ({
     value,
     onChange,
@@ -61,22 +39,18 @@ export const DurationInput: React.FC<DurationInputProps> = ({
     disabled = false
 }) => {
     const { amount: parsedAmount, unit: parsedUnit } = parseDuration(value, defaultUnit);
-    const [selectedUnit, setSelectedUnit] = useState<TimeUnit>(
-        unitOptions.includes(parsedUnit) ? parsedUnit : defaultUnit
-    );
+    // A written value names its own unit ("30s"), and that wins; the chooser
+    // only decides for a value that has none yet. Deriving it is what the
+    // effect underneath used to do a render late.
+    const [chosenUnit, setChosenUnit] = useState<TimeUnit | null>(null);
+    const hasValue = value !== undefined && value !== null && value !== '';
+    const selectedUnit: TimeUnit = hasValue && unitOptions.includes(parsedUnit)
+        ? parsedUnit
+        : (chosenUnit ?? (unitOptions.includes(defaultUnit) ? defaultUnit : unitOptions[0] ?? defaultUnit));
+    const setSelectedUnit = setChosenUnit;
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
-
-    // Keep internal unit in sync if value specifies a different valid unit
-    useEffect(() => {
-        if (value !== undefined && value !== null && value !== '') {
-            const { unit } = parseDuration(value, defaultUnit);
-            if (unitOptions.includes(unit)) {
-                setSelectedUnit(unit);
-            }
-        }
-    }, [value, defaultUnit, unitOptions]);
 
     // Close dropdown on outside click
     useEffect(() => {

@@ -25,7 +25,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         ? `rw:${remnawave.activeProfileUuid}`
         : activeProfileId;
 
-    const history = histories[activeKey] || [];
+    const history = React.useMemo(() => histories[activeKey] || [], [histories, activeKey]);
 
     // Profile display name
     const profileName = remnawave.activeProfileUuid
