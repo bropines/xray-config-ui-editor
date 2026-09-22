@@ -40,12 +40,15 @@ export const useXrayEditor = <T extends Record<string, any>>({
                     let curr = draft;
                     for (let i = 0; i < path.length - 1; i++) {
                         const key = path[i];
+                        if (key === undefined) return;
                         if (!curr[key] || typeof curr[key] !== 'object') {
-                            curr[key] = typeof path[i+1] === 'number' ? [] : {};
+                            curr[key] = typeof path[i + 1] === 'number' ? [] : {};
                         }
                         curr = curr[key];
                     }
-                    curr[path[path.length - 1]] = value;
+                    const leaf = path[path.length - 1];
+                    if (leaf === undefined) return;
+                    curr[leaf] = value;
                 } else {
                     draft[path] = value;
                 }

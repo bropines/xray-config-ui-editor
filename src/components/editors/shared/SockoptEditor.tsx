@@ -10,7 +10,7 @@ import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useSockoptEditor } from '../../../hooks/useSockoptEditor';
 import { t } from '../../../i18n';
 
-export const SockoptEditor = ({ sockopt, onChange, isClient }: any) => {
+export const SockoptEditor = ({ sockopt, onChange, isClient }: { sockopt: any; onChange: (value: any) => void; isClient?: boolean }) => {
     const { local, update, add, remove, hasExtendedValues } = useSockoptEditor(sockopt, onChange);
     const config = useConfigStore(state => state.config);
     const outboundTags = (config?.outbounds || []).map((o: any) => o.tag).filter(Boolean);

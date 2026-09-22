@@ -7,7 +7,7 @@ import { DurationInput } from '../../ui/DurationInput';
 import { useFinalmaskEditor, FINALMASK_LAYER_TYPES as TYPES } from '../../../hooks/useFinalmaskEditor';
 import { t } from '../../../i18n';
 
-export const FinalmaskEditor = ({ finalmask, onChange }) => {
+export const FinalmaskEditor = ({ finalmask, onChange }: { finalmask: any; onChange: (value: any) => void }) => {
     const {
         enabled,
         toggle,
@@ -111,7 +111,7 @@ export const FinalmaskEditor = ({ finalmask, onChange }) => {
                                                                                 let val = e.target.value;
                                                                                 if (val.includes('0x')) {
                                                                                     const match = val.match(/0x([0-9a-fA-F]+)/);
-                                                                                    if (match) val = match[1];
+                                                                                    if (match?.[1]) val = match[1];
                                                                                 }
                                                                                 const newNoise = [...layer.settings.noise];
                                                                                 newNoise[i] = { ...n, packet: val };

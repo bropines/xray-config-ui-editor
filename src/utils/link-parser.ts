@@ -21,7 +21,7 @@ export const parseWireguardConfig = (text: string, mode: 'direct' | 'chained' = 
 
         const parts = line.split('=');
         if (parts.length < 2) continue;
-        const key = parts[0].trim();
+        const key = (parts[0] ?? '').trim();
         const value = parts.slice(1).join('=').trim();
 
         if (currentSection === "Interface") {
@@ -133,7 +133,7 @@ export const parseXrayLink = (link: string): any => {
 
     // --- VMess (Base64 JSON format) ---
     if (trimmed.startsWith('vmess://')) {
-      const base64Part = trimmed.substring(8).split('#')[0].trim();
+      const base64Part = (trimmed.substring(8).split('#')[0] ?? '').trim();
       const decoded = decodeBase64Safe(base64Part);
       if (!decoded) return null;
       const data = JSON.parse(decoded);
@@ -240,18 +240,20 @@ export const parseXrayLink = (link: string): any => {
         protocol = 'shadowsocks';
     }
 
-    const hashPart = trimmed.includes('#') ? trimmed.split('#')[1] : '';
+    const hashPart = trimmed.includes('#') ? (trimmed.split('#')[1] ?? '') : '';
     const tag = decodeURIComponent(hashPart);
     const query = Object.fromEntries(url.searchParams.entries());
 
     const baseOutbound = {
       tag: tag || `${protocol}-${Math.floor(Math.random() * 1000)}`,
       protocol: protocol,
-      settings: {},
+      settings: {} as Record<string, any>,
+      // Transport settings are filled in per protocol below, so the literal's
+      // inferred shape would be wrong from the second assignment onward.
       streamSettings: {
         network: "tcp",
         security: "none",
-      }
+      } as Record<string, any>,
     };
 
     // --- VLESS ---
@@ -290,21 +292,21 @@ export const parseXrayLink = (link: string): any => {
       let serverPort = 443;
 
       // 1. Try to parse as ss://BASE64(method:password@host:port)
-      const linkBody = trimmed.split('://')[1].split('#')[0];
+      const linkBody = (trimmed.split('://')[1] ?? '').split('#')[0] ?? '';
       
       try {
         // If it's a legacy all-in-one base64 link
         if (!linkBody.includes('@')) {
             const decoded = atob(linkBody.replace(/-/g, '+').replace(/_/g, '/'));
             if (decoded.includes('@')) {
-                const [userInfo, hostPort] = decoded.split('@');
-                const [m, p] = userInfo.split(':');
+                const [userInfo = '', hostPort = ''] = decoded.split('@');
+                const [m = '', p = ''] = userInfo.split(':');
                 method = m;
                 password = p;
                 if (hostPort.includes(':')) {
-                    const [h, port] = hostPort.split(':');
+                    const [h = '', port = ''] = hostPort.split(':');
                     serverAddr = h;
-                    serverPort = parseInt(port);
+                    serverPort = parseInt(port) || serverPort;
                 } else {
                     serverAddr = hostPort;
                 }
@@ -329,16 +331,16 @@ export const parseXrayLink = (link: string): any => {
 
           if (decodedUserInfo.includes(':')) {
               const parts = decodedUserInfo.split(':');
-              method = parts[0];
+              method = parts[0] ?? '';
               password = parts.slice(1).join(':');
           }
 
           // Handle host:port?query
-          const [hostPort] = hostPortPart.split('?');
+          const [hostPort = ''] = hostPortPart.split('?');
           if (hostPort.includes(':')) {
               const hp = hostPort.split(':');
-              serverAddr = hp[0];
-              serverPort = parseInt(hp[1]);
+              serverAddr = hp[0] ?? '';
+              serverPort = parseInt(hp[1] ?? '') || serverPort;
           } else {
               serverAddr = hostPort;
           }

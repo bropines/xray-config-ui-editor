@@ -12,7 +12,15 @@ import { t, tn } from '../../../i18n';
 import { dndAccessibility } from '../../ui/dndAccessibility';
 
 // Компонент одного элемента (Sortable)
-const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
+interface SortableDnsItemProps {
+    server: any;
+    id: string;
+    isActive: boolean;
+    onClick: () => void;
+    onDelete: () => void;
+}
+
+const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }: SortableDnsItemProps) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
     const style = { transform: CSS.Transform.toString(transform), transition, zIndex: transform ? 999 : 'auto' };
 
@@ -55,13 +63,21 @@ const SortableDnsItem = ({ server, id, isActive, onClick, onDelete }) => {
     );
 };
 
-export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder }) => {
+interface DnsServersProps {
+    servers?: any[];
+    onSelect: (index: number) => void;
+    onAdd: () => void;
+    onDelete: (index: number) => void;
+    onReorder: (servers: any[]) => void;
+}
+
+export const DnsServers = ({ servers = [], onSelect, onAdd, onDelete, onReorder }: DnsServersProps) => {
     // No path-based updateField here (onReorder replaces the whole servers
     // array), so we adapt useArrayField the same way DnsFakedns does:
     // wrap `servers` as a single-key local object and forward to onReorder.
     const list = useArrayField<any>({ servers }, (_path, value) => onReorder(value), 'servers');
 
-    const handleDragEnd = (event) => {
+    const handleDragEnd = (event: any) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 

@@ -91,9 +91,11 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
         // Merge overlapping ranges
         const merged: Array<{ start: number; end: number }> = [];
         let current = rawRanges[0];
+        if (!current) return merged;
 
         for (let i = 1; i < rawRanges.length; i++) {
             const next = rawRanges[i];
+            if (!next) continue;
             if (next.start <= current.end + 1) {
                 current.end = Math.max(current.end, next.end);
             } else {
@@ -101,7 +103,7 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
                 current = next;
             }
         }
-        if (current) merged.push(current);
+        merged.push(current);
 
         return merged;
     }, [flatLines, viewMode, contextSize]);
@@ -230,14 +232,16 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
 
                                 if (isExpanded) {
                                     for (let idx = collapsedStart; idx <= collapsedEnd; idx++) {
-                                        items.push(<DiffLineRow key={idx} line={flatLines[idx]} />);
+                                        const line = flatLines[idx];
+                                        if (line) items.push(<DiffLineRow key={idx} line={line} />);
                                     }
                                 }
                             }
 
                             // Render current hunk lines
                             for (let idx = range.start; idx <= range.end; idx++) {
-                                items.push(<DiffLineRow key={idx} line={flatLines[idx]} />);
+                                const line = flatLines[idx];
+                                if (line) items.push(<DiffLineRow key={idx} line={line} />);
                             }
 
                             lastEnd = range.end;
@@ -273,7 +277,8 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
 
                             if (isExpanded) {
                                 for (let idx = collapsedStart; idx <= collapsedEnd; idx++) {
-                                    items.push(<DiffLineRow key={idx} line={flatLines[idx]} />);
+                                    const line = flatLines[idx];
+                                    if (line) items.push(<DiffLineRow key={idx} line={line} />);
                                 }
                             }
                         }

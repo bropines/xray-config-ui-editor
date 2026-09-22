@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn';
 export interface SwitchProps {
     checked: boolean;
     onChange: (checked: boolean) => void;
-    label?: string;
+    label?: React.ReactNode;
     disabled?: boolean;
     /** Forwarded to the underlying checkbox input, for a <label htmlFor> elsewhere or test hooks. */
     id?: string;

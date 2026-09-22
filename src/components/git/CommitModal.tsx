@@ -15,13 +15,13 @@ export const CommitModal: React.FC<CommitModalProps> = ({ onClose, onCommitSucce
     const activeProfile = profiles.find(p => p.id === activeProfileId);
 
     const stats = React.useMemo(() => {
-        return calculateConfigStats(activeProfile?.config || null, config);
+        return calculateConfigStats(activeProfile?.config || null, config ?? {});
     }, [activeProfile, config]);
 
     const [message, setMessage] = useState(() => {
-        const inbounds = config.inbounds?.length || 0;
-        const outbounds = config.outbounds?.length || 0;
-        const rules = config.routing?.rules?.length || 0;
+        const inbounds = config?.inbounds?.length || 0;
+        const outbounds = config?.outbounds?.length || 0;
+        const rules = config?.routing?.rules?.length || 0;
         return t("Update config ({inbounds} inbounds, {outbounds} outbounds, {rules} rules)", { inbounds, outbounds, rules });
     });
 

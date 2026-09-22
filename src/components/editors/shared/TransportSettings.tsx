@@ -120,10 +120,14 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
         const newObj = JSON.parse(JSON.stringify(streamSettings));
         let curr = newObj;
         for (let i = 0; i < pathArr.length - 1; i++) {
-            if (!curr[pathArr[i]]) curr[pathArr[i]] = {};
-            curr = curr[pathArr[i]];
+            const key = pathArr[i];
+            if (key === undefined) return;
+            if (!curr[key]) curr[key] = {};
+            curr = curr[key];
         }
-        curr[pathArr[pathArr.length - 1]] = value;
+        const leaf = pathArr[pathArr.length - 1];
+        if (leaf === undefined) return;
+        curr[leaf] = value;
         onChange(newObj);
     };
 

@@ -32,7 +32,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         : (profiles.find(p => p.id === activeProfileId)?.name || 'Default');
 
     const [selectedCommitId, setSelectedCommitId] = useState<string | null>(
-        history.length > 0 ? history[0].id : null
+        history[0]?.id ?? null
     );
 
     const selectedSnapshot = history.find(h => h.id === selectedCommitId);
@@ -80,7 +80,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
             deleteSnapshot(id);
             if (selectedCommitId === id) {
                 const remaining = history.filter(h => h.id !== id);
-                setSelectedCommitId(remaining.length > 0 ? remaining[0].id : null);
+                setSelectedCommitId(remaining[0]?.id ?? null);
             }
         }
     };
@@ -237,7 +237,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                                         {t("Delete")}
                                         </Button>
                                     <Button
-                                        variant="indigo"
+                                        variant="primary"
                                         className="text-xs py-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-bold shadow-lg shadow-emerald-950/50"
                                         onClick={() => handleRestore(selectedSnapshot.id)}
                                         icon="ArrowCounterClockwise"
@@ -250,7 +250,7 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
                             <div className="flex-1 p-3 overflow-hidden">
                                 <GitDiffViewer
                                     changes={diffChanges}
-                                    titleOld={selectedIdx < history.length - 1 ? `Commit #${history[selectedIdx + 1].id.substring(0, 7)}` : 'Initial Baseline'}
+                                    titleOld={selectedIdx < history.length - 1 ? `Commit #${history[selectedIdx + 1]?.id.substring(0, 7) ?? ""}` : 'Initial Baseline'}
                                     titleNew={`Commit #${selectedSnapshot.id.substring(0, 7)}`}
                                 />
                             </div>

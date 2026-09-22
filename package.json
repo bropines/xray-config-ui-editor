@@ -33,6 +33,7 @@
     "preview": "vite preview",
     "test": "bun test",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "schema:audit": "bun run scripts/schema-audit.ts",
     "i18n:report": "bun run scripts/i18n-report.ts",
     "icons:generate": "bun run scripts/generate-icon-map.ts",
