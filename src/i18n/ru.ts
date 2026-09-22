@@ -2031,4 +2031,27 @@ export const ru: Record<string, string> = {
 
     // ── Мобильная навигация внутри редакторов ───────────────────────────────
     'Back to the index': 'Назад к списку',
+
+    // ── Резервная копия всего состояния ─────────────────────────────────────
+    'Backup & Restore': 'Резервная копия',
+    'Downloading a config exports that config alone. This exports everything the editor remembers — profiles, version history, panel connection, libraries and settings — as one file.':
+        'Скачивание конфига выгружает только сам конфиг. Здесь выгружается всё, что помнит редактор: профили, история версий, подключение к панели, библиотеки и настройки — одним файлом.',
+    'Export everything': 'Выгрузить всё',
+    'Import a backup': 'Загрузить копию',
+    'There is nothing stored yet to export.': 'Выгружать пока нечего — ничего не сохранено.',
+    'That file is not JSON.': 'Это не JSON.',
+    'That is a JSON file, but not a backup of this editor. A single config goes in through Open, not here.':
+        'Это JSON, но не копия этого редактора. Отдельный конфиг открывается кнопкой «Открыть», а не здесь.',
+    'That backup was written by a newer version of the editor. Update first, then import it.':
+        'Эту копию записала более новая версия редактора. Сначала обновитесь, потом загружайте.',
+    'That backup has no state in it.': 'В этой копии нет состояния.',
+    'Importing replaces everything currently in this browser. Export first if you have not.':
+        'Загрузка заменит всё, что сейчас лежит в этом браузере. Если ещё не выгружали — выгрузите сначала.',
+    'panel connection': 'подключение к панели',
+    'Replace and reload': 'Заменить и перезагрузить',
+    'Exported {n} profile|Exported {n} profiles':
+        'Выгружен {n} профиль|Выгружено {n} профиля|Выгружено {n} профилей',
+    '{n} profile|{n} profiles': '{n} профиль|{n} профиля|{n} профилей',
+    '{n} snapshot|{n} snapshots': '{n} снимок|{n} снимка|{n} снимков',
+    '{n} spiderX path|{n} spiderX paths': '{n} путь spiderX|{n} пути spiderX|{n} путей spiderX',
 };
