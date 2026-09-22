@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.0] - 2026-09-22
+
+### Fixed
+- **The JSON editors called working configs invalid.** A rule as ordinary as `{"ruleTag": "BLOCK-BITTORRENT", "protocol": ["bittorrent"], "outboundTag": "BLOCK"}` was underlined with *must NOT have additional properties*. It was right about the schema and wrong about Xray: the editors validated against a file a script generates from Xray-core's Go structs, and a routing rule is unmarshalled by hand there, so the generated definition knows only `ruleTag`, `outboundTag` and `balancerTag` — and forbids everything else. Every matcher a rule exists to carry was an error.
+  - The forms in this app have never used that schema. They use the zod schemas under `core/xray/schemas`, written from the Xray documentation, where every object carries unknown keys instead of condemning them. The editors use them now, so the JSON view and the form view finally agree on what a valid config is — and a panel extension or a field from a newer Xray passes without complaint.
+  - **250 lines of tables went with it**: lists of properties to forgive, protocol-branch mappings, discriminator allow-lists — all of it written to suppress what the wrong schema got wrong.
+- **Errors point at the thing that is wrong.** The underline was placed by searching the text for the first `"port"` after the last match, which lands in whatever object comes first. It comes from the parse tree now, so `routing.rules[1].port` marks that rule's key and no other — comments and all.
+- **And they say what they mean.** `Schema: /port must be equal to one of the allowed values` is now `routing.rules[1].port: expected a number`, with the allowed values listed for a closed set.
+
+### Changed
+- **Completion knows where the cursor is.** It offered the root config's keys at every depth — inside a routing rule it suggested `log` and `inbounds` — because it read one flat list out of the schema. It now offers the keys of the object being written, marked with their type and whether they are required, drops the ones already present, and inside a value offers what that field accepts: `tcp`/`udp` for a network, the sniffable protocols for `protocol`.
+- **The editor is 41 kB lighter.** `ajv` and the 80 kB generated schema are no longer shipped: the main chunk is 1,197 kB (was 1,238) and the precache 2,727 KiB (was 2,883).
+
+### Fixed
+- **The editor kept calling the callbacks it was built with.** CodeMirror's view is constructed once and deliberately not rebuilt, so `onChange` and both shortcut handlers were frozen at mount — an edit could be written into a snapshot of state that was several renders old.
+- **Lint warnings are at zero**, from 66 this morning. The last five were the text-synchronisation in the JSON field and the snippet body; the rule that decides which text to show for a value — raw text, what is on screen, the stored config, or a fresh print — is a tested function now instead of sixty lines inside an effect.
+
 ## [1.15.0] - 2026-09-22
 
 ### Fixed

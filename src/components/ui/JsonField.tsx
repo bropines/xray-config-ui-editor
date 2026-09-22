@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { JsonEditor } from "./JsonEditor";
-import { parseJsonc, stringifyJsonc } from "../../utils/jsonc";
+import { parseJsonc } from "../../utils/jsonc";
+import { pickDisplayText } from "../../core/xray/json-display-text";
 import { t } from '../../i18n';
 
 interface JsonFieldProps {
@@ -28,83 +29,40 @@ interface JsonFieldProps {
 export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full', rawText, rawConfigText, onSaveShortcut, onCommitShortcut, readOnly = false }: JsonFieldProps) => {
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
-    const isLocalEditRef = useRef(false);
 
-    // Synchronize external value -> internal text while preserving comments
-    useEffect(() => {
-        // If this update was triggered by local typing/pasting in this component, do NOT overwrite text!
-        if (isLocalEditRef.current) {
-            isLocalEditRef.current = false;
-            return;
+    // True while the change came from this editor, so the refill below can
+    // let it be. State rather than a ref: the check runs during render, and
+    // refs may not be read there.
+    const [localEdit, setLocalEdit] = useState(false);
+
+    // Refill the box when the value changes elsewhere — an undo, a form
+    // edit, a profile switch — choosing the text that keeps the most of what
+    // the author wrote (see core/xray/json-display-text). Done during render,
+    // so the box is never a frame behind the value it claims to show.
+    const [synced, setSynced] = useState<{
+        value: any;
+        rawText?: string | null;
+        rawConfigText?: string | null;
+        schemaMode: string;
+    } | null>(null);
+
+    if (!synced
+        || value !== synced.value
+        || rawText !== synced.rawText
+        || rawConfigText !== synced.rawConfigText
+        || schemaMode !== synced.schemaMode) {
+        setSynced({ value, rawText, rawConfigText, schemaMode });
+        if (localEdit) {
+            setLocalEdit(false);
+        } else {
+            const next = pickDisplayText({ value, text, rawText, rawConfigText, schemaMode });
+            if (next !== null) setText(next);
         }
-
-        let displayValue = value;
-        if (value && typeof value === 'object' && !Array.isArray(value) && 'i' in value) {
-            displayValue = { ...value };
-            Object.getOwnPropertySymbols(value).forEach(sym => {
-                (displayValue as any)[sym] = (value as any)[sym];
-            });
-            delete (displayValue as any).i;
-        }
-
-        // 1. If explicit rawText prop passed and matches structurally, use it
-        if (rawText && rawText.trim() !== "") {
-            try {
-                const parsed = parseJsonc(rawText);
-                if (JSON.stringify(parsed) === JSON.stringify(displayValue)) {
-                    setText(rawText);
-                    return;
-                }
-            } catch {}
-        }
-
-        // 2. If current text in editor matches structurally, keep it (do not wipe user's comments/formatting while typing)
-        try {
-            if (text.trim() !== "") {
-                const currentObj = parseJsonc(text);
-                if (JSON.stringify(currentObj) === JSON.stringify(displayValue)) {
-                    return;
-                }
-            }
-        } catch {
-            // While text has syntax error or in-progress edits, do not overwrite!
-            return;
-        }
-
-        // 3. Check if rawConfigText from store can be used for full config or section
-        if (rawConfigText && rawConfigText.trim() !== "") {
-            try {
-                const fullObj = parseJsonc(rawConfigText);
-                if (schemaMode === 'full') {
-                    if (JSON.stringify(fullObj) === JSON.stringify(displayValue)) {
-                        setText(rawConfigText);
-                        return;
-                    }
-                } else {
-                    let sectionKey = schemaMode;
-                    if (schemaMode === 'inbound') sectionKey = 'inbounds';
-                    if (schemaMode === 'outbound') sectionKey = 'outbounds';
-
-                    if (sectionKey in fullObj) {
-                        const secObj = fullObj[sectionKey];
-                        if (JSON.stringify(secObj) === JSON.stringify(displayValue)) {
-                            const sectionText = stringifyJsonc(secObj, 2);
-                            setText(sectionText);
-                            return;
-                        }
-                    }
-                }
-            } catch {}
-        }
-
-        // 4. Fallback to standard comment-json stringify
-        const newText = stringifyJsonc(displayValue, 2);
-        setText(newText);
-    }, [value, rawConfigText, rawText, schemaMode]);
+    }
 
     const handleEditorChange = (v: string) => {
         setText(v);
-        isLocalEditRef.current = true;
+        setLocalEdit(true);
         try {
             if (v.trim() === "") {
                 onChange({ inbounds: [], outbounds: [] }, v);

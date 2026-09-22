@@ -41,43 +41,62 @@ export const SnippetBodyEditor = ({
 }: SnippetBodyEditorProps) => {
     const [text, setText] = useState(() => stringifyJsonc(value ?? [], 2));
     const [error, setError] = useState(false);
-    const isLocalEdit = useRef(false);
 
-    // Keep the editor in sync with external changes (a different snippet
-    // selected, "Capture current rules"), but never stomp on in-progress
-    // typing — including text that does not parse yet.
-    useEffect(() => {
-        if (isLocalEdit.current) {
-            isLocalEdit.current = false;
-            return;
-        }
+    // True while this editor is what changed the value, so the refill below
+    // leaves it alone. State rather than a ref, since the check runs during
+    // render and refs may not be read there.
+    const [localEdit, setLocalEdit] = useState(false);
+
+    // Whether the box already says what the value says. Unparseable text
+    // counts as "yes": it is being typed, and must not be replaced.
+    const alreadyShows = (candidate: string, next: unknown): boolean => {
         try {
-            if (text.trim() !== '' && JSON.stringify(parseJsonc(text)) === JSON.stringify(value)) return;
+            return candidate.trim() !== '' && JSON.stringify(parseJsonc(candidate)) === JSON.stringify(next);
         } catch {
-            return;
+            return true;
         }
-        setText(stringifyJsonc(value ?? [], 2));
-        setError(false);
-        onSyntaxError?.(false);
-    }, [value]);
+    };
+
+    // Follow a value that changed elsewhere — a different snippet selected,
+    // "Capture current rules" — during render rather than an effect later,
+    // so the previous snippet's body is never on screen under the new name.
+    const [synced, setSynced] = useState(value);
+    if (value !== synced) {
+        setSynced(value);
+        if (localEdit) {
+            setLocalEdit(false);
+        } else if (!alreadyShows(text, value)) {
+            setText(stringifyJsonc(value ?? [], 2));
+            setError(false);
+        }
+    }
+
+    // The parent wants to know whether the body parses. Reported from one
+    // place, when it changes, instead of at each of the five sites that used
+    // to change it — and through a box, so a parent that passes a fresh
+    // arrow every render does not make this fire every render.
+    const report = useRef(onSyntaxError);
+    useEffect(() => {
+        report.current = onSyntaxError;
+    });
+    useEffect(() => {
+        report.current?.(error);
+    }, [error]);
 
     const handleChange = (next: string) => {
         setText(next);
-        isLocalEdit.current = true;
+        setLocalEdit(true);
         if (next.trim() === '') {
             setError(false);
-            onSyntaxError?.(false);
             onChange?.([]);
             return;
         }
         try {
             const parsed = parseJsonc(next);
             setError(false);
-            onSyntaxError?.(false);
             onChange?.(parsed as any[]);
         } catch {
             setError(true);
-            onSyntaxError?.(true);
         }
     };
 

@@ -61,7 +61,6 @@
     "@types/dagre": "^0.7.53",
     "@types/diff": "^8.0.0",
     "@xyflow/react": "^12.10.0",
-    "ajv": "^8.20.0",
     "clsx": "^2.1.1",
     "comment-json": "^5.0.0",
     "dagre": "^0.8.5",
@@ -75,7 +74,6 @@
     "tweetnacl": "^1.0.3",
     "validator": "^13.15.26",
     "virtua": "^0.50.3",
-    "zod-to-json-schema": "^3.25.2",
     "zustand": "^5.0.10"
   }
 }

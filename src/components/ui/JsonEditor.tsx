@@ -10,262 +10,15 @@ import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } 
 import { lintKeymap, linter, lintGutter } from "@codemirror/lint";
 import { jsonc, jsoncLanguage } from "@platformos/lang-jsonc";
 import { oneDark } from "@codemirror/theme-one-dark";
-import Ajv from "ajv";
-import xraySchema from "../../utils/config.schema.json";
 
 
 import { parseJsonc } from "../../utils/jsonc";
+import { lintValue, type LintMode } from "../../core/xray/json-lint";
+import { rangeAtPath, contextAt } from "../../core/xray/json-positions";
+import { fieldsAt, valuesAt } from "../../core/xray/schema-walk";
 import { toast } from "sonner";
 import { t } from '../../i18n';
 
-const ajv = new Ajv({ allErrors: true, strict: false });
-
-function findPathPosition(doc: string, path: string): { from: number; to: number } | null {
-    if (!path || path === "/") return null;
-    const segments = path.split('/').filter(Boolean);
-    let currentIndex = 0;
-    
-    for (const segment of segments) {
-        const isIndex = !isNaN(Number(segment));
-        const query = isIndex ? null : `"${segment}"`;
-        
-        if (query) {
-            const found = doc.indexOf(query, currentIndex);
-            if (found !== -1) {
-                currentIndex = found;
-            } else {
-                const foundFallback = doc.indexOf(segment, currentIndex);
-                if (foundFallback !== -1) {
-                    currentIndex = foundFallback;
-                }
-            }
-        } else {
-            // Ищем следующий открывающий объект или массив
-            const foundBracket = doc.indexOf('{', currentIndex);
-            if (foundBracket !== -1) {
-                currentIndex = foundBracket;
-            }
-        }
-    }
-    
-    if (currentIndex > 0) {
-        const lastSegment = segments[segments.length - 1];
-        const length = lastSegment ? lastSegment.length + 2 : 1; // длина с учетом кавычек
-        return { from: currentIndex, to: Math.min(currentIndex + length, doc.length) };
-    }
-    return null;
-}
-
-const VALID_DISCRIMINATORS: Record<string, string[]> = {
-    protocol: ["vless", "vmess", "trojan", "shadowsocks", "shadowsocks-2022", "socks", "http", "wireguard", "freedom", "blackhole", "dns", "loopback", "hysteria", "tun", "masquerade"],
-    network: ["tcp", "kcp", "ws", "h2", "grpc", "httpupgrade", "xhttp", "raw"],
-    security: ["none", "tls", "reality"]
-};
-
-const VALID_PROPERTIES_BY_DISCRIMINATOR: Record<string, string[]> = {
-    vless: ["clients", "decryption", "fallback", "fallbacks", "vnext"],
-    vmess: ["clients", "detour", "vnext"],
-    trojan: ["clients", "fallback", "fallbacks", "servers"],
-    shadowsocks: ["email", "method", "password", "network", "level", "servers"],
-    "shadowsocks-2022": ["email", "method", "password", "network", "level", "servers"],
-    socks: ["auth", "accounts", "udp", "ip", "timeout", "servers"],
-    http: ["accounts", "allowTransparent", "timeout", "servers"],
-    wireguard: ["secretKey", "peers", "address", "mtu", "reserved", "workers"],
-    freedom: ["domainStrategy", "redirect", "userLevel"],
-    blackhole: ["response"],
-    dns: ["address", "port", "nonIPQuery"],
-    loopback: ["inboundTag"],
-    hysteria: ["auth", "auth_str", "up", "down", "up_mbps", "down_mbps", "obfs", "masq", "masqObject"],
-    tun: ["name", "mtu", "acceptProxyProtocol", "routePrivateKey"],
-    
-    tcp: ["acceptProxyProtocol", "header"],
-    kcp: ["mtu", "tti", "uplinkCapacity", "downlinkCapacity", "congestion", "readBufferSize", "writeBufferSize", "header"],
-    ws: ["path", "headers"],
-    h2: ["path", "host"],
-    grpc: ["serviceName", "multiMode", "idleTimeout", "healthCheckTimeout", "permitWithoutStream", "initialWindowsSize"],
-    httpupgrade: ["path", "host"],
-    xhttp: ["path", "host", "mode", "extra"],
-    
-    tls: ["serverName", "rejectUnauthorized", "alpn", "minVersion", "maxVersion", "cipherSuites", "certificates", "disableSystemRoot"],
-    reality: ["show", "dest", "xver", "serverNames", "privateKey", "minClientVer", "maxClientVer", "maxTimeDiff", "shortIds", "publicKey", "fingerprint", "spiderX", "shortId"]
-};
-
-const ALL_SETTINGS_BLOCKS = ["tcpSettings", "kcpSettings", "wsSettings", "httpSettings", "grpcSettings", "httpupgradeSettings", "xhttpSettings", "tlsSettings", "realitySettings"];
-
-const VALID_SETTINGS_BLOCKS: Record<string, string> = {
-    tcp: "tcpSettings",
-    kcp: "kcpSettings",
-    ws: "wsSettings",
-    h2: "httpSettings",
-    grpc: "grpcSettings",
-    httpupgrade: "httpupgradeSettings",
-    xhttp: "xhttpSettings",
-    tls: "tlsSettings",
-    reality: "realitySettings"
-};
-
-const INBOUND_PROTOCOL_BRANCH_MAPPING: Record<string, number[]> = {
-    shadowsocks: [0],
-    "shadowsocks-2022": [0],
-    vmess: [1, 8],
-    tun: [2],
-    http: [3],
-    trojan: [4],
-    wireguard: [5],
-    vless: [6],
-    dokodemo: [7],
-    "dokodemo-door": [7],
-    socks: [9]
-};
-
-const OUTBOUND_PROTOCOL_BRANCH_MAPPING: Record<string, number[]> = {
-    dokodemo: [0],
-    "dokodemo-door": [0],
-    shadowsocks: [1],
-    "shadowsocks-2022": [1],
-    socks: [3, 11],
-    http: [3, 11],
-    blackhole: [4],
-    trojan: [5],
-    wireguard: [6],
-    vless: [7],
-    dns: [8],
-    freedom: [9],
-    vmess: [10]
-};
-
-function getValueByPath(obj: any, path: string): any {
-    const parts = path.split('/').filter(Boolean);
-    let current = obj;
-    for (const part of parts) {
-        if (current && typeof current === 'object') {
-            current = current[part];
-        } else {
-            return undefined;
-        }
-    }
-    return current;
-}
-
-function findSiblingProtocol(parsedObj: any, path: string): string | null {
-    const parts = path.split('/').filter(Boolean);
-    for (let i = parts.length; i >= 0; i--) {
-        const currentPath = '/' + parts.slice(0, i).join('/');
-        const obj = getValueByPath(parsedObj, currentPath);
-        if (obj && typeof obj === 'object' && obj.protocol) {
-            return obj.protocol;
-        }
-    }
-    return null;
-}
-
-function cleanAjvErrors(errors: any[], parsedObj: any): any[] {
-    if (!errors) return [];
-
-    // 1. Убираем общие ошибки объединений (anyOf/oneOf/allOf)
-    let filtered = errors.filter(err => err.keyword !== 'anyOf' && err.keyword !== 'oneOf' && err.keyword !== 'allOf');
-
-    // 2. Убираем ошибки дискриминаторов, если выбранное значение является валидным
-    filtered = filtered.filter(err => {
-        if (err.keyword === 'const' || err.keyword === 'enum') {
-            const path = err.instancePath;
-            const lastSegment = path.split('/').pop() || '';
-            const validValues = VALID_DISCRIMINATORS[lastSegment];
-            if (validValues) {
-                const currentVal = getValueByPath(parsedObj, path);
-                if (validValues.includes(currentVal)) {
-                    // Значение валидно, ошибка "must be equal to constant" — это шум от других веток
-                    return false;
-                }
-            }
-        }
-        return true;
-    });
-
-    // 3. Убираем ошибки "additionalProperties" от неактивных веток протоколов/сетей/безопасности
-    filtered = filtered.filter(err => {
-        if (err.keyword === 'additionalProperties') {
-            const path = err.instancePath;
-            const additionalProp = err.params?.additionalProperty;
-            
-            // Игнорируем расширения Xray-core и UI свойства в подстветке JSON
-            const ALLOWED_ADDITIONAL_PROPERTIES = [
-                'i', '_id', 'ruleTag', 'rule_tag', 'ruleName', 'vlessRoute', 'attrs', 'webhook', 'balancerTag', 'outboundTag',
-                'fallbackTag', 'expected', 'maxRTT', 'tolerance', 'baselines', 'costs', 'domain', 'ip', 'port', 'sourcePort',
-                'network', 'source', 'user', 'inboundTag', 'protocol', 'localIP', 'localPort', 'process'
-            ];
-            if (additionalProp && ALLOWED_ADDITIONAL_PROPERTIES.includes(additionalProp)) {
-                return false;
-            }
-            
-            const pathParts = path.split('/').filter(Boolean);
-            const foundDiscriminatorValues: string[] = [];
-
-            // Собираем все дискриминаторы по всему пути снизу вверх
-            for (let i = pathParts.length; i >= 0; i--) {
-                const currentPath = '/' + pathParts.slice(0, i).join('/');
-                const obj = getValueByPath(parsedObj, currentPath);
-                if (obj && typeof obj === 'object') {
-                    if (obj.protocol) foundDiscriminatorValues.push(obj.protocol);
-                    if (obj.network) foundDiscriminatorValues.push(obj.network);
-                    if (obj.streamSettings?.network) foundDiscriminatorValues.push(obj.streamSettings.network);
-                    const sec = obj.security || obj.streamSettings?.security;
-                    if (sec) foundDiscriminatorValues.push(sec);
-                }
-            }
-
-            for (const value of foundDiscriminatorValues) {
-                const validProps = VALID_PROPERTIES_BY_DISCRIMINATOR[value];
-                if (validProps && validProps.includes(additionalProp)) {
-                    return false;
-                }
-
-                if (ALL_SETTINGS_BLOCKS.includes(additionalProp)) {
-                    const expectedBlock = VALID_SETTINGS_BLOCKS[value];
-                    if (expectedBlock && additionalProp !== expectedBlock) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    });
-
-    // 4. Фильтруем ошибки неактивных веток anyOf для настроек входящих и исходящих соединений
-    filtered = filtered.filter(err => {
-        const schemaPath = err.schemaPath || "";
-        
-        // Проверяем исходящие
-        const outboundMatch = schemaPath.match(/OutboundConfigurationObject\/anyOf\/(\d+)/);
-        if (outboundMatch) {
-            const branchIndex = parseInt(outboundMatch[1], 10);
-            const protocol = findSiblingProtocol(parsedObj, err.instancePath);
-            if (protocol) {
-                const allowedBranches = OUTBOUND_PROTOCOL_BRANCH_MAPPING[protocol];
-                if (allowedBranches && !allowedBranches.includes(branchIndex)) {
-                    return false; // Скрываем ошибку, так как она относится к чужой ветке протокола
-                }
-            }
-        }
-
-        // Проверяем входящие
-        const inboundMatch = schemaPath.match(/InboundConfigurationObject\/anyOf\/(\d+)/);
-        if (inboundMatch) {
-            const branchIndex = parseInt(inboundMatch[1], 10);
-            const protocol = findSiblingProtocol(parsedObj, err.instancePath);
-            if (protocol) {
-                const allowedBranches = INBOUND_PROTOCOL_BRANCH_MAPPING[protocol];
-                if (allowedBranches && !allowedBranches.includes(branchIndex)) {
-                    return false; // Скрываем ошибку
-                }
-            }
-        }
-
-        return true;
-    });
-
-    return filtered;
-}
 
 interface JsonEditorProps {
     value: string;
@@ -293,80 +46,20 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
     const editorParent = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
 
+    // The view is built once and kept; anything it closes over would freeze
+    // at mount. Reading the callbacks through a box that every render
+    // refreshes is what keeps the editor writing into current state instead
+    // of the one that existed when it opened.
+    const latest = useRef({ value, onChange, onSaveShortcut, onCommitShortcut });
+    useEffect(() => {
+        latest.current = { value, onChange, onSaveShortcut, onCommitShortcut };
+    });
+
     const isJson = mode === 'json';
 
-    // Подготовка схемы
-    const schemaForMode = useMemo(() => {
-        if (!isJson) return null;
-        const definitions = (xraySchema as any).definitions || {};
-        switch (schemaMode) {
-            case 'full': 
-                return xraySchema;
-            case 'inbound': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/InboundDetourConfig",
-                    definitions
-                };
-            case 'outbound': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/OutboundDetourConfig",
-                    definitions
-                };
-            case 'rule': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/RouterRule",
-                    definitions
-                };
-            case 'routing': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/RouterConfig",
-                    definitions
-                };
-            case 'dns': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/DNSConfig",
-                    definitions
-                };
-            case 'balancer': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/BalancingRule",
-                    definitions
-                };
-            case 'reverse': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    $ref: "#/definitions/ReverseConfig",
-                    definitions
-                };
-            case 'inbounds': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    type: "array",
-                    items: { $ref: "#/definitions/InboundDetourConfig" },
-                    definitions
-                };
-            case 'outbounds': 
-                return {
-                    $schema: "http://json-schema.org/draft-07/schema#",
-                    type: "array",
-                    items: { $ref: "#/definitions/OutboundDetourConfig" },
-                    definitions
-                };
-            default: 
-                return xraySchema;
-        }
-    }, [schemaMode, isJson]);
-
-    // Единый линтер (синтаксис + схема)
+    // Единый линтер (синтаксис + схема)    // Syntax first, then the schema — see core/xray/json-lint.
     const customLinter = useMemo(() => {
-        if (!isJson || !schemaForMode) return null;
-        const validate = ajv.compile(schemaForMode);
+        if (!isJson) return null;
         return linter((view) => {
             const diagnostics: any[] = [];
             const doc = view.state.doc.toString();
@@ -374,18 +67,18 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
 
             try {
                 const parsed = parseJsonc(doc);
-                const valid = validate(parsed);
+                const tree = syntaxTree(view.state);
 
-                if (!valid && validate.errors) {
-                    const cleanErrors = cleanAjvErrors(validate.errors, parsed);
-                    cleanErrors.forEach(err => {
-                        const pos = findPathPosition(doc, err.instancePath);
-                        diagnostics.push({
-                            from: pos ? pos.from : 0,
-                            to: pos ? pos.to : view.state.doc.length,
-                            severity: "error",
-                            message: `Schema: ${err.instancePath} ${err.message}`,
-                        });
+                for (const issue of lintValue(schemaMode as LintMode, parsed)) {
+                    // A path that is not in the text yet — half-typed — has
+                    // nowhere to point, so the first character stands in for
+                    // the document rather than underlining the whole file.
+                    const range = rangeAtPath(doc, issue.path, tree);
+                    diagnostics.push({
+                        from: range ? range.from : 0,
+                        to: range ? range.to : Math.min(1, doc.length),
+                        severity: "error",
+                        message: issue.message,
                     });
                 }
             } catch (e: any) {
@@ -412,78 +105,76 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             }
             return diagnostics;
         });
-    }, [schemaForMode, isJson]);
+    }, [schemaMode, isJson]);
 
-    // --- УЛУЧШЕННАЯ АВТОПОДСТАНОВКА (COMPLETION) ---
+    /**
+     * What may be written here.
+     *
+     * The old version offered the root object's keys at every depth — inside
+     * a routing rule it suggested `log` and `inbounds` — because it read one
+     * flat list out of the schema and never asked where the cursor was. This
+     * asks: the keys of the object being written, or the values the key on
+     * the left accepts.
+     */
     const customCompletion = useMemo(() => {
         if (!isJson) return null;
         return jsoncLanguage.data.of({
             autocomplete: (context: any) => {
-                const node = syntaxTree(context.state).resolveInner(context.pos, -1);
-                if (node && (node.type.name.includes("Comment") || node.type.name.includes("LineComment") || node.type.name.includes("BlockComment"))) {
-                    return null;
-                }
+                const tree = syntaxTree(context.state);
+                const node = tree.resolveInner(context.pos, -1);
+                if (node && node.type.name.includes("Comment")) return null;
 
-                const word = context.matchBefore(/[\w"]*/);
+                const word = context.matchBefore(/[\w"@.:-]*/);
                 if (!word || (word.from === word.to && !context.explicit)) return null;
 
                 const doc = context.state.doc.toString();
+                const where = contextAt(doc, context.pos, tree);
+                const quoted = doc[word.from] === '"';
                 const options: any[] = [];
-                // Функция для рекурсивного поиска ключей в схеме
-                const getKeysFromSchema = (schema: any): string[] => {
-                    if (!schema) return [];
-                    if (schema.$ref) {
-                        const ref = schema.$ref.split('/').pop();
-                        const defs = (xraySchema as any).definitions || {};
-                        return getKeysFromSchema(defs[ref]);
-                    }
-                    if (schema.properties) return Object.keys(schema.properties);
-                    if (schema.items) return getKeysFromSchema(schema.items);
-                    if (schema.anyOf) {
-                        const keys: string[] = [];
-                        schema.anyOf.forEach((s: any) => keys.push(...getKeysFromSchema(s)));
-                        return Array.from(new Set(keys));
-                    }
-                    if (schema.allOf) {
-                        const keys: string[] = [];
-                        schema.allOf.forEach((s: any) => keys.push(...getKeysFromSchema(s)));
-                        return Array.from(new Set(keys));
-                    }
-                    if (schema.oneOf) {
-                        const keys: string[] = [];
-                        schema.oneOf.forEach((s: any) => keys.push(...getKeysFromSchema(s)));
-                        return Array.from(new Set(keys));
-                    }
-                    return [];
-                };
 
-                // Определяем текущий набор ключей
-                const availableKeys = getKeysFromSchema(schemaForMode);
-                
-                availableKeys.forEach(key => {
-                    options.push({ 
-                        label: `"${key}"`, 
-                        type: "property", 
-                        apply: `"${key}": `,
-                        detail: "schema property"
-                    });
-                });
+                if (where.kind === 'value') {
+                    for (const value of valuesAt(schemaMode as LintMode, where.path)) {
+                        options.push({
+                            label: quoted ? `"${value}"` : value,
+                            apply: quoted ? `"${value}"` : `"${value}"`,
+                            type: "constant",
+                            detail: "value",
+                        });
+                    }
+                } else {
+                    // Keys already written are not worth offering again.
+                    const parent = tree.resolveInner(context.pos, -1);
+                    const taken = new Set<string>();
+                    for (let n: any = parent; n; n = n.parent) {
+                        if (n.name !== 'Object') continue;
+                        for (let child = n.firstChild; child; child = child.nextSibling) {
+                            if (child.name !== 'Property') continue;
+                            const nameNode = child.firstChild;
+                            if (nameNode?.name === 'PropertyName') {
+                                taken.add(doc.slice(nameNode.from + 1, nameNode.to - 1));
+                            }
+                        }
+                        break;
+                    }
 
-                // Добавляем значения для протоколов, если мы в поле "protocol"
-                const line = doc.slice(0, context.pos).split('\n').pop() || "";
-                if (line.includes('"protocol"')) {
-                    const protocols = ["vless", "vmess", "trojan", "shadowsocks", "hysteria", "socks", "http", "wireguard", "freedom", "blackhole"];
-                    protocols.forEach(p => options.push({ label: `"${p}"`, type: "keyword", detail: "protocol" }));
+                    for (const field of fieldsAt(schemaMode as LintMode, where.path)) {
+                        if (taken.has(field.name)) continue;
+                        options.push({
+                            label: quoted ? `"${field.name}"` : field.name,
+                            apply: `"${field.name}": `,
+                            type: "property",
+                            detail: field.required ? `${field.type} · required` : field.type,
+                            info: field.values ? field.values.join(" | ") : undefined,
+                            boost: field.required ? 1 : 0,
+                        });
+                    }
                 }
 
-                return {
-                    from: word.from,
-                    options: options,
-                    filter: false // Позволяем CodeMirror самому фильтровать по вводу
-                };
+                if (options.length === 0) return null;
+                return { from: word.from, options, filter: true };
             }
         });
-    }, [schemaForMode, isJson]);
+    }, [schemaMode, isJson]);
 
     useEffect(() => {
         if (!editorParent.current) return;
@@ -517,7 +208,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             oneDark,
             EditorView.updateListener.of((update) => {
                 if (update.docChanged) {
-                    onChange(update.state.doc.toString());
+                    latest.current.onChange(update.state.doc.toString());
                 }
             }),
             EditorView.editable.of(!readOnly),
@@ -576,9 +267,9 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     run: (view) => {
                         const currentDoc = view.state.doc.toString();
                         console.log('[JsonEditor] Ctrl+S pressed -> Syncing memory & UI...');
-                        onChange(currentDoc);
-                        if (onSaveShortcut) {
-                            onSaveShortcut();
+                        latest.current.onChange(currentDoc);
+                        if (latest.current.onSaveShortcut) {
+                            latest.current.onSaveShortcut();
                             toast.success(t("✓ Saved to memory & UI updated"), { id: 'ctrl-s-toast' });
                         }
                         return true;
@@ -589,10 +280,10 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
                     run: (view) => {
                         const currentDoc = view.state.doc.toString();
                         console.log('[JsonEditor] Ctrl+Shift+S pressed -> Creating Git Commit...');
-                        onChange(currentDoc);
-                        onSaveShortcut?.();
-                        if (onCommitShortcut) {
-                            const snapshot = onCommitShortcut();
+                        latest.current.onChange(currentDoc);
+                        latest.current.onSaveShortcut?.();
+                        if (latest.current.onCommitShortcut) {
+                            const snapshot = latest.current.onCommitShortcut();
                             if (snapshot) {
                                 console.log('[JsonEditor] Created snapshot commit:', snapshot);
                                 toast.success(`✓ Git Commit: ${snapshot.id.substring(0, 7)} (+${snapshot.additions ?? 0} -${snapshot.deletions ?? 0})`, { id: 'ctrl-shift-s-toast' });
@@ -635,7 +326,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
         extensions.push(wrapping.of(narrow.matches ? EditorView.lineWrapping : []));
 
         const state = EditorState.create({
-            doc: value,
+            doc: latest.current.value,
             extensions
         });
 
@@ -665,7 +356,7 @@ export const JsonEditor = ({ value, onChange, readOnly = false, schemaMode = 'fu
             narrow.removeEventListener('change', syncWrapping);
             view.destroy();
         };
-    }, [schemaMode, readOnly]); 
+    }, [schemaMode, readOnly, isJson, customLinter, customCompletion]);
 
     useEffect(() => {
         if (viewRef.current && value !== viewRef.current.state.doc.toString()) {
