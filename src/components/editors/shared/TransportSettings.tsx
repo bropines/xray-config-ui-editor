@@ -5,18 +5,15 @@ import { Help } from '../../ui/Help';
 import { generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
 import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor, foreignFieldsIn } from '../../../core/xray/field-directions';
 import { SockoptEditor } from './SockoptEditor';
-import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 import { FinalmaskEditor } from './FinalmaskEditor';
-import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { NumberInput } from '../../ui/NumberInput';
-import { DurationInput } from '../../ui/DurationInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
 import { SchemaForm } from '../../ui/SchemaForm';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useConfigStore } from '../../../store/configStore';
-import { useField } from '../../../hooks/useField';
-import type { FieldPath } from '../../../hooks/useField';
+import { useTransportFields } from '../../../hooks/useTransportFields';
+import { NetworkSection } from './NetworkSection';
 import { toast } from 'sonner';
 import { t, tn } from '../../../i18n';
 
@@ -109,74 +106,15 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
     const { realityErrors, tlsErrors } = parseTransportErrors(errors);
 
-    // `streamSettings` is this editor's `local` state and `update` below is
-    // its `updateField(path, value)` — same shape as useXrayEditor's, just
-    // scoped to this one sub-object. useField binds directly on top of it, so
-    // every path below is the ONE place the wiring to streamSettings lives;
-    // the JSX under it can be restyled freely (see InboundClients.tsx for the
-    // same pattern against the full editor state).
-    const update = (path: FieldPath, value: any) => {
-        const pathArr = Array.isArray(path) ? path : [path];
-        const newObj = JSON.parse(JSON.stringify(streamSettings));
-        let curr = newObj;
-        for (let i = 0; i < pathArr.length - 1; i++) {
-            const key = pathArr[i];
-            if (key === undefined) return;
-            if (!curr[key]) curr[key] = {};
-            curr = curr[key];
-        }
-        const leaf = pathArr[pathArr.length - 1];
-        if (leaf === undefined) return;
-        curr[leaf] = value;
-        onChange(newObj);
-    };
-
-    const network = useField<string>(streamSettings, update, ['network']);
-    const security = useField<string>(streamSettings, update, ['security']);
-
-    const httpupgradePath = useField<string>(streamSettings, update, ['httpupgradeSettings', 'path']);
-    const httpupgradeHost = useField<string>(streamSettings, update, ['httpupgradeSettings', 'host']);
-
-    const tcpAcceptProxyProtocol = useField<boolean>(streamSettings, update, ['tcpSettings', 'acceptProxyProtocol']);
-    const tcpHeaderType = useField<string>(streamSettings, update, ['tcpSettings', 'header', 'type']);
-    const tcpHeaderPath = useField<string[]>(streamSettings, update, ['tcpSettings', 'header', 'request', 'path']);
-    const tcpHeaderHost = useField<string[]>(streamSettings, update, ['tcpSettings', 'header', 'request', 'headers', 'Host']);
-
-    const wsAcceptProxyProtocol = useField<boolean>(streamSettings, update, ['wsSettings', 'acceptProxyProtocol']);
-    const wsPath = useField<string>(streamSettings, update, ['wsSettings', 'path']);
-    const wsHost = useField<string>(streamSettings, update, ['wsSettings', 'headers', 'Host']);
-    const wsHeartbeatPeriod = useField<number | undefined>(streamSettings, update, ['wsSettings', 'heartbeatPeriod']);
-
-    const grpcMultiMode = useField<boolean>(streamSettings, update, ['grpcSettings', 'multiMode']);
-    const grpcPermitWithoutStream = useField<boolean>(streamSettings, update, ['grpcSettings', 'permit_without_stream']);
-    const grpcServiceName = useField<string>(streamSettings, update, ['grpcSettings', 'serviceName']);
-    const grpcAuthority = useField<string>(streamSettings, update, ['grpcSettings', 'authority']);
-    const grpcUserAgent = useField<string>(streamSettings, update, ['grpcSettings', 'user_agent']);
-    const grpcIdleTimeout = useField<number | undefined>(streamSettings, update, ['grpcSettings', 'idle_timeout']);
-    const grpcHealthCheckTimeout = useField<number | undefined>(streamSettings, update, ['grpcSettings', 'health_check_timeout']);
-    const grpcInitialWindowsSize = useField<number | undefined>(streamSettings, update, ['grpcSettings', 'initial_windows_size']);
-
-    const kcpCongestion = useField<boolean>(streamSettings, update, ['kcpSettings', 'congestion']);
-    const kcpHeaderType = useField<string>(streamSettings, update, ['kcpSettings', 'header', 'type']);
-    const kcpSeed = useField<string>(streamSettings, update, ['kcpSettings', 'seed']);
-    const kcpMtu = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'mtu']);
-    const kcpTti = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'tti']);
-    const kcpUplinkCapacity = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'uplinkCapacity']);
-    const kcpDownlinkCapacity = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'downlinkCapacity']);
-    const kcpReadBufferSize = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'readBufferSize']);
-    const kcpWriteBufferSize = useField<number | undefined>(streamSettings, update, ['kcpSettings', 'writeBufferSize']);
-
-    const quicSecurity = useField<string>(streamSettings, update, ['quicSettings', 'security']);
-    const quicHeaderType = useField<string>(streamSettings, update, ['quicSettings', 'header', 'type']);
-    const quicKey = useField<string>(streamSettings, update, ['quicSettings', 'key']);
-
-    const realitySettings = useField<any>(streamSettings, update, ['realitySettings']);
-    const tlsSettings = useField<any>(streamSettings, update, ['tlsSettings']);
-    // certificates is always written as a single-element array (server cert +
-    // key), so it's bound as one leaf field rather than useArrayField's
-    // CRUD-list semantics (which would preserve any extra elements instead of
-    // collapsing to one, changing behavior for hand-edited multi-cert JSON).
-    const tlsCertificates = useField<any[]>(streamSettings, update, ['tlsSettings', 'certificates']);
+    // Every binding to `streamSettings` lives in the hook.
+    const {
+        update,
+        network,
+        security,
+        realitySettings,
+        tlsSettings,
+        tlsCertificates,
+    } = useTransportFields(streamSettings, onChange);
 
     const net = network.value || "tcp";
     const sec = security.value || "none";
@@ -228,300 +166,12 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             <div className="border-t border-slate-800/50 my-2" />
 
             {/* --- NETWORK SPECIFIC SETTINGS --- */}
-
-            {/* RAW (for Finalmask) */}
-            {net === 'raw' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
-                    <div className="col-span-full flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-400">{t("RAW Socket Settings")}</span>
-                        <Help>{t("Used primarily with Finalmask for obfuscation.")}</Help>
-                    </div>
-                </div>
-            )}
-
-            {/* HTTP Upgrade */}
-            {net === 'httpupgrade' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800/50 pt-4">
-                    <div className="col-span-full flex items-center gap-2">
-                        <span className="text-xs font-bold text-blue-400">{t("HTTP Upgrade Configuration")}</span>
-                    </div>
-                    <div><label className="label-xs">{t("Path")}</label><input className="input-base font-mono" placeholder="/" value={httpupgradePath.value || ""} onChange={e => httpupgradePath.onChange(e.target.value)} /></div>
-                    <div><label className="label-xs">{t("Host")}</label><input className="input-base font-mono" placeholder={t("example.com")} value={httpupgradeHost.value || ""} onChange={e => httpupgradeHost.onChange(e.target.value)} /></div>
-                </div>
-            )}
-
-            {/* TCP (RAW) */}
-            {net === 'tcp' && (
-                <div className="space-y-4 border-t border-slate-800/50 pt-4 animate-in fade-in">
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-400">{t("TCP (RAW) Settings")}</span>
-                    </div>
-
-                    {!isClient && (
-                        <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
-                            <Switch
-                                checked={tcpAcceptProxyProtocol.value || false}
-                                onChange={checked => tcpAcceptProxyProtocol.onChange(checked)}
-                                label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">{t("Accept PROXY Protocol")}</span>}
-                            />
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select
-                            label={t("Header Type (Obfuscation)")}
-                            value={tcpHeaderType.value || "none"}
-                            onChange={val => tcpHeaderType.onChange(val)}
-                            options={[
-                                { value: "none", label: t("None"), description: t("No obfuscation") },
-                                { value: "http", label: "HTTP", description: t("Simulate HTTP request") },
-                            ]}
-                        />
-
-                        {tcpHeaderType.value === 'http' && (
-                            <div className="col-span-full space-y-2 bg-slate-950 p-3 rounded border border-slate-800">
-                                <label className="label-xs text-yellow-500">{t("HTTP Request (Legacy Obfuscation)")}</label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <input className="input-base text-xs font-mono" placeholder={t("Path (e.g. /)")}
-                                        value={tcpHeaderPath.value?.[0] || "/"}
-                                        onChange={e => tcpHeaderPath.onChange([e.target.value])} />
-                                    <input className="input-base text-xs font-mono" placeholder={t("Host (e.g. bing.com)")}
-                                        value={tcpHeaderHost.value?.[0] || ""}
-                                        onChange={e => tcpHeaderHost.onChange([e.target.value])} />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {(net === 'xhttp' || net === 'splithttp') && (
-                <div className="border-t border-slate-800 pt-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                            {t("{net} configuration", { net: net.toUpperCase() })}
-                        </span>
-                        <span className="text-[10px] text-white bg-blue-600 px-1.5 py-0.5 rounded font-bold animate-pulse">{t("BEYOND REALITY")}</span>
-                    </div>
-                    <XhttpSettingsEditor
-                        xhttpSettings={streamSettings.xhttpSettings || streamSettings.splithttpSettings}
-                        onChange={v => update([net === 'splithttp' ? 'splithttpSettings' : 'xhttpSettings'], v)}
-                        isClient={isClient}
-                    />
-                </div>
-            )}
-
-            {net === 'ws' && (
-                <div className="space-y-4 border-t border-slate-800/50 pt-4 animate-in fade-in">
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">{t("WebSocket Settings")}</span>
-                    </div>
-
-                    {!isClient && (
-                        <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
-                            <Switch
-                                checked={wsAcceptProxyProtocol.value || false}
-                                onChange={checked => wsAcceptProxyProtocol.onChange(checked)}
-                                label={<span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">{t("Accept PROXY Protocol")}</span>}
-                            />
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label className="label-xs">{t("Path")}</label><input className="input-base font-mono" value={wsPath.value || "/"} onChange={e => wsPath.onChange(e.target.value)} /></div>
-                        <div><label className="label-xs">{t("Host")}</label><input className="input-base font-mono" placeholder={t("host.com")} value={wsHost.value || ""} onChange={e => wsHost.onChange(e.target.value)} /></div>
-                        <div>
-                            <label className="label-xs">{t("Heartbeat Period (s)")}</label>
-                            <NumberInput
-                                placeholder="10"
-                                value={wsHeartbeatPeriod.value}
-                                onChange={val => wsHeartbeatPeriod.onChange(val)}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {net === 'grpc' && (
-                <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">{t("gRPC Settings")}</span>
-                    </div>
-
-                    {isClient && (
-                        <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Switch
-                                checked={grpcMultiMode.value || false}
-                                onChange={checked => grpcMultiMode.onChange(checked)}
-                                label={t("Enable Multi Mode")}
-                            />
-                            <Switch
-                                checked={grpcPermitWithoutStream.value || false}
-                                onChange={checked => grpcPermitWithoutStream.onChange(checked)}
-                                label={t("Permit Without Stream")}
-                            />
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="col-span-full"><label className="label-xs">{t("Service Name")}</label><input className="input-base font-mono" placeholder={t("GunService")} value={grpcServiceName.value || ""} onChange={e => grpcServiceName.onChange(e.target.value)} /></div>
-                        <div><label className="label-xs">{t("Authority")}</label><input className="input-base font-mono" placeholder={t("grpc.example.com")} value={grpcAuthority.value || ""} onChange={e => grpcAuthority.onChange(e.target.value)} /></div>
-                        {isClient && (
-                            <>
-                                <div><label className="label-xs">{t("User Agent")}</label><input className="input-base font-mono" placeholder={t("custom user agent")} value={grpcUserAgent.value || ""} onChange={e => grpcUserAgent.onChange(e.target.value)} /></div>
-                                <div>
-                                    <label className="label-xs">{t("Idle Timeout")}</label>
-                                    <DurationInput
-                                        placeholder="60"
-                                        value={grpcIdleTimeout.value}
-                                        onChange={val => grpcIdleTimeout.onChange(val)}
-                                        defaultUnit="s"
-                                        mode="number"
-                                        baseUnit="s"
-                                        unitOptions={['ms', 's', 'm', 'h']}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="label-xs">{t("Health Check Timeout")}</label>
-                                    <DurationInput
-                                        placeholder="20"
-                                        value={grpcHealthCheckTimeout.value}
-                                        onChange={val => grpcHealthCheckTimeout.onChange(val)}
-                                        defaultUnit="s"
-                                        mode="number"
-                                        baseUnit="s"
-                                        unitOptions={['ms', 's', 'm', 'h']}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="label-xs">{t("Initial Windows Size")}</label>
-                                    <NumberInput
-                                        placeholder="0"
-                                        value={grpcInitialWindowsSize.value}
-                                        onChange={val => grpcInitialWindowsSize.onChange(val)}
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {net === 'kcp' && (
-                <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">{t("mKCP Settings")}</span>
-                    </div>
-
-                    <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50 flex flex-wrap gap-4">
-                        <Switch
-                            checked={kcpCongestion.value || false}
-                            onChange={checked => kcpCongestion.onChange(checked)}
-                            label={t("Enable Congestion Control")}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select
-                            label={t("Header Type")}
-                            value={kcpHeaderType.value || "none"}
-                            onChange={val => kcpHeaderType.onChange(val)}
-                            options={[
-                                { value: "none", label: t("None") },
-                                { value: "srtp", label: t("SRTP"), description: t("Video call simulation") },
-                                { value: "utp", label: "uTP", description: t("BitTorrent simulation") },
-                                { value: "wechat-video", label: t("WeChat"), description: t("WeChat video call") },
-                                { value: "dtls", label: t("DTLS"), description: t("DTLS 1.2 simulation") },
-                                { value: "wireguard", label: t("WireGuard"), description: t("WireGuard simulation") },
-                            ]}
-                        />
-                        <div><label className="label-xs">{t("Seed")}</label><input className="input-base font-mono" placeholder={t("password")} value={kcpSeed.value || ""} onChange={e => kcpSeed.onChange(e.target.value)} /></div>
-                        <div>
-                            <label className="label-xs">{t("MTU")}</label>
-                            <NumberInput
-                                placeholder="1350"
-                                value={kcpMtu.value}
-                                onChange={val => kcpMtu.onChange(val)}
-                            />
-                        </div>
-                        <div>
-                            <label className="label-xs">{t("TTI (ms)")}</label>
-                            <NumberInput
-                                placeholder="50"
-                                value={kcpTti.value}
-                                onChange={val => kcpTti.onChange(val)}
-                            />
-                        </div>
-                        <div>
-                            <label className="label-xs">{t("Uplink Capacity (MB/s)")}</label>
-                            <NumberInput
-                                placeholder="5"
-                                value={kcpUplinkCapacity.value}
-                                onChange={val => kcpUplinkCapacity.onChange(val)}
-                            />
-                        </div>
-                        <div>
-                            <label className="label-xs">{t("Downlink Capacity (MB/s)")}</label>
-                            <NumberInput
-                                placeholder="20"
-                                value={kcpDownlinkCapacity.value}
-                                onChange={val => kcpDownlinkCapacity.onChange(val)}
-                            />
-                        </div>
-                        <div>
-                            <label className="label-xs">{t("Read Buffer Size (MB)")}</label>
-                            <NumberInput
-                                placeholder="2"
-                                value={kcpReadBufferSize.value}
-                                onChange={val => kcpReadBufferSize.onChange(val)}
-                            />
-                        </div>
-                        <div>
-                            <label className="label-xs">{t("Write Buffer Size (MB)")}</label>
-                            <NumberInput
-                                placeholder="2"
-                                value={kcpWriteBufferSize.value}
-                                onChange={val => kcpWriteBufferSize.onChange(val)}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {net === 'quic' && (
-                <div className="space-y-4 border-t border-slate-800 pt-4 animate-in fade-in">
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-indigo-400">{t("QUIC Settings")}</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select
-                            label={t("Security")}
-                            value={quicSecurity.value || "none"}
-                            onChange={val => quicSecurity.onChange(val)}
-                            options={[
-                                { value: "none", label: t("None") },
-                                { value: "aes-128-gcm", label: t("AES-128-GCM") },
-                                { value: "chacha20-poly1305", label: t("ChaCha20") },
-                            ]}
-                        />
-                        <Select
-                            label={t("Header Type")}
-                            value={quicHeaderType.value || "none"}
-                            onChange={val => quicHeaderType.onChange(val)}
-                            options={[
-                                { value: "none", label: t("None") },
-                                { value: "srtp", label: t("SRTP") },
-                                { value: "utp", label: "uTP" },
-                                { value: "wechat-video", label: t("WeChat") },
-                                { value: "dtls", label: t("DTLS") },
-                                { value: "wireguard", label: t("WireGuard") },
-                            ]}
-                        />
-                        <div className="col-span-full"><label className="label-xs">{t("Key")}</label><input className="input-base font-mono" placeholder="key" value={quicKey.value || ""} onChange={e => quicKey.onChange(e.target.value)} /></div>
-                    </div>
-                </div>
-            )}
+            <NetworkSection
+                streamSettings={streamSettings}
+                onChange={onChange}
+                net={net}
+                isClient={isClient}
+            />
 
             {/* --- SECURITY SETTINGS --- */}
 

@@ -15,6 +15,7 @@ import { GeoViewerModal } from './GeoViewerModal';
 import { ConfigInspectorModal } from './ConfigInspectorModal';
 import { HostsModal } from './hosts/HostsModal';
 import { SnippetsModal } from './snippets/SnippetsModal';
+import { LocalBalancerModal } from './builder/LocalBalancerModal';
 
 /**
  * Does each editor still open?
@@ -55,6 +56,7 @@ const EDITORS: [string, () => React.ReactElement][] = [
     ['config inspector', () => <ConfigInspectorModal onClose={() => {}} setModal={() => {}} openSectionJson={() => {}} />],
     ['hosts', () => <HostsModal onClose={() => {}} />],
     ['snippets', () => <SnippetsModal onClose={() => {}} />],
+    ['balancer builder', () => <LocalBalancerModal onClose={() => {}} />],
 ];
 
 describe('every editor opens', () => {

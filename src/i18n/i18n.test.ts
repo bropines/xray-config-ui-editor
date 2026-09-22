@@ -134,7 +134,9 @@ describe('i18n imports', () => {
             if (text.includes('perLanguage(')) needed.add('perLanguage');
             if (!needed.size) continue;
 
-            const line = text.match(/^import \{ ([^}]+) \} from '[^']*i18n';$/m);
+            // Either quote style: the repo mixes them, and a file that spells
+            // the path with double quotes still imports what it imports.
+            const line = text.match(/^import \{ ([^}]+) \} from ["'][^"']*i18n["'];$/m);
             const imported = new Set((line?.[1] ?? '').split(',').map(s => s.trim()));
             const missing = [...needed].filter(name => !imported.has(name));
             if (missing.length) broken.push(`${file}: ${missing.join(', ')}`);

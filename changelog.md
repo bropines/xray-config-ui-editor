@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0] - 2026-09-22
+
+### Changed
+- **The three biggest components are no longer the three biggest components.** Between them they held 3,031 lines, most of it one render function each:
+  - **The dashboard: 1,290 lines to 433.** Its four cards — inbounds, routing, outbounds, DNS — are four files now, along with the section box and the draggable outbound row. Each card derives what it shows instead of being handed it: the DNS summary and the outbound-routing map are computed where they are used, and the outbounds card owns the selection, search and drag ordering that nothing outside it ever read.
+  - **The local-balancer builder: 1,062 lines to 157.** The two halves of its screen never spoke to each other, so they are two components; what is left is the shell that decides which one a phone shows. Its pane switcher moved to the foot of the sheet with the rest of the controls.
+  - **The transport editor: 679 lines to 329.** The forty `useField` bindings that tie the form to `streamSettings` are a hook now, and the six mutually exclusive transport blocks are a component that calls it — which is why not one field name in that markup had to change.
+- **Eleven more render tests, covering exactly what a move like this can break.** The dashboard's four cards are held to what they show and which handler each control calls; the transport blocks are held to rendering one transport at a time and writing back to that transport's own path. Both were checked by breaking them: mis-binding the WebSocket path fails three tests, and reverting a card's placement fails the one that describes it.
+
 ## [1.13.0] - 2026-09-22
 
 ### Added

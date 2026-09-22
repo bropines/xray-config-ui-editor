@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'bun:test';
 import { idbStorage } from './indexedDbStorage';
-import { installMockIndexedDB, type MockIDBDatabase } from './indexedDbStorage.mock';
+import { installMockIndexedDB } from './indexedDbStorage.mock';
 
 describe('indexedDbStorage', () => {
-    let mockDb: MockIDBDatabase;
-
     beforeAll(() => {
-        mockDb = installMockIndexedDB();
+        installMockIndexedDB();
     });
 
     // happy-dom supplies a real localStorage, and it is read-only on the
