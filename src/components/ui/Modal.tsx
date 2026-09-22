@@ -26,7 +26,10 @@ const BottomSlot = React.createContext<HTMLElement | null>(null);
 export const ModalBottomBar = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
   const node = React.useContext(BottomSlot);
   if (!node) return <>{children}</>;
-  return createPortal(<div className={`contents ${className}`}>{children}</div>, node);
+  return createPortal(
+    <div className={`min-w-0 flex-1 flex ${className}`}>{children}</div>,
+    node,
+  );
 };
 
 export const Modal = ({
@@ -150,7 +153,7 @@ export const Modal = ({
           <div
             ref={setBottomSlot}
             data-testid="modal-bottom-bar"
-            className={`empty:hidden flex items-center gap-2 px-3 py-2 border-t border-slate-800 bg-slate-900 shrink-0 overflow-x-auto hide-scrollbar ${hideFooter && !tabs ? 'pb-[max(0.5rem,env(safe-area-inset-bottom))]' : ''}`}
+            className={`empty:hidden flex items-center gap-2 px-3 py-2 border-t border-slate-800 bg-slate-900 shrink-0 hide-scrollbar [&_button]:h-9 [&_button]:w-full ${hideFooter && !tabs ? 'pb-[max(0.5rem,env(safe-area-inset-bottom))]' : ''}`}
           />
         )}
 
@@ -166,14 +169,14 @@ export const Modal = ({
 
         {/* Footer */}
         {!hideFooter && (
-          <div className="px-3 py-2 md:p-5 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:pb-5 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center bg-slate-900 md:rounded-b-2xl shrink-0 gap-2 md:gap-0 z-20">
+          <div className="px-3 py-2 md:p-5 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:pb-5 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center bg-slate-900 md:rounded-b-2xl shrink-0 gap-2 md:gap-0 z-20 [&_button]:h-9 md:[&_button]:h-auto">
             {/* Buttons must keep their intrinsic width for overflow-x-auto to
                 mean anything — without shrink-0 they compress and wrap their
                 labels instead, doubling the footer height on a phone. */}
             {/* The module's own buttons: their own row above the actions on a
                 phone, the left half of the same row on a desktop. Scrolled
                 rather than wrapped, so the row stays one line high. */}
-            <div className="flex gap-2 w-full md:w-auto overflow-x-auto hide-scrollbar relative z-10 [&>*]:shrink-0 [&_button]:whitespace-nowrap">
+            <div className="flex gap-2 w-full md:w-auto justify-center md:justify-start overflow-x-auto hide-scrollbar relative z-10 [&>*]:shrink-0 [&_button]:whitespace-nowrap">
                 {extraButtons}
             </div>
             <div className="flex gap-3 w-full md:w-auto relative z-10">

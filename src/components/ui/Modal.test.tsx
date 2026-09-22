@@ -167,6 +167,23 @@ describe('ModalBottomBar', () => {
         expect(bottomBar()!.contains(screen.getByText('Back'))).toBe(true);
     });
 
+    it('gives every control at the foot the same height and an equal share', () => {
+        at(PHONE, (
+            <Modal title="Editor" onClose={() => {}}>
+                <ModalBottomBar><button>Back</button></ModalBottomBar>
+                <ModalBottomBar><button>JSON</button></ModalBottomBar>
+            </Modal>
+        ));
+        const bar = bottomBar()!;
+        // Two portals, two columns of the same width.
+        expect(bar.childElementCount).toBe(2);
+        for (const wrapper of bar.children) {
+            expect(wrapper.className).toContain('flex-1');
+        }
+        // And the row, not the control's own padding, sets the height.
+        expect(bar.className).toContain('[&_button]:h-9');
+    });
+
     it('leaves the keyboard the room it takes', () => {
         // Safari draws the keyboard over the page rather than resizing it, so
         // a sheet claiming the whole screen puts its footer underneath.

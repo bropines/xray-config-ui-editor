@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.19.1] - 2026-09-22
+
+### Changed
+- **One height and one rhythm at the foot of every sheet.** Measured on the routing editor at 412x800: Back was 42px tall, the JSON toggle beside it 26px, the tab strip 36px and Close 42px — four heights in three rows, with the tab strip pushed against the left edge of a row 367px wide. Each control was sizing itself out of its own padding.
+  - The sheet decides now. Every control in the bottom stack is **36px**, the two halves of a row are **equal width**, and a tab strip narrower than its row is **centred** rather than left-aligned. A desktop keeps each control's own size, where there is room for it.
+  - The bar's portal wrapper was `display: contents`, which hid it from the flex layout — so a control could not be told to share the row, and the `className` passed to `ModalBottomBar` was being dropped on the floor. It is a real flex item now.
+  - 14px of chrome came back: the bottom stack is 158px where it was 172.
+
 ## [1.19.0] - 2026-09-22
 
 ### Changed
