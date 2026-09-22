@@ -2067,4 +2067,30 @@ export const ru: Record<string, string> = {
     'Open': 'Открыть',
     'Cloud': 'Облако',
     'About': 'О нас',
+
+    // ── Установка приложения и диагностика ──────────────────────────────────
+    'Install as an app': 'Установка приложения',
+    'Installed, the editor opens in its own window, works offline and keeps its own storage. Export your data first — an installed app does not inherit what the browser tab saved.':
+        'Установленный редактор открывается в своём окне, работает офлайн и держит собственное хранилище. Сначала выгрузите данные: установленное приложение не наследует то, что сохранила вкладка браузера.',
+    'Install': 'Установить',
+    'Check why it cannot be installed': 'Проверить, почему не ставится',
+    'Running as an installed app.': 'Запущено как установленное приложение.',
+    'The browser has not offered an install for this page.':
+        'Браузер не предлагал установку для этой страницы.',
+    'Install dismissed.': 'Установка отклонена.',
+    'This is what fails:': 'Вот что не проходит:',
+    'Everything checks out and the browser has offered an install.':
+        'Всё сходится, и браузер предложил установку.',
+    'Everything this page can check passes. If the browser still refuses, it is holding an older copy — reload once or twice — or it is Safari, which installs only through Share → Add to Home Screen.':
+        'Всё, что можно проверить со страницы, проходит. Если браузер всё равно отказывает — он держит старую копию (перезагрузите раз-другой) — либо это Safari, где установка идёт только через «Поделиться» → «На экран „Домой“».',
+    'Served over HTTPS': 'Отдаётся по HTTPS',
+    'The page links a manifest': 'На странице есть ссылка на манифест',
+    'The manifest loads': 'Манифест загружается',
+    'The manifest has a name': 'В манифесте есть имя',
+    'It asks for its own window': 'Запрошено собственное окно',
+    "The start page is inside the app's scope": 'Стартовая страница внутри области приложения',
+    'An icon of at least 192px is declared': 'Объявлена иконка не меньше 192px',
+    'Every declared icon actually loads': 'Каждая объявленная иконка действительно грузится',
+    'A service worker is installed': 'Service worker установлен',
+    'The service worker controls this page': 'Service worker контролирует эту страницу',
 };

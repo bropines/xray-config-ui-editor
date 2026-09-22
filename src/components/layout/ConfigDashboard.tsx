@@ -405,29 +405,40 @@ export const ConfigDashboard = ({
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
       {/* Toolbar */}
-      <div className="shrink-0 flex flex-col md:flex-row justify-between items-start bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl shadow-lg gap-4">
+      {/* `contents` below md: the strip itself is a sheet raised from the
+          dock, so the card around it would only draw an empty box. The
+          element has to stay in the tree — the sheet is its child. */}
+      <div className="contents md:flex shrink-0 md:flex-row md:justify-between md:items-start md:bg-slate-900 md:border md:border-slate-800 md:p-4 md:rounded-xl md:shadow-lg md:gap-4">
         <div className="flex flex-col md:flex-row items-start gap-4 w-full md:w-auto">
-          {/* The collapse control is mobile-only; on desktop each group's own
-              label is its heading, so both columns share one baseline. */}
-          <div className="flex items-center justify-between w-full md:hidden">
-            <h2 className="font-bold text-slate-300 flex items-center gap-2 text-sm">
-              <Icon name="SlidersHorizontal" />
-{t("Modules")}
-</h2>
-            <button
-              onClick={() => setModulesVisible(!modulesVisible)}
-              className="p-2 text-slate-400 hover:text-white transition-colors"
-            >
-              <Icon
-                name={modulesVisible ? "CaretUp" : "CaretDown"}
-                weight="bold"
-              />
-            </button>
-          </div>
-
+          {/* On a phone this whole strip lives in a sheet raised from the
+              dock, so the backdrop and its header render here and the same
+              markup serves both. */}
+          {modulesVisible && (
+            <div
+              className="md:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
+              onClick={() => setModulesVisible(false)}
+            />
+          )}
           <div
-            className={`${modulesVisible ? "flex" : "hidden md:flex"} flex-col md:flex-row md:items-start gap-3 md:gap-4 w-full md:w-auto animate-in fade-in slide-in-from-top-1 duration-200`}
+            className={`${
+              modulesVisible
+                ? 'fixed md:static inset-x-0 bottom-0 z-50 md:z-auto max-h-[80dvh] md:max-h-none overflow-y-auto custom-scroll rounded-t-3xl md:rounded-none border-t md:border-0 border-slate-700 bg-slate-900 md:bg-transparent p-4 md:p-0 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-0 flex animate-in slide-in-from-bottom-4 duration-200'
+                : 'hidden md:flex'
+            } flex-col md:flex-row md:items-start gap-3 md:gap-4 w-full md:w-auto`}
           >
+            <div className="flex items-center justify-between md:hidden shrink-0">
+              <h2 className="font-bold text-slate-200 flex items-center gap-2 text-sm">
+                <Icon name="SlidersHorizontal" />
+                {t("Modules")}
+              </h2>
+              <button
+                onClick={() => setModulesVisible(false)}
+                className="p-2 -mr-2 text-slate-400 hover:text-white transition-colors"
+                title={t("Close")}
+              >
+                <Icon name="X" weight="bold" />
+              </button>
+            </div>
             {/* Core: everything that edits the config open in this editor. */}
             <div className="flex flex-col gap-1.5 w-full md:w-auto">
               <span className="label-xs flex items-center gap-1.5">

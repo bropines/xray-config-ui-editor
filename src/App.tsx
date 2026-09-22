@@ -113,12 +113,9 @@ export const App = () => {
                 for them. */}
             <MobileActionBar
                 hasConfig={!!config}
-                connected={remnawave.connected}
-                pushStage={pushStage}
+                onOpenModules={() => setModulesVisible(true)}
                 onFileUpload={handleFileUpload}
                 onDownload={downloadConfig}
-                onPush={pushStage === 'idle' ? () => setPushStage('confirm') : handleRealPush}
-                onOpenRemnawave={() => setRemnawaveModalOpen(true)}
                 onOpenAbout={() => setAboutOpen(true)}
             />
 

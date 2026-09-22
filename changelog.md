@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-09-22
+
+### Added
+- **The app says why the browser will not install it.** Chrome answers "this app cannot be installed" and volunteers nothing else — not in the dialog, not in the console. Every condition it checks is observable from the page, so Settings now runs the same checks *on the device that is refusing* and names the one that fails: HTTPS, the manifest link, its contents, whether `start_url` sits inside `scope`, whether an icon of at least 192px is declared **and actually loads**, and the state of the service worker. There is an Install button too, for when the browser has offered one.
+  - This exists because the first cause was invisible from a desktop: the icons were gitignored, so the manifest shipped pointing at 404s, and each hypothesis cost a deploy to test.
+
+### Changed
+- **Modules moved into the dock.** On a phone the modules strip was an accordion at the top of the dashboard that pushed everything else down. It is a sheet raised from the dock bar now — the same nine buttons, the git status and the JSON toggle, over a backdrop, capped at 80% of the screen.
+- **Cloud moved back up top**, next to the indicator that says whether you are linked to it, which is where its state was already being reported.
+
 ## [1.6.2] - 2026-09-22
 
 ### Fixed

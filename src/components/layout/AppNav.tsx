@@ -197,6 +197,33 @@ export const AppNav = ({
                         </div>
                     )}
 
+                    {/* Mobile: cloud lives up here, beside the indicator that
+                        says whether it is linked. */}
+                    <div className="flex md:hidden items-center justify-center shrink-0">
+                        {connected ? (
+                            <button
+                                onClick={onPush}
+                                className={`flex items-center justify-center gap-1.5 px-3 h-11 rounded-xl font-bold text-xs transition-all border ${
+                                    pushStage === 'confirm'
+                                        ? 'bg-amber-500 text-black border-amber-400'
+                                        : 'bg-indigo-600/10 text-indigo-300 border-indigo-500/30 active:bg-indigo-600 active:text-white'
+                                }`}
+                                title={t("Push Cloud")}
+                            >
+                                <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" />
+                                <span>{pushStage === 'confirm' ? t("Confirm?") : t("Push Cloud")}</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={onOpenRemnawave}
+                                className="flex items-center justify-center gap-1.5 px-3 h-11 rounded-xl font-bold text-xs border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 active:bg-indigo-500/20 transition-all"
+                                title={t("Connect Cloud")}
+                            >
+                                <Icon name="Cloud" />
+                                <span>{t("Cloud")}</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right: Load/Download + Mobile Menu trigger + Combined TG & Xray Docs + About (Very Right End) */}

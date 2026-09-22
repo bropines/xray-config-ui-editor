@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../ui/Card';
 import { BackupEditor } from './BackupEditor';
+import { InstallEditor } from './InstallEditor';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { FormField } from '../../ui/FormField';
@@ -321,6 +322,8 @@ export const EditorSettingsEditor = ({ onOpenHistory }: { onOpenHistory?: () => 
             </Card>
 
             <BackupEditor />
+
+            <InstallEditor />
         </div>
     );
 };

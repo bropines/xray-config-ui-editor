@@ -4,12 +4,9 @@ import { t } from '../../i18n';
 
 interface MobileActionBarProps {
     hasConfig: boolean;
-    connected: boolean;
-    pushStage: 'idle' | 'confirm';
+    onOpenModules: () => void;
     onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onDownload: () => void;
-    onPush: () => void;
-    onOpenRemnawave: () => void;
     onOpenAbout: () => void;
 }
 
@@ -18,8 +15,9 @@ interface MobileActionBarProps {
  *
  * The top bar was six controls of equal weight, one of them carrying a text
  * label — so "push to cloud" took 40% of the width and everything else was
- * squeezed into what was left. None of those are navigation; they are the two
- * or three things you *do* on this screen, which is what a bottom bar is for.
+ * squeezed into what was left. These are not navigation; they are the things
+ * you *do* on this screen, which is what a bottom bar is for. Cloud stayed
+ * upstairs, next to the indicator that says whether you are linked to it.
  *
  * It hides when you scroll down and comes back when you scroll up. In a
  * browser tab the address bar is often along the same edge, and two bars
@@ -27,12 +25,9 @@ interface MobileActionBarProps {
  */
 export const MobileActionBar = ({
     hasConfig,
-    connected,
-    pushStage,
+    onOpenModules,
     onFileUpload,
     onDownload,
-    onPush,
-    onOpenRemnawave,
     onOpenAbout,
 }: MobileActionBarProps) => {
     const [hidden, setHidden] = React.useState(false);
@@ -73,6 +68,16 @@ export const MobileActionBar = ({
             }`}
         >
             <div className="flex items-stretch gap-1">
+                <button
+                    type="button"
+                    onClick={onOpenModules}
+                    disabled={!hasConfig}
+                    className={`${item} ${hasConfig ? 'text-indigo-300 active:bg-indigo-500/10' : 'text-slate-600'}`}
+                >
+                    <Icon name="SlidersHorizontal" className="text-lg" />
+                    <span>{t("Modules")}</span>
+                </button>
+
                 <label className={`${item} text-slate-300 active:bg-slate-800 cursor-pointer`}>
                     <Icon name="FolderOpen" className="text-lg" />
                     <span>{t("Open")}</span>
@@ -88,30 +93,6 @@ export const MobileActionBar = ({
                     <Icon name="DownloadSimple" className="text-lg" />
                     <span>{t("Save")}</span>
                 </button>
-
-                {connected ? (
-                    <button
-                        type="button"
-                        onClick={onPush}
-                        className={`${item} ${
-                            pushStage === 'confirm'
-                                ? 'bg-amber-500 text-black'
-                                : 'text-indigo-300 active:bg-indigo-500/10'
-                        }`}
-                    >
-                        <Icon name={pushStage === 'confirm' ? 'SealCheck' : 'CloudArrowUp'} weight="bold" className="text-lg" />
-                        <span>{pushStage === 'confirm' ? t("Confirm?") : t("Push Cloud")}</span>
-                    </button>
-                ) : (
-                    <button
-                        type="button"
-                        onClick={onOpenRemnawave}
-                        className={`${item} text-indigo-300 active:bg-indigo-500/10`}
-                    >
-                        <Icon name="Cloud" className="text-lg" />
-                        <span>{t("Cloud")}</span>
-                    </button>
-                )}
 
                 <button
                     type="button"

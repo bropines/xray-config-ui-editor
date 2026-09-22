@@ -3,6 +3,7 @@ import "./index.css";
 import { App } from "./App";
 import { useLang } from "./i18n";
 import { warmCyrillicSubsets } from "./utils/fonts";
+import { watchInstallPrompt } from "./core/pwa/install-prompt";
 
 /**
  * Remounts the app when the language changes.
@@ -19,6 +20,10 @@ const I18nRoot = () => {
 };
 
 warmCyrillicSubsets();
+
+// The browser fires its install offer once, early; nothing would catch it
+// by the time Settings is opened.
+watchInstallPrompt();
 
 /**
  * Ask the browser to keep this origin's storage.
