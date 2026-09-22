@@ -3,29 +3,15 @@ import {
     XrayConfigSchema,
     InboundSchema,
     OutboundSchema,
-    VlessInboundSettingsSchema,
-    VmessInboundSettingsSchema,
-    TrojanInboundSettingsSchema,
-    ShadowsocksInboundSettingsSchema,
-    SocksInboundSettingsSchema,
-    HttpInboundSettingsSchema,
-    TunnelInboundSettingsSchema,
-    HysteriaInboundSettingsSchema,
-    WireguardInboundSettingsSchema,
-    TunInboundSettingsSchema,
-    VlessOutboundSettingsSchema,
-    VmessOutboundSettingsSchema,
-    TrojanOutboundSettingsSchema,
-    ShadowsocksOutboundSettingsSchema,
-    SocksOutboundSettingsSchema,
-    HttpOutboundSettingsSchema,
-    FreedomOutboundSettingsSchema,
-    BlackholeOutboundSettingsSchema,
-    DnsOutboundSettingsSchema,
-    LoopbackOutboundSettingsSchema,
-    HysteriaOutboundSettingsSchema,
-    WireguardOutboundSettingsSchema
+    WireguardOutboundSettingsSchema,
 } from '../xray/schemas';
+// The protocol -> settings-schema table these validators used to carry as a
+// switch. Shared with the JSON editors' linter, so a form and a JSON view
+// cannot disagree about what a settings block may hold.
+import {
+    inboundSettingsSchemaFor,
+    outboundSettingsSchemaFor,
+} from '../xray/schemas/settings-by-protocol';
 
 import { isSnippetRef } from '../snippets';
 
@@ -86,42 +72,8 @@ export const validateInbound = (data: any): ValidationError[] => {
     // Protocol settings validation
     const protocol = data.protocol;
     const settings = data.settings || {};
-    let settingsResult: any = null;
-
-    switch (protocol) {
-        case 'vless':
-            settingsResult = VlessInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'vmess':
-            settingsResult = VmessInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'trojan':
-            settingsResult = TrojanInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'shadowsocks':
-        case 'shadowsocks-2022':
-            settingsResult = ShadowsocksInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'socks':
-            settingsResult = SocksInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'http':
-            settingsResult = HttpInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'dokodemo-door':
-        case 'tunnel':
-            settingsResult = TunnelInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'hysteria':
-            settingsResult = HysteriaInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'wireguard':
-            settingsResult = WireguardInboundSettingsSchema.safeParse(settings);
-            break;
-        case 'tun':
-            settingsResult = TunInboundSettingsSchema.safeParse(settings);
-            break;
-    }
+    const settingsSchema = inboundSettingsSchemaFor(protocol);
+    const settingsResult = settingsSchema ? settingsSchema.safeParse(settings) : null;
 
     if (settingsResult && !settingsResult.success) {
         settingsResult.error.issues.forEach((issue: any) => {
@@ -194,47 +146,8 @@ export const validateOutbound = (data: any): ValidationError[] => {
     }
 
     // Protocol settings validation
-    let settingsResult: any = null;
-    switch (protocol) {
-        case 'vless':
-            settingsResult = VlessOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'vmess':
-            settingsResult = VmessOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'trojan':
-            settingsResult = TrojanOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'shadowsocks':
-        case 'shadowsocks-2022':
-            settingsResult = ShadowsocksOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'socks':
-            settingsResult = SocksOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'http':
-            settingsResult = HttpOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'freedom':
-            settingsResult = FreedomOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'blackhole':
-            settingsResult = BlackholeOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'dns':
-            settingsResult = DnsOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'loopback':
-            settingsResult = LoopbackOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'hysteria':
-        case 'hysteria2':
-            settingsResult = HysteriaOutboundSettingsSchema.safeParse(settings);
-            break;
-        case 'wireguard':
-            settingsResult = WireguardOutboundSettingsSchema.safeParse(settings);
-            break;
-    }
+    const settingsSchema = outboundSettingsSchemaFor(protocol);
+    const settingsResult = settingsSchema ? settingsSchema.safeParse(settings) : null;
 
     if (settingsResult && !settingsResult.success) {
         settingsResult.error.issues.forEach((issue: any) => {

@@ -4,6 +4,10 @@
 
 import { z } from 'zod';
 import {
+    inboundSettingsSchemaFor,
+    outboundSettingsSchemaFor,
+} from './schemas/settings-by-protocol';
+import {
     XrayConfigSchema,
     InboundSchema,
     OutboundSchema,
@@ -72,8 +76,8 @@ const article = (word: string) => (/^[aeiou]/i.test(word) ? 'an' : 'a');
  * input: expected string, received number"); this names the field and what it
  * wanted, which is the part that tells you what to type instead.
  */
-const describe = (issue: z.core.$ZodIssue): string => {
-    const where = formatPath(issue.path as (string | number)[]);
+const describe = (issue: z.core.$ZodIssue, path: (string | number)[]): string => {
+    const where = formatPath(path);
     const field = where ? `${where}: ` : '';
 
     switch (issue.code) {
@@ -106,6 +110,66 @@ const describe = (issue: z.core.$ZodIssue): string => {
 };
 
 /**
+ * The `settings` block, checked against the protocol beside it.
+ *
+ * The wrapper schemas leave `settings` open — it means something different
+ * for every protocol — so the shape is looked up by `protocol` and the issues
+ * are reported at the path of the block they came from.
+ */
+const settingsIssues = (mode: LintMode, value: unknown): JsonIssue[] => {
+    const issues: JsonIssue[] = [];
+
+    const check = (
+        node: unknown,
+        at: (string | number)[],
+        pick: (protocol: unknown) => z.ZodTypeAny | null,
+    ) => {
+        if (!node || typeof node !== 'object') return;
+        const entry = node as { protocol?: unknown; settings?: unknown };
+        if (entry.settings === undefined || entry.settings === null) return;
+        const schema = pick(entry.protocol);
+        if (!schema) return;
+
+        const result = schema.safeParse(entry.settings);
+        if (result.success) return;
+        for (const issue of result.error.issues) {
+            const path = [...at, 'settings', ...(issue.path as (string | number)[])];
+            issues.push({ path, message: describe(issue, path) });
+        }
+    };
+
+    const eachOf = (list: unknown, at: (string | number)[], pick: (p: unknown) => z.ZodTypeAny | null) => {
+        if (!Array.isArray(list)) return;
+        list.forEach((entry, index) => check(entry, [...at, index], pick));
+    };
+
+    switch (mode) {
+        case 'inbound':
+            check(value, [], inboundSettingsSchemaFor);
+            break;
+        case 'outbound':
+            check(value, [], outboundSettingsSchemaFor);
+            break;
+        case 'inbounds':
+            eachOf(value, [], inboundSettingsSchemaFor);
+            break;
+        case 'outbounds':
+            eachOf(value, [], outboundSettingsSchemaFor);
+            break;
+        case 'full': {
+            const config = (value ?? {}) as { inbounds?: unknown; outbounds?: unknown };
+            eachOf(config.inbounds, ['inbounds'], inboundSettingsSchemaFor);
+            eachOf(config.outbounds, ['outbounds'], outboundSettingsSchemaFor);
+            break;
+        }
+        default:
+            break;
+    }
+
+    return issues;
+};
+
+/**
  * Validates an already-parsed value.
  *
  * Returns at most one issue per path: zod reports every branch of a union it
@@ -113,16 +177,23 @@ const describe = (issue: z.core.$ZodIssue): string => {
  */
 export const lintValue = (mode: LintMode, value: unknown): JsonIssue[] => {
     const result = schemaFor(mode).safeParse(value);
-    if (result.success) return [];
+
+    const found: JsonIssue[] = [];
+    if (!result.success) {
+        for (const issue of result.error.issues) {
+            const path = issue.path as (string | number)[];
+            found.push({ path, message: describe(issue, path) });
+        }
+    }
+    found.push(...settingsIssues(mode, value));
 
     const seen = new Set<string>();
     const issues: JsonIssue[] = [];
-    for (const issue of result.error.issues) {
-        const path = issue.path as (string | number)[];
-        const key = formatPath(path);
+    for (const issue of found) {
+        const key = formatPath(issue.path);
         if (seen.has(key)) continue;
         seen.add(key);
-        issues.push({ path, message: describe(issue) });
+        issues.push(issue);
     }
     return issues;
 };

@@ -4,6 +4,7 @@
 
 import type { z } from 'zod';
 import { schemaFor, type LintMode } from './json-lint';
+import { settingsSchemaFor } from './schemas/settings-by-protocol';
 
 /**
  * The JSON editors offered the root object's keys everywhere, at every depth,
@@ -132,9 +133,65 @@ const step = (schema: Any, segment: string | number): Any => {
     return shape?.[segment] ?? null;
 };
 
-const schemaAtPath = (mode: LintMode, path: (string | number)[]): Any => {
-    let current: Any = schemaFor(mode) as unknown as z.ZodTypeAny;
+/**
+ * Where the protocol for a `settings` block is read from.
+ *
+ * A document works, but completion runs against text that is usually
+ * mid-edit and does not parse — so the editor passes a lookup backed by the
+ * syntax tree instead, which reads a half-written file quite happily.
+ */
+export type ProtocolLookup = (ownerPath: (string | number)[]) => unknown;
+
+/** Reads a value out of the document being edited, if there is one. */
+const valueAt = (root: unknown, path: (string | number)[]): unknown => {
+    let node: Any = root;
     for (const segment of path) {
+        if (node === null || node === undefined) return undefined;
+        node = node[segment as keyof typeof node];
+    }
+    return node;
+};
+
+/** Which side of the config a `settings` block at this path belongs to. */
+const directionAt = (mode: LintMode, path: (string | number)[]): 'inbound' | 'outbound' | null => {
+    if (mode === 'inbound' || mode === 'inbounds') return 'inbound';
+    if (mode === 'outbound' || mode === 'outbounds') return 'outbound';
+    if (mode !== 'full') return null;
+    if (path[0] === 'inbounds') return 'inbound';
+    if (path[0] === 'outbounds') return 'outbound';
+    return null;
+};
+
+/**
+ * Walks the schema down a path.
+ *
+ * `settings` is the one hop the schema alone cannot make: the wrapper leaves
+ * it open because its shape depends on the `protocol` written next to it.
+ * Given the document, the walk switches to that protocol's schema and carries
+ * on, which is how completion can offer `clients` inside a vless inbound and
+ * `vnext` inside a vless outbound.
+ */
+const lookupFrom = (source: unknown | ProtocolLookup): ProtocolLookup => (
+    typeof source === 'function'
+        ? source as ProtocolLookup
+        : (ownerPath) => (valueAt(source, ownerPath) as { protocol?: unknown } | undefined)?.protocol
+);
+
+const schemaAtPath = (mode: LintMode, path: (string | number)[], source?: unknown): Any => {
+    let current: Any = schemaFor(mode) as unknown as z.ZodTypeAny;
+    for (let i = 0; i < path.length; i++) {
+        const segment = path[i]!;
+
+        if (segment === 'settings' && source !== undefined) {
+            const direction = directionAt(mode, path);
+            const protocol = lookupFrom(source)(path.slice(0, i));
+            const settings = direction ? settingsSchemaFor(direction, protocol) : null;
+            if (settings) {
+                current = settings;
+                continue;
+            }
+        }
+
         current = step(current, segment);
         if (!current) return null;
     }
@@ -147,8 +204,8 @@ const schemaAtPath = (mode: LintMode, path: (string | number)[]): Any => {
  * Empty when the path leads somewhere with no fixed keys — a `record` of
  * protocol settings, say — which is the honest answer: anything goes there.
  */
-export const fieldsAt = (mode: LintMode, path: (string | number)[]): FieldHint[] => {
-    const shape = shapeOf(schemaAtPath(mode, path));
+export const fieldsAt = (mode: LintMode, path: (string | number)[], source?: unknown | ProtocolLookup): FieldHint[] => {
+    const shape = shapeOf(schemaAtPath(mode, path, source));
     if (!shape) return [];
     return Object.entries(shape).map(([name, field]) => {
         const { required } = unwrap(field);
@@ -158,7 +215,7 @@ export const fieldsAt = (mode: LintMode, path: (string | number)[]): FieldHint[]
 };
 
 /** The values the field at `path` accepts, when it accepts only a few. */
-export const valuesAt = (mode: LintMode, path: (string | number)[]): string[] => {
-    const schema = schemaAtPath(mode, path);
+export const valuesAt = (mode: LintMode, path: (string | number)[], source?: unknown | ProtocolLookup): string[] => {
+    const schema = schemaAtPath(mode, path, source);
     return schema ? valuesOf(schema) ?? [] : [];
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { rangeAtPath, pathAtPosition, contextAt } from './json-positions';
+import { rangeAtPath, pathAtPosition, contextAt, stringAt } from './json-positions';
 
 const CONFIG = `{
   // routing first
@@ -101,5 +101,25 @@ describe('contextAt', () => {
 
     it('offers keys in an empty object', () => {
         expect(contextAt('{ "routing": { } }', 15)).toEqual({ kind: 'key', path: ['routing'] });
+    });
+});
+
+describe('stringAt', () => {
+    it('reads a string by its path', () => {
+        expect(stringAt(CONFIG, ['inbounds', 0, 'tag'])).toBe('socks-in');
+        expect(stringAt(CONFIG, ['routing', 'rules', 1, 'ruleTag'])).toBe('B');
+    });
+
+    it('reads one out of text that is still being typed', () => {
+        // This is the case it exists for: completion runs on text like this,
+        // and a parse of it throws.
+        const typing = '{ "protocol": "vless", "settings": { "de';
+        expect(stringAt(typing, ['protocol'])).toBe('vless');
+    });
+
+    it('is null for a value that is not a string, or not there', () => {
+        expect(stringAt(CONFIG, ['inbounds', 0, 'port'])).toBeNull();
+        expect(stringAt(CONFIG, ['inbounds', 0, 'nope'])).toBeNull();
+        expect(stringAt(CONFIG, [])).toBeNull();
     });
 });

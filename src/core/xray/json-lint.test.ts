@@ -131,3 +131,63 @@ describe('formatPath', () => {
         expect(formatPath([2, 'tag'])).toBe('[2].tag');
     });
 });
+
+describe('the settings block is checked against its protocol', () => {
+    it('reaches inside a vless inbound and names the client that is wrong', () => {
+        const issues = lintValue('inbound', {
+            tag: 'in', port: 443, protocol: 'vless',
+            settings: { clients: [{ id: 12345 }], decryption: 'none' },
+        });
+        expect(issues).toHaveLength(1);
+        expect(issues[0]!.message).toBe('settings.clients[0].id: expected a string');
+    });
+
+    it('lists what a settings enum accepts', () => {
+        const issues = lintValue('outbound', {
+            tag: 'direct', protocol: 'freedom', settings: { domainStrategy: 'Nonsense' },
+        });
+        expect(issues[0]!.message).toContain('settings.domainStrategy: must be one of');
+        expect(issues[0]!.message).toContain('"UseIP"');
+    });
+
+    it('finds it inside a whole config too', () => {
+        const issues = lintValue('full', {
+            inbounds: [{ tag: 'in', port: 443, protocol: 'trojan', settings: { clients: 'not-a-list' } }],
+        });
+        expect(issues.map(i => formatPath(i.path))).toEqual(['inbounds[0].settings.clients']);
+    });
+
+    it('says nothing about a protocol it has no shape for', () => {
+        // A protocol from a newer core, or a panel's own: not an error.
+        expect(lintValue('outbound', {
+            tag: 'x', protocol: 'something-new', settings: { whatever: true },
+        })).toEqual([]);
+    });
+
+    it('accepts the settings every shipped protocol actually uses', () => {
+        const inbounds = [
+            { protocol: 'vless', settings: { clients: [{ id: 'u', flow: 'xtls-rprx-vision' }], decryption: 'none' } },
+            { protocol: 'vmess', settings: { clients: [{ id: 'u', level: 0 }] } },
+            { protocol: 'trojan', settings: { clients: [{ password: 'p' }] } },
+            { protocol: 'shadowsocks', settings: { method: 'aes-256-gcm', password: 'p', network: 'tcp,udp' } },
+            { protocol: 'socks', settings: { auth: 'noauth', udp: true } },
+            { protocol: 'http', settings: { allowTransparent: false } },
+            { protocol: 'dokodemo-door', settings: { address: '1.1.1.1', port: 53, network: 'tcp,udp' } },
+        ];
+        for (const inbound of inbounds) {
+            expect(lintValue('inbound', { tag: 't', port: 443, ...inbound })).toEqual([]);
+        }
+
+        const outbounds = [
+            { protocol: 'freedom', settings: { domainStrategy: 'UseIP' } },
+            { protocol: 'blackhole', settings: { response: { type: 'http' } } },
+            { protocol: 'dns', settings: { network: 'udp', address: '8.8.8.8', port: 53 } },
+            { protocol: 'loopback', settings: { inboundTag: 'socks-in' } },
+            { protocol: 'vless', settings: { vnext: [{ address: 'e.com', port: 443, users: [{ id: 'u', encryption: 'none' }] }] } },
+            { protocol: 'shadowsocks', settings: { servers: [{ address: 'e.com', port: 443, method: 'aes-256-gcm', password: 'p' }] } },
+        ];
+        for (const outbound of outbounds) {
+            expect(lintValue('outbound', { tag: 't', ...outbound })).toEqual([]);
+        }
+    });
+});

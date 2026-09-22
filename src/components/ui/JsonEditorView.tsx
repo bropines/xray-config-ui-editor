@@ -14,7 +14,7 @@ import { oneDark } from "@codemirror/theme-one-dark";
 
 import { parseJsonc } from "../../utils/jsonc";
 import { lintValue, type LintMode } from "../../core/xray/json-lint";
-import { rangeAtPath, contextAt } from "../../core/xray/json-positions";
+import { rangeAtPath, contextAt, stringAt } from "../../core/xray/json-positions";
 import { fieldsAt, valuesAt } from "../../core/xray/schema-walk";
 import { toast } from "sonner";
 import { t } from '../../i18n';
@@ -132,8 +132,15 @@ export const JsonEditorView = ({ value, onChange, readOnly = false, schemaMode =
                 const quoted = doc[word.from] === '"';
                 const options: any[] = [];
 
+                // A `settings` block takes its shape from the `protocol`
+                // written beside it. Read from the tree rather than by
+                // parsing: completion runs on text that is mid-edit, which is
+                // exactly the text a parse refuses.
+                const protocolAt = (ownerPath: (string | number)[]) =>
+                    stringAt(doc, [...ownerPath, 'protocol'], tree) ?? undefined;
+
                 if (where.kind === 'value') {
-                    for (const value of valuesAt(schemaMode as LintMode, where.path)) {
+                    for (const value of valuesAt(schemaMode as LintMode, where.path, protocolAt)) {
                         options.push({
                             label: quoted ? `"${value}"` : value,
                             apply: quoted ? `"${value}"` : `"${value}"`,
@@ -157,7 +164,7 @@ export const JsonEditorView = ({ value, onChange, readOnly = false, schemaMode =
                         break;
                     }
 
-                    for (const field of fieldsAt(schemaMode as LintMode, where.path)) {
+                    for (const field of fieldsAt(schemaMode as LintMode, where.path, protocolAt)) {
                         if (taken.has(field.name)) continue;
                         options.push({
                             label: quoted ? `"${field.name}"` : field.name,

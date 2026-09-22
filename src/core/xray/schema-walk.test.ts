@@ -74,3 +74,48 @@ describe('valuesAt', () => {
         expect(valuesAt('rule', ['ruleTag'])).toEqual([]);
     });
 });
+
+describe('settings follow the protocol beside them', () => {
+    const config = {
+        inbounds: [{ tag: 'in', protocol: 'vless', settings: { clients: [{ id: 'u' }] } }],
+        outbounds: [{ tag: 'out', protocol: 'freedom', settings: {} }],
+    };
+
+    it('offers a vless inbound its own settings keys', () => {
+        const fields = fieldsAt('full', ['inbounds', 0, 'settings'], config).map(f => f.name);
+        expect(fields).toContain('clients');
+        expect(fields).toContain('decryption');
+        expect(fields).not.toContain('vnext');
+    });
+
+    it('offers a freedom outbound different ones', () => {
+        const fields = fieldsAt('full', ['outbounds', 0, 'settings'], config).map(f => f.name);
+        expect(fields).toContain('domainStrategy');
+        expect(fields).toContain('fragment');
+        expect(fields).not.toContain('clients');
+    });
+
+    it('goes deeper than the settings block itself', () => {
+        const fields = fieldsAt('full', ['inbounds', 0, 'settings', 'clients', 0], config).map(f => f.name);
+        expect(fields).toContain('id');
+        expect(fields).toContain('flow');
+    });
+
+    it('answers for a bare inbound as well as one inside a config', () => {
+        const inbound = { protocol: 'socks', settings: {} };
+        expect(fieldsAt('inbound', ['settings'], inbound).map(f => f.name)).toContain('auth');
+    });
+
+    it('offers the values a settings enum accepts', () => {
+        expect(valuesAt('full', ['outbounds', 0, 'settings', 'domainStrategy'], config)).toContain('UseIP');
+    });
+
+    it('says nothing without a document to read the protocol from', () => {
+        expect(fieldsAt('full', ['inbounds', 0, 'settings'])).toEqual([]);
+    });
+
+    it('says nothing for a protocol it has no shape for', () => {
+        const unknown = { inbounds: [{ protocol: 'brand-new', settings: {} }] };
+        expect(fieldsAt('full', ['inbounds', 0, 'settings'], unknown)).toEqual([]);
+    });
+});

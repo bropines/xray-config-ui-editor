@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.19.0] - 2026-09-22
+
+### Changed
+- **The JSON editors now check `settings` too — the last place they were blind.** A protocol's settings block means something different for every protocol, so the wrapper schema left it open and nothing looked inside: a vless inbound whose client `id` was a number passed the JSON view without a word, while the form next door reported it. The 22 protocol schemas needed to check it have been in the repository all along, read only by the form validator.
+  - The protocol-to-schema table was a `switch` buried in that validator. It is one table now, read by both, and about 90 lines of it disappeared. A form and a JSON view can no longer disagree about what a settings block may hold.
+  - Errors land where they belong: `inbounds[0].settings.clients[0].id: expected a string`.
+  - A protocol the schemas have never heard of is still not an error — nothing is checked where nothing is known.
+- **Completion follows `settings` into the protocol beside it.** Inside a vless inbound it offers `clients`, `decryption` and `fallbacks`; inside a freedom outbound, `domainStrategy`, `fragment` and `noises`. The protocol is read from the parse tree rather than by parsing the document, because completion runs exactly when the document does not parse — which is the whole point of it.
+
 ## [1.18.0] - 2026-09-22
 
 ### Fixed

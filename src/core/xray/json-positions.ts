@@ -148,6 +148,60 @@ export const pathAtPosition = (
     return path;
 };
 
+/**
+ * The string written at `path`, or null if there is none there.
+ *
+ * Answered from the tree, so it still works on the half-typed document that
+ * completion actually runs against — where a parse would simply throw.
+ */
+export const stringAt = (
+    text: string,
+    path: (string | number)[],
+    tree: Tree = treeFor(text),
+): string | null => {
+    if (path.length === 0) return null;
+    const owner = path.slice(0, -1);
+    const key = path[path.length - 1];
+    if (typeof key !== 'string') return null;
+
+    let node = rootValue(tree);
+    if (!node) return null;
+
+    for (const segment of owner) {
+        if (typeof segment === 'number') {
+            if (node.name !== 'Array') return null;
+            const entry: SyntaxNode | undefined = childValues(node)[segment];
+            if (!entry) return null;
+            node = entry;
+            continue;
+        }
+        if (node.name !== 'Object') return null;
+        let next: SyntaxNode | null = null;
+        for (let child = node.firstChild; child; child = child.nextSibling) {
+            if (child.name !== 'Property') continue;
+            const nameNode = child.firstChild;
+            if (!nameNode || nameNode.name !== 'PropertyName') continue;
+            if (nameOf(text, nameNode) !== segment) continue;
+            next = valueOf(child);
+            break;
+        }
+        if (!next) return null;
+        node = next;
+    }
+
+    if (node.name !== 'Object') return null;
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+        if (child.name !== 'Property') continue;
+        const nameNode = child.firstChild;
+        if (!nameNode || nameNode.name !== 'PropertyName') continue;
+        if (nameOf(text, nameNode) !== key) continue;
+        const value = valueOf(child);
+        if (!value || value.name !== 'String') return null;
+        return nameOf(text, value);
+    }
+    return null;
+};
+
 /** Whether the cursor is writing a key or the value that follows one. */
 export interface CursorContext {
     kind: 'key' | 'value';
