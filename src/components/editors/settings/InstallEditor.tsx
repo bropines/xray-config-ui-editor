@@ -25,6 +25,14 @@ const checkText = (id: string): string => ({
     'sw-controlling': t("The service worker controls this page"),
 }[id] ?? id);
 
+/** Detail codes the core reports; anything else is already technical. */
+const detailText = (detail: string): string => ({
+    'restored:stripped-here': t("The server sends it, but something in this browser removed it — put back."),
+    'restored:not-served': t("The page as served has no manifest link — put back."),
+    'restored:unknown': t("It was missing — put back."),
+    'cannot-add': t("It is missing and could not be added."),
+}[detail] ?? detail);
+
 const Row = ({ check }: { check: Check }) => {
     const tone = check.status === 'pass' ? 'text-emerald-400'
         : check.status === 'fail' ? 'text-rose-400'
@@ -38,7 +46,7 @@ const Row = ({ check }: { check: Check }) => {
             <div className="min-w-0">
                 <span className="text-slate-300">{checkText(check.id)}</span>
                 {check.detail && (
-                    <span className="block font-mono text-[10px] text-slate-500 break-words">{check.detail}</span>
+                    <span className="block font-mono text-[10px] text-slate-500 break-words">{detailText(check.detail)}</span>
                 )}
             </div>
         </div>

@@ -2093,4 +2093,10 @@ export const ru: Record<string, string> = {
     'Every declared icon actually loads': 'Каждая объявленная иконка действительно грузится',
     'A service worker is installed': 'Service worker установлен',
     'The service worker controls this page': 'Service worker контролирует эту страницу',
+    'The server sends it, but something in this browser removed it — put back.':
+        'Сервер его отдаёт, но что-то в этом браузере его убрало — поставили обратно.',
+    'The page as served has no manifest link — put back.':
+        'В отданной странице ссылки на манифест нет — поставили обратно.',
+    'It was missing — put back.': 'Его не было — поставили обратно.',
+    'It is missing and could not be added.': 'Его нет, и добавить не получилось.',
 };

@@ -4,6 +4,7 @@ import { App } from "./App";
 import { useLang } from "./i18n";
 import { warmCyrillicSubsets } from "./utils/fonts";
 import { watchInstallPrompt } from "./core/pwa/install-prompt";
+import { ensureManifestLink } from "./core/pwa/manifest-link";
 
 /**
  * Remounts the app when the language changes.
@@ -20,6 +21,11 @@ const I18nRoot = () => {
 };
 
 warmCyrillicSubsets();
+
+// The build puts `<link rel="manifest">` in index.html and the deployed file
+// carries it, yet on some Android browsers it is gone from the DOM by the time
+// scripts run — and the browser then refuses to install. Put it back.
+ensureManifestLink();
 
 // The browser fires its install offer once, early; nothing would catch it
 // by the time Settings is opened.

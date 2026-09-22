@@ -12,6 +12,8 @@
  * from another machine took a deploy cycle per hypothesis.
  */
 
+import { ensureManifestLink, manifestHref } from './manifest-link';
+
 export type CheckStatus = 'pass' | 'fail' | 'unknown';
 
 export interface Check {
@@ -62,16 +64,36 @@ export const checkInstallReadiness = async (promptAvailable: boolean): Promise<I
     add('secure', isSecureContext ? 'pass' : 'fail', isSecureContext ? undefined : location.protocol);
 
     // ── Manifest ────────────────────────────────────────────────────────────
+    // Restoring it here as well as at boot: a blocker that strips the tag may
+    // have done so again since, and a diagnostic that leaves the page broken
+    // is half a diagnostic.
+    const state = ensureManifestLink();
     const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (!link) {
-        add('manifest-link', 'fail');
+        add('manifest-link', 'fail', 'cannot-add');
         return { checks, installed, promptAvailable };
     }
-    add('manifest-link', 'pass');
+    if (state === 'restored') {
+        // Whether the server sent it decides who to blame: the build, or
+        // something in this browser rewriting <head>.
+        let servedIt: boolean | null;
+        try {
+            const html = await fetch(location.href, { cache: 'no-store' }).then(response => response.text());
+            servedIt = /rel=["']manifest["']/.test(html.slice(0, html.indexOf('</head>') + 1));
+        } catch {
+            servedIt = null;
+        }
+        add('manifest-link', 'unknown',
+            servedIt === true ? 'restored:stripped-here'
+            : servedIt === false ? 'restored:not-served'
+            : 'restored:unknown');
+    } else {
+        add('manifest-link', 'pass');
+    }
 
     let manifest: any = null;
     try {
-        const response = await fetch(link.href, { cache: 'no-store' });
+        const response = await fetch(link.href || manifestHref(), { cache: 'no-store' });
         if (!response.ok) {
             add('manifest-fetch', 'fail', `${response.status}`);
         } else {

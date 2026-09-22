@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1] - 2026-09-22
+
+### Fixed
+- **The manifest link was missing from the page in at least one Android browser**, which is why the app could not be installed there — the diagnostic added in 1.7.0 named it on the first try. The build injects `<link rel="manifest">` and the deployed HTML demonstrably carries it, so something in that browser rewrites `<head>`: a content blocker, a reader mode, a translation layer. None of them say so. The app now checks for the tag at boot and puts it back when it is gone, and the diagnostic reports whether the served page had it — which distinguishes a broken build from a browser that strips it.
+
 ## [1.7.0] - 2026-09-22
 
 ### Added
