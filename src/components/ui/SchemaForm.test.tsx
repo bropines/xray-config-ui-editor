@@ -101,17 +101,57 @@ describe('a list of objects', () => {
         expect(container.textContent).not.toContain('[object Object]');
     });
 
-    it('hands it to the JSON editor, where the objects can be read and edited', async () => {
-        render(
+    it('gives each entry real fields, not a JSON box', () => {
+        const { container } = render(
             <SchemaForm
                 schema={withCerts}
                 value={{ certificates: [{ certificateFile: '/etc/xray/tls.crt', keyFile: '/etc/xray/tls.key' }] }}
                 onChange={() => {}}
             />,
         );
-        // CodeMirror is fetched on demand, so the field is the editor's
-        // boundary first and the editor once it lands.
-        expect(await screen.findByText(/certificateFile|Loading editor/)).toBeDefined();
+        const values = Array.from(container.querySelectorAll('input')).map(i => (i as HTMLInputElement).value);
+        expect(values).toContain('/etc/xray/tls.crt');
+        expect(values).toContain('/etc/xray/tls.key');
+        // The field the entry came from, spelled as a label rather than as JSON.
+        expect(container.textContent).toContain('Certificate File');
+        expect(container.querySelector('.cm-editor')).toBeNull();
+    });
+
+    it('edits one entry without disturbing the others', () => {
+        let received: any = null;
+        const { container } = render(
+            <SchemaForm
+                schema={withCerts}
+                value={{ certificates: [{ keyFile: 'first.key' }, { keyFile: 'second.key' }] }}
+                onChange={next => { received = next; }}
+            />,
+        );
+        const input = Array.from(container.querySelectorAll('input'))
+            .find(i => (i as HTMLInputElement).value === 'second.key') as HTMLInputElement;
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+        setter.call(input, 'changed.key');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        expect(received.certificates).toHaveLength(2);
+        expect(received.certificates[0].keyFile).toBe('first.key');
+        expect(received.certificates[1].keyFile).toBe('changed.key');
+    });
+
+    it('can add an entry and drop one', () => {
+        let received: any = null;
+        const { container } = render(
+            <SchemaForm
+                schema={withCerts}
+                value={{ certificates: [{ keyFile: 'only.key' }] }}
+                onChange={next => { received = next; }}
+            />,
+        );
+        const buttons = Array.from(container.querySelectorAll('button'));
+        fireEvent.click(buttons.find(b => /Add|Добавить/.test(b.textContent ?? ''))!);
+        expect(received.certificates).toHaveLength(2);
+
+        fireEvent.click(container.querySelector('button[title]')!);
+        expect(received.certificates).toHaveLength(0);
     });
 
     it('still gives a list of strings its tag input', () => {

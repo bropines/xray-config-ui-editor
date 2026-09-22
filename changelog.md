@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.19.4] - 2026-09-22
+
+### Changed
+- **A list of objects gets fields now, not a JSON box.** Yesterday's fix traded `[object Object]` tags for a JSON editor embedded in a form row, which is the form giving up: the element's shape is in the schema, so it can be drawn. Each entry is a card with the real inputs — for a TLS certificate that is Certificate File, Key File, Usage, Build Chain, OCSP Stapling and the rest — with an Add and a Remove around them. The JSON remains only for an element whose shape nothing knows, where there is genuinely nothing to draw.
+
+### Fixed
+- **Typing a certificate path threw away every certificate but the first.** The quick pair at the top of the TLS block wrote `[{ ...first, keyFile }]` — the whole array — so a config with two certificates silently lost the second one the moment either box was touched. It edits the first entry and leaves the rest alone.
+
 ## [1.19.3] - 2026-09-22
 
 ### Fixed

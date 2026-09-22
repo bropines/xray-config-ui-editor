@@ -10,6 +10,7 @@ import { DurationInput } from './DurationInput';
 import { DURATION_FIELD_SPECS, getSchemaTypeAndDetails } from './schema-introspection';
 import type { TimeUnit } from './duration';
 import { Icon } from './Icon';
+import { Button } from './Button';
 import { generateRealityShortIds, generateX25519Keys, generateSpiderPath } from '../../core/generators';
 import { toast } from 'sonner';
 import { t } from '../../i18n';
@@ -134,23 +135,87 @@ export const SchemaField = ({
                 }
             };
 
-            // A list of objects — TLS certificates, fallbacks, peers — has no
-            // tag form: String() on each entry gives "[object Object]", which
-            // is what this showed, and editing one of those tags would have
-            // replaced the object with that literal string. The JSON is the
-            // only honest control for a value of that shape.
+            // A list of objects — TLS certificates, fallbacks, peers. The tag
+            // input calls String() on each entry, which is where the
+            // "[object Object]" tags came from; but the answer is not a JSON
+            // box in the middle of a form either. The element's shape is in
+            // the schema, so each entry gets the same fields any other object
+            // would, with an Add and a Remove around them.
             if (innerDetails.type === 'object') {
+                const entries: any[] = Array.isArray(value) ? value : [];
+                const elementShape = (details.innerSchema as any)?.shape as Record<string, any> | undefined;
+
+                const replaceAt = (index: number, next: any) =>
+                    onChange(entries.map((entry, i) => (i === index ? next : entry)));
+                const removeAt = (index: number) =>
+                    onChange(entries.filter((_, i) => i !== index));
+
+                // Only an element nothing knows the shape of — a bare record —
+                // has no fields to draw, and then the JSON is all there is.
+                if (!elementShape) {
+                    return (
+                        <FormField label={fieldLabel} help={help} error={error}>
+                            <div className="h-48">
+                                <JsonField
+                                    label=""
+                                    value={entries}
+                                    onChange={(next: any) => onChange(next)}
+                                    schemaMode="none"
+                                    className="h-full"
+                                    inline
+                                />
+                            </div>
+                        </FormField>
+                    );
+                }
+
+                const setKey = (index: number, key: string, next: any) => {
+                    const entry = { ...(entries[index] ?? {}) };
+                    if (next === undefined || next === '') delete entry[key];
+                    else entry[key] = next;
+                    replaceAt(index, entry);
+                };
+
                 return (
                     <FormField label={fieldLabel} help={help} error={error}>
-                        <div className="h-48">
-                            <JsonField
-                                label=""
-                                value={Array.isArray(value) ? value : []}
-                                onChange={(next: any) => onChange(next)}
-                                schemaMode="none"
-                                className="h-full"
-                                inline
-                            />
+                        <div className="flex flex-col gap-3">
+                            {entries.map((entry, index) => (
+                                <div
+                                    key={index}
+                                    className="relative rounded-xl border border-slate-800 bg-slate-950/40 p-3 pt-8"
+                                >
+                                    <span className="absolute top-2 left-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                        {fieldLabel} #{index + 1}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeAt(index)}
+                                        title={t("Remove")}
+                                        className="absolute top-1 right-1.5 p-2 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-slate-800/60 transition-colors"
+                                    >
+                                        <Icon name="Trash" className="text-sm" />
+                                    </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {Object.entries(elementShape).map(([key, subSchema]) => (
+                                            <SchemaField
+                                                key={key}
+                                                name={key}
+                                                schema={subSchema as any}
+                                                value={(entry ?? {})[key]}
+                                                onChange={next => setKey(index, key, next)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            <Button
+                                variant="secondary"
+                                icon="Plus"
+                                className="text-xs py-1.5 self-start"
+                                onClick={() => onChange([...entries, {}])}
+                            >
+                                {t("Add")}
+                            </Button>
                         </div>
                     </FormField>
                 );

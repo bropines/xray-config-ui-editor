@@ -83,6 +83,18 @@ const ForeignFieldNotice = ({ fields, side }: { fields: string[]; side: 'inbound
     );
 };
 
+/**
+ * The quick pair of paths edits the first certificate and leaves the rest of
+ * the list alone. It used to write `[{ ...first, keyFile }]` — which is the
+ * whole array — so a config with two certificates lost the second one the
+ * moment either box was typed in.
+ */
+const withFirstCertificate = (list: any[] | undefined, patch: Record<string, string>): any[] => {
+    const certificates = Array.isArray(list) ? [...list] : [];
+    certificates[0] = { ...(certificates[0] ?? {}), ...patch };
+    return certificates;
+};
+
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
     // Which security fields belong to which side is declared once, in
     // core/xray/field-directions. These used to be five hand-written
@@ -258,10 +270,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <input className="input-base text-xs font-mono" placeholder={t("Certificate file path (e.g. /path/to/fullchain.crt)")}
                                     value={tlsCertificates.value?.[0]?.certificateFile || ""}
-                                    onChange={e => tlsCertificates.onChange([{ ...tlsCertificates.value?.[0], certificateFile: e.target.value }])} />
+                                    onChange={e => tlsCertificates.onChange(withFirstCertificate(tlsCertificates.value, { certificateFile: e.target.value }))} />
                                 <input className="input-base text-xs font-mono" placeholder={t("Private key file path (e.g. /path/to/private.key)")}
                                     value={tlsCertificates.value?.[0]?.keyFile || ""}
-                                    onChange={e => tlsCertificates.onChange([{ ...tlsCertificates.value?.[0], keyFile: e.target.value }])} />
+                                    onChange={e => tlsCertificates.onChange(withFirstCertificate(tlsCertificates.value, { keyFile: e.target.value }))} />
                             </div>
                         </div>
                     )}
