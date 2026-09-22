@@ -16,7 +16,7 @@ export const VersionHistoryModal = ({ onClose }: { onClose: () => void }) => {
     const history = histories[activeKey] || [];
 
     const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(
-        history.length > 0 ? history[0].id : null
+        history[0]?.id ?? null
     );
 
     const selectedSnapshot = history.find(h => h.id === selectedSnapshotId);

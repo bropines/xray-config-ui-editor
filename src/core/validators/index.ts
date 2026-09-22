@@ -282,7 +282,7 @@ export const validateWireguard = (data: any): ValidationError[] => {
                 const index = path[1];
                 const fieldName = path[2];
                 errors.push({
-                    field: `peer_${index}_${fieldName}`,
+                    field: `peer_${index}_${String(fieldName)}`,
                     message: issue.message
                 });
             } else {

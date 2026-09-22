@@ -11,6 +11,16 @@ import { generateRealityShortIds, generateX25519Keys, generateSpiderPath } from 
 import { toast } from 'sonner';
 import { t } from '../../i18n';
 
+/**
+ * The schema's runtime kind — `'string'`, `'optional'`, `'union'` and so on.
+ *
+ * Read structurally rather than with `instanceof` so a schema that came from
+ * a different copy of zod is still recognised. zod 3 spelled this
+ * `_def.typeName` ('ZodString'); zod 4 spells it `_def.type` ('string').
+ */
+const defTag = (schema: unknown): string | undefined =>
+    (schema as { _def?: { type?: string } } | null)?._def?.type;
+
 // Helper to inspect the Zod type at runtime
 export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     type: 'string' | 'number' | 'boolean' | 'enum' | 'object' | 'array' | 'unknown';
@@ -23,34 +33,34 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     while (
         current instanceof z.ZodOptional ||
         current instanceof z.ZodNullable ||
-        current._def.typeName === 'ZodOptional' ||
-        current._def.typeName === 'ZodNullable' ||
-        current._def.typeName === 'ZodDefault'
+        defTag(current) === 'optional' ||
+        defTag(current) === 'nullable' ||
+        defTag(current) === 'default'
     ) {
         current = (current as any).unwrap ? (current as any).unwrap() : (current as any)._def.innerType;
     }
 
-    const typeName = current._def?.typeName;
+    const typeName = defTag(current);
 
-    if (current instanceof z.ZodString || typeName === 'ZodString') {
+    if (current instanceof z.ZodString || typeName === 'string') {
         return { type: 'string' };
     }
-    if (current instanceof z.ZodNumber || typeName === 'ZodNumber') {
+    if (current instanceof z.ZodNumber || typeName === 'number') {
         return { type: 'number' };
     }
-    if (current instanceof z.ZodBoolean || typeName === 'ZodBoolean') {
+    if (current instanceof z.ZodBoolean || typeName === 'boolean') {
         return { type: 'boolean' };
     }
-    if (current instanceof z.ZodEnum || typeName === 'ZodEnum') {
+    if (current instanceof z.ZodEnum || typeName === 'enum') {
         return { type: 'enum', options: (current as any).options };
     }
-    if (current instanceof z.ZodObject || typeName === 'ZodObject') {
+    if (current instanceof z.ZodObject || typeName === 'object') {
         return { type: 'object', innerSchema: current };
     }
-    if (current instanceof z.ZodArray || typeName === 'ZodArray') {
+    if (current instanceof z.ZodArray || typeName === 'array') {
         return { type: 'array', innerSchema: (current as any).element };
     }
-    if (current instanceof z.ZodUnion || typeName === 'ZodUnion') {
+    if (current instanceof z.ZodUnion || typeName === 'union') {
         const options = (current as any)._def.options || [];
         
         // 1. Check if any union branch is an enum with defined options
@@ -63,7 +73,7 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
 
         // 2. Check if all union branches are literals (e.g. z.literal(0) | z.literal(1))
         const literalValues = options
-            .filter((opt: any) => opt instanceof z.ZodLiteral || opt._def?.typeName === 'ZodLiteral')
+            .filter((opt: any) => opt instanceof z.ZodLiteral || defTag(opt) === 'literal')
             .map((opt: any) => String(opt._def?.value ?? (opt as any).value));
         if (literalValues.length > 0 && literalValues.length === options.length) {
             return { type: 'enum', options: literalValues };
@@ -74,11 +84,11 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
             let u = opt;
             while (
                 u instanceof z.ZodOptional || u instanceof z.ZodNullable ||
-                u._def.typeName === 'ZodOptional' || u._def.typeName === 'ZodNullable' || u._def.typeName === 'ZodDefault'
+                defTag(u) === 'optional' || defTag(u) === 'nullable' || defTag(u) === 'default'
             ) {
                 u = u.unwrap ? u.unwrap() : u._def.innerType;
             }
-            return u instanceof z.ZodString || u._def?.typeName === 'ZodString';
+            return u instanceof z.ZodString || defTag(u) === 'string';
         });
         if (hasString) {
             return { type: 'string' };

@@ -72,7 +72,7 @@ export const summariseDns = (config: XrayConfig | null | undefined): DnsSummary 
     const rules = (config?.routing?.rules || []) as any[];
 
     const rawServers = Array.isArray(dns?.servers) ? dns.servers : [];
-    const servers = rawServers.map(addressOf).filter((a: string | null): a is string => !!a);
+    const servers: string[] = rawServers.map(addressOf).filter((a: string | null): a is string => !!a);
     const scopedServers = rawServers.filter(isScoped).length;
 
     const fakeDnsRaw = (config as any)?.fakedns ?? dns?.fakedns;

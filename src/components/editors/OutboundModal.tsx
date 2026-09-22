@@ -38,7 +38,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
         if (parsed.multiple && Array.isArray(parsed.outbounds)) {
             const [primary, ...others] = parsed.outbounds;
             setLocal(primary);
-            others.forEach(outbound => addItem('outbounds', outbound));
+            others.forEach((outbound: any) => addItem('outbounds', outbound));
             toast.success(tn(parsed.outbounds.length, "Imported {n} outbound (chained)", "Imported {n} outbounds (chained)"));
         } else {
             setLocal(parsed);

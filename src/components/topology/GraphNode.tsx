@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Icon } from '../ui/Icon';
 
-const colors: Record<string, string> = {
+const colors: Record<string, string> & { default: string } = {
     inbound: "border-emerald-500/50 bg-emerald-900/20 text-emerald-100",
     outbound: "border-blue-500/50 bg-blue-900/20 text-blue-100",
     rule: "border-slate-500/50 bg-slate-800 text-slate-200",
@@ -10,7 +10,7 @@ const colors: Record<string, string> = {
     default: "border-slate-700 bg-slate-900 text-slate-400"
 };
 
-const icons: Record<string, string> = {
+const icons: Record<string, string> & { default: string } = {
     inbound: "ArrowCircleDown",
     outbound: "PaperPlaneRight",
     rule: "ArrowsSplit",
@@ -20,8 +20,8 @@ const icons: Record<string, string> = {
 
 export const GraphNode = memo(({ data }: any) => {
     const type = data.type || 'default';
-    const style = colors[type] || colors.default;
-    const iconName = icons[type] || icons.default;
+    const style = colors[type] ?? colors.default;
+    const iconName = icons[type] ?? icons.default;
 
     return (
         // Добавил mx-auto для центрирования, если нужно

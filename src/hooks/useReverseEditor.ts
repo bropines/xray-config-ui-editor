@@ -22,7 +22,11 @@ export const useReverseEditor = () => {
 
     const updateItem = useCallback((type: 'bridges' | 'portals', idx: number, field: string, val: string) => {
         const n = [...(reverse[type] || [])];
-        n[idx] = { ...n[idx], [field]: val };
+        const current = n[idx];
+        // An index past the end would otherwise write a half-formed entry
+        // with neither tag nor domain.
+        if (!current) return;
+        n[idx] = { ...current, [field]: val };
         updateList(type, n);
     }, [reverse, updateList]);
 

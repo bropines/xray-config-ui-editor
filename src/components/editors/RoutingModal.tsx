@@ -148,7 +148,7 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                                             <span>
                                                 <b className="text-rose-200">{r.label}</b>
                                                 {" — "}
-                                                {r.errors[0].message}
+                                                {r.errors[0]?.message}
                                                 {r.errors.length > 1 && <span className="text-rose-400/60">{t(" (+{n} more)", { n: r.errors.length - 1 })}</span>}
                                             </span>
                                         </button>

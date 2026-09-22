@@ -234,8 +234,9 @@ export const SmartTagInput = ({
             e.preventDefault();
             e.stopPropagation();
             
-            if (showSuggest && focusedIndex >= 0 && focusedIndex < filteredSuggestions.length) {
-                processAndAddTags(`${prefix}${filteredSuggestions[focusedIndex].code}`);
+            const focused = showSuggest && focusedIndex >= 0 ? filteredSuggestions[focusedIndex] : undefined;
+            if (focused) {
+                processAndAddTags(`${prefix}${focused.code}`);
             } else {
                 processAndAddTags(input);
             }
@@ -243,7 +244,7 @@ export const SmartTagInput = ({
             setShowSuggest(false);
             setFocusedIndex(-1);
         } else if (e.key === 'Backspace' && !input && value.length > 0) {
-            removeTag(value[value.length - 1]);
+            removeTag(value[value.length - 1]!);
         }
     };
 
@@ -295,6 +296,7 @@ export const SmartTagInput = ({
 
         const newValue = [...value];
         const [moved] = newValue.splice(oldIndex, 1);
+        if (moved === undefined) return;
         newValue.splice(newIndex, 0, moved);
         onChange(newValue);
         toast.success(t("Tags reordered"));

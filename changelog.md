@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0] - 2026-09-22
+
+### Fixed
+- **Type errors are at zero, down from 141 three releases ago.** The project builds with esbuild, which does not typecheck, so everything below had been shipping quietly. Among the last 43:
+  - **The dashboard's own Git Log button would have thrown.** Its hook promised a `history` field the store has never had, so it was `undefined`, and `history.length` would have crashed the dashboard on render. Nothing caught it because the button is behind an `onOpenHistory` prop no caller passes. The field now reads the active profile's history for real.
+  - **A balancer's errors never reached the form.** `validateBalancer` returns plain messages; the editor folded them into a `{field: message}` record, so every key was `undefined` and the form received nothing. "Balancer tag is missing" had no way to appear at all — only the selector message did, and only in its own panel. All of them show now.
+  - **The DNS server rows lied about their handlers.** They declared `onClick`/`onDelete` as taking an index while the list passes closures, so the row handed `onClick` a MouseEvent and called `onDelete` with nothing. It worked because the closures ignore their arguments; the declaration was the wrong half.
+  - **Zod 4 renamed the runtime tag and the fallbacks went dead with it.** `SchemaField` recognises a field's type by `instanceof` with a structural fallback for schemas built by a second copy of zod — and that fallback read `_def.typeName`, which zod 3 wrote and zod 4 does not. Fourteen comparisons that could never be true; they read `_def.type` now.
+  - Editing a reverse-proxy entry by an out-of-range index would have written a half-formed one with neither tag nor domain. A WireGuard peer error whose path segment was a symbol would have thrown while being formatted into the field name. The dashboard's JSON editor declared a `setConfig` that drops the raw text its caller passes and its store accepts.
+  - The transport editor's `errors` prop was typed as a keyed map, while both the inbound and outbound editors pass an array — the code has always handled both; only the type disagreed.
+
 ## [1.11.0] - 2026-09-22
 
 ### Changed

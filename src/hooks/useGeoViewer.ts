@@ -111,9 +111,10 @@ export const useGeoViewer = () => {
             
             if (!buffer) {
                 const cached = await loadCachedData(currentUrl + "_raw");
-                if (cached && cached.buffer) {
-                    buffer = cached.buffer;
-                    binaryCache.set(currentUrl, buffer);
+                const cachedBuffer: ArrayBuffer | undefined = cached?.buffer;
+                if (cachedBuffer) {
+                    buffer = cachedBuffer;
+                    binaryCache.set(currentUrl, cachedBuffer);
                 }
             }
 

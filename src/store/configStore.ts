@@ -265,8 +265,22 @@ function resolveMutableConfig(
     return state.config ? parseJsonc(stringifyJsonc(state.config)) : fallbackDefault;
 }
 
+/**
+ * The slice that survives a reload. Everything else — hydration flags, in-
+ * flight loading state, geo caches — is per session and rebuilt on start.
+ */
+type PersistedConfig =
+    Pick<ConfigState,
+        'config' | 'rawConfigText' | 'coreVersion' | 'warpWorkerUrl' | 'spiderPaths'
+        | 'profiles' | 'activeProfileId' | 'baselineConfigJson' | 'histories'
+        | 'historyLimit' | 'autoSave'>
+    & {
+        remnawave: Pick<ConfigState['remnawave'], 'url' | 'token' | 'connected' | 'activeProfileUuid'>;
+        snippetLibrary: ConfigState['snippetLibrary'];
+    };
+
 export const useConfigStore = create(
-    persist<ConfigState>(
+    persist<ConfigState, [], [], PersistedConfig>(
         (set, get) => ({
             config: null,
             rawConfigText: null,
@@ -762,7 +776,7 @@ export const useConfigStore = create(
                 const history = histories[key] || [];
 
                 // Compare against previous snapshot — skip if nothing changed
-                const prevConfig = history.length > 0 ? history[0].config : null;
+                const prevConfig = history[0]?.config ?? null;
                 const currentJson = JSON.stringify(config);
                 const prevJson = prevConfig ? JSON.stringify(prevConfig) : '';
                 if (currentJson === prevJson) return null;
@@ -844,7 +858,7 @@ export const useConfigStore = create(
                 const deduped = history.filter((snapshot, idx) => {
                     if (idx === history.length - 1) return true;
                     const next = history[idx + 1];
-                    return JSON.stringify(snapshot.config) !== JSON.stringify(next.config);
+                    return JSON.stringify(snapshot.config) !== JSON.stringify(next?.config);
                 });
                 const removed = history.length - deduped.length;
                 set({ histories: { ...histories, [key]: deduped } });
@@ -937,7 +951,7 @@ export const useConfigStore = create(
                     return;
                 }
                 const remaining = profiles.filter(p => p.id !== id);
-                const nextActive = activeProfileId === id ? remaining[0].id : activeProfileId;
+                const nextActive = activeProfileId === id ? remaining[0]!.id : activeProfileId;
                 const nextProfile = remaining.find(p => p.id === nextActive);
                 const nextConfig = nextProfile?.config || null;
                 const nextText = nextProfile?.rawConfigText || (nextConfig ? stringifyJsonc(nextConfig, 2) : null);

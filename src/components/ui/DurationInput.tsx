@@ -40,7 +40,7 @@ export function parseDuration(raw: string | number | undefined | null, fallbackU
     const str = String(raw).trim();
     const match = str.match(/^([+-]?\d+(?:\.\d+)?)\s*(ms|s|m|h)?$/i);
     if (match) {
-        const numStr = match[1];
+        const numStr = match[1]!;
         const unitStr = (match[2]?.toLowerCase() as TimeUnit) || fallbackUnit;
         return { amount: numStr, unit: unitStr };
     }
@@ -123,7 +123,7 @@ export const DurationInput: React.FC<DurationInputProps> = ({
         // Check if user pasted/typed a string with unit e.g. "500ms" or "2m"
         const match = raw.match(/^([+-]?\d+(?:\.\d+)?)\s*(ms|s|m|h)?$/i);
         if (match && match[2]) {
-            const numPart = match[1];
+            const numPart = match[1]!;
             const unitPart = match[2].toLowerCase() as TimeUnit;
             if (unitOptions.includes(unitPart)) {
                 setSelectedUnit(unitPart);

@@ -41,7 +41,6 @@ export function useConfigDashboardGit(): ConfigDashboardGit {
     revertToBaseline,
     baselineConfigJson,
     config: storeConfig,
-    history,
     rawConfigText,
     recordSnapshot,
   } = useConfigStore();
@@ -49,14 +48,19 @@ export function useConfigDashboardGit(): ConfigDashboardGit {
   const histories = useConfigStore((state) => state.histories);
   const remnawave = useConfigStore((state) => state.remnawave);
 
+  const activeKey = remnawave.activeProfileUuid ? `rw:${remnawave.activeProfileUuid}` : activeProfileId;
+  const history = React.useMemo(
+    () => histories[activeKey] ?? [],
+    [histories, activeKey],
+  );
+
   const isModified = React.useMemo(() => {
     if (!storeConfig) return false;
-    const activeKey = remnawave.activeProfileUuid ? `rw:${remnawave.activeProfileUuid}` : activeProfileId;
-    const currentHistory = histories[activeKey] || [];
+    const head = history[0];
 
-    if (currentHistory.length > 0) {
+    if (head) {
       try {
-        return JSON.stringify(storeConfig) !== JSON.stringify(currentHistory[0].config);
+        return JSON.stringify(storeConfig) !== JSON.stringify(head.config);
       } catch {
         return false;
       }
@@ -70,7 +74,7 @@ export function useConfigDashboardGit(): ConfigDashboardGit {
     } catch {
       return false;
     }
-  }, [baselineConfigJson, storeConfig, profiles, activeProfileId, histories, remnawave.activeProfileUuid]);
+  }, [baselineConfigJson, storeConfig, profiles, activeProfileId, history]);
 
   const [commitModalOpen, setCommitModalOpen] = React.useState(false);
 

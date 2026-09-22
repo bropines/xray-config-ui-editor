@@ -175,7 +175,7 @@ describe('russian coverage', () => {
             if (!used.has(key)) continue;
             const vars = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join(',');
             // Plural keys hold pipe-separated forms; each form repeats the vars.
-            const englishVars = vars(key.split('|')[0]);
+            const englishVars = vars(key.split('|')[0] ?? key);
             for (const form of value.split('|')) {
                 if (vars(form) !== englishVars) broken.push(`${key} → ${form}`);
             }

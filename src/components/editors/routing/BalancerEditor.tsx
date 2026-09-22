@@ -70,11 +70,6 @@ export const BalancerEditor = ({
     const currentSelector = balancer.selector || [];
     
     const errors = validateBalancer(balancer);
-    const errorRecord: Record<string, string> = {};
-    errors.forEach((e: any) => {
-        errorRecord[e.field] = e.message;
-    });
-    const selectorError = errors.find((e: any) => e.field === 'selector' || (typeof e === 'string' && e.includes('selectors')));
 
     const update = (field: string | null, val: any) => {
         if (field === null) {
@@ -98,12 +93,14 @@ export const BalancerEditor = ({
 </button>
             </div>
 
-            {selectorError && (
+            {errors.length > 0 && (
                 <div className="p-4 rounded-xl bg-rose-900/20 border border-rose-500/50 text-rose-200 flex gap-3 items-start animate-pulse">
                     <Icon name="WarningOctagon" className="mt-1 shrink-0 text-xl" weight="fill" />
                     <div>
                         <strong className="block text-sm">{t("Critical Config Error")}</strong>
-                        <p className="text-xs opacity-80">{typeof selectorError === 'string' ? selectorError : selectorError.message}</p>
+                        <ul className="text-xs opacity-80 space-y-0.5">
+                            {errors.map(message => <li key={message}>{message}</li>)}
+                        </ul>
                     </div>
                 </div>
             )}
@@ -114,7 +111,6 @@ export const BalancerEditor = ({
                         schema={BalancerSchema}
                         value={balancer}
                         onChange={onChange}
-                        errors={errorRecord}
                         excludeKeys={['selector', 'strategy']}
                         fieldConfigs={{
                             tag: {

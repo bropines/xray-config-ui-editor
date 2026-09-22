@@ -30,9 +30,10 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                 } else {
                     try {
                         const cached = await loadCachedData(currentUrl + "_raw");
-                        if (cached && cached.buffer) {
-                            buffer = cached.buffer;
-                            binaryCache.set(currentUrl, buffer);
+                        const cachedBuffer: ArrayBuffer | undefined = cached?.buffer ?? undefined;
+                        if (cachedBuffer) {
+                            buffer = cachedBuffer;
+                            binaryCache.set(currentUrl, cachedBuffer);
                         } else {
                             const myProxy = `https://crs.bropines.workers.dev/${currentUrl}`;
                             const targets = currentUrl.includes('github') || currentUrl.includes('jsdelivr') 

@@ -252,7 +252,7 @@ interface ConfigDashboardProps {
   config: XrayConfig;
   rawMode: boolean;
   setRawMode: (v: boolean) => void;
-  setConfig: (cfg: XrayConfig | null) => void;
+  setConfig: (cfg: XrayConfig | null, rawText?: string | null) => void;
   onEditInbound: (data: any, index: number | null) => void;
   onDeleteInbound: (index: number) => void;
   onOpenInboundJson: () => void;

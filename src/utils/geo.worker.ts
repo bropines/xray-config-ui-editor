@@ -26,7 +26,7 @@ const formatIp = (bytes: Uint8Array) => {
     if (bytes.length === 4) return Array.from(bytes).join('.');
     if (bytes.length === 16) {
         const hex = [];
-        for (let i = 0; i < 16; i += 2) hex.push(((bytes[i] << 8) | bytes[i + 1]).toString(16));
+        for (let i = 0; i < 16; i += 2) hex.push(((bytes[i]! << 8) | bytes[i + 1]!).toString(16));
         return hex.join(':').replace(/(^|:)0(:0)+/g, '::');
     }
     return '';

@@ -24,7 +24,7 @@ interface TransportProps {
     streamSettings: any;
     onChange: (newSettings: any) => void;
     isClient?: boolean;
-    errors?: Record<string, string | undefined>;
+    errors?: Record<string, string | undefined> | { field: string; message: string }[];
     protocol?: string;
 }
 

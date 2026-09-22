@@ -10,7 +10,7 @@ import { useField, useArrayField } from '../../../hooks/useField';
 import { useConfigStore } from '../../../store/configStore';
 import { t } from '../../../i18n';
 
-export const InboundClients = ({ inbound, onChange, errors = {} as any }) => {
+export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) => {
     const { remnawave } = useConfigStore();
     const [ssPassLen, setSsPassLen] = React.useState(32);
     const proto = inbound.protocol;

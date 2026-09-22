@@ -10,8 +10,8 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     const isString = typeof server === 'string';
     const [local, setLocal] = useState(isString ? { address: server } : { ...server });
 
-    const [geoSites, setGeoSites] = useState([]);
-    const [geoIps, setGeoIps] = useState([]);
+    const [geoSites, setGeoSites] = useState<any[]>([]);
+    const [geoIps, setGeoIps] = useState<any[]>([]);
     const [loadingGeo, setLoadingGeo] = useState(false);
 
     useEffect(() => {
@@ -33,7 +33,7 @@ export const DnsServerEditor = ({ server, onChange, onCancel }: any) => {
     }, [isString]);
 
     const update = (field: FieldPath, val: any) => {
-        setLocal(prev => ({ ...prev, [field as string]: val }));
+        setLocal((prev: any) => ({ ...prev, [field as string]: val }));
     };
 
     // `local`/`update` here play the same role as `local`/`updateField` from

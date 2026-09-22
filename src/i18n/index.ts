@@ -102,7 +102,7 @@ export const tn = (n: number, one: string, many: string, vars?: TVars): string =
     const key = `${one}|${many}`;
     const forms = (DICTIONARIES[current][key] ?? key).split('|');
     const index = current === 'ru' ? russianPluralIndex(n) : n === 1 ? 0 : 1;
-    const form = forms[Math.min(index, forms.length - 1)] ?? forms[0];
+    const form = forms[Math.min(index, forms.length - 1)] ?? key;
     return interpolate(form, { n, ...vars });
 };
 

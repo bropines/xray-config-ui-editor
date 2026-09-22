@@ -28,22 +28,22 @@ const autoDetectSystemParams = () => {
     if (/Windows/i.test(ua)) {
         os = "Windows";
         const match = ua.match(/Windows NT ([\d.]+)/);
-        ver = match ? match[1] : "10.0";
+        ver = match?.[1] ?? "10.0";
         model = "Windows PC";
     } else if (/Macintosh|Mac OS X/i.test(ua)) {
         os = "macOS";
         const match = ua.match(/Mac OS X ([\d_]+)/);
-        ver = match ? match[1].replace(/_/g, '.') : "14.0";
+        ver = match?.[1]?.replace(/_/g, '.') ?? "14.0";
         model = "Macintosh";
     } else if (/Android/i.test(ua)) {
         os = "Android";
         const match = ua.match(/Android ([\d.]+)/);
-        ver = match ? match[1] : "14";
+        ver = match?.[1] ?? "14";
         model = "Android Device";
     } else if (/iPhone|iPad|iPod/i.test(ua)) {
         os = "iOS";
         const match = ua.match(/OS ([\d_]+)/);
-        ver = match ? match[1].replace(/_/g, '.') : "18.3";
+        ver = match?.[1]?.replace(/_/g, '.') ?? "18.3";
         model = "iPhone";
     }
     return { os, ver, model };
