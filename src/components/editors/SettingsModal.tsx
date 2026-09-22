@@ -15,6 +15,7 @@ import { SpiderPathsEditor } from './settings/SpiderPathsEditor';
 
 import { useSettingsEditor } from '../../hooks/useSettingsEditor';
 import { useConfigStore } from '../../store/configStore';
+import { useIsDesktop } from '../../hooks/useMediaQuery';
 import { t } from '../../i18n';
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
@@ -36,6 +37,8 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
         toggleSection
     } = useSettingsEditor();
 
+    const isDesktop = useIsDesktop();
+
     const tabs = (
         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
             <button onClick={() => setActiveTab('general')} className={`px-4 py-2.5 md:py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Log & API")}</button>
@@ -46,7 +49,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
 
     const extraButtons = (
         <>
-            {!rawMode && tabs}
+            {!rawMode && isDesktop && tabs}
             <Button variant="success" className="text-xs py-1" onClick={downloadCoreJson} icon="DownloadSimple">{t("Export")}</Button>
         </>
     );
@@ -69,6 +72,11 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
         >
             <div className="max-w-3xl mx-auto space-y-6">
+                {!rawMode && !isDesktop && (
+                    <div className="sticky -top-3 z-10 -mx-3 px-3 py-2 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 overflow-x-auto hide-scrollbar">
+                        {tabs}
+                    </div>
+                )}
                 {activeTab === 'general' && (
                     <>
                         <Card title={t("Core Compatibility & Generators")} icon="Cpu">

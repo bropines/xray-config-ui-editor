@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0] - 2026-09-22
+
+### Changed
+- **Every editor gives its own settings more room.** The shell took 200px of a phone screen: a 73px title bar and a 127px footer stacked into two rows, one for the module's buttons and one for Close. The title bar is 41px now, the module's buttons get a full-width strip of their own under it, and the footer is a single row — **155px of chrome instead of 200**, measured on the routing editor at 412×800, where the body went from 600px to 645px.
+- **One way out, not two.** A sheet had both a × in the corner and a Close at the foot. The Close stays; the × returns only when a module renders no footer to hold it.
+- **Core settings fit without scrolling sideways.** Five controls came to 571px in a 391px strip. The three tabs switch what the body shows, so on a phone they moved into the body as a sticky row, leaving Export and the JSON toggle — which fit exactly.
+- **The geo viewer's source picker folds.** It is half a phone screen, and once a list is loaded it stands between you and the thing you opened the viewer for. It folds itself the moment data arrives and reopens on a tap — **239px reclaimed**, measured with the search field moving from y=416 to y=177.
+
 ## [1.9.0] - 2026-09-22
 
 ### Fixed

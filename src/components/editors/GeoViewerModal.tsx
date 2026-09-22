@@ -86,6 +86,12 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
         fetchCustomList
     } = useGeoViewer();
 
+    // Open until there is something to show, then out of the way — derived
+    // rather than synced in an effect, so it needs no second render and the
+    // user's own choice simply wins once they make one.
+    const [sourceOverride, setSourceOverride] = React.useState<boolean | null>(null);
+    const sourceOpen = sourceOverride ?? displayData.length === 0;
+
     const handleCopyAll = async () => {
         if (displayData.length === 0) return toast.warning(t("Nothing to copy"));
         const prefix = activeTab === 'geosite' ? 'geosite:' : activeTab === 'geoip' ? 'geoip:' : '';
@@ -146,6 +152,22 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                 
                 {activeTab === 'custom' && (
                     <div className="flex flex-col gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800 shrink-0 animate-in fade-in slide-in-from-top-2">
+                        {/* The source picker is half a phone screen, and once a
+                            list is loaded it is in the way of the thing you
+                            came to look at. It folds, and folds itself the
+                            moment data arrives. */}
+                        <button
+                            type="button"
+                            onClick={() => setSourceOverride(!sourceOpen)}
+                            className="md:hidden flex items-center justify-between gap-2 -m-1 p-1 text-left"
+                        >
+                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold truncate">
+                                {t("Source")}{customUrl ? ` — ${customUrl.split('/').pop()}` : ''}
+                            </span>
+                            <Icon name={sourceOpen ? 'CaretUp' : 'CaretDown'} weight="bold" className="text-slate-500 shrink-0" />
+                        </button>
+
+                        <div className={`${sourceOpen ? 'flex' : 'hidden md:flex'} flex-col gap-3`}>
                         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
                             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mr-1">{t("Quick Presets:")}</span>
                             {CUSTOM_PRESETS.map((p, i) => (
@@ -183,6 +205,7 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                                 {customLoading ? <Icon name="Spinner" className="animate-spin" /> : <Icon name="DownloadSimple" />}
                                 <span className="hidden md:inline">{t("Fetch")}</span>
                             </Button>
+                        </div>
                         </div>
                     </div>
                 )}
