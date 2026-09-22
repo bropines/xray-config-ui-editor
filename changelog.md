@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.5.0] - 2026-09-22
 
 ### Fixed
 - **Editors no longer collapse to a strip on a phone.** `Modal` emitted `h-auto` while every caller passed its own `h-[90vh] md:h-[88vh]`. Both are plain classes, so stylesheet order decided the winner — and below `md` that was `h-auto`. The box then sized to its content, every `flex-1 min-h-0` beneath it resolved against an indefinite height, and what was left was the chrome that happens to be `shrink-0`, with `overflow-hidden` leaving nothing to scroll to the rest. Measured on a 412×380 viewport: the routing editor's panel was **644px tall inside a 380px screen**, with 16px of it reachable.
