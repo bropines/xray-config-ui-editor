@@ -129,7 +129,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                 <button
                                                     type="button"
                                                     onClick={handleAutoDetect}
-                                                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-950/40 hover:bg-indigo-900/60 px-2 py-0.5 rounded-lg border border-indigo-500/40 transition-colors"
+                                                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-950/40 hover:bg-indigo-900/60 px-2 py-2 md:py-0.5 rounded-lg border border-indigo-500/40 transition-colors"
                                                 >
                                                     <Icon name="Laptop" />
 {t("Auto-Detect")}
@@ -137,7 +137,7 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
                                                 <button
                                                     type="button"
                                                     onClick={handleGenerateNewHwid}
-                                                    className="text-[10px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-0.5 rounded-lg border border-purple-500/40 transition-colors"
+                                                    className="text-[10px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-2 md:py-0.5 rounded-lg border border-purple-500/40 transition-colors"
                                                 >
                                                     <Icon name="ArrowsClockwise" />
 {t("New HWID")}

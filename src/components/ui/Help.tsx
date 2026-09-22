@@ -110,7 +110,7 @@ export const Help = ({ children, position = 'top' }: HelpProps) => {
                     e.stopPropagation();
                     setOpen(prev => !prev);
                 }}
-                className="inline-flex items-center ml-1.5 align-middle cursor-help bg-transparent border-0 p-0"
+                className="relative inline-flex items-center ml-1.5 align-middle cursor-help bg-transparent border-0 p-0 after:absolute after:content-[''] after:-inset-2.5 md:after:hidden"
             >
                 <Icon
                     name="Question"

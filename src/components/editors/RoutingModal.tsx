@@ -67,11 +67,11 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                 <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
                     <button
                         onClick={() => { setActiveTab('rules'); setMobileEditMode(false); }}
-                        className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'rules' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                        className={`px-4 py-2.5 md:py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'rules' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
                     >{t("Rules")}</button>
                     <button
                         onClick={() => { setActiveTab('balancers'); setMobileEditMode(false); }}
-                        className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'balancers' ? 'bg-purple-600 text-white' : 'text-slate-400'}`}
+                        className={`px-4 py-2.5 md:py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'balancers' ? 'bg-purple-600 text-white' : 'text-slate-400'}`}
                     >{t("Balancers")}</button>
                 </div>
             }
