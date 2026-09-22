@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { useBackToClose } from '../../hooks/useBackToClose';
-import { useIsDesktop } from '../../hooks/useMediaQuery';
 import { t } from '../../i18n';
 
 export const Modal = ({
@@ -21,12 +20,6 @@ export const Modal = ({
   isSecondary = false
 }: any) => {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
-  // Where the module's own buttons live. On a desktop they share the footer
-  // with Close and Save; on a phone that footer was two stacked rows, so they
-  // get a strip of their own under the title and the footer keeps one row.
-  // Rendered in one place either way — two copies would double the DOM and
-  // any state inside them.
-  const isDesktop = useIsDesktop();
 
   // A full-screen sheet that swallows the system Back gesture turns "out of
   // this" into "out of everything you were doing".
@@ -107,14 +100,6 @@ export const Modal = ({
           </button>
         </div>
 
-        {/* The module's own buttons, on a phone: full width, one row, scrolled
-            rather than wrapped or squeezed. */}
-        {!isDesktop && extraButtons && (
-          <div className="flex items-center gap-2 px-3 py-1 border-b border-slate-800 bg-slate-900/60 shrink-0 overflow-x-auto hide-scrollbar [&>*]:shrink-0 [&_button]:whitespace-nowrap">
-            {extraButtons}
-          </div>
-        )}
-
         {/* Content */}
         <div className={`${isFullScreen ? 'p-1' : 'p-3 md:p-6'} ${contentOverflow} overscroll-contain custom-scroll flex-1 relative flex flex-col min-h-0 @container`}>
           {children}
@@ -126,11 +111,12 @@ export const Modal = ({
             {/* Buttons must keep their intrinsic width for overflow-x-auto to
                 mean anything — without shrink-0 they compress and wrap their
                 labels instead, doubling the footer height on a phone. */}
-            {isDesktop && (
-              <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10 [&>*]:shrink-0 [&_button]:whitespace-nowrap">
-                  {extraButtons}
-              </div>
-            )}
+            {/* The module's own buttons: their own row above the actions on a
+                phone, the left half of the same row on a desktop. Scrolled
+                rather than wrapped, so the row stays one line high. */}
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto hide-scrollbar relative z-10 [&>*]:shrink-0 [&_button]:whitespace-nowrap">
+                {extraButtons}
+            </div>
             <div className="flex gap-3 w-full md:w-auto relative z-10">
                 <Button variant="secondary" onClick={onClose} className="flex-1 md:flex-none">{closeText}</Button>
                 {onSave && onSave !== onClose && <Button variant={variantSave} onClick={onSave} icon={saveIcon} className="flex-1 md:flex-none">{saveText}</Button>}

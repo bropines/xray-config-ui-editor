@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.1] - 2026-09-22
+
+### Changed
+- **A module's own buttons sit at the foot of the sheet, not under its title.** 1.10.0 gave them a strip below the header, which put the one control you press most — JSON Mode — at the top of a phone screen, where a thumb does not reach. They share the bottom with Close and Save again. The strip cost more than it saved anyway: **132px of chrome instead of 155**, measured on the inbound editor at 412x800, where the body went from 645px to 668px.
+
 ## [1.10.0] - 2026-09-22
 
 ### Changed
