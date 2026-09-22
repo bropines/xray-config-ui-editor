@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0] - 2026-09-22
+
+### Added
+- **The app has render tests now — 45 of them, where it had none.** There was no DOM in the test runner at all: 28 test files, 20 of them for `core/`, and not one that mounted a component. Every UI bug this project has fixed was found by opening the page.
+  - **The modal shell**, which is where the placement rules live: the module's buttons belong in the footer, a tab strip belongs beside the content on a desktop and below it on a phone, each slot renders exactly once, and the bar `ModalBottomBar` portals into folds away when nothing arrives. The rules are a media query, not a class, so only a rendered tree can check them — and reverting the phone placement does fail the test that describes it.
+  - **The primitives**: a button that does not fire while disabled or loading, a switch that reports the new state rather than the old, a select that shows a label and returns a value, and an icon that draws path data — including the lower-case names the app really passes (`spinner`, `x`).
+  - **The schema-driven forms.** Most of this app's forms are derived from a zod schema, and which control a field gets depends on reading zod's internals. With every `instanceof` check removed, the structural fallback alone still renders all seven field kinds — which is the proof that 1.12.0 brought it back to life.
+  - **A smoke test per editor**: all ten mount, on a desktop and on a phone. Two of this year's bugs were a screen that could not open at all.
+
+### Fixed
+- **Two tests were quietly breaking every test that ran after them.** `bun test` shares one global scope: the back-gesture test replaced `window` with a fake and then deleted it, and two others assigned to `localStorage`. There was nothing downstream to break before — the moment there was, 45 tests failed. Both now restore the property descriptor they found.
+
 ## [1.12.0] - 2026-09-22
 
 ### Fixed

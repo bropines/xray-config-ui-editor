@@ -36,6 +36,25 @@ const usedKeys = (): Map<string, string> => {
     return found;
 };
 
+
+/**
+ * Swaps `localStorage` for the duration of a check.
+ *
+ * The test DOM defines it as a configurable accessor on the global, so it
+ * cannot be assigned to — only redefined, and only put back by restoring the
+ * descriptor that was there.
+ */
+const withStorage = (fake: unknown, run: () => void) => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')!;
+    Object.defineProperty(globalThis, 'localStorage', { value: fake, configurable: true });
+    try {
+        run();
+    } finally {
+        Object.defineProperty(globalThis, 'localStorage', original);
+        setLang('en');
+    }
+};
+
 describe('translation lookup', () => {
     it('falls back to the key when a language has no entry', () => {
         setLang('en');
@@ -75,36 +94,28 @@ describe('translation lookup', () => {
 
     it('remembers the chosen language', () => {
         const store = new Map<string, string>();
-        (globalThis as any).localStorage = {
+        withStorage({
             getItem: (k: string) => store.get(k) ?? null,
             setItem: (k: string, v: string) => void store.set(k, v),
-        };
-        try {
+        }, () => {
             setLang('ru');
             expect(getLang()).toBe('ru');
             expect(store.get('xray-ui-lang')).toBe('ru');
-        } finally {
-            delete (globalThis as any).localStorage;
-            setLang('en');
-        }
+        });
     });
 
     it('still switches when storage is unavailable', () => {
-        // No localStorage at all here (as in this test runner), and a browser in
-        // private mode can throw from setItem — neither may break the switch.
-        (globalThis as any).localStorage = {
+        // A browser in private mode can throw from setItem, and there may be
+        // no localStorage at all — neither may break the switch.
+        withStorage({
             getItem: () => null,
             setItem: () => {
                 throw new Error('QuotaExceededError');
             },
-        };
-        try {
+        }, () => {
             setLang('ru');
             expect(getLang()).toBe('ru');
-        } finally {
-            delete (globalThis as any).localStorage;
-            setLang('en');
-        }
+        });
     });
 });
 

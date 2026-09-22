@@ -1,66 +1,10 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 
 // configStore.ts wires zustand's `persist` middleware to IndexedDB
-// (src/utils/indexedDbStorage.ts) at module-load time, so IndexedDB (and a
-// localStorage fallback) must exist on globalThis BEFORE the store module is
-// imported — same minimal in-memory mock indexedDbStorage.test.ts uses.
-class MockLocalStorage {
-    private store: Record<string, string> = {};
-    getItem(key: string): string | null { return this.store[key] ?? null; }
-    setItem(key: string, value: string): void { this.store[key] = value; }
-    removeItem(key: string): void { delete this.store[key]; }
-    clear(): void { this.store = {}; }
-}
-
-class MockIDBDatabase {
-    objectStoreNames = { contains: () => true };
-    private store = new Map<string, any>();
-    createObjectStore() {}
-    transaction() {
-        const store = this.store;
-        const txObj: any = { oncomplete: null, onerror: null, onabort: null };
-        txObj.objectStore = () => ({
-            get: (key: string) => {
-                const req: any = { onsuccess: null, onerror: null, result: store.get(key) };
-                queueMicrotask(() => { req.onsuccess?.(); txObj.oncomplete?.(); });
-                return req;
-            },
-            put: (val: any, key: string) => {
-                store.set(key, val);
-                const req: any = { onsuccess: null, onerror: null };
-                queueMicrotask(() => { req.onsuccess?.(); txObj.oncomplete?.(); });
-                return req;
-            },
-            // Bun runs test files in a shared global scope, so this mock's
-            // globalThis.indexedDB assignment can end up being the one still
-            // active when indexedDbStorage.test.ts's own removeItem test
-            // runs — needs the same surface as that test's mock, not just
-            // what this file's own tests happen to call.
-            delete: (key: string) => {
-                store.delete(key);
-                const req: any = { onsuccess: null, onerror: null };
-                queueMicrotask(() => { req.onsuccess?.(); txObj.oncomplete?.(); });
-                return req;
-            },
-        });
-        return txObj;
-    }
-}
-
-// Install the mocks as plain top-level statements (NOT inside beforeAll) so
-// they're in place before the dynamic import below runs — configStore.ts
-// creates its zustand store (and kicks off persist's synchronous hydrate
-// attempt) at module-evaluation time, which happens before any beforeAll
-// hook would fire.
-const mockDb = new MockIDBDatabase();
-(globalThis as any).indexedDB = {
-    open: () => {
-        const req: any = { onsuccess: null, onerror: null, result: mockDb };
-        queueMicrotask(() => req.onsuccess?.());
-        return req;
-    },
-};
-(globalThis as any).localStorage = new MockLocalStorage();
+// (src/utils/indexedDbStorage.ts) at module-load time, so IndexedDB has to
+// exist before the store module is imported. test-setup.ts installs the
+// shared in-memory stand-in as a preload, which runs before any of this, and
+// happy-dom supplies the localStorage half.
 
 const { useConfigStore } = await import('./configStore');
 const { parseJsonc } = await import('../utils/jsonc');

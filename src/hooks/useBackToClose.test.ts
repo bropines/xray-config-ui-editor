@@ -14,11 +14,17 @@ const fireBack = () => {
     for (const listener of listeners) listener({ type: 'popstate' });
 };
 
+// The real window is a configurable accessor on the global once there is a
+// DOM, so it can be shadowed but not assigned to — and deleting it would take
+// it away from every test that runs after this file, not just this one.
+let realWindow: PropertyDescriptor | undefined;
+
 beforeEach(() => {
     __resetBackLayers();
     listeners.clear();
     entries.length = 0;
-    (globalThis as any).window = {
+    realWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    Object.defineProperty(globalThis, 'window', { configurable: true, writable: true, value: {
         addEventListener: (type: string, listener: any) => {
             if (type === 'popstate') listeners.add(listener);
         },
@@ -29,11 +35,12 @@ beforeEach(() => {
             pushState: (state: unknown) => entries.push(state),
             back: () => fireBack(),
         },
-    };
+    } });
 });
 
 afterEach(() => {
-    delete (globalThis as any).window;
+    if (realWindow) Object.defineProperty(globalThis, 'window', realWindow);
+    else delete (globalThis as any).window;
 });
 
 describe('back layers', () => {

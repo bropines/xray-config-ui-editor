@@ -149,6 +149,7 @@ export const Modal = ({
         {!isDesktop && (
           <div
             ref={setBottomSlot}
+            data-testid="modal-bottom-bar"
             className={`empty:hidden flex items-center gap-2 px-3 py-2 border-t border-slate-800 bg-slate-900 shrink-0 overflow-x-auto hide-scrollbar ${hideFooter && !tabs ? 'pb-[max(0.5rem,env(safe-area-inset-bottom))]' : ''}`}
           />
         )}
