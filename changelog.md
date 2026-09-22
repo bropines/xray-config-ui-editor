@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0] - 2026-09-22
+
+### Changed
+- **Everything you tap is at the bottom of the sheet now; the top is for reading.** A phone is held one-handed and the top third of it is out of a thumb's reach, so every control that was sitting above the content moved down:
+  - The six **Back** buttons in the list-to-detail editors — routing rules, DNS servers, hosts, snippets, the inspector — were the first line of the pane they opened. They are the last now, in a bar at the foot.
+  - **Core settings' tabs** were a sticky row at the top of the body. They are a row of their own above the buttons.
+  - The routing editor's **JSON** toggle came down with them.
+  - The DNS tabs lost 2px of padding each, which is what it took for all four plus JSON to stop scrolling sideways on a 412px screen.
+- These controls live deep inside panes whose state the shell cannot see, so they stay where they are in the code and render where the thumb is — one element, moved, not a second copy. The bar folds away when a sheet has nothing to put in it, and a test keeps a merely-hidden control from propping it open.
+
 ## [1.10.1] - 2026-09-22
 
 ### Changed

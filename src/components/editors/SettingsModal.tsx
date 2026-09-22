@@ -15,7 +15,6 @@ import { SpiderPathsEditor } from './settings/SpiderPathsEditor';
 
 import { useSettingsEditor } from '../../hooks/useSettingsEditor';
 import { useConfigStore } from '../../store/configStore';
-import { useIsDesktop } from '../../hooks/useMediaQuery';
 import { t } from '../../i18n';
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
@@ -37,7 +36,6 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
         toggleSection
     } = useSettingsEditor();
 
-    const isDesktop = useIsDesktop();
 
     const tabs = (
         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
@@ -49,7 +47,6 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
 
     const extraButtons = (
         <>
-            {!rawMode && isDesktop && tabs}
             <Button variant="success" className="text-xs py-1" onClick={downloadCoreJson} icon="DownloadSimple">{t("Export")}</Button>
         </>
     );
@@ -67,16 +64,12 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             onClose={onClose}
             schemaMode="full"
             extraButtons={extraButtons}
+            tabs={tabs}
             rawConfigText={rawConfigText}
             onSaveShortcut={() => useConfigStore.getState().saveActiveProfile()}
             onCommitShortcut={() => useConfigStore.getState().recordSnapshot("Manual Commit (Ctrl+Shift+S)")}
         >
             <div className="max-w-3xl mx-auto space-y-6">
-                {!rawMode && !isDesktop && (
-                    <div className="sticky -top-3 z-10 -mx-3 px-3 py-2 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 overflow-x-auto hide-scrollbar">
-                        {tabs}
-                    </div>
-                )}
                 {activeTab === 'general' && (
                     <>
                         <Card title={t("Core Compatibility & Generators")} icon="Cpu">

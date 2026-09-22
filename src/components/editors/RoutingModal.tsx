@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal } from '../ui/Modal';
+import { Modal, ModalBottomBar } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { useConfigStore } from '../../store/configStore';
@@ -59,6 +59,17 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
     // before it closes the editor.
     useBackToClose(mobileEditMode, () => setMobileEditMode(false));
 
+    const jsonToggle = (cls: string) => (
+        <Button
+            variant="secondary"
+            className={`text-xs py-1 ${cls}`}
+            onClick={() => setRawMode(!rawMode)}
+            icon={rawMode ? "Layout" : "Code"}
+        >
+            {rawMode ? t("UI Mode") : t("JSON")}
+        </Button>
+    );
+
     const { geoSites, geoIps, loadingGeo } = useGeoData();
     const { sidebarWidth, startResizing } = useSidebarResizer();
 
@@ -83,7 +94,9 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
         >
             <div className="mb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
                 {mobileEditMode && (
-                    <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">{t("Back")}</Button>
+                    <ModalBottomBar>
+                        <Button variant="secondary" className="md:hidden w-full" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">{t("Back")}</Button>
+                    </ModalBottomBar>
                 )}
                 <div className={`flex flex-col w-full md:w-64 ${mobileEditMode ? 'hidden md:flex' : ''}`}>
                     <Select
@@ -99,14 +112,12 @@ export const RoutingModal = ({ onClose, onOpenSnippets }: any) => {
                 </div>
 
                 {((activeTab === 'rules' && activeRuleIdx !== null) || (activeTab === 'balancers' && activeBalancerIdx !== null)) && (
-                    <Button
-                        variant="secondary"
-                        className={`text-xs py-1 ${mobileEditMode ? 'w-full md:w-auto' : 'hidden md:flex'}`}
-                        onClick={() => setRawMode(!rawMode)}
-                        icon={rawMode ? "Layout" : "Code"}
-                    >
-                        {rawMode ? t("UI Mode") : t("JSON")}
-                    </Button>
+                    // Same button either way; the branch is only about where it
+                    // renders, and a hidden copy in the bottom bar would hold
+                    // the bar open around nothing.
+                    mobileEditMode
+                        ? <ModalBottomBar>{jsonToggle('w-full md:w-auto')}</ModalBottomBar>
+                        : jsonToggle('hidden md:flex')
                 )}
             </div>
 

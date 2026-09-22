@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '../../ui/Button';
+import { ModalBottomBar } from '../../ui/Modal';
 import { Icon } from '../../ui/Icon';
 import { RuleList } from '../routing/RuleList';
 import { RuleEditor } from '../routing/RuleEditor';
@@ -204,14 +205,18 @@ export const SnippetFormEditor = ({ kind, body, onChange }: Props) => {
 
             {/* ─── Editor ────────────────────────────────────────────── */}
             <div className={`flex-1 min-w-0 flex-col min-h-0 ${mobileEdit ? 'flex' : 'hidden md:flex'}`}>
-                <Button
-                    variant="secondary"
-                    icon="ArrowLeft"
-                    className="md:hidden m-2"
-                    onClick={() => setMobileEdit(false)}
-                >
-                    {t("Back to the list")}
-                </Button>
+                {mobileEdit && (
+                    <ModalBottomBar>
+                        <Button
+                            variant="secondary"
+                            icon="ArrowLeft"
+                            className="md:hidden w-full"
+                            onClick={() => setMobileEdit(false)}
+                        >
+                            {t("Back to the list")}
+                        </Button>
+                    </ModalBottomBar>
+                )}
 
                 {kind === 'outbounds' ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-slate-600 p-6 text-center gap-2">

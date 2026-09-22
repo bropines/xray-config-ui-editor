@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal } from '../../ui/Modal';
+import { Modal, ModalBottomBar } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Icon } from '../../ui/Icon';
@@ -158,9 +158,11 @@ export const HostsModal = ({ onClose, initialHostUuid, onOpenTemplates }: {
                         </div>
                     ) : (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scroll p-4 md:p-5 flex flex-col gap-3">
-                            <Button variant="secondary" icon="ArrowLeft" className="md:hidden w-full" onClick={h.closeDraft}>
-                                {t("Back to the list")}
+                            <ModalBottomBar>
+                                <Button variant="secondary" icon="ArrowLeft" className="md:hidden w-full" onClick={h.closeDraft}>
+                                    {t("Back to the list")}
                                 </Button>
+                            </ModalBottomBar>
 
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant={h.isNew ? 'warning' : 'primary'} size="sm" icon="Broadcast">

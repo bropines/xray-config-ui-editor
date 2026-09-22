@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal } from '../ui/Modal';
+import { Modal, ModalBottomBar } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { JsonField } from '../ui/JsonField';
 import { useConfigStore } from '../../store/configStore';
@@ -88,13 +88,13 @@ export const DnsModal = ({ onClose }: any) => {
                 <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
                     <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
                         <button onClick={() => { setActiveTab('general'); setEditingServerIdx(null); setMobileEditMode(false); }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'general' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>{t("General")}</button>
+                            className={`px-2.5 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'general' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>{t("General")}</button>
                         <button onClick={() => { setActiveTab('servers'); setEditingServerIdx(null); setMobileEditMode(false); }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'servers' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>{t("Servers")}</button>
+                            className={`px-2.5 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'servers' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>{t("Servers")}</button>
                         <button onClick={() => { setActiveTab('hosts'); setEditingServerIdx(null); setMobileEditMode(false); }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'hosts' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>{t("Hosts")}</button>
+                            className={`px-2.5 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'hosts' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>{t("Hosts")}</button>
                         <button onClick={() => { setActiveTab('fakedns'); setEditingServerIdx(null); setMobileEditMode(false); }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'fakedns' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>{t("FakeDNS")}</button>
+                            className={`px-2.5 py-1.5 text-xs font-bold rounded transition-all ${activeTab === 'fakedns' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>{t("FakeDNS")}</button>
                     </div>
                     <Button variant="secondary" className="text-xs py-1 shrink-0" onClick={() => setRawMode(true)} icon="Code">JSON</Button>
                 </div>
@@ -128,9 +128,9 @@ export const DnsModal = ({ onClose }: any) => {
                     <>
                         {/* Mobile Back Button */}
                         {mobileEditMode && (
-                            <div className="md:hidden w-full pb-2">
-                                <Button variant="secondary" className="w-full text-xs" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">{t("Back to Servers")}</Button>
-                            </div>
+                            <ModalBottomBar>
+                                <Button variant="secondary" className="md:hidden w-full text-xs" onClick={() => setMobileEditMode(false)} icon="ArrowLeft">{t("Back to Servers")}</Button>
+                            </ModalBottomBar>
                         )}
 
                         {/* List Column (Hidden on mobile if editing) */}

@@ -3,7 +3,31 @@ import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { useBackToClose } from '../../hooks/useBackToClose';
+import { useIsDesktop } from '../../hooks/useMediaQuery';
 import { t } from '../../i18n';
+
+/**
+ * Where a module's own controls land on a phone.
+ *
+ * Null on a desktop and outside a Modal, which is the signal to render in
+ * place. Holding the node rather than a ref is what makes it a state update:
+ * the children that portal into it re-render once it exists.
+ */
+const BottomSlot = React.createContext<HTMLElement | null>(null);
+
+/**
+ * Moves a control to the foot of the sheet on a phone.
+ *
+ * A Back button belongs at the top of the reading order and the bottom of the
+ * screen — the two cannot both be satisfied by where the JSX sits, and these
+ * buttons live deep inside panes whose state the shell cannot see. So they
+ * stay where they are and render where the thumb is.
+ */
+export const ModalBottomBar = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+  const node = React.useContext(BottomSlot);
+  if (!node) return <>{children}</>;
+  return createPortal(<div className={`contents ${className}`}>{children}</div>, node);
+};
 
 export const Modal = ({
   title,
@@ -15,11 +39,23 @@ export const Modal = ({
   variantSave = "success",
   hideFooter = false,
   children,
+  tabs = null,
   extraButtons = null,
   className = "",
   isSecondary = false
 }: any) => {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
+
+  // Anything you tap belongs at the bottom of a phone, where a thumb
+  // reaches. A tab strip picks what the body shows, so it reads as part of
+  // the body on a desktop — and as one more thing to reach for on a phone,
+  // where it goes to the foot with the buttons. Rendered in one place either
+  // way: two copies would double the DOM and any state inside them.
+  const isDesktop = useIsDesktop();
+
+  // State, not a ref: children portal into this node, so they have to
+  // re-render once it exists.
+  const [bottomSlot, setBottomSlot] = React.useState<HTMLDivElement | null>(null);
 
   // A full-screen sheet that swallows the system Back gesture turns "out of
   // this" into "out of everything you were doing".
@@ -70,6 +106,7 @@ export const Modal = ({
     : 'overflow-y-auto';
 
   return createPortal(
+    <BottomSlot.Provider value={bottomSlot}>
     <div className={`fixed inset-0 z-[9999] flex items-stretch md:items-center justify-center ${isSecondary ? 'bg-black/50' : 'bg-black/85 backdrop-blur-md'} animate-in fade-in duration-200 ${isFullScreen ? 'p-0 is-modal-fullscreen' : 'p-0 md:p-6'}`}>
       <div className={`bg-slate-900 border-slate-700 md:border w-full flex flex-col shadow-2xl animate-in zoom-in-95 duration-200
         ${sizing}
@@ -102,8 +139,29 @@ export const Modal = ({
 
         {/* Content */}
         <div className={`${isFullScreen ? 'p-1' : 'p-3 md:p-6'} ${contentOverflow} overscroll-contain custom-scroll flex-1 relative flex flex-col min-h-0 @container`}>
+          {isDesktop && tabs && <div className="shrink-0 mb-3">{tabs}</div>}
           {children}
         </div>
+
+        {/* Controls a module sends down from inside its body. `empty:hidden`
+            keeps the bar out of the layout until something arrives — the
+            portal's own children are what stop it matching :empty. */}
+        {!isDesktop && (
+          <div
+            ref={setBottomSlot}
+            className={`empty:hidden flex items-center gap-2 px-3 py-2 border-t border-slate-800 bg-slate-900 shrink-0 overflow-x-auto hide-scrollbar ${hideFooter && !tabs ? 'pb-[max(0.5rem,env(safe-area-inset-bottom))]' : ''}`}
+          />
+        )}
+
+        {/* The tab strip on a phone: its own row at the foot, above the
+            buttons. Scrolled rather than wrapped, so it stays one line high,
+            and outside the footer so a module that renders no footer still
+            gets it. */}
+        {!isDesktop && tabs && (
+          <div className={`flex items-center gap-2 px-3 py-2 border-t border-slate-800 bg-slate-900 shrink-0 overflow-x-auto hide-scrollbar [&>*]:shrink-0 [&_button]:whitespace-nowrap ${hideFooter ? 'pb-[max(0.5rem,env(safe-area-inset-bottom))]' : ''}`}>
+            {tabs}
+          </div>
+        )}
 
         {/* Footer */}
         {!hideFooter && (
@@ -124,7 +182,8 @@ export const Modal = ({
           </div>
         )}
       </div>
-    </div>,
+    </div>
+    </BottomSlot.Provider>,
     document.body
   );
 };

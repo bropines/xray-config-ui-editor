@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal } from '../ui/Modal';
+import { Modal, ModalBottomBar } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Select } from '../ui/Select';
@@ -336,14 +336,18 @@ export const ConfigInspectorModal = ({ onClose, setModal, openSectionJson }: {
 
                         {/* Content: Harvesting Board */}
                         <div className={`${mobilePane === 'index' ? 'hidden md:flex' : 'flex'} flex-1 flex-col min-w-0 min-h-0 gap-3 md:gap-6`}>
-                            <Button
-                                variant="secondary"
-                                icon="ArrowLeft"
-                                className="md:hidden shrink-0"
-                                onClick={() => setMobilePane('index')}
-                            >
-                                {t("Back to the index")}
-                            </Button>
+                            {mobilePane !== 'index' && (
+                                <ModalBottomBar>
+                                    <Button
+                                        variant="secondary"
+                                        icon="ArrowLeft"
+                                        className="md:hidden w-full shrink-0"
+                                        onClick={() => setMobilePane('index')}
+                                    >
+                                        {t("Back to the index")}
+                                    </Button>
+                                </ModalBottomBar>
+                            )}
                             {/* Dashboard Header */}
                             <div className="bg-slate-900/60 border border-slate-800/60 p-5 rounded-3xl flex justify-between items-center shadow-xl backdrop-blur-xl">
                                 <div className="min-w-0 flex items-center gap-4">

@@ -16,6 +16,8 @@ interface EditorLayoutProps {
     onClose: () => void;
     schemaMode: any;
     children: React.ReactNode;
+    /** A tab strip that picks what the body shows. Placed by the shell. */
+    tabs?: React.ReactNode;
     extraButtons?: React.ReactNode;
     rawText?: string | null;
     /** Forwarded to JsonField — see its own doc comment. */
@@ -35,6 +37,7 @@ export const EditorLayout = ({
     onClose,
     schemaMode,
     children,
+    tabs,
     extraButtons,
     rawText,
     rawConfigText,
@@ -62,6 +65,7 @@ export const EditorLayout = ({
             onClose={onClose} 
             onSave={onSave}
             extraButtons={modalButtons}
+            tabs={rawMode ? null : tabs}
             className="md:h-full overflow-hidden"
         >
             {errors.length > 0 && (
