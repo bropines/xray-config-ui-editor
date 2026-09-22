@@ -44,7 +44,7 @@ export function Select<T extends string = string>({
     const [searchQuery, setSearchQuery] = useState("");
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const [coords, setCoords] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 200 });
+    const [coords, setCoords] = useState<{ top: number; left: number; width: number; maxHeight: number }>({ top: 0, left: 0, width: 200, maxHeight: 260 });
 
     const selectedOption = options.find(opt => opt.value === value);
 
@@ -54,10 +54,24 @@ export function Select<T extends string = string>({
             const minWidth = Math.max(rect.width, 220);
             // Ensure dropdown doesn't go off right edge of viewport
             const left = Math.min(rect.left, window.innerWidth - minWidth - 12);
+
+            // The bottom edge was never clamped, so a select near the foot of
+            // the screen — or any select at all once a keyboard is up — opened
+            // its list off the bottom with no way to reach it. visualViewport
+            // is what shrinks when the keyboard appears; innerHeight is not.
+            const vv = window.visualViewport;
+            const viewTop = vv ? vv.offsetTop : 0;
+            const viewBottom = viewTop + (vv ? vv.height : window.innerHeight);
+            const below = viewBottom - rect.bottom - 12;
+            const above = rect.top - viewTop - 12;
+            const openUp = below < 180 && above > below;
+            const maxHeight = Math.max(140, Math.min(320, openUp ? above : below));
+
             setCoords({
-                top: rect.bottom + 6,
+                top: openUp ? Math.max(viewTop + 8, rect.top - maxHeight - 6) : rect.bottom + 6,
                 left: Math.max(8, left),
-                width: minWidth
+                width: minWidth,
+                maxHeight
             });
             setIsPositioned(true);
         }
@@ -69,9 +83,16 @@ export function Select<T extends string = string>({
             const handleScrollOrResize = () => updateCoords();
             window.addEventListener('resize', handleScrollOrResize);
             window.addEventListener('scroll', handleScrollOrResize, true);
+            // The keyboard opening fires neither of those on iOS — only the
+            // visual viewport notices, and that is exactly when the list is
+            // most likely to need flipping.
+            window.visualViewport?.addEventListener('resize', handleScrollOrResize);
+            window.visualViewport?.addEventListener('scroll', handleScrollOrResize);
             return () => {
                 window.removeEventListener('resize', handleScrollOrResize);
                 window.removeEventListener('scroll', handleScrollOrResize, true);
+                window.visualViewport?.removeEventListener('resize', handleScrollOrResize);
+                window.visualViewport?.removeEventListener('scroll', handleScrollOrResize);
             };
         } else {
             setIsPositioned(false);
@@ -167,7 +188,7 @@ export function Select<T extends string = string>({
                     </div>
                 </div>
             )}
-            <div className="max-h-[260px] overflow-y-auto custom-scroll p-1.5 space-y-0.5 bg-[#0f172a] opacity-100">
+            <div className="overflow-y-auto custom-scroll p-1.5 space-y-0.5 bg-[#0f172a] opacity-100" style={{ maxHeight: coords.maxHeight }}>
                 {filteredOptions.length === 0 ? (
                     <div className="p-3 text-xs text-slate-600 text-center italic">{t("No options found")}</div>
                 ) : (

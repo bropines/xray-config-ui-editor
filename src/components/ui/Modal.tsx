@@ -71,7 +71,7 @@ export const Modal = ({
         ${isFullScreen ? 'max-w-full' : modalWidthClass} ${passThrough.join(' ')}`}>
         
         {/* Header */}
-        <div className="flex justify-between items-center p-4 md:p-5 border-b border-slate-800 shrink-0">
+        <div className="flex justify-between items-center p-4 md:p-5 pt-[max(1rem,env(safe-area-inset-top))] md:pt-5 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3 min-w-0 relative z-10">
             <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2 truncate">
                 <Icon name="PencilSimple" className="text-indigo-400 shrink-0"/> {title}

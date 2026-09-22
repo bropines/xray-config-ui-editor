@@ -35,6 +35,10 @@ body {
 
 #app {
     height: 100dvh;
+    /* viewport-fit=cover разрешает рисовать под вырезом и под полосой жестов,
+       так что отступы надо вернуть там, где реально лежит содержимое. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 /* Hide number input spinners globally */
@@ -55,10 +59,10 @@ input[type="number"] {
    only ever worked because the Tailwind CDN script parsed it at runtime. */
 @layer components {
     .input-base {
-        @apply w-full bg-slate-950 border border-slate-700 rounded-lg h-11 px-4 text-white text-sm focus:border-indigo-500 outline-none transition-all font-mono shadow-inner;
+        @apply w-full bg-slate-950 border border-slate-700 rounded-lg h-11 px-4 text-white text-base md:text-sm focus:border-indigo-500 outline-none transition-all font-mono shadow-inner;
     }
     .select-base {
-        @apply w-full bg-slate-950 border border-slate-700 rounded-lg h-11 pl-4 pr-10 text-white text-sm focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner;
+        @apply w-full bg-slate-950 border border-slate-700 rounded-lg h-11 pl-4 pr-10 text-white text-base md:text-sm focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 0.75rem center;
@@ -98,6 +102,9 @@ input[type="number"] {
 .custom-scroll {
     scrollbar-width: thin;
     scrollbar-color: #334155 #0f172a;
+    /* Доскроллив до конца, жест не должен уезжать на страницу под листом:
+       на телефоне это выглядит как рывок всей модалки. */
+    overscroll-behavior: contain;
 }
 
 .custom-scroll::-webkit-scrollbar {
