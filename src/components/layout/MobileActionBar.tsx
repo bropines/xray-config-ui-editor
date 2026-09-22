@@ -1,4 +1,5 @@
 import React from 'react';
+import { CONFIG_FILE_ACCEPT } from '../../core/config-file';
 import { Icon } from '../ui/Icon';
 import { t } from '../../i18n';
 
@@ -81,7 +82,7 @@ export const MobileActionBar = ({
                 <label className={`${item} text-slate-300 active:bg-slate-800 cursor-pointer`}>
                     <Icon name="FolderOpen" className="text-lg" />
                     <span>{t("Open")}</span>
-                    <input type="file" className="hidden" accept=".json" onChange={onFileUpload} />
+                    <input type="file" className="hidden" accept={CONFIG_FILE_ACCEPT} onChange={onFileUpload} />
                 </label>
 
                 <button

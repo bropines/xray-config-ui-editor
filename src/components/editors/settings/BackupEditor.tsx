@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { CONFIG_FILE_ACCEPT } from '../../../core/config-file';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -118,7 +119,7 @@ export const BackupEditor = () => {
                 <input
                     ref={fileInput}
                     type="file"
-                    accept="application/json,.json"
+                    accept={CONFIG_FILE_ACCEPT}
                     className="hidden"
                     onChange={handlePick}
                 />

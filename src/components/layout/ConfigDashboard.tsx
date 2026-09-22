@@ -767,9 +767,8 @@ export const ConfigDashboard = ({
                   {config.routing?.domainStrategy || "AsIs"}
                 </span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[60dvh] overflow-y-auto overscroll-contain custom-scroll md:max-h-none md:overflow-visible">
                 {(config.routing?.rules || [])
-                  .slice(0, 20)
                   .map((rule: any, i: number) => {
                     const snippetName = getSnippetRefName(rule);
                     if (snippetName) {
@@ -875,11 +874,6 @@ export const ConfigDashboard = ({
                     <br />
                     {t("Traffic will follow the first outbound.")}
                     </div>
-                )}
-                {(config.routing?.rules || []).length > 20 && (
-                  <div className="text-center text-xs text-slate-500 italic pt-2 border-t border-slate-800">
-                    ... +{(config.routing?.rules || []).length - 20} more rules
-                  </div>
                 )}
               </div>
             </DashCard>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { CONFIG_FILE_ACCEPT } from '../../core/config-file';
 import { Icon } from '../ui';
 import { Button } from '../ui';
 import { Select } from '../ui/Select';
@@ -248,7 +249,7 @@ export const AppNav = ({
                             title={t("Load JSON")}
                         >
                             <Icon name="FolderOpen" />
-                            <input type="file" className="hidden" accept=".json" onChange={onFileUpload} />
+                            <input type="file" className="hidden" accept={CONFIG_FILE_ACCEPT} onChange={onFileUpload} />
                         </label>
                         <Button variant="success" onClick={onDownload} icon="DownloadSimple" className="rounded-lg h-9 px-2.5 sm:px-4 text-xs font-bold shadow-none" disabled={!hasConfig} title={t("Download")}>
                             <span className="hidden md:inline">{t("Download")}</span>
