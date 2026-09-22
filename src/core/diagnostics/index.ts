@@ -1,5 +1,4 @@
 import type { XrayConfig } from '../types';
-import type { ValidationError } from '../validators';
 import {
     collectSnippetRefs,
     indexSnippets,

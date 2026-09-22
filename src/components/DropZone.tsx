@@ -14,7 +14,7 @@ export const DropZone = ({ onFileLoaded }: DropZoneProps) => {
         reader.onload = (e) => {
             try {
                 onFileLoaded(parseJsonc(e.target?.result as string));
-            } catch (err) {
+            } catch {
                 alert("Invalid JSON");
             }
         };

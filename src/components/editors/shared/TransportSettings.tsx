@@ -5,7 +5,6 @@ import { Help } from '../../ui/Help';
 import { generateRealityShortIds, generateX25519Keys } from '../../../core/generators';
 import { REALITY_FIELDS, TLS_FIELDS, hiddenKeysFor, foreignFieldsIn } from '../../../core/xray/field-directions';
 import { SockoptEditor } from './SockoptEditor';
-import { TagSelector } from '../../ui/TagSelector';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 import { FinalmaskEditor } from './FinalmaskEditor';
 import { Switch } from '../../ui/Switch';
@@ -104,7 +103,6 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
             const v = value?.[key];
             return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '' && v !== false;
         });
-    const [tempPublicKey, setTempPublicKey] = useState<string | null>(null);
     // Paths the user collected from the real REALITY target. The spiderX
     // generator prefers them to anything it can invent.
     const spiderPaths = useConfigStore(state => state.spiderPaths);
@@ -178,20 +176,6 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
 
     const net = network.value || "tcp";
     const sec = security.value || "none";
-
-    const handleGenKeys = () => {
-        const keys = generateX25519Keys();
-        if (isClient) {
-            update(['realitySettings', 'privateKey'], keys.privateKey);
-            update(['realitySettings', 'publicKey'], keys.publicKey);
-        } else {
-            update(['realitySettings', 'privateKey'], keys.privateKey);
-            setTempPublicKey(keys.publicKey);
-            if (!streamSettings.realitySettings?.shortIds) {
-                update(['realitySettings', 'shortIds'], [Math.random().toString(16).substring(2, 10)]);
-            }
-        }
-    };
 
     return (
         <div className="bg-slate-900/40 p-5 rounded-2xl border border-slate-800/80 space-y-6 animate-in fade-in duration-300">

@@ -18,7 +18,7 @@ export function parseJsonc<T = any>(input: string): T {
         // silently discarded on the very first parse, before any of the
         // "preserve comments" logic downstream ever got a chance to run.
         return commentJsonParse(input, null, false) as T;
-    } catch (e) {
+    } catch {
         const cleanComments = input.replace(/("(?:\\.|[^\\"])*")|\/\*[\s\S]*?\*\/|\/\/.*/g, (match, group1) => {
             return group1 ? group1 : "";
         });
@@ -34,7 +34,7 @@ export function stringifyJsonc(val: any, space: number = 2): string {
     if (val === undefined || val === null) return "";
     try {
         return commentJsonStringify(val, null, space);
-    } catch (e) {
+    } catch {
         return JSON.stringify(val, null, space);
     }
 }

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Icon } from '../ui';
-import { Button } from '../ui';
 import { t } from '../../i18n';
 
 interface DragDropOverlayProps {

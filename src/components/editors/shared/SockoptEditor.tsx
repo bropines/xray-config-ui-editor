@@ -1,7 +1,6 @@
 import React from 'react';
 import { TagSelector } from '../../ui/TagSelector';
 import { Help } from '../../ui/Help';
-import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { useConfigStore } from '../../../store/configStore';
 import { Select } from '../../ui/Select';

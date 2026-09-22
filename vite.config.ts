@@ -7,12 +7,12 @@ import { execSync } from 'child_process'
 let gitHash = 'dev'
 try {
   gitHash = execSync('git rev-parse --short HEAD').toString().trim()
-} catch (e) { }
+} catch { }
 
 let gitTag = '1.0.0'
 try {
   gitTag = execSync('git describe --tags --abbrev=0').toString().trim().replace(/^v/, '')
-} catch (e) { }
+} catch { }
 
 const appVersion = `v${gitTag}-${gitHash}`
 

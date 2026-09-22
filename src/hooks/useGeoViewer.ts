@@ -8,7 +8,6 @@ export interface GeoItem { code: string; count: number; }
 
 export const useGeoViewer = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const customWorkerRef = useRef<Worker | null>(null);
 
     const [activeTab, setActiveTab] = useState<'geosite' | 'geoip' | 'custom'>(() => (localStorage.getItem('geo_tab') as any) || 'geosite');
     const [customUrl, setCustomUrl] = useState(() => localStorage.getItem('geo_url') || "");
@@ -60,7 +59,7 @@ export const useGeoViewer = () => {
                     setGeoIps(ips);
                     setLoading(false);
                 }
-            } catch (e) {
+            } catch {
                 if (isMounted) setLoading(false);
             }
         };
@@ -218,7 +217,7 @@ export const useGeoViewer = () => {
                 try { 
                     res = await fetch(target);
                     if (res.ok) break;
-                } catch (e) {} 
+                } catch {} 
             }
             if (!res || !res.ok) throw new Error("Failed to fetch list from URL");
 

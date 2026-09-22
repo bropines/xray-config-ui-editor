@@ -79,7 +79,7 @@ self.onmessage = async (e: MessageEvent) => {
                         console.log("Fetch success from:", t, "size:", b.byteLength);
                         return b;
                     }
-                } catch (err) { console.warn("Fetch failed for:", t); }
+                } catch { console.warn("Fetch failed for:", t); }
             }
             throw new Error("Failed to download DAT file");
         };

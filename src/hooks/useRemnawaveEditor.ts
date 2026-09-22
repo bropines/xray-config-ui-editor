@@ -28,7 +28,7 @@ export const useRemnawaveEditor = (onClose: () => void) => {
         try {
             const list = await fetchRemnawaveProfiles();
             setProfiles(list);
-        } catch (e: any) {
+        } catch {
             setStep('login');
         } finally {
             setLoading(false);

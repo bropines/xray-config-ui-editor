@@ -79,7 +79,7 @@ const decodeSubscriptionText = (raw: string): string => {
         if (decodedB64.includes('://') || decodedB64.startsWith('[') || decodedB64.startsWith('{')) {
             return decodedB64;
         }
-    } catch (e) {}
+    } catch {}
 
     return text;
 };
@@ -114,7 +114,7 @@ const handleFetchSub = async () => {
                     return;
                 }
             }
-        } catch (e) {
+        } catch {
             // Stage 1 failed
         }
 
@@ -128,7 +128,7 @@ const handleFetchSub = async () => {
                     rawText = await res.text();
                     resHeaders = res.headers;
                 }
-            } catch (e) {
+            } catch {
                 // Stage 2 failed
             }
         }
@@ -141,7 +141,7 @@ const handleFetchSub = async () => {
                 if (res.ok) {
                     rawText = await res.text();
                 }
-            } catch (e) {
+            } catch {
                 // Stage 3 failed
             }
         }

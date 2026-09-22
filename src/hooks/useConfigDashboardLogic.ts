@@ -57,7 +57,7 @@ export function useConfigDashboardGit(): ConfigDashboardGit {
     if (currentHistory.length > 0) {
       try {
         return JSON.stringify(storeConfig) !== JSON.stringify(currentHistory[0].config);
-      } catch (e) {
+      } catch {
         return false;
       }
     }
@@ -67,7 +67,7 @@ export function useConfigDashboardGit(): ConfigDashboardGit {
     if (!baseline) return false;
     try {
       return JSON.stringify(storeConfig) !== baseline;
-    } catch (e) {
+    } catch {
       return false;
     }
   }, [baselineConfigJson, storeConfig, profiles, activeProfileId, histories, remnawave.activeProfileUuid]);

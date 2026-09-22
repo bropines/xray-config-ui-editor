@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { JsonEditor } from "./JsonEditor";
-import { parseJsonc, stringifyJsonc, stripJsoncComments } from "../../utils/jsonc";
+import { parseJsonc, stringifyJsonc } from "../../utils/jsonc";
 import { t } from '../../i18n';
 
 interface JsonFieldProps {
@@ -55,7 +55,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                     setText(rawText);
                     return;
                 }
-            } catch (e) {}
+            } catch {}
         }
 
         // 2. If current text in editor matches structurally, keep it (do not wipe user's comments/formatting while typing)
@@ -66,7 +66,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                     return;
                 }
             }
-        } catch (e) {
+        } catch {
             // While text has syntax error or in-progress edits, do not overwrite!
             return;
         }
@@ -94,7 +94,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                         }
                     }
                 }
-            } catch (e) {}
+            } catch {}
         }
 
         // 4. Fallback to standard comment-json stringify
@@ -144,7 +144,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                 setError(false);
             }
         }
-    } catch (err) {
+    } catch {
         setError(true);
     }
 };

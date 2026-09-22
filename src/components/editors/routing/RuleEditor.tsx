@@ -17,7 +17,7 @@ const AttrsEditor = ({ value, onChange }: any) => {
         const currentText = value ? JSON.stringify(value, null, 2) : "";
         try {
             if (JSON.stringify(parseJsonc(text)) === JSON.stringify(value)) return;
-        } catch (e) { }
+        } catch { }
         setText(currentText);
     }, [value]);
 
@@ -32,7 +32,7 @@ const AttrsEditor = ({ value, onChange }: any) => {
             const parsed = parseJsonc(v);
             onChange(parsed);
             setError(false);
-        } catch (e) {
+        } catch {
             setError(true);
         }
     };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseJsonc } from '../utils/jsonc';
-import { useConfigStore, type XrayConfig } from '../store/configStore';
+import { useConfigStore } from '../store/configStore';
 import { runFullDiagnostics } from '../core/diagnostics';
 import { parseJsonSubscription } from '../utils/link-parser';
 import { toast } from 'sonner';

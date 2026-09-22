@@ -151,8 +151,8 @@ export function useConfigInspector(setModal: (m: any) => void) {
                     let b64 = decoded.replace(/\s/g, '');
                     while (b64.length % 4 !== 0) b64 += '=';
                     const dec = atob(b64);
-                    try { decoded = decodeURIComponent(escape(dec)); } catch (e) { decoded = dec; }
-                } catch (e) {
+                    try { decoded = decodeURIComponent(escape(dec)); } catch { decoded = dec; }
+                } catch {
                     decoded = rawText.trim();
                 }
             }
@@ -163,7 +163,7 @@ export function useConfigInspector(setModal: (m: any) => void) {
                     const parsed = JSON.parse(decoded);
                     decoded = JSON.stringify(parsed, null, 2);
                 }
-            } catch (e) { }
+            } catch { }
 
             setInputText(decoded);
             toast.success(t("Subscription fetched successfully"), { description: `HWID: ${hwid.substring(0, 8)}...` });

@@ -8,7 +8,6 @@ import { indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatchi
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { lintKeymap, linter, lintGutter } from "@codemirror/lint";
-import { jsonLanguage, json } from "@codemirror/lang-json";
 import { jsonc, jsoncLanguage } from "@platformos/lang-jsonc";
 import { oneDark } from "@codemirror/theme-one-dark";
 import Ajv from "ajv";

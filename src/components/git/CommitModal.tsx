@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
-import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { useConfigStore } from '../../store/configStore';
 import { calculateConfigStats, generateShortHash } from '../../core/git/gitEngine';

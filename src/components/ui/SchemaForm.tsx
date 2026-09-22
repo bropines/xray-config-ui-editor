@@ -421,8 +421,7 @@ export const SchemaForm = ({
         onChange(newValue);
     };
 
-    const getColSpanClass = (key: string, zodType: z.ZodTypeAny) => {
-        const details = getSchemaTypeAndDetails(zodType);
+    const getColSpanClass = (key: string) => {
         if (
             key.toLowerCase().includes('path') ||
             key.toLowerCase().includes('cert')
@@ -482,7 +481,7 @@ export const SchemaForm = ({
                         const placeholder = customConfig.placeholder ?? standardConfig.placeholder;
                         const options = customConfig.options ?? standardConfig.options;
 
-                        const colSpanClass = getColSpanClass(key, fieldSchema);
+                        const colSpanClass = getColSpanClass(key);
 
                         return (
                             <div key={key} className={colSpanClass}>

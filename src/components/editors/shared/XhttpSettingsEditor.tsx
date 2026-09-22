@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Icon } from '../../ui/Icon';
 import { Switch } from '../../ui/Switch';
 import { Help } from '../../ui/Help';
-import { SockoptEditor } from './SockoptEditor';
 import { Select } from '../../ui/Select';
 import { DurationInput } from '../../ui/DurationInput';
 import { useXhttpSettingsEditor } from '../../../hooks/useXhttpSettingsEditor';

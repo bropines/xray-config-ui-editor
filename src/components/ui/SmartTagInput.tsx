@@ -117,7 +117,7 @@ const SortableChipTag = ({
                                 document.execCommand('copy');
                                 document.body.removeChild(el);
                                 toast.success(`Copied: ${tag}`);
-                            } catch (err) { toast.error(t("Copy failed")); }
+                            } catch { toast.error(t("Copy failed")); }
                         });
                 } else {
                     try {
@@ -128,7 +128,7 @@ const SortableChipTag = ({
                         document.execCommand('copy');
                         document.body.removeChild(el);
                         toast.success(`Copied: ${tag}`);
-                    } catch (err) { toast.error(t("Copy failed")); }
+                    } catch { toast.error(t("Copy failed")); }
                 }
             }
         }

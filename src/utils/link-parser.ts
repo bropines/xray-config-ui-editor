@@ -122,7 +122,7 @@ const decodeBase64Safe = (b64: string): string => {
     } catch {
       return decoded;
     }
-  } catch (e) {
+  } catch {
     return "";
   }
 };
@@ -310,7 +310,7 @@ export const parseXrayLink = (link: string): any => {
                 }
             }
         }
-      } catch (e) {
+      } catch {
         // Not a full base64 link
       }
 
@@ -323,7 +323,7 @@ export const parseXrayLink = (link: string): any => {
           let decodedUserInfo = "";
           try {
               decodedUserInfo = atob(userInfoRaw.replace(/-/g, '+').replace(/_/g, '/'));
-          } catch (e) {
+          } catch {
               decodedUserInfo = userInfoRaw;
           }
 
@@ -334,7 +334,7 @@ export const parseXrayLink = (link: string): any => {
           }
 
           // Handle host:port?query
-          const [hostPort, queryStr] = hostPortPart.split('?');
+          const [hostPort] = hostPortPart.split('?');
           if (hostPort.includes(':')) {
               const hp = hostPort.split(':');
               serverAddr = hp[0];

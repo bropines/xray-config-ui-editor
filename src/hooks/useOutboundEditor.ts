@@ -1,11 +1,9 @@
 import { useXrayEditor } from './useXrayEditor';
 import { validateOutbound, validateWireguard, checkOutboundDuplication } from '../core/validators';
-import type { ValidationError } from '../core/validators';
 import { createDefaultOutbound } from '../utils/protocol-factories';
 import { useConfigStore } from '../store/configStore';
 import type { Outbound } from '../store/configStore';
 import { useCallback } from 'react';
-import { toast } from 'sonner';
 
 export const useOutboundEditor = (data: Outbound, onSave: (data: Outbound, rawText?: string | null) => void, index: number | null) => {
     const { config } = useConfigStore();

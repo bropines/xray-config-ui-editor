@@ -17,8 +17,6 @@ export const GitHistoryModal = ({ onClose }: { onClose: () => void }) => {
         deleteSnapshot,
         clearHistory,
         deduplicateHistory,
-        historyLimit,
-        config
     } = useConfigStore();
 
     // Determine which history to show based on active profile

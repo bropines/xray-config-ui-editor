@@ -44,7 +44,7 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                                 try {
                                     res = await fetch(target);
                                     if (res.ok) break;
-                                } catch (e) {}
+                                } catch {}
                             }
 
                             if (res && res.ok) {
@@ -55,7 +55,7 @@ export const useTagDetails = (tag: string, customUrl?: string, customFormat?: st
                                 throw new Error("Fetch failed");
                             }
                         }
-                    } catch (err) {
+                    } catch {
                         if (!isCancelled) {
                             toast.error(t("Failed to download database for extraction"));
                             setText("Network error.");

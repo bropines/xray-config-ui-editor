@@ -40,7 +40,7 @@ export type {
     BurstObservatoryConfig,
 } from '../core/types';
 
-import type { XrayConfig, Inbound, Outbound, RoutingRule } from '../core/types';
+import type { XrayConfig, RoutingRule } from '../core/types';
 import { t } from '../i18n';
 
 export interface LocalProfile {
@@ -998,7 +998,7 @@ export const useConfigStore = create(
                     const reverted = parseJsonc(baselineConfigJson);
                     set({ config: reverted, rawConfigText: baselineConfigJson });
                     toast.info(t("Reverted changes to baseline"));
-                } catch (e) {}
+                } catch {}
             },
 
             markBaseline: () => {

@@ -1,8 +1,6 @@
 import React from 'react';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-import { DnsServerEditor } from './DnsServerEditor';
-import { useConfigStore } from '../../../store/configStore'; // Если нужно обновлять глобально, но тут мы принимаем пропсы
 import { useArrayField } from '../../../hooks/useField';
 
 // DnD Imports

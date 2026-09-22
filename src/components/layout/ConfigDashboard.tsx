@@ -10,7 +10,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { XrayConfig } from "../../core/types";
-import { Select } from "../ui/Select";
 import { CommitModal } from "../git/CommitModal";
 import { collectSnippetRefs, getSnippetRefName, type SnippetDefinition } from '../../core/snippets';
 import { useConfigDashboardGit, useOutboundSelection } from "../../hooks/useConfigDashboardLogic";
