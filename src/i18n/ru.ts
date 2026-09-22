@@ -614,8 +614,16 @@ export const ru: Record<string, string> = {
     'Keep-alive (s)': 'Keep-alive (с)',
     'Allowed IPs': 'Разрешённые IP',
     'No peers added': 'Пиров нет',
-    'ForceIP: query DNS locally and use IP. UseIP: resolve IP through system.':
-        'ForceIP — резолвить DNS локально и работать по IP. UseIP — получать IP через систему.',
+    "How the peer's endpoint domain is resolved. WireGuard accepts only the Force variants; anything else stops the core from starting.":
+        'Как резолвится домен эндпоинта пира. WireGuard принимает только варианты Force — на любом другом значении ядро не запустится.',
+    'ForceIP (Default)': 'ForceIP (по умолчанию)',
+    'Resolve the endpoint to any address': 'Резолвить эндпоинт в любой адрес',
+    'IPv4 only': 'Только IPv4',
+    'IPv6 only': 'Только IPv6',
+    'IPv4 first, then IPv6': 'Сначала IPv4, потом IPv6',
+    'IPv6 first, then IPv4': 'Сначала IPv6, потом IPv4',
+    'Not accepted by Xray-core — the config will not start':
+        'Xray-core не принимает это значение — конфиг не запустится',
     'Workers': 'Воркеры',
     'Number of concurrent workers. Default is CPU core count.':
         'Сколько воркеров работает параллельно. По умолчанию — по числу ядер.',

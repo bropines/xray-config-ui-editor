@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.19.2] - 2026-09-22
+
+### Fixed
+- **The WireGuard domain strategy could not be set to four of its five values, and two of the three on offer break the config.** `infra/conf/wireguard.go` (v26.9.9) lower-cases the value and matches it against exactly `forceip`, `forceipv4`, `forceipv6`, `forceipv4v6`, `forceipv6v4` — an empty value meaning ForceIP — and returns *"unsupported domain strategy"* for anything else, so the core refuses to start. The chooser offered `AsIs`, `UseIP` and `ForceIP`: the first two are rejected by Xray, and the four IPv4/IPv6 variants that it accepts were missing. A config carrying `ForceIPv4` — which is what the panel and the WARP generators write — showed an empty chooser, because the value it held was not in the list.
+  - All five are on offer now, default first. A value the core would refuse is still shown rather than hidden behind an empty chooser, labelled as one the core will not accept.
+  - The schema beside it has had the right five all along (`WireguardDomainStrategySchema`), which is what the JSON editors validate against — so the form and the JSON view disagreed about the same config. A test now keeps the chooser and the schema in step.
+  - This list has been three items since the field was first written (81e54ef); nothing removed it.
+
 ## [1.19.1] - 2026-09-22
 
 ### Changed

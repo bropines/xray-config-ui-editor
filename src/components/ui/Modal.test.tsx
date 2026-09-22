@@ -177,7 +177,7 @@ describe('ModalBottomBar', () => {
         const bar = bottomBar()!;
         // Two portals, two columns of the same width.
         expect(bar.childElementCount).toBe(2);
-        for (const wrapper of bar.children) {
+        for (const wrapper of Array.from(bar.children)) {
             expect(wrapper.className).toContain('flex-1');
         }
         // And the row, not the control's own padding, sets the height.

@@ -9,6 +9,7 @@ import { ExperimentalBadge } from '../../ui/ExperimentalBadge';
 import { generateWarpAccount } from '../../../core/generators';
 import { useConfigStore } from '../../../store/configStore';
 import { useField, useArrayField } from '../../../hooks/useField';
+import { WG_DOMAIN_STRATEGIES } from './wireguard-strategies';
 import { t } from '../../../i18n';
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {
@@ -32,6 +33,14 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
     const reserved = useField<number[]>(outbound, onChange, ['settings', 'reserved']);
     const noKernelTun = useField<boolean>(outbound, onChange, ['settings', 'noKernelTun']);
     const domainStrategy = useField<string>(outbound, onChange, ['settings', 'domainStrategy']);
+
+    // A value the core would refuse is still shown rather than hidden behind
+    // an empty chooser: seeing what is set is the first step to fixing it.
+    const strategies = WG_DOMAIN_STRATEGIES();
+    const current = domainStrategy.value;
+    const domainStrategyOptions = current && !strategies.some(o => o.value === current)
+        ? [{ value: current, label: current, description: t("Not accepted by Xray-core — the config will not start") }, ...strategies]
+        : strategies;
     const workers = useField<number>(outbound, onChange, ['settings', 'workers']);
     const remoteDNS = useField<string[]>(outbound, onChange, ['settings', 'remoteDNS']);
     const peers = useArrayField<any>(outbound, onChange, ['settings', 'peers']);
@@ -198,14 +207,10 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4">
                 <Select
                     label={t("Domain Strategy")}
-                    hint={t("ForceIP: query DNS locally and use IP. UseIP: resolve IP through system.")}
-                    value={domainStrategy.value || "AsIs"}
+                    hint={t("How the peer's endpoint domain is resolved. WireGuard accepts only the Force variants; anything else stops the core from starting.")}
+                    value={domainStrategy.value || "ForceIP"}
                     onChange={val => domainStrategy.onChange(val)}
-                    options={[
-                        { value: 'AsIs', label: t("AsIs (Default)") },
-                        { value: 'UseIP', label: t("UseIP") },
-                        { value: 'ForceIP', label: t("ForceIP") }
-                    ]}
+                    options={domainStrategyOptions}
                 />
                 <FormField label={t("Workers")} help={t("Number of concurrent workers. Default is CPU core count.")}>
                     <input type="number" className="input-base h-[42px]" placeholder={t("Auto")} value={workers.value || ""} onChange={e => workers.onChange(parseInt(e.target.value) || 0)} />
