@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.17.0] - 2026-09-22
+
+### Changed
+- **700 kB less to download before the app can be used.** Nothing was lazy: every screen's code was fetched and parsed on first load, including two things most sessions never open.
+  - **The JSON editor (417 kB)** — CodeMirror, its grammars and its lint machinery — arrives the first time a JSON view is switched on. Split behind the `JsonEditor` component itself, so all eight places that use it were fixed at once.
+  - **The topology graph (279 kB + 16 kB of stylesheet)** arrives when the graph is opened.
+  - **`@xyflow/react` was being bundled as React.** The chunk rule matched any package path ending in `/react/`, so the graph library and its stylesheet landed in the entry chunk — downloaded, parsed and blocking the first paint for everyone, whether or not they ever opened the topology. It was the reason making the modal lazy changed nothing until the rule was anchored.
+- The first load is now the entry, React, the icon paths, the JSONC parser and the stylesheet — **1.9 MB where it was 2.6 MB**.
+
 ## [1.16.0] - 2026-09-22
 
 ### Fixed

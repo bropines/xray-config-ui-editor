@@ -104,10 +104,16 @@ export default defineConfig({
           if (id.includes('icon-map.generated')) return 'icons';
           if (!id.includes('node_modules')) return;
           if (/\/(@codemirror|@lezer|@platformos)\//.test(id)) return 'codemirror';
-          if (/\/(@xyflow|dagre|d3-)/.test(id)) return 'topology';
-          if (/\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+          // Anchored at the package root: `@xyflow/react` also ends in
+          // `/react/`, and matching it here put the whole graph library —
+          // and its stylesheet — in the entry's chunk, where it was
+          // downloaded and parsed by everyone who never opens the topology.
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
           if (/\/(protobufjs|@protobufjs)\//.test(id)) return 'protobuf';
-          if (/\/(ajv|zod-to-json-schema|comment-json)\//.test(id)) return 'schema';
+          if (/\/comment-json\//.test(id)) return 'schema';
+          // @xyflow and dagre are named by nothing here on purpose: left
+          // alone they land in the chunk of the dynamic import that pulls
+          // them, which is the topology modal and nowhere else.
         },
       },
     },

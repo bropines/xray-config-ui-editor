@@ -5,7 +5,12 @@ import { RoutingModal } from '../editors/RoutingModal';
 import { DnsModal } from '../editors/DnsModal';
 import { SettingsModal } from '../editors/SettingsModal';
 import { ReverseModal } from '../editors/ReverseModal';
-import { TopologyModal } from '../topology/TopologyModal';
+/**
+ * The graph view brings 267 kB of @xyflow and dagre with it, for a screen
+ * that is opened on purpose and not often. Fetched when it is asked for.
+ */
+const TopologyModal = React.lazy(() =>
+    import('../topology/TopologyModal').then(module => ({ default: module.TopologyModal })));
 import { RemnawaveModal } from '../editors/RemnawaveModal';
 import { SectionJsonModal } from '../editors/SectionJsonModal';
 import { BatchOutboundModal } from '../editors/outbound/BatchOutboundModal';
@@ -154,7 +159,11 @@ export const ModalManager = ({
         {modal.type === 'dns' && <DnsModal onClose={onCloseModal} />}
         {modal.type === 'settings' && <SettingsModal onClose={onCloseModal} />}
         {modal.type === 'reverse' && <ReverseModal onClose={onCloseModal} />}
-        {modal.type === 'topology' && <TopologyModal onClose={onCloseModal} />}
+        {modal.type === 'topology' && (
+            <React.Suspense fallback={null}>
+                <TopologyModal onClose={onCloseModal} />
+            </React.Suspense>
+        )}
 
         {batchModalOpen && <BatchOutboundModal onClose={onCloseBatch} />}
         {geoViewerOpen && <GeoViewerModal onClose={onCloseGeoViewer} />}

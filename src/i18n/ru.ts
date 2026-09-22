@@ -51,6 +51,7 @@ export const ru: Record<string, string> = {
     'Clipboard is not available here': 'Буфер обмена здесь недоступен',
     'Nothing to copy': 'Копировать нечего',
     'Loading your workspace…': 'Загружаем ваше рабочее пространство…',
+    'Loading editor…': 'Загружаем редактор…',
 
     // ── Local balancer / template builder ───────────────────────────────────
     'Label — also the grouping key when splitting by location':
