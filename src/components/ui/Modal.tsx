@@ -90,7 +90,7 @@ export const Modal = ({
         </div>
 
         {/* Content */}
-        <div className={`${isFullScreen ? 'p-1' : 'p-3 md:p-6'} ${contentOverflow} custom-scroll flex-1 relative flex flex-col min-h-0 @container`}>
+        <div className={`${isFullScreen ? 'p-1' : 'p-3 md:p-6'} ${contentOverflow} overscroll-contain custom-scroll flex-1 relative flex flex-col min-h-0 @container`}>
           {children}
         </div>
 

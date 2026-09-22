@@ -102,9 +102,6 @@ input[type="number"] {
 .custom-scroll {
     scrollbar-width: thin;
     scrollbar-color: #334155 #0f172a;
-    /* Доскроллив до конца, жест не должен уезжать на страницу под листом:
-       на телефоне это выглядит как рывок всей модалки. */
-    overscroll-behavior: contain;
 }
 
 .custom-scroll::-webkit-scrollbar {

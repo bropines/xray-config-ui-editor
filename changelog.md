@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.2] - 2026-09-22
+
+### Fixed
+- **Scrolling over most of the app stopped working.** 1.6.1 put `overscroll-behavior: contain` on `.custom-scroll` to keep a mobile sheet from dragging the page behind it. That mode stops scroll chaining *even when the container has nothing to scroll* — so the wheel was swallowed and the parent never moved. `.custom-scroll` is on about a hundred elements, most of them not overflowing at any moment, which turned "scroll anywhere" into "scroll only over the few panes that happen to be full". Containment now sits on the one element that wanted it: the sheet body, which is always a scroll container. Measured on the dashboard: seven `.custom-scroll` elements, none of them overflowing, exactly one containing.
+
 ## [1.6.1] - 2026-09-22
 
 ### Fixed
