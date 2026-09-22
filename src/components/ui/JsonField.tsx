@@ -9,7 +9,7 @@ interface JsonFieldProps {
     value: any;
     onChange: (val: any, rawText?: string) => void;
     className?: string;
-    schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse';
+    schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse' | 'none';
     rawText?: string | null;
     /**
      * The full config document's current raw JSONC text (store's
@@ -22,11 +22,19 @@ interface JsonFieldProps {
     /** Forwarded to JsonEditor — see its own doc comment. */
     onSaveShortcut?: () => void;
     onCommitShortcut?: () => { id: string; additions?: number; deletions?: number } | null | undefined;
+    /**
+     * Sized by its container instead of claiming most of the viewport.
+     *
+     * The default minimum is for a field that IS the screen — a JSON mode, a
+     * section editor. Inside a form field it would push everything else off
+     * the page for the sake of a two-line array.
+     */
+    inline?: boolean;
     /** Forwarded to JsonEditor. Previously accepted but silently dropped here — the prop wasn't declared, so callers passing it (e.g. VersionHistoryModal's snapshot preview) got an editable field despite asking for read-only. */
     readOnly?: boolean;
 }
 
-export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full', rawText, rawConfigText, onSaveShortcut, onCommitShortcut, readOnly = false }: JsonFieldProps) => {
+export const JsonField = ({ label, value, onChange, className = "", schemaMode = 'full', rawText, rawConfigText, onSaveShortcut, onCommitShortcut, readOnly = false, inline = false }: JsonFieldProps) => {
     const [text, setText] = useState("");
     const [error, setError] = useState(false);
 
@@ -118,7 +126,7 @@ export const JsonField = ({ label, value, onChange, className = "", schemaMode =
                 </div>
             )}
             
-            <div className={`flex-1 min-h-[45dvh] md:min-h-[65vh] relative rounded-lg overflow-hidden border transition-all bg-[#282c34] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
+            <div className={`flex-1 ${inline ? 'min-h-0' : 'min-h-[45dvh] md:min-h-[65vh]'} relative rounded-lg overflow-hidden border transition-all bg-[#282c34] ${error ? 'border-rose-500/50' : 'border-slate-700'}`}>
                 <div className="absolute inset-0">
                     <JsonEditor
                         value={text}

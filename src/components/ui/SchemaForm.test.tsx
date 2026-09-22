@@ -79,3 +79,46 @@ describe('SchemaForm', () => {
         expect(screen.getByText('Tag is required')).toBeDefined();
     });
 });
+
+describe('a list of objects', () => {
+    const withCerts = z.object({
+        // The shape that produced "[object Object]" tags.
+        certificates: z.array(z.object({
+            certificateFile: z.string().optional(),
+            keyFile: z.string().optional(),
+        }).passthrough()).optional(),
+        alpn: z.array(z.string()).optional(),
+    });
+
+    it('is never rendered as tags reading [object Object]', () => {
+        const { container } = render(
+            <SchemaForm
+                schema={withCerts}
+                value={{ certificates: [{ certificateFile: '/etc/xray/tls.crt', keyFile: '/etc/xray/tls.key' }] }}
+                onChange={() => {}}
+            />,
+        );
+        expect(container.textContent).not.toContain('[object Object]');
+    });
+
+    it('hands it to the JSON editor, where the objects can be read and edited', async () => {
+        render(
+            <SchemaForm
+                schema={withCerts}
+                value={{ certificates: [{ certificateFile: '/etc/xray/tls.crt', keyFile: '/etc/xray/tls.key' }] }}
+                onChange={() => {}}
+            />,
+        );
+        // CodeMirror is fetched on demand, so the field is the editor's
+        // boundary first and the editor once it lands.
+        expect(await screen.findByText(/certificateFile|Loading editor/)).toBeDefined();
+    });
+
+    it('still gives a list of strings its tag input', () => {
+        const { container } = render(
+            <SchemaForm schema={withCerts} value={{ alpn: ['h2', 'http/1.1'] }} onChange={() => {}} />,
+        );
+        expect(container.textContent).toContain('h2');
+        expect(container.textContent).toContain('http/1.1');
+    });
+});

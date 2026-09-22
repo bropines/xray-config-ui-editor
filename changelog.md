@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.19.3] - 2026-09-22
+
+### Fixed
+- **A list of objects showed as a tag reading `[object Object]`.** Extended TLS Settings renders every schema key it is given, and `certificates` is `[{certificateFile, keyFile}]` — an array, so it went to the tag input, which calls `String()` on each entry. The tag could not be read, and editing it would have replaced the certificate object with that literal text. Any array of objects in a schema-driven form had the same fate.
+  - Such a field gets the JSON editor now, showing the objects as they are. Syntax is still checked; the shape is not, because a fragment like this belongs to no section of the config — a new `none` mode for the linter, rather than validating it against something it is not.
+  - `JsonField` claimed a minimum of 45dvh, which is right for a field that *is* the screen and absurd inside a form row — it took 582px for a two-line array. It sizes to its container when asked to.
+
 ## [1.19.2] - 2026-09-22
 
 ### Fixed

@@ -4,6 +4,7 @@ import { FormField } from './FormField';
 import { Select } from './Select';
 import { Switch } from './Switch';
 import { SmartTagInput } from './SmartTagInput';
+import { JsonField } from './JsonField';
 import { NumberInput } from './NumberInput';
 import { DurationInput } from './DurationInput';
 import { DURATION_FIELD_SPECS, getSchemaTypeAndDetails } from './schema-introspection';
@@ -132,6 +133,28 @@ export const SchemaField = ({
                     onChange(stringItems);
                 }
             };
+
+            // A list of objects — TLS certificates, fallbacks, peers — has no
+            // tag form: String() on each entry gives "[object Object]", which
+            // is what this showed, and editing one of those tags would have
+            // replaced the object with that literal string. The JSON is the
+            // only honest control for a value of that shape.
+            if (innerDetails.type === 'object') {
+                return (
+                    <FormField label={fieldLabel} help={help} error={error}>
+                        <div className="h-48">
+                            <JsonField
+                                label=""
+                                value={Array.isArray(value) ? value : []}
+                                onChange={(next: any) => onChange(next)}
+                                schemaMode="none"
+                                className="h-full"
+                                inline
+                            />
+                        </div>
+                    </FormField>
+                );
+            }
 
             const displayValue = Array.isArray(value)
                 ? value.map(String)

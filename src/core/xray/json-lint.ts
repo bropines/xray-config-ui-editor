@@ -37,7 +37,9 @@ import {
 
 export type LintMode =
     | 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds'
-    | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse';
+    | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse'
+    /** A fragment with no section of its own: syntax is checked, shape is not. */
+    | 'none';
 
 export interface JsonIssue {
     /** Where the problem is, as a path of keys and array indexes. */
@@ -47,6 +49,7 @@ export interface JsonIssue {
 }
 
 const SCHEMAS: Record<LintMode, z.ZodTypeAny> = {
+    none: z.unknown(),
     full: XrayConfigSchema,
     inbound: InboundSchema,
     inbounds: z.array(InboundSchema),

@@ -24,7 +24,7 @@ export interface JsonEditorProps {
     value: string;
     onChange: (value: string) => void;
     readOnly?: boolean;
-    schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse';
+    schemaMode?: 'full' | 'inbound' | 'inbounds' | 'outbound' | 'outbounds' | 'rule' | 'dns' | 'balancer' | 'routing' | 'reverse' | 'none';
     mode?: 'json' | 'plaintext';
     /**
      * Ctrl+S handler — called (in addition to onChange, which always fires
