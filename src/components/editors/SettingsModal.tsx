@@ -38,9 +38,9 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
 
     const tabs = (
         <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 shrink-0">
-            <button onClick={() => setActiveTab('general')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Log & API")}</button>
-            <button onClick={() => setActiveTab('policy')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'policy' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Policy")}</button>
-            <button onClick={() => setActiveTab('observatory')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'observatory' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Observatory")}</button>
+            <button onClick={() => setActiveTab('general')} className={`px-4 py-2.5 md:py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Log & API")}</button>
+            <button onClick={() => setActiveTab('policy')} className={`px-4 py-2.5 md:py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'policy' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Policy")}</button>
+            <button onClick={() => setActiveTab('observatory')} className={`px-4 py-2.5 md:py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'observatory' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>{t("Observatory")}</button>
         </div>
     );
 

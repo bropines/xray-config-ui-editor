@@ -524,7 +524,7 @@ export const SmartTagInput = ({
                             type="button"
                             onClick={(e) => { e.stopPropagation(); onActionClick(); }}
                             title={actionTooltip}
-                            className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-full w-[24px]"
+                            className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-full w-[40px] md:w-[24px]"
                         >
                             <Icon name={actionIcon} className="text-base" />
                         </button>

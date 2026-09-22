@@ -607,7 +607,7 @@ export const ConfigDashboard = ({
               title={`Inbounds (${config.inbounds?.length || 0})`}
               icon="ArrowCircleDown"
               color="bg-emerald-600"
-              className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
+              className="h-[55dvh] md:h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
                 <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                   <Button
@@ -696,7 +696,7 @@ export const ConfigDashboard = ({
               title={t("Routing")}
               icon="ArrowsSplit"
               color="bg-purple-600"
-              className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
+              className="h-[55dvh] md:h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
                 <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11">
                   <Button
@@ -848,7 +848,7 @@ export const ConfigDashboard = ({
               title={`Outbounds (${config.outbounds?.length || 0})`}
               icon="ArrowCircleUp"
               color="bg-blue-600"
-              className="h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
+              className="h-[55dvh] md:h-[400px] xl:h-full xl:min-h-0 shrink-0 xl:shrink"
               actions={
                 <div className="flex items-center bg-slate-950/50 p-1 rounded-xl border border-slate-700/50 gap-1 h-11 shrink-0">
                   {/* Desktop Only Buttons: WARP, Batch, JSON, Add + Divider */}

@@ -1028,7 +1028,7 @@ export const LocalBalancerModal = ({ onClose, initialTemplateUuid, initialMode, 
                             </div>
                         )}
 
-                        <div className="shrink-0 h-[360px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
+                        <div className="shrink-0 h-[38dvh] md:h-[360px] relative rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
                             {isTemplate ? (
                                 <div className="absolute inset-0">
                                     <JsonEditor

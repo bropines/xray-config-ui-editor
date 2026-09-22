@@ -31,7 +31,7 @@ export const ReverseModal = ({ onClose }: any) => {
                 onSave={() => onClose()}
                 extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">{t("Form Mode")}</Button>}
             >
-                <div className="h-[500px] flex flex-col gap-2">
+                <div className="flex-1 min-h-0 md:flex-none md:h-[500px] flex flex-col gap-2">
                     <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded text-[10px] text-slate-400 font-mono">
                         {t("This editor edits the reverse root section directly.")}
                     </div>
@@ -111,7 +111,7 @@ export const ReverseModal = ({ onClose }: any) => {
                 </div>
             }
         >
-            <div className="max-w-2xl mx-auto h-[500px] overflow-y-auto custom-scroll p-1">
+            <div className="max-w-2xl mx-auto w-full flex-1 min-h-0 md:flex-none md:h-[500px] overflow-y-auto custom-scroll p-1">
                 {activeTab === 'bridges' && renderList('bridges')}
                 {activeTab === 'portals' && renderList('portals')}
                 

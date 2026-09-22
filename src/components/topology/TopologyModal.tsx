@@ -104,7 +104,7 @@ export const TopologyModal = ({ onClose }: { onClose: () => void }) => {
                 `}</style>
 
                 {/* Map Legend & Category Toggles */}
-                <div className="absolute bottom-4 right-4 bg-slate-900/95 p-3 sm:p-4 rounded-xl border border-slate-700/50 backdrop-blur-md shadow-2xl text-[10px] space-y-2 pointer-events-auto z-10 border-t-indigo-500/30">
+                <div className="absolute bottom-4 right-4 max-h-[35dvh] overflow-y-auto custom-scroll bg-slate-900/95 p-2.5 sm:p-4 rounded-xl border border-slate-700/50 backdrop-blur-md shadow-2xl text-[10px] space-y-1.5 sm:space-y-2 pointer-events-auto z-10 border-t-indigo-500/30">
                     <div className="font-bold text-slate-400 uppercase tracking-[0.15em] text-[9px] mb-1">{t("Toggle Map Layers")}</div>
                     
                     {/* Inbounds */}

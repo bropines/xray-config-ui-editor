@@ -25,7 +25,15 @@ const TagDetailsPanel = ({ tag, customUrl, customFormat, customFileBuffer, onClo
         <div className="w-full md:w-[400px] lg:w-[550px] shrink-0 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-in slide-in-from-right-8 fade-in duration-200 shadow-2xl h-full">
             <div className="flex items-center justify-between p-3 border-b border-slate-800 bg-slate-900/50 shrink-0">
                 <div className="flex items-center gap-2 min-w-0">
-                    <Icon name="ListDashes" className="text-indigo-400 shrink-0" />
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        title={t("Back")}
+                        className="md:hidden p-1 -ml-1 text-slate-400 hover:text-white shrink-0"
+                    >
+                        <Icon name="ArrowLeft" weight="bold" />
+                    </button>
+                    <Icon name="ListDashes" className="text-indigo-400 shrink-0 hidden md:block" />
                     <span className="text-sm font-bold text-slate-200 truncate pr-2">{tag}</span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -209,8 +217,8 @@ export const GeoViewerModal = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 </div>
 
-                <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
-                    <div className="flex-1 bg-slate-950 rounded-xl border border-slate-800 relative min-w-0">
+                <div className="flex-1 flex flex-col md:flex-row gap-4 min-h-0 overflow-hidden">
+                    <div className={`${viewTag ? 'hidden md:block' : 'block'} flex-1 bg-slate-950 rounded-xl border border-slate-800 relative min-w-0`}>
                         {loading && activeTab !== 'custom' ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10 bg-slate-950/50 backdrop-blur-sm">
                                 <Icon name="Spinner" className="text-4xl animate-spin mb-4 text-indigo-500" />

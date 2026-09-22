@@ -50,7 +50,7 @@ export const DnsModal = ({ onClose }: any) => {
                 onSave={() => onClose()}
                 extraButtons={<Button variant="secondary" className="text-xs py-1" onClick={() => setRawMode(false)} icon="Layout">{t("Form Mode")}</Button>}
             >
-                <div className="h-[500px] flex flex-col gap-2">
+                <div className="flex-1 min-h-0 md:flex-none md:h-[500px] flex flex-col gap-2">
                     <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded text-[10px] text-slate-400">
                         {t("This editor manages the dns and fakedns root sections at the same time.")}
                     </div>
@@ -96,7 +96,7 @@ export const DnsModal = ({ onClose }: any) => {
                 </div>
             }
         >
-            <div className="h-[500px] md:h-[500px] flex flex-col md:flex-row gap-6">
+            <div className="flex-1 min-h-0 md:flex-none md:h-[500px] flex flex-col md:flex-row gap-6">
 
                 {/* --- GENERAL TAB --- */}
                 {activeTab === 'general' && (

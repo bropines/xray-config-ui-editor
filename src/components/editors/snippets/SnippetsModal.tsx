@@ -264,7 +264,7 @@ export const SnippetsModal = ({ onClose }: { onClose: () => void }) => {
                                 </div>
 
                                 {view === 'form' ? (
-                                    <div className="h-[320px] md:h-[38vh] flex shrink-0">
+                                    <div className="h-[42dvh] md:h-[38vh] flex shrink-0">
                                         <SnippetFormEditor
                                             kind={lib.draftKind as any}
                                             body={draft.body}

@@ -248,7 +248,7 @@ const handleFetchSub = async () => {
                     </div>
                 )}
 
-                <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[280px]' : 'h-[380px]'}`} placeholder={t("Nodes will appear here after Fetching or Paste manual links...")} value={text} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
+                <textarea className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-white focus:border-indigo-500 outline-none resize-none leading-relaxed custom-scroll ${mode === 'import' ? 'h-[30dvh] md:h-[280px]' : 'h-[38dvh] md:h-[380px]'}`} placeholder={t("Nodes will appear here after Fetching or Paste manual links...")} value={text} onChange={e => setText(e.target.value)} readOnly={mode === 'export'} />
                 
                 {mode === 'import' && text.trim() && (
                     <Button className="w-full" onClick={() => {

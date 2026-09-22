@@ -28,7 +28,7 @@ export const TagDetailsModal = ({
             isSecondary={true}
             extraButtons={<Button variant="secondary" onClick={handleCopy} icon="Copy">{t("Copy Raw Text")}</Button>}
         >
-            <div className="h-[500px] relative overflow-hidden rounded-xl border border-slate-700 bg-[#1e1e1e]">
+            <div className="flex-1 min-h-0 md:flex-none md:h-[500px] relative overflow-hidden rounded-xl border border-slate-700 bg-[#1e1e1e]">
                 {loading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 bg-slate-900/50 rounded-xl z-10">
                         <Icon name="Spinner" className="animate-spin text-4xl mb-3 text-indigo-500" />

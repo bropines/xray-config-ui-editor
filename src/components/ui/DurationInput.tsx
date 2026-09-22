@@ -174,12 +174,12 @@ export const DurationInput: React.FC<DurationInputProps> = ({
             />
 
             {/* Stepper buttons (Up/Down) */}
-            <div className="absolute right-14 flex flex-col h-[34px] justify-between border-l border-slate-800/80 pl-1.5 pr-1.5 select-none">
+            <div className="absolute right-14 flex flex-col h-[40px] md:h-[34px] justify-between border-l border-slate-800/80 pl-2 pr-2 md:pl-1.5 md:pr-1.5 select-none">
                 <button
                     type="button"
                     onClick={handleIncrement}
                     disabled={disabled}
-                    className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[14px] disabled:opacity-30"
+                    className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[20px] md:h-[14px] disabled:opacity-30"
                 >
                     <Icon name="CaretUp" weight="bold" className="text-[10px]" />
                 </button>
@@ -187,7 +187,7 @@ export const DurationInput: React.FC<DurationInputProps> = ({
                     type="button"
                     onClick={handleDecrement}
                     disabled={disabled}
-                    className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[14px] disabled:opacity-30"
+                    className="text-slate-500 hover:text-indigo-400 active:text-indigo-500 transition-colors cursor-pointer flex items-center justify-center h-[20px] md:h-[14px] disabled:opacity-30"
                 >
                     <Icon name="CaretDown" weight="bold" className="text-[10px]" />
                 </button>

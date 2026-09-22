@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
   - The tab strip sits above the action row instead of below it, so Close and Save stay where a thumb is.
 - **`hide-scrollbar` / `no-scrollbar` were never defined.** Six places used them to make a horizontal tab strip scroll cleanly; without the rule the scrollbar took height on desktop and the strip just looked clipped.
 - `min-h-[600px]` on the config inspector and `h-[80vh]` panes inside the inspector and geo viewer now fill the shell instead of re-deriving a height taller than the phone they are on.
+- **Controls that could not be reached on a touch screen.** Four delete buttons were `opacity-0 group-hover:opacity-100` with no `md:` prefix — removing a DNS server, a WireGuard peer, a commit or a snippet field was not merely subtle on a phone, it was impossible. The house idiom scopes the reveal to desktop; these are the places that missed it.
+- **The config inspector had no mobile layout at all** — a rigid 320px index beside the board left about 25px for the board. It shows one pane at a time now, with a back button, the same switch the DNS and balancer editors already use. The geo viewer got the same back affordance, since opening a tag there already collapsed the list to nothing.
+- **The JSON editor never wrapped lines**, so every long value sat behind a horizontal scroll past a 45px gutter. Narrow viewports wrap now, through a CodeMirror compartment, so a rotated phone changes its mind instead of keeping whatever was true at startup.
+- **Twelve grids declared two or three columns with no breakpoint**, and `col-span-2` inside a one-column grid spanned into an *implicit* second column — measured at 412px, a `grid-cols-1 md:grid-cols-2` row resolved to `294px 0px` and `39px 221px`. A sweep of every grid on screen at 412px now finds only the two deliberate two-up button rows.
+- **Tap targets.** Number and duration steppers were 14px tall inside a 34px rail; the settings tabs were 22px. Touch gets 20px arrows in a 40px rail and 40px tabs; desktop keeps the compact ones.
+- **Heights chosen for a laptop.** `h-[500px]` panes in the DNS, reverse and tag-details editors, plus 280–380px textareas and three 400px dashboard cards, did not fit a ~700px phone and did not shrink to say so. They fill the sheet on a phone and keep their designed height from `md` up. The topology legend is capped at a third of the screen instead of covering half the graph.
+- A boolean field's label and its switch stack instead of squeezing each other, and a long label no longer pushes its `?` out of reach.
 
 ## [1.4.2] - 2026-09-22
 
