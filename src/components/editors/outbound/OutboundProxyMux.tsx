@@ -1,39 +1,24 @@
 import React from 'react';
 import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
-import { Help } from '../../ui/Help';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useField } from '../../../hooks/useField';
-import { migrateProxySettings } from '../../../core/xray/outbound-shape';
+import { OutboundChain } from './OutboundChain';
 import { DOMAIN_STRATEGY_OPTIONS } from './domain-strategies';
-import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import { t } from '../../../i18n';
 
-export const OutboundProxyMux = ({ outbound, onChange, showMux = true }: any) => {
-    /** Where chaining lives now; the card below reports it rather than duplicating its editor. */
-    const dialerProxy: string | undefined = outbound.streamSettings?.sockopt?.dialerProxy;
-    /**
-     * `proxySettings`, which 26.9 refuses.
-     *
-     * `OutboundDetourConfig.Build()` answers `PrintRemovedFeatureError` for it
-     * on 26.9, so the config does not load there; 26.3 and 26.7 still run it.
-     * An existing one is therefore shown on every line — red where the chosen
-     * core refuses it, amber where it works but will not survive an upgrade —
-     * and nothing offers to add a new one: `sockopt.dialerProxy` does the same
-     * job on all three.
-     */
-    const { status, tag: coreTag } = useCoreVersion();
-    const proxySettingsRefused = status('outbound.proxySettings') === 'rejected';
-    const legacyProxyTag: string | undefined = outbound.proxySettings?.tag;
-    const migrateToDialerProxy = () => {
-        const migrated = migrateProxySettings(outbound);
-        if (migrated === outbound) return;
-        onChange('streamSettings', migrated.streamSettings);
-        onChange('proxySettings', undefined);
-    };
+export const OutboundProxyMux = ({
+    outbound,
+    onChange,
+    showChain = true,
+    showMux = true,
+    showStrategy = true,
+    /** Whether the protocol is offered mux at all, as opposed to merely holding one. */
+    muxOffered = true,
+    outboundTags = [],
+}: any) => {
     // `outbound` is the editor's `local` state and `onChange` is its
     // `updateField(path, value)` (see OutboundModal.tsx).
-    const transportLayer = useField<boolean>(outbound, onChange, ['proxySettings', 'transportLayer']);
     const concurrency = useField<number>(outbound, onChange, ['mux', 'concurrency']);
     const xudpConcurrency = useField<number>(outbound, onChange, ['mux', 'xudpConcurrency']);
     const xudpProxyUDP443 = useField<string>(outbound, onChange, ['mux', 'xudpProxyUDP443']);
@@ -47,65 +32,13 @@ export const OutboundProxyMux = ({ outbound, onChange, showMux = true }: any) =>
             onChange('mux', { enabled: true, concurrency: 8, xudpConcurrency: 8, xudpProxyUDP443: "reject" });
         }
     };
-    const hasExtendedValues = !!outbound.targetStrategy || !!outbound.proxySettings?.transportLayer;
+    const hasExtendedValues = !!outbound.targetStrategy;
     return (
         <div className="space-y-4 mt-4">
-            {legacyProxyTag && (
-                <div className={`p-4 rounded-xl border space-y-3 ${
-                    proxySettingsRefused ? 'bg-rose-950/20 border-rose-500/30' : 'bg-amber-950/20 border-amber-500/30'
-                }`}>
-                    <h4 className={`label-xs flex items-center gap-1 ${proxySettingsRefused ? 'text-rose-300' : 'text-amber-300'}`}>
-                        {proxySettingsRefused
-                            ? t("Proxy chaining (refused by Xray {tag})", { tag: coreTag })
-                            : t("Proxy chaining (removed in Xray 26.9)")}
-                        <Help>{t("26.9 answers \"this feature has been removed\" and refuses to start. 26.3 and 26.7 still run it.")}</Help>
-                    </h4>
-                    <p className={`text-[11px] leading-relaxed ${proxySettingsRefused ? 'text-rose-200/70' : 'text-amber-200/70'}`}>
-                        {proxySettingsRefused
-                            ? t("This outbound chains through {tag} via proxySettings, which a current Xray refuses to load. The replacement is sockopt.dialerProxy and does the same job.", { tag: legacyProxyTag })
-                            : t("This outbound chains through {tag} via proxySettings. It works on {core}, and stops the config from loading on 26.9 — sockopt.dialerProxy does the same job on every supported version.", { tag: legacyProxyTag, core: coreTag })}
-                    </p>
-                    <div className={`flex items-center justify-between gap-3 pt-2 border-t ${proxySettingsRefused ? 'border-rose-500/20' : 'border-amber-500/20'}`}>
-                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                            Transport Layer Chaining
-                            <Help>{t("When enabled, proxy chaining occurs at the transport layer instead of the application layer.")}</Help>
-                        </span>
-                        <Switch
-                            checked={transportLayer.value || false}
-                            onChange={checked => transportLayer.onChange(checked)}
-                        />
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <button
-                            type="button"
-                            onClick={migrateToDialerProxy}
-                            className="flex-1 h-9 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-[11px] font-bold text-emerald-200 hover:border-emerald-400 transition-colors"
-                        >
-                            {t("Move it to sockopt.dialerProxy")}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => onChange('proxySettings', undefined)}
-                            className="flex-1 h-9 rounded-lg border border-slate-700 bg-slate-900 text-[11px] font-bold text-slate-300 hover:border-slate-500 transition-colors"
-                        >
-                            {t("Remove it")}
-                        </button>
-                    </div>
-                </div>
-            )}
-            <div className={`grid grid-cols-1 gap-6 ${showMux ? 'md:grid-cols-2' : ''}`}>
-                {/* Proxy chaining, the way the core still takes it. */}
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h4 className="label-xs text-slate-400 flex items-center gap-1">
-                        {t("Proxy Chaining (Optional)")}
-                        <Help>{t("Sends this outbound's connection through another one first. Set as streamSettings.sockopt.dialerProxy, in Sockopt under Transport.")}</Help>
-                    </h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                        {dialerProxy
-                            ? t("Chaining through {tag}, set in Sockopt under Transport.", { tag: dialerProxy })
-                            : t("Not chained. Set a dialerProxy in Sockopt under Transport to send this outbound through another one.")}
-                    </p>
-                </div>
+            {(showChain || showMux) && (
+            <div className={`grid grid-cols-1 gap-6 ${showChain && showMux ? 'md:grid-cols-2' : ''}`}>
+                {/* Which outbound this one goes through, and at which layer. */}
+                {showChain && <OutboundChain outbound={outbound} onChange={onChange} outboundTags={outboundTags} />}
                 {/* Mux. A protocol whose far end cannot demultiplex a
                     Mux.Cool stream — a plain SOCKS or HTTP proxy, a direct
                     connection — is not offered it. */}
@@ -149,10 +82,18 @@ export const OutboundProxyMux = ({ outbound, onChange, showMux = true }: any) =>
                         </div>
                     )}
                     {!outbound.mux?.enabled && <p className="text-[10px] text-slate-500">{t("Enable to reduce handshake latency.")}</p>}
+                    {/* The far end has to be Xray: Mux.Cool is its own
+                        protocol, and a plain proxy of the same name has
+                        nothing to answer it with. */}
+                    {muxOffered
+                        ? <p className="text-[10px] text-slate-500 mt-2">{t("Needs Xray on the far end — any Xray inbound answers Mux, a plain proxy of the same protocol does not.")}</p>
+                        : <p className="text-[10px] text-amber-300/80 mt-2">{t("This protocol cannot carry Mux: it would try to reach the Mux address for real. It is shown because the config has it — switch it off to remove it.")}</p>}
                 </div>
                 )}
             </div>
+            )}
             {/* Extended Outbound Options */}
+            {showStrategy && (
             <ExtendedSection
                 title={t("Extended Outbound Settings")}
                 description={t("Target domain resolution strategy and advanced proxy routing.")}
@@ -169,6 +110,7 @@ export const OutboundProxyMux = ({ outbound, onChange, showMux = true }: any) =>
                     />
                 </div>
             </ExtendedSection>
+            )}
         </div>
     );
 };

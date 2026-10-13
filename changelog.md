@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.0] - 2026-10-13
+
+### Fixed
+- **The proxy-chain chooser is back in the outbound editor.** In 1.22.0 the Proxy Chaining card lost its tag picker and its Transport Layer switch and got a sentence telling you to set `dialerProxy` in Sockopt instead — a field that only appears after Sockopt is added, three steps down. The reason given was that the core no longer accepts `proxySettings`. That was read off the development branch: of the three supported cores, 26.3 and 26.7 run it and only 26.9 refuses it. The card now holds the choice again — which outbound to go through, picked from the others' tags — and a layer switch beside it.
+- **The two layers are offered as what they are.** They were treated as one setting with two spellings; they are different code in the core.
+  - **L4 · Transport** writes `streamSettings.sockopt.dialerProxy`. The outbound dials as usual — its own transport, TLS or REALITY, sockopt and finalmask all apply — and the socket underneath is opened through the other outbound. Every supported core has it.
+  - **L7 · Application** writes `proxySettings`. The other outbound carries the stream, and of this outbound's own stream settings **only TLS is used**; its network, REALITY, sockopt and finalmask are never consulted. 26.3 and 26.7 run it; 26.9 refuses the config. It is offered on the lines that run it, shown on any line when the config already has it, and the card lists what an outbound's transport block holds that this layer leaves unused.
+  - The old `proxySettings` + `transportLayer: true` is read as the L4 it becomes — the core rewrites it to `dialerProxy` on load — with one press to write it that way.
+- **Mux is offered to socks, http and hysteria outbounds again.** It was hidden on the grounds that a plain SOCKS or HTTP proxy cannot answer Mux.Cool. True of a plain proxy — but the core builds `mux` for any protocol and every Xray inbound has a mux server behind it, so against an Xray far end it works. It carries a line saying the far end has to be Xray.
+- **`targetStrategy` is offered to loopback outbounds again.** It went with the transport block, though the target is resolved before loopback hands it back to the router, so the setting changes what the second routing pass sees.
+- **Nothing an outbound already holds is hidden any more.** Which blocks a protocol is *offered* was also deciding which were *shown*, so a `mux`, a chain, a `sendThrough` or a `targetStrategy` already in the config vanished from the form when the protocol was one not offered it — still in the JSON, still built by the core, and impossible to see or remove without the raw editor. They are drawn whenever they are present; `streamSettings` on an outbound that never dials gets a notice with a Remove.
+- **An exit that only carries another outbound was labelled "unreachable".** The freedom outbound behind a WireGuard tunnel has no routing rule of its own, and every packet of the tunnel goes through it. It counts as reached when something that is reached goes out through it.
+- **A freedom fragment could be saved in a state the core refuses.** Clearing Length or Interval left a `fragment` the core answers "Length can't be empty" to. Both boxes say so, and it stops a save to the panel.
+- **Four hysteria settings were described as "deprecated, still works".** `congestion`, `up`, `down` and `udphop` under `hysteriaSettings` are logged and then discarded on 26.3 and 26.7 — a value there changes nothing. They are reported as having no effect.
+
+### Added
+- **A chain mark on the outbound's card.** An outbound that goes out through another shows it — `🔗 warp · L4` or `· L7` — and the exit shows what it carries.
+- **Diagnostics for chains the core will not run:** both chaining keys on one outbound (a load error on 26.3 and 26.7), a chain to an outbound that does not exist, an outbound chained through itself, and a chain that comes back to where it started. All four stop a save to the panel.
+
 ## [1.26.2] - 2026-10-02
 
 ### Fixed

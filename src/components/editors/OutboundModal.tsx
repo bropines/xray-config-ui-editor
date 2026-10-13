@@ -18,12 +18,19 @@ import { OutboundFreedom } from './outbound/OutboundFreedom';
 import { OutboundMasque } from './outbound/OutboundMasque';
 import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 import { outboundShape } from '../../core/xray/outbound-shape';
+import { chainOf } from '../../core/xray/outbound-chain';
 import { TransportSettings } from './shared/TransportSettings';
 import { t, tn } from '../../i18n';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const { config, addItem, rawConfigText } = useConfigStore(useShallow(state => ({ config: state.config, addItem: state.addItem, rawConfigText: state.rawConfigText })));
     const allInboundTags = (config?.inbounds || []).map((i: any) => i.tag).filter((tag: any) => tag);
+    // Every outbound this one could go through: all of them but itself. By
+    // position, not by tag — the tag is one of the fields being edited here.
+    const otherOutboundTags: string[] = (config?.outbounds || [])
+        .filter((_: any, at: number) => at !== index)
+        .map((o: any) => o?.tag)
+        .filter((tag: any): tag is string => typeof tag === 'string' && tag !== '');
 
     const {
         local,
@@ -40,6 +47,17 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     } = useOutboundEditor(data, onSave, index);
 
     const shape = outboundShape(local.protocol);
+    // What the protocol is offered, or what the config already holds. The
+    // second half is not optional: a value the form will not draw is still in
+    // the JSON and still built by the core, so hiding it only hides the cause
+    // when something goes wrong.
+    const show = {
+        sendThrough: shape.transport || local.sendThrough !== undefined,
+        chain: shape.transport || chainOf(local) !== null,
+        mux: shape.mux || local.mux !== undefined,
+        strategy: shape.strategy || local.targetStrategy !== undefined,
+    };
+    const strayStream = !shape.transport && local.streamSettings !== undefined;
 
     const handleImport = (parsed: any) => {
         if (parsed.multiple && Array.isArray(parsed.outbounds)) {
@@ -120,7 +138,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
                         onChange={updateField} 
                         onProtocolChange={handleProtocolChange}
                         errors={{ tag: getError('tag') }}
-                        showSendThrough={shape.transport}
+                        showSendThrough={show.sendThrough}
                     />
                 </div>
                 
@@ -161,13 +179,36 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
 
                 {/* Mux / Proxy chain / targetStrategy. A protocol that never
                     dials has none of these — see core/xray/outbound-shape. */}
-                {shape.transport && (
+                {(show.chain || show.mux || show.strategy) && (
                     <div className="relative z-20">
                         <OutboundProxyMux
                             outbound={local}
                             onChange={updateField}
-                            showMux={shape.mux}
+                            showChain={show.chain}
+                            showMux={show.mux}
+                            showStrategy={show.strategy}
+                            muxOffered={shape.mux}
+                            outboundTags={otherOutboundTags}
                         />
+                    </div>
+                )}
+
+                {/* A transport block on something that never dials. Not drawn
+                    as an editor — there is nothing for it to configure — but
+                    not left invisible either: the core still parses it, and a
+                    mistake in it stops the config loading. */}
+                {strayStream && (
+                    <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <p className="text-[11px] text-amber-200/80 leading-relaxed flex-1">
+                            {t("This outbound carries streamSettings, and a {protocol} outbound never opens a connection to use them. The core still reads and checks them when it loads.", { protocol: String(local.protocol) })}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => updateField('streamSettings', undefined)}
+                            className="h-8 px-3 shrink-0 rounded-lg border border-slate-700 bg-slate-900 text-[11px] font-bold text-slate-300 hover:border-slate-500 transition-colors"
+                        >
+                            {t("Remove them")}
+                        </button>
                     </div>
                 )}
 

@@ -213,11 +213,17 @@ describe('hysteria per line', () => {
         expect(hysteriaUdpIdleProblem(601)).toBeDefined();
     });
 
-    it('reports congestion, bandwidth and hopping as deprecated, then gone', () => {
+    it('reports congestion, bandwidth and hopping as having no effect on any line', () => {
+        // Not "deprecated, still works", which this once said for 26.3 and
+        // 26.7. There the core logs that they "move to finalmask/quicParams"
+        // and then never copies them into the config it builds
+        // (v26.7.28:infra/conf/transport_method.go:779-797) — so a value set
+        // here changes nothing, exactly as on 26.9 where the keys are gone.
         const hysteria = { version: 2, congestion: 'bbr', up: '100 mbps', udphop: { ports: '20000-30000' } };
         const where = { scope: 'outbound' as const, settingsPath: 'streamSettings.hysteriaSettings' };
         const keys = ['congestion', 'up', 'down', 'udphop'];
-        expect(keyNotices(hysteria, keys, where, '26.7').map(notice => notice.status)).toEqual(['deprecated', 'deprecated', 'deprecated']);
+        expect(keyNotices(hysteria, keys, where, '26.3').map(notice => notice.status)).toEqual(['absent', 'absent', 'absent']);
+        expect(keyNotices(hysteria, keys, where, '26.7').map(notice => notice.status)).toEqual(['absent', 'absent', 'absent']);
         expect(keyNotices(hysteria, keys, where, '26.9').map(notice => notice.status)).toEqual(['absent', 'absent', 'absent']);
     });
 });

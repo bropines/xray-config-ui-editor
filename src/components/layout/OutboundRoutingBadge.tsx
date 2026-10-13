@@ -8,6 +8,12 @@ const LAYER_STYLE: Record<Exclude<RoutingLayer, 'none'>, string> = {
     mixed: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
 };
 
+/** The chain mark: the same two colours as the layers it names. */
+const CHAIN_STYLE = {
+    L4: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
+    L7: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+} as const;
+
 const layerTitle = (layer: RoutingLayer): string => {
     switch (layer) {
         case 'L4':
@@ -32,7 +38,7 @@ const layerTitle = (layer: RoutingLayer): string => {
 export const OutboundRoutingBadge = ({ summary }: { summary?: OutboundRoutingSummary }) => {
     if (!summary) return null;
 
-    const { routes, layer, balancers, unreachable, isDefault } = summary;
+    const { routes, layer, balancers, unreachable, isDefault, chain, carries } = summary;
     const viaBalancer = routes.some(route => route.via);
 
     return (
@@ -52,6 +58,34 @@ export const OutboundRoutingBadge = ({ summary }: { summary?: OutboundRoutingSum
                     className="px-1.5 py-0.5 rounded border text-[9px] font-bold bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
                 >
                     {t("default")}
+                </span>
+            )}
+
+            {/* Going out through another outbound. Its own layer mark, kept
+                apart from the routing one beside it by the link and the tag:
+                the two L4s mean different things. */}
+            {chain && (
+                <span
+                    title={chain.layer === 'L4'
+                        ? t("Goes out through {via} at the transport layer: this outbound dials as usual and the socket underneath is opened by {via}.", { via: chain.via })
+                        : t("Goes out through {via} at the application layer: {via} carries the stream, and of this outbound's own stream settings only TLS is used. Xray 26.9 refuses this form.", { via: chain.via })}
+                    className={`px-1.5 py-0.5 rounded border text-[9px] font-bold inline-flex items-center gap-1 max-w-[160px] ${
+                        chain.conflict ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : CHAIN_STYLE[chain.layer]
+                    }`}
+                >
+                    <Icon name="LinkSimple" className="text-[9px] shrink-0" />
+                    <span className="truncate">{chain.via}</span>
+                    <span className="shrink-0 opacity-80">· {chain.layer}</span>
+                </span>
+            )}
+
+            {carries.length > 0 && (
+                <span
+                    title={t("Carries the connections of: {tags}. They go out through this outbound, which is why it needs no routing rule of its own.", { tags: carries.join(', ') })}
+                    className="px-1.5 py-0.5 rounded border text-[9px] font-bold bg-slate-800/60 text-slate-300 border-slate-600/60 inline-flex items-center gap-1 max-w-[160px]"
+                >
+                    <Icon name="ArrowElbowDownRight" className="text-[9px] shrink-0" />
+                    <span className="truncate">{carries.join(', ')}</span>
                 </span>
             )}
 

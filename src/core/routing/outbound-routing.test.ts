@@ -121,3 +121,54 @@ describe('summariseOutboundRouting', () => {
         expect(all.get('proxy')!.balancers).toEqual(['entry']);
     });
 });
+
+describe('an outbound that goes out through another', () => {
+    // The shape a "WireGuard + obfuscator" import produces: only the tunnel
+    // has a rule, and the freedom outbound exists to carry it.
+    const chained = {
+        outbounds: [
+            { tag: 'direct', protocol: 'freedom' },
+            { tag: 'wg', protocol: 'wireguard', streamSettings: { sockopt: { dialerProxy: 'obfs' } } },
+            { tag: 'obfs', protocol: 'freedom' },
+            { tag: 'legacy', protocol: 'vless', proxySettings: { tag: 'obfs' } },
+            { tag: 'idle', protocol: 'vless', streamSettings: { sockopt: { dialerProxy: 'spare' } } },
+            { tag: 'spare', protocol: 'freedom' },
+        ],
+        routing: { rules: [{ outboundTag: 'wg', network: 'tcp,udp' }] },
+    } as any;
+
+    it('says which outbound it goes through, and at which layer', () => {
+        expect(describeOutboundRouting(chained, 'wg').chain).toMatchObject({ via: 'obfs', layer: 'L4' });
+        expect(describeOutboundRouting(chained, 'legacy').chain).toMatchObject({ via: 'obfs', layer: 'L7' });
+        expect(describeOutboundRouting(chained, 'direct').chain).toBeNull();
+    });
+
+    it('lists what an exit carries', () => {
+        expect(describeOutboundRouting(chained, 'obfs').carries).toEqual(['wg', 'legacy']);
+        expect(describeOutboundRouting(chained, 'wg').carries).toEqual([]);
+    });
+
+    it('does not call an exit unreachable while a reached outbound goes through it', () => {
+        // No rule names `obfs`, and every packet of the tunnel crosses it.
+        const exit = describeOutboundRouting(chained, 'obfs');
+        expect(exit.routes).toEqual([]);
+        expect(exit.unreachable).toBe(false);
+    });
+
+    it('still calls an exit unreachable when what it carries is unreachable too', () => {
+        // `idle` has no rule, so nothing ever gets as far as `spare`.
+        expect(describeOutboundRouting(chained, 'idle').unreachable).toBe(true);
+        expect(describeOutboundRouting(chained, 'spare').unreachable).toBe(true);
+    });
+
+    it('does not loop on outbounds chained in a circle', () => {
+        const circle = {
+            outbounds: [
+                { tag: 'first' },
+                { tag: 'a', streamSettings: { sockopt: { dialerProxy: 'b' } } },
+                { tag: 'b', streamSettings: { sockopt: { dialerProxy: 'a' } } },
+            ],
+        } as any;
+        expect(describeOutboundRouting(circle, 'a').unreachable).toBe(true);
+    });
+});

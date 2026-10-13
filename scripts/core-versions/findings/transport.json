@@ -894,8 +894,8 @@
       "path": "streamSettings.hysteriaSettings.congestion",
       "kind": "field",
       "status": {
-        "v26.3.27": "deprecated",
-        "v26.7.28": "deprecated",
+        "v26.3.27": "absent",
+        "v26.7.28": "absent",
         "v26.9.9": "absent"
       },
       "detail": "Already inert in v26.3.27/v26.7.28 (decoded, a warning says it moved to finalmask.quicParams, value never used); removed from the struct in v26.9.9 and silently ignored; use finalmask.quicParams.congestion (reno|bbr|brutal|force-brutal).",
@@ -912,8 +912,8 @@
       "path": "streamSettings.hysteriaSettings.up",
       "kind": "field",
       "status": {
-        "v26.3.27": "deprecated",
-        "v26.7.28": "deprecated",
+        "v26.3.27": "absent",
+        "v26.7.28": "absent",
         "v26.9.9": "absent"
       },
       "detail": "Warned-and-ignored in v26.3.27/v26.7.28, silently ignored in v26.9.9; the replacement is finalmask.quicParams.brutalUp (bandwidth string, >= 65536 B/s when set).",
@@ -930,8 +930,8 @@
       "path": "streamSettings.hysteriaSettings.down",
       "kind": "field",
       "status": {
-        "v26.3.27": "deprecated",
-        "v26.7.28": "deprecated",
+        "v26.3.27": "absent",
+        "v26.7.28": "absent",
         "v26.9.9": "absent"
       },
       "detail": "Warned-and-ignored in v26.3.27/v26.7.28, silently ignored in v26.9.9; the replacement is finalmask.quicParams.brutalDown.",
@@ -948,8 +948,8 @@
       "path": "streamSettings.hysteriaSettings.udphop",
       "kind": "field",
       "status": {
-        "v26.3.27": "deprecated",
-        "v26.7.28": "deprecated",
+        "v26.3.27": "absent",
+        "v26.7.28": "absent",
         "v26.9.9": "absent"
       },
       "detail": "Warned-and-ignored in v26.3.27/v26.7.28 (whose replacement is finalmask.quicParams.udpHop {ports, interval}); v26.9.9 removes both the transport key and quicParams.udpHop and moves port hopping to a finalmask udp mask of type udphop.",

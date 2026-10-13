@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { migrateProxySettings, outboundShape, shapedProtocols } from './outbound-shape';
+import { outboundShape, shapedProtocols } from './outbound-shape';
 import { OutboundProtocolSchema } from './schemas/primitives';
 
 /**
@@ -28,7 +28,16 @@ describe('a protocol that never dials', () => {
     // proxy/loopback/loopback.go: Process(ctx, link, _ internet.Dialer)
     // proxy/blackhole/blackhole.go: takes `dialer`, never references it
     it.each(['loopback', 'blackhole'])('has no transport, server or mux: %s', protocol => {
-        expect(outboundShape(protocol)).toEqual({ server: false, transport: false, mux: false });
+        expect(outboundShape(protocol)).toMatchObject({ server: false, transport: false, mux: false });
+    });
+
+    it('still has a targetStrategy when it hands the target back to the router', () => {
+        // handler.go:185-205 resolves the target before the protocol runs, and
+        // loopback re-dispatches it — so the setting is live there. Hiding it
+        // with the transport block was a regression.
+        expect(outboundShape('loopback').strategy).toBe(true);
+        // Blackhole drops the traffic; there is nothing left to resolve for.
+        expect(outboundShape('blackhole').strategy).toBe(false);
     });
 });
 
@@ -51,78 +60,32 @@ describe('a protocol that dials', () => {
         }
     });
 
-    it('offers mux only where the far end can demultiplex it', () => {
-        for (const protocol of ['vless', 'vmess', 'trojan', 'shadowsocks']) {
+    it('offers mux wherever a proxy can carry it to an Xray', () => {
+        // xray.go:345 builds mux for any protocol and always.go:89 puts a mux
+        // server behind every inbound, so socks, http and hysteria belong here.
+        // They were once left out because a *plain* SOCKS proxy cannot answer —
+        // which hid a working setting from anyone whose far end was Xray.
+        for (const protocol of ['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http', 'hysteria']) {
             expect(outboundShape(protocol).mux).toBe(true);
         }
-        // A plain SOCKS or HTTP proxy does not speak Mux.Cool.
-        for (const protocol of ['socks', 'http', 'freedom', 'dns', 'wireguard', 'hysteria']) {
+        // These would try to reach `v1.mux.cool` for real (mux/client.go:185).
+        for (const protocol of ['freedom', 'dns', 'wireguard']) {
             expect(outboundShape(protocol).mux).toBe(false);
         }
     });
 });
 
 describe('masque', () => {
-    it('is never offered mux, which the core refuses for it by name', () => {
-        // xray.go: `masque outbound does not support "mux"`
-        expect(outboundShape('masque')).toEqual({ server: true, transport: true, mux: false });
+    it('is never offered mux', () => {
+        // No supported tag registers masque at all; the branch that does
+        // refuses mux for it by name.
+        expect(outboundShape('masque')).toMatchObject({ server: true, transport: true, mux: false });
     });
 });
 
 describe('a protocol nobody told it about', () => {
     it('is drawn in full rather than losing a field to a missing entry', () => {
-        expect(outboundShape('something-new')).toEqual({ server: true, transport: true, mux: true });
-        expect(outboundShape(undefined)).toEqual({ server: true, transport: true, mux: true });
-    });
-});
-
-describe('moving a removed proxySettings to sockopt', () => {
-    it('carries the tag over to dialerProxy and drops the old key', () => {
-        const migrated = migrateProxySettings<any>({
-            tag: 'proxy',
-            protocol: 'vless',
-            proxySettings: { tag: 'warp', transportLayer: true },
-        });
-
-        expect(migrated.streamSettings.sockopt.dialerProxy).toBe('warp');
-        expect('proxySettings' in migrated).toBe(false);
-    });
-
-    it('keeps the rest of streamSettings and of sockopt', () => {
-        const migrated = migrateProxySettings<any>({
-            protocol: 'vless',
-            proxySettings: { tag: 'warp' },
-            streamSettings: {
-                network: 'ws',
-                security: 'tls',
-                sockopt: { mark: 255, tcpFastOpen: true },
-            },
-        });
-
-        expect(migrated.streamSettings.network).toBe('ws');
-        expect(migrated.streamSettings.security).toBe('tls');
-        expect(migrated.streamSettings.sockopt.mark).toBe(255);
-        expect(migrated.streamSettings.sockopt.dialerProxy).toBe('warp');
-    });
-
-    it('does not overrule a dialerProxy someone already chose', () => {
-        const migrated = migrateProxySettings<any>({
-            proxySettings: { tag: 'old' },
-            streamSettings: { sockopt: { dialerProxy: 'current' } },
-        });
-        expect(migrated.streamSettings.sockopt.dialerProxy).toBe('current');
-        expect('proxySettings' in migrated).toBe(false);
-    });
-
-    it('leaves an outbound without one exactly as it was', () => {
-        const outbound = { protocol: 'freedom', settings: {} };
-        expect(migrateProxySettings(outbound)).toBe(outbound);
-    });
-
-    it('does not touch the outbound it was given', () => {
-        const outbound: any = { proxySettings: { tag: 'warp' } };
-        migrateProxySettings(outbound);
-        expect(outbound.proxySettings.tag).toBe('warp');
-        expect(outbound.streamSettings).toBeUndefined();
+        expect(outboundShape('something-new')).toEqual({ server: true, transport: true, mux: true, strategy: true });
+        expect(outboundShape(undefined)).toEqual({ server: true, transport: true, mux: true, strategy: true });
     });
 });

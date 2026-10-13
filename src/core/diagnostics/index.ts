@@ -7,6 +7,9 @@ import {
     type SnippetDefinition,
 } from '../snippets';
 import { versionDiagnostics } from '../xray/versions/check';
+import { chainProblems } from '../xray/outbound-chain';
+import { fragmentProblems } from '../xray/freedom-fragment';
+import { t } from '../../i18n';
 import type { CoreVersionId } from '../xray/versions';
 
 export type DiagnosticSeverity = 'critical' | 'warning' | 'info';
@@ -68,6 +71,16 @@ export const runFullDiagnostics = (
 
     const checkOutbound = (o: any, i: number) => {
         if (isSnippetRef(o)) return;
+
+        // A fragment the core will not build: the config does not load.
+        if (o.protocol === 'freedom') {
+            for (const problem of fragmentProblems(o.settings?.fragment)) {
+                diagnostics.push({
+                    section: 'outbounds', itemIndex: i, field: `fragment.${problem.field}`,
+                    severity: 'critical', message: problem.message,
+                });
+            }
+        }
         const stream = o.streamSettings || {};
         const net = stream.network || 'tcp';
         const sec = stream.security || 'none';
@@ -163,6 +176,37 @@ export const runFullDiagnostics = (
 
     inbounds.forEach(checkInbound);
     outbounds.forEach(checkOutbound);
+
+    // Chains the core will not run. Each of these is a refusal the source
+    // spells out (see core/xray/outbound-chain.ts), and none of them was
+    // reported anywhere: a conflict stops the config loading, the others
+    // leave an outbound that fails every connection it is handed.
+    for (const problem of chainProblems(outbounds, [...snippetTags, ...KNOWN_EXTERNAL_TAGS])) {
+        const itemIndex = outbounds.findIndex((o: any) => o?.tag === problem.tag);
+        const at = { section: 'outbounds', itemIndex, severity: 'critical' as const };
+        if (problem.kind === 'conflict') {
+            diagnostics.push({
+                ...at, field: 'proxySettings',
+                message: t("Outbound \"{tag}\" sets both proxySettings and sockopt.dialerProxy. Xray refuses the config: an outbound is chained one way or the other, never both.", { tag: problem.tag }),
+                suggestion: t("Keep one of them — the Proxy Chaining card in the outbound picks the layer and clears the other."),
+            });
+        } else if (problem.kind === 'missing') {
+            diagnostics.push({
+                ...at, field: 'dialerProxy',
+                message: t("Outbound \"{tag}\" goes out through \"{via}\", and there is no outbound with that tag. Every connection it is given will fail.", { tag: problem.tag, via: problem.via }),
+            });
+        } else if (problem.kind === 'self') {
+            diagnostics.push({
+                ...at, field: 'dialerProxy',
+                message: t("Outbound \"{tag}\" is chained through itself, so nothing ever opens the connection.", { tag: problem.tag }),
+            });
+        } else {
+            diagnostics.push({
+                ...at, field: 'dialerProxy',
+                message: t("Outbound \"{tag}\" is part of a chain that comes back to itself (through \"{via}\"), so nothing at the end of it opens a connection.", { tag: problem.tag, via: problem.via }),
+            });
+        }
+    }
 
     const seenDomains = new Map<string, { index: number; name: string }>();
     const seenIPs = new Map<string, { index: number; name: string }>();

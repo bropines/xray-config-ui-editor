@@ -24,76 +24,69 @@ export interface OutboundShape {
     server: boolean;
     /** Dials out, so `streamSettings` (transport, security, sockopt) applies. */
     transport: boolean;
-    /** Worth offering Mux.Cool: a stream the far end can demultiplex. */
+    /** Can carry a Mux.Cool stream to an Xray on the far end. */
     mux: boolean;
+    /**
+     * `targetStrategy` does something. The handler resolves the target before
+     * the protocol runs (v26.7.28:app/proxyman/outbound/handler.go:185-205),
+     * so this is true of everything that then uses the target — including
+     * loopback, which hands the rewritten one back to the router.
+     */
+    strategy: boolean;
 }
 
 /**
- * Mux is not refused by the core for any protocol but masque, so this column
- * is about what the far end can answer. Mux.Cool needs an Xray server on the
- * other side; a plain SOCKS or HTTP proxy, a direct connection or a dropped
- * one has nobody to speak it with.
+ * Mux is not a property of the protocol. The wrapper builds `mux` for any of
+ * them with no check (v26.7.28:infra/conf/xray.go:345-351), and every Xray
+ * inbound, whatever it speaks, has a mux server behind it
+ * (app/proxyman/inbound/always.go:89). What it needs is an Xray on the far end
+ * and a proxy able to carry a stream addressed to `v1.mux.cool`
+ * (common/mux/client.go:153,185).
+ *
+ * So socks, http and hysteria get it: against an Xray inbound of the same
+ * protocol it works, and whether the far end is one is the user's knowledge,
+ * not this table's. Freedom, dns and wireguard do not — they would try to
+ * reach that name for real — and nothing that never dials has a stream at all.
+ *
+ * This column once said false for socks, http and hysteria, on the grounds
+ * that "a plain SOCKS proxy does not speak Mux.Cool". True of a plain proxy;
+ * the table then hid a working setting from everyone whose proxy was not one.
  */
 const SHAPES: Record<string, OutboundShape> = {
-    vless: { server: true, transport: true, mux: true },
-    vmess: { server: true, transport: true, mux: true },
-    trojan: { server: true, transport: true, mux: true },
-    shadowsocks: { server: true, transport: true, mux: true },
-    'shadowsocks-2022': { server: true, transport: true, mux: true },
-    socks: { server: true, transport: true, mux: false },
-    http: { server: true, transport: true, mux: false },
-    hysteria: { server: true, transport: true, mux: false },
-    // The one protocol whose mux the core refuses by name: Build() answers
-    // `masque outbound does not support "mux"`. Its transport is the masque
-    // one, which nothing else may use and it may not do without.
-    masque: { server: true, transport: true, mux: false },
+    vless: { server: true, transport: true, mux: true, strategy: true },
+    vmess: { server: true, transport: true, mux: true, strategy: true },
+    trojan: { server: true, transport: true, mux: true, strategy: true },
+    shadowsocks: { server: true, transport: true, mux: true, strategy: true },
+    'shadowsocks-2022': { server: true, transport: true, mux: true, strategy: true },
+    socks: { server: true, transport: true, mux: true, strategy: true },
+    http: { server: true, transport: true, mux: true, strategy: true },
+    hysteria: { server: true, transport: true, mux: true, strategy: true },
+    // Not a protocol on any supported tag — none of v26.3.27, v26.7.28 or
+    // v26.9.9 registers it, and the version table refuses it outright. The
+    // development branch that has it answers `masque outbound does not support
+    // "mux"` from Build(), which is why this column says false.
+    masque: { server: true, transport: true, mux: false, strategy: true },
     // Its own device and peers rather than a server card, and its own
     // encrypted transport underneath.
-    wireguard: { server: false, transport: true, mux: false },
+    wireguard: { server: false, transport: true, mux: false, strategy: true },
     // Dials the destination itself. No protocol of its own to multiplex, but
     // sockopt — mark, interface, dialerProxy — is exactly how it is steered.
-    freedom: { server: false, transport: true, mux: false },
+    freedom: { server: false, transport: true, mux: false, strategy: true },
     // Dials the DNS server it forwards to, so sockopt applies here too.
-    dns: { server: false, transport: true, mux: false },
-    blackhole: { server: false, transport: false, mux: false },
-    loopback: { server: false, transport: false, mux: false },
+    dns: { server: false, transport: true, mux: false, strategy: true },
+    // Drops what it is given, so there is no target left to resolve.
+    blackhole: { server: false, transport: false, mux: false, strategy: false },
+    // Never dials, but re-dispatches the target — after the handler has
+    // already resolved it, so the second routing pass sees what
+    // targetStrategy made of it (proxy/loopback/loopback.go:29,46).
+    loopback: { server: false, transport: false, mux: false, strategy: true },
 };
 
 /** Anything unknown is assumed to be a full proxy — better too much than a hidden field. */
-const DEFAULT_SHAPE: OutboundShape = { server: true, transport: true, mux: true };
+const DEFAULT_SHAPE: OutboundShape = { server: true, transport: true, mux: true, strategy: true };
 
 export const outboundShape = (protocol: unknown): OutboundShape =>
     (typeof protocol === 'string' ? SHAPES[protocol] : undefined) ?? DEFAULT_SHAPE;
 
 /** The protocols this table knows, for the test that keeps it beside the schema. */
 export const shapedProtocols = (): string[] => Object.keys(SHAPES);
-
-/**
- * Move an outbound's `proxySettings.tag` to `streamSettings.sockopt.dialerProxy`.
- *
- * `proxySettings` is a removed feature: `OutboundDetourConfig.Build()` answers
- * `PrintRemovedFeatureError("outbound \"proxySettings\"",
- * "\"streamSettings.sockopt.dialerProxy\"")`, so a config still carrying it
- * does not start on a current core — it is not ignored the way an unknown
- * field would be. Cores up to 26.3 still accept it, which is why this is
- * offered rather than done silently.
- *
- * Pure: returns a new outbound and leaves the original alone. An existing
- * `dialerProxy` wins, because something already made that choice deliberately.
- */
-export const migrateProxySettings = <T extends Record<string, any>>(outbound: T): T => {
-    const tag = outbound?.proxySettings?.tag;
-    if (!tag) return outbound;
-
-    const sockopt = { ...(outbound.streamSettings?.sockopt ?? {}) };
-    if (!sockopt.dialerProxy) sockopt.dialerProxy = tag;
-
-    const next = {
-        ...outbound,
-        streamSettings: { ...(outbound.streamSettings ?? {}), sockopt },
-    } as Record<string, any>;
-    // `transportLayer` goes with it: sockopt chaining is transport-level by
-    // definition, so there is nothing left for the flag to say.
-    delete next.proxySettings;
-    return next as T;
-};

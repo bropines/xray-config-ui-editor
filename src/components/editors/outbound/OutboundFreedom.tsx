@@ -9,6 +9,7 @@ import { useField } from '../../../hooks/useField';
 import { DOMAIN_STRATEGY_OPTIONS } from './domain-strategies';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import { t } from '../../../i18n';
+import { fragmentProblems } from '../../../core/xray/freedom-fragment';
 
 /**
  * Freedom, with the fields it actually has.
@@ -45,6 +46,10 @@ export const OutboundFreedom = ({ outbound, onChange }: any) => {
     const proxyProtocol = useField<number | undefined>(outbound, onChange, ['settings', 'proxyProtocol']);
 
     const fragment = outbound.settings?.fragment;
+    // Said beside the box, since either can be emptied and the core refuses
+    // the config when one is.
+    const fragmentError = (field: 'length' | 'interval') =>
+        fragmentProblems(fragment).find(problem => problem.field === field)?.message;
     const fragmentPackets = useField<string | undefined>(outbound, onChange, ['settings', 'fragment', 'packets']);
     const fragmentLength = useField<string | undefined>(outbound, onChange, ['settings', 'fragment', 'length']);
     const fragmentInterval = useField<string | undefined>(outbound, onChange, ['settings', 'fragment', 'interval']);
@@ -106,7 +111,7 @@ export const OutboundFreedom = ({ outbound, onChange }: any) => {
                                 onChange={e => fragmentPackets.onChange(e.target.value || undefined)}
                             />
                         </FormField>
-                        <FormField label={t("Length (bytes)")}>
+                        <FormField label={t("Length (bytes)")} error={fragmentError('length')}>
                             <input
                                 className="input-base font-mono text-xs"
                                 placeholder="100-200"
@@ -114,7 +119,7 @@ export const OutboundFreedom = ({ outbound, onChange }: any) => {
                                 onChange={e => fragmentLength.onChange(e.target.value || undefined)}
                             />
                         </FormField>
-                        <FormField label={t("Interval (ms)")}>
+                        <FormField label={t("Interval (ms)")} error={fragmentError('interval')}>
                             <input
                                 className="input-base font-mono text-xs"
                                 placeholder="10-20"

@@ -3,6 +3,7 @@
 // ============================================================
 
 import type { XrayConfig, RoutingRule } from '../types';
+import { carriedBy, chainOf, type OutboundChain } from '../xray/outbound-chain';
 
 /**
  * The layer a routing rule decides at.
@@ -45,11 +46,17 @@ export interface OutboundRoutingSummary {
     /** Balancer tags whose selector matches this outbound. */
     balancers: string[];
     /**
-     * True when no rule names it and it is not the first outbound — Xray sends
-     * unmatched traffic to the first outbound, so everything else with no rule
-     * is dead weight in the config.
+     * True when nothing sends traffic here: no rule names it, it is not the
+     * first outbound (which takes whatever no rule matched), and no outbound
+     * that is itself reached goes out through it. The last part matters — an
+     * exit that only carries another outbound's connections has no rule of
+     * its own and is very much in use.
      */
     unreachable: boolean;
+    /** The outbound this one's connections go through, and at which layer. */
+    chain: OutboundChain | null;
+    /** Outbounds whose connections go through this one. */
+    carries: string[];
     /** It is the first outbound, so it catches everything no rule matched. */
     isDefault: boolean;
 }
@@ -94,14 +101,26 @@ export const balancerSelects = (selector: unknown, tag: string): boolean =>
 const ruleLabel = (rule: RoutingRule, index: number): string =>
     (rule as any).ruleTag || (rule as any).outboundTag || (rule as any).balancerTag || `#${index + 1}`;
 
-/** Everything that can send traffic to one outbound tag. */
-export const describeOutboundRouting = (
+/**
+ * Whether anything sends traffic to `tag`: a rule, the default slot, or — at
+ * any depth — an outbound that is reached and goes out through it.
+ */
+const isReached = (config: XrayConfig | null | undefined, tag: string, seen = new Set<string>()): boolean => {
+    if (seen.has(tag)) return false;
+    seen.add(tag);
+    const outbounds = (config?.outbounds || []) as any[];
+    if (outbounds[0]?.tag === tag) return true;
+    if (routesTo(config, tag).routes.length > 0) return true;
+    return carriedBy(outbounds, tag).some(other => isReached(config, other, seen));
+};
+
+/** The rules that name `tag`, directly or through a balancer that selects it. */
+const routesTo = (
     config: XrayConfig | null | undefined,
     tag: string,
-): OutboundRoutingSummary => {
+): { routes: OutboundRoute[]; feeding: string[] } => {
     const rules = (config?.routing?.rules || []) as RoutingRule[];
     const balancers = (config?.routing?.balancers || []) as any[];
-    const outbounds = (config?.outbounds || []) as any[];
 
     const feeding = balancers
         .filter(b => balancerSelects(b?.selector, tag))
@@ -127,6 +146,16 @@ export const describeOutboundRouting = (
         });
     });
 
+    return { routes, feeding };
+};
+
+/** Everything that can send traffic to one outbound tag. */
+export const describeOutboundRouting = (
+    config: XrayConfig | null | undefined,
+    tag: string,
+): OutboundRoutingSummary => {
+    const outbounds = (config?.outbounds || []) as any[];
+    const { routes, feeding } = routesTo(config, tag);
     const isDefault = outbounds.length > 0 && outbounds[0]?.tag === tag;
 
     return {
@@ -134,8 +163,10 @@ export const describeOutboundRouting = (
         routes,
         layer: combineLayers(routes.map(r => r.layer)),
         balancers: feeding,
-        unreachable: routes.length === 0 && !isDefault,
+        unreachable: !isReached(config, tag),
         isDefault,
+        chain: chainOf(outbounds.find(outbound => outbound?.tag === tag)),
+        carries: carriedBy(outbounds, tag),
     };
 };
 

@@ -105,14 +105,6 @@ export const ru: Record<string, string> = {
 
     'Checked against Xray {tag}': 'Проверено против Xray {tag}',
 
-    'Proxy chaining (refused by Xray {tag})':
-        'Цепочка прокси (отвергается Xray {tag})',
-    'Proxy chaining (removed in Xray 26.9)':
-        'Цепочка прокси (удалена в Xray 26.9)',
-    '26.9 answers "this feature has been removed" and refuses to start. 26.3 and 26.7 still run it.':
-        '26.9 отвечает «эта возможность удалена» и не стартует. 26.3 и 26.7 её ещё выполняют.',
-    'This outbound chains through {tag} via proxySettings. It works on {core}, and stops the config from loading on 26.9 — sockopt.dialerProxy does the same job on every supported version.':
-        'Этот outbound ходит через {tag} по proxySettings. На {core} это работает, а на 26.9 конфиг не загрузится — sockopt.dialerProxy делает то же самое на всех поддерживаемых версиях.',
 
     'Xray {tag} takes: {values}.':
         'Xray {tag} принимает: {values}.',
@@ -781,6 +773,59 @@ export const ru: Record<string, string> = {
     '{n} datagrams go out before the first real one. A long burst is a shape of its own; the WARP profiles send five or six.':
         'До первой настоящей датаграммы уходит {n}. Длинная очередь — сама по себе приметный признак; профили WARP отправляют пять-шесть.',
 
+    'L4 · Transport': 'L4 · Транспорт',
+    'This outbound dials as usual, and the socket underneath is opened through the other one. Its own transport, security and sockopt all apply.':
+        'Этот outbound подключается как обычно, а сокет под ним открывается через другой outbound. Его собственные транспорт, защита и sockopt применяются полностью.',
+    'L7 · Application': 'L7 · Приложение',
+    'The other outbound carries the stream to the destination. Of this outbound\'s own stream settings only TLS is used.':
+        'Поток до адресата несёт другой outbound. Из собственных настроек транспорта этого outbound используется только TLS.',
+    'Sends this outbound\'s connections through another outbound first — for example WireGuard through a freedom outbound that carries the obfuscation. Pick the outbound to go through, then the layer.':
+        'Пускает соединения этого outbound сначала через другой — например, WireGuard через freedom, на котором висит обфускация. Выберите, через какой outbound идти, затем уровень.',
+    'Direct (None)': 'Напрямую (нет)',
+    'Not chained: this outbound opens its own connections.':
+        'Без цепочки: этот outbound сам открывает свои соединения.',
+    'Chaining layer': 'Уровень цепочки',
+    'Unchain': 'Убрать цепочку',
+    'Both proxySettings and sockopt.dialerProxy name an outbound here. Xray refuses the config for that. Pick a layer above to keep one of them.':
+        'Здесь outbound указан и в proxySettings, и в sockopt.dialerProxy. Xray такой конфиг не принимает. Выберите уровень выше, чтобы оставить что-то одно.',
+    'Switch to the transport layer': 'Перейти на транспортный уровень',
+    'Xray {tag} refuses any proxySettings, and the config does not load. The transport layer is the only chaining it has.':
+        'Xray {tag} отвергает любой proxySettings, и конфиг не загружается. Транспортный уровень — единственный вид цепочки, который у него есть.',
+    'Runs on Xray 26.3 and 26.7. From 26.9 the core refuses the config instead — the transport layer is what survives an upgrade.':
+        'Работает на Xray 26.3 и 26.7. Начиная с 26.9 ядро отвергает такой конфиг — обновление переживёт только транспортный уровень.',
+    'Not used while chained at this layer: {list}. Only TLS from this outbound\'s stream settings is applied; the transport layer is the one that runs them.':
+        'При цепочке на этом уровне не используется: {list}. Из настроек транспорта этого outbound применяется только TLS; чтобы они заработали, нужен транспортный уровень.',
+    'Rewrite as sockopt.dialerProxy': 'Переписать как sockopt.dialerProxy',
+    'Written the old way, as proxySettings with transportLayer. The core turns that into sockopt.dialerProxy when it loads, so it runs the same — and 26.9 refuses it instead.':
+        'Записано по-старому: proxySettings с transportLayer. При загрузке ядро само превращает это в sockopt.dialerProxy, так что работает так же, — а 26.9 такой конфиг отвергает.',
+    'Outbound "{tag}" sets both proxySettings and sockopt.dialerProxy. Xray refuses the config: an outbound is chained one way or the other, never both.':
+        'Outbound «{tag}» задаёт и proxySettings, и sockopt.dialerProxy. Xray такой конфиг не принимает: цепочка задаётся либо так, либо так, но не обоими способами сразу.',
+    'Keep one of them — the Proxy Chaining card in the outbound picks the layer and clears the other.':
+        'Оставьте что-то одно: карточка «Цепочка прокси» в outbound выбирает уровень и убирает второй ключ.',
+    'Outbound "{tag}" goes out through "{via}", and there is no outbound with that tag. Every connection it is given will fail.':
+        'Outbound «{tag}» идёт через «{via}», а outbound с таким тегом нет. Каждое соединение, которое ему достанется, оборвётся.',
+    'Outbound "{tag}" is chained through itself, so nothing ever opens the connection.':
+        'Outbound «{tag}» пущен через самого себя, поэтому соединение не открывает никто.',
+    'Outbound "{tag}" is part of a chain that comes back to itself (through "{via}"), so nothing at the end of it opens a connection.':
+        'Outbound «{tag}» входит в цепочку, которая замыкается сама на себя (через «{via}»), поэтому в её конце некому открыть соединение.',
+    'Goes out through {via} at the transport layer: this outbound dials as usual and the socket underneath is opened by {via}.':
+        'Идёт через {via} на транспортном уровне: этот outbound подключается как обычно, а сокет под ним открывает {via}.',
+    'Goes out through {via} at the application layer: {via} carries the stream, and of this outbound\'s own stream settings only TLS is used. Xray 26.9 refuses this form.':
+        'Идёт через {via} на уровне приложения: поток несёт {via}, а из собственных настроек транспорта используется только TLS. Xray 26.9 такую запись отвергает.',
+    'Carries the connections of: {tags}. They go out through this outbound, which is why it needs no routing rule of its own.':
+        'Несёт соединения: {tags}. Они выходят через этот outbound, поэтому собственное правило маршрутизации ему не нужно.',
+    'Fragmentation needs a length: the core refuses the config without one.':
+        'Фрагментации нужна длина: без неё ядро не примет конфиг.',
+    'The length cannot start at 0: the core refuses a fragment of no bytes.':
+        'Длина не может начинаться с 0: фрагмент в ноль байт ядро не принимает.',
+    'Fragmentation needs an interval: the core refuses the config without one.':
+        'Фрагментации нужен интервал: без него ядро не примет конфиг.',
+    'Needs Xray on the far end — any Xray inbound answers Mux, a plain proxy of the same protocol does not.':
+        'На другой стороне должен быть Xray: любой его inbound понимает Mux, а обычный прокси того же протокола — нет.',
+    'This protocol cannot carry Mux: it would try to reach the Mux address for real. It is shown because the config has it — switch it off to remove it.':
+        'Этот протокол не может нести Mux: он попытался бы по-настоящему подключиться к служебному адресу Mux. Блок показан потому, что он есть в конфиге, — выключите, чтобы убрать.',
+    'This outbound carries streamSettings, and a {protocol} outbound never opens a connection to use them. The core still reads and checks them when it loads.':
+        'В этом outbound есть streamSettings, а outbound протокола {protocol} не открывает соединений и ими не пользуется. При загрузке ядро всё равно читает и проверяет их.',
     // ── Freedom: fragment, noises and the rest of its settings ──────────────
     'Domain Strategy (legacy key)': 'Стратегия доменов (старый ключ)',
     'TLS Fragmentation': 'Фрагментация TLS',
@@ -833,16 +878,7 @@ export const ru: Record<string, string> = {
     'Custom Response (base64)': 'Свой ответ (base64)',
     'Base64 of the exact bytes to write back. Xray decodes it at startup and will not run if it is not valid base64.':
         'Base64 тех байтов, которые нужно отдать. Xray декодирует их при старте и не запустится, если это не корректный base64.',
-    'This outbound chains through {tag} via proxySettings, which a current Xray refuses to load. The replacement is sockopt.dialerProxy and does the same job.':
-        'Этот outbound ходит через {tag} по proxySettings, а современный Xray такой конфиг не загрузит. Замена — sockopt.dialerProxy, делает то же самое.',
-    'Move it to sockopt.dialerProxy': 'Перенести в sockopt.dialerProxy',
     'Remove it': 'Убрать',
-    "Sends this outbound's connection through another one first. Set as streamSettings.sockopt.dialerProxy, in Sockopt under Transport.":
-        'Пускает соединение этого outbound через другой. Задаётся как streamSettings.sockopt.dialerProxy — в разделе Sockopt под транспортом.',
-    'Chaining through {tag}, set in Sockopt under Transport.':
-        'Ходит через {tag} — задано в Sockopt под транспортом.',
-    'Not chained. Set a dialerProxy in Sockopt under Transport to send this outbound through another one.':
-        'Цепочки нет. Задайте dialerProxy в Sockopt под транспортом, чтобы пустить этот outbound через другой.',
 
     'Copies a JSON array, which is what the scopes field wants when you create the token.':
         'Копируется JSON-массив — именно его ждёт поле scopes при создании токена.',
@@ -1644,8 +1680,6 @@ export const ru: Record<string, string> = {
     'Obfuscator Only': 'Только обфускатор',
     'Import & Parse': 'Импортировать и разобрать',
     'Proxy Chaining (Optional)': 'Цепочка прокси (необязательно)',
-    'When enabled, proxy chaining occurs at the transport layer instead of the application layer.':
-        'Если включено, цепочка прокси строится на транспортном уровне, а не на прикладном.',
     'Mux (Multiplexing)': 'Mux (мультиплексирование)',
     'TCP Concurrency': 'Параллельность TCP',
     'XUDP Concurrency': 'Параллельность XUDP',
