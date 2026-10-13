@@ -49,6 +49,9 @@ const INBOUND: Record<string, z.ZodTypeAny> = {
     // The 2022 ciphers are the same block with different method names.
     'shadowsocks-2022': ShadowsocksInboundSettingsSchema,
     socks: SocksInboundSettingsSchema,
+    // Not a schema of its own: the loader builds a `mixed` inbound from the
+    // struct it builds `socks` from (v26.7.28:infra/conf/xray.go:27-28).
+    mixed: SocksInboundSettingsSchema,
     http: HttpInboundSettingsSchema,
     tunnel: TunnelInboundSettingsSchema,
     // `tunnel` is the current name for what the docs still call dokodemo-door.

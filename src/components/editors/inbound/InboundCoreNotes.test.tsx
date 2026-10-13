@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { useConfigStore } from '../../../store/configStore';
 import { t } from '../../../i18n';
+import { wireguardPublicKey } from '../../../core/generators/crypto';
 import { InboundCoreNotes } from './InboundCoreNotes';
 
 const onLine = (version: '26.3' | '26.7' | '26.9') => useConfigStore.setState({ coreVersion: version } as any);
@@ -46,6 +47,36 @@ describe('InboundCoreNotes', () => {
         );
         fireEvent.click(screen.getByText(t("Rename to {key}", { key: 'clients' })));
         expect(calls).toEqual([['settings', { clients: [{ password: 'x' }] }]]);
+    });
+
+    it('says a WireGuard inbound with no secret key will not load, and offers to make one', () => {
+        const calls: [unknown, any][] = [];
+        const { container } = render(
+            <InboundCoreNotes
+                inbound={{ protocol: 'wireguard', port: 51820, settings: { secretKey: '', peers: [] } }}
+                onChange={(path, value) => calls.push([path, value])}
+            />,
+        );
+        expect(screen.getByText(t("{what} is empty. Every supported Xray refuses a WireGuard inbound without its secret key — the config will not load.", { what: 'settings.secretKey' }))).toBeTruthy();
+        // Refused, so the box is the red one rather than the amber one.
+        expect(container.firstElementChild!.className).toContain('rose');
+        expect(calls).toEqual([]);
+
+        fireEvent.click(screen.getByText(t("Generate a key")));
+        expect(calls).toHaveLength(1);
+        expect(calls[0]![0]).toEqual(['settings', 'secretKey']);
+        expect(wireguardPublicKey(calls[0]![1])).not.toBeNull();
+    });
+
+    it('does not offer to replace a key that is there and wrong', () => {
+        render(
+            <InboundCoreNotes
+                inbound={{ protocol: 'wireguard', port: 51820, settings: { secretKey: 'not a key!', peers: [] } }}
+                onChange={() => {}}
+            />,
+        );
+        expect(screen.getByText(t("{what} is not a WireGuard key: Xray cannot decode it, and the config will not load.", { what: 'settings.secretKey' }))).toBeTruthy();
+        expect(screen.queryByText(t("Generate a key"))).toBeNull();
     });
 
     it('lets the user pick which of two user lists to keep', () => {

@@ -41,8 +41,8 @@ export const BatchEditModal = ({ direction, items, initialSelection, onApply, on
     const set = (update: Partial<BatchPatch>) => setPatch(prev => ({ ...prev, ...update }));
 
     const preview = useMemo(
-        () => applyBatch(items, selection, direction, patch),
-        [items, selection, direction, patch],
+        () => applyBatch(items, selection, direction, patch, coreVersion),
+        [items, selection, direction, patch, coreVersion],
     );
 
     const empty = isEmptyPatch(patch);

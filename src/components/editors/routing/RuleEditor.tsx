@@ -463,9 +463,17 @@ export const RuleEditor = ({
                                                 placeholder: '10',
                                                 help: t("Deduplication interval in seconds.")
                                             },
+                                            // A map of name to value on every line
+                                            // (v26.7.28:infra/conf/router.go:129, the same at
+                                            // v26.9.9; v26.3.27:infra/conf/router.go:528), so
+                                            // the form draws it as a JSON object. It was a text
+                                            // input, and the string that wrote fails the rule's
+                                            // decode and the config with it
+                                            // (v26.7.28:infra/conf/router.go:154-157).
                                             headers: {
                                                 label: t("Headers"),
-                                                placeholder: t("e.g. Authorization: Bearer token"),
+                                                // The shape to type, not prose: the same in every language.
+                                                placeholder: '{ "Authorization": "Bearer token" }',
                                                 help: t("Custom HTTP headers for the webhook request.")
                                             }
                                         }}

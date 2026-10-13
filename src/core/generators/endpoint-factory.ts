@@ -207,10 +207,22 @@ const PROTOCOLS: Record<string, ProtocolSpec> = {
     },
 
     wireguard: {
+        // Incomplete, and it says so rather than looking finished. The secret
+        // key is the server's identity and nobody's to invent behind a
+        // protocol chooser, so it starts empty: every line refuses that
+        // (v26.7.28:infra/conf/wireguard.go:75-78), the editor and the
+        // diagnostics report it (core/xray/wireguard-inbound.ts), and the
+        // card's Generate button is one press away.
+        //
+        // No peer either. This used to write one with an empty public key and
+        // "0.0.0.0/0", which 26.7 refuses outright
+        // (v26.7.28:proxy/wireguard/config.go:12-15) — a second thing wrong
+        // that no field in the form could reach. A server with no peers
+        // loads on every line; it just has nobody to talk to yet.
         inbound: () => ({
             settings: {
                 secretKey: '',
-                peers: [{ publicKey: '', allowedIPs: ['0.0.0.0/0'] }],
+                peers: [],
                 mtu: 1420,
             },
             // WireGuard dials UDP itself; the stream only carries finalmask and
@@ -230,6 +242,16 @@ const PROTOCOLS: Record<string, ProtocolSpec> = {
     },
 
     // ── Inbound-only ────────────────────────────────────────────────────────
+    // The socks inbound under its other name: the loader builds both from one
+    // struct (v26.3.27:infra/conf/xray.go:30-31, v26.7.28:infra/conf/xray.go:27-28,
+    // v26.9.9:infra/conf/xray.go:28-29), and the server it builds already
+    // hands whatever does not open as SOCKS 4 or 5 to an HTTP proxy on the
+    // same port (v26.7.28:proxy/socks/server.go:87-89). So the default is the
+    // socks default. There is no outbound of this name
+    // (v26.7.28:infra/conf/xray.go:37-52).
+    mixed: {
+        inbound: () => ({ settings: { auth: 'noauth', udp: true } }),
+    },
     tun: {
         // No line has a `stack` key (v26.3.27:infra/conf/tun.go:8,
         // v26.7.28:infra/conf/tun.go:14). `mtu` is spelled `MTU` in the 26.3

@@ -177,6 +177,25 @@ describe('what each protocol is built with, per supported core', () => {
         const settings = createDefaultInbound('dokodemo-door', { address: '1.1.1.1', port: 53 }).settings as any;
         expect(settings).toEqual({ address: '1.1.1.1', port: 53, network: 'tcp,udp' });
     });
+
+    it('builds mixed as the socks inbound it is, on the inbound side only', () => {
+        // One struct for both names (v26.7.28:infra/conf/xray.go:27-28), and no
+        // `mixed` in the outbound loader at all.
+        expect(createDefaultInbound('mixed').settings).toEqual(createDefaultInbound('socks').settings);
+        expect(supportsProtocol('inbound', 'mixed')).toBe(true);
+        expect(supportsProtocol('outbound', 'mixed')).toBe(false);
+        expect(bidirectionalProtocols()).not.toContain('mixed');
+    });
+
+    it('leaves a WireGuard inbound without a key and without a made-up peer', () => {
+        // The one default here that is incomplete on purpose. A secret key is
+        // not the factory's to invent, so the inbound says it has none — and
+        // core/xray/wireguard-inbound.ts makes sure that is reported. The peer
+        // with an empty public key this used to write was a second refusal
+        // (v26.7.28:proxy/wireguard/config.go:12) that helped nobody.
+        const settings = createDefaultInbound('wireguard').settings as any;
+        expect(settings).toEqual({ secretKey: '', peers: [], mtu: 1420 });
+    });
 });
 
 describe('normalizeInbound', () => {

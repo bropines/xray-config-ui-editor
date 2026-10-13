@@ -7,6 +7,7 @@ import { InboundClients } from './inbound/InboundClients';
 import { InboundSniffing } from './inbound/InboundSniffing';
 import { InboundTun } from './inbound/InboundTun';
 import { InboundTunnel } from './inbound/InboundTunnel';
+import { InboundWireguard } from './inbound/InboundWireguard';
 import { InboundCoreNotes } from './inbound/InboundCoreNotes';
 import { TransportSettings } from './shared/TransportSettings';
 import { t } from '../../i18n';
@@ -62,6 +63,11 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                         <InboundTun inbound={local} onChange={updateField} errors={errors} />
                     ) : TUNNEL_PROTOCOLS.includes(local.protocol) ? (
                         <InboundTunnel inbound={local} onChange={updateField} />
+                    ) : local.protocol === 'wireguard' ? (
+                        // Its own card: a WireGuard server has a key, an
+                        // address and peers, none of which is a "client" in
+                        // the sense InboundClients draws.
+                        <InboundWireguard inbound={local} onChange={updateField} />
                     ) : (
                         <InboundClients
                             inbound={local}

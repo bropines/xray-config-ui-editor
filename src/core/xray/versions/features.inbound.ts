@@ -172,4 +172,19 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
         detail: 'Compared exactly; any other value, "Password" included, quietly falls back to noauth.',
         evidence: ['v26.3.27:infra/conf/socks.go:40', 'v26.7.28:infra/conf/socks.go:41', 'v26.9.9:infra/conf/socks.go:41'],
     },
+    {
+        // A WireGuard server never resolves anything with it — the strategy is
+        // for a client's peer endpoint — but WireGuardConfig.Build() is one
+        // function for both sides and switches on it before it knows which it
+        // is building. So the inbound editor does not offer the key, and a
+        // value left in one still has to be one of these.
+        id: 'inbound.wireguard.domainStrategy',
+        scope: 'inbound',
+        protocol: ['wireguard'],
+        path: 'settings.domainStrategy',
+        allowed: same(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']),
+        outside: 'rejected',
+        detail: 'Lower-cased and switched on for an inbound too; anything outside the ForceIP family fails with "unsupported domain strategy".',
+        evidence: ['v26.3.27:infra/conf/wireguard.go:105', 'v26.7.28:infra/conf/wireguard.go:127', 'v26.9.9:infra/conf/wireguard.go:128'],
+    },
 ];

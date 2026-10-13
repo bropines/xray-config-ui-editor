@@ -826,6 +826,150 @@ export const ru: Record<string, string> = {
         'Этот протокол не может нести Mux: он попытался бы по-настоящему подключиться к служебному адресу Mux. Блок показан потому, что он есть в конфиге, — выключите, чтобы убрать.',
     'This outbound carries streamSettings, and a {protocol} outbound never opens a connection to use them. The core still reads and checks them when it loads.':
         'В этом outbound есть streamSettings, а outbound протокола {protocol} не открывает соединений и ими не пользуется. При загрузке ядро всё равно читает и проверяет их.',
+    'A noise needs a type of rand, str, hex or base64, written exactly so: the core refuses anything else.':
+        'Шуму нужен тип rand, str, hex или base64, записанный именно так: всё остальное ядро отвергает.',
+    'A rand noise needs a length or a range, like 50-100: the core refuses the config without one.':
+        'Шуму типа rand нужна длина или диапазон, например 50-100: без этого ядро не примет конфиг.',
+    'A rand noise cannot start at 0 bytes: the core refuses it.':
+        'Шум типа rand не может начинаться с 0 байт: ядро его отвергает.',
+    'Not hex: pairs of 0-9 and a-f are what the core decodes.':
+        'Не шестнадцатеричное значение: ядро разбирает пары из 0-9 и a-f.',
+    'Not base64: the core cannot decode it.': 'Не base64: ядро не сможет это раскодировать.',
+    'The login this proxy asks for. Leave both boxes empty for a proxy that takes anyone.':
+        'Логин, который требует этот прокси. Оставьте оба поля пустыми, если прокси пускает всех.',
+    'A password with no user name: the proxy would be offered an empty login.':
+        'Пароль без имени пользователя: прокси получит пустой логин.',
+    'Hysteria\'s password is not set here: it is the transport\'s Auth, under Stream Settings below.':
+        'Пароль Hysteria задаётся не здесь: это поле Auth транспорта, в настройках потока ниже.',
+    'Rate': 'Скорость',
+    'bytes/s': 'байт/с',
+    'How fast the forwarded traffic may flow once the limit applies. Empty or 0 is no limit at all, and the two fields beside it then do nothing.':
+        'С какой скоростью может идти перенаправленный трафик, когда лимит действует. Пусто или 0 — лимита нет вовсе, и два соседних поля тогда ни на что не влияют.',
+    'Free allowance': 'Без ограничения',
+    'bytes': 'байт',
+    'This much of each connection passes at full speed before the limit starts.':
+        'Столько байт каждого соединения проходит на полной скорости, прежде чем включается лимит.',
+    'Burst': 'Всплеск',
+    'How much may pass in one go after a quiet moment — the size of the token bucket, in bytes despite the key\'s name. Raised to the rate when set lower.':
+        'Сколько может пройти разом после паузы — размер «ведра» токенов, в байтах, несмотря на название ключа. Если задано меньше скорости, поднимается до неё.',
+    'Fallback upload limit': 'Лимит отдачи для fallback',
+    'Fallback download limit': 'Лимит загрузки для fallback',
+    'REALITY hands every connection that is not one of its own clients on to the target site. These limits apply to those forwarded connections only, never to your clients\' traffic — they keep the server from being a free relay to the target.':
+        'REALITY передаёт на целевой сайт каждое соединение, которое не принадлежит его клиентам. Эти лимиты действуют только на такие перенаправленные соединения и никогда на трафик ваших клиентов — они не дают серверу стать бесплатным ретранслятором к целевому сайту.',
+    'Caps what a forwarded connection may send on to the target — visitor to target.':
+        'Ограничивает то, что перенаправленное соединение отправляет на целевой сайт: от посетителя к цели.',
+    'Caps what the target may send back over a forwarded connection — target to visitor.':
+        'Ограничивает то, что целевой сайт отправляет обратно по перенаправленному соединению: от цели к посетителю.',
+    'With no rate set, Xray does not limit this direction — the other values here do nothing.':
+        'Пока скорость не задана, Xray это направление не ограничивает — остальные значения здесь ни на что не влияют.',
+    'Remove this limit': 'Убрать этот лимит',
+    'ECH Query Socket Options (echSockopt)': 'Параметры сокета для запроса ECH (echSockopt)',
+    'Socket options for the DNS query that fetches the ECH config. Xray makes that query only when ECH Config List names a DNS server instead of holding the config itself, so without one these do nothing.':
+        'Параметры сокета для DNS-запроса, которым получают конфиг ECH. Xray делает этот запрос, только когда в ECH Config List указан DNS-сервер, а не сам конфиг, — без него эти параметры ни на что не влияют.',
+    'This key takes a JSON list, in square brackets — the config keeps the last valid value.':
+        'Этот ключ принимает JSON-список в квадратных скобках — в конфиге остаётся последнее корректное значение.',
+    'This key takes a JSON object, in braces — the config keeps the last valid value.':
+        'Этот ключ принимает JSON-объект в фигурных скобках — в конфиге остаётся последнее корректное значение.',
+    'SHA-256 of the certificate to expect — the server\'s own, or a CA in the chain it sends — as 64 hex digits. Colons between bytes are fine, and several hashes go in this one field separated by commas. `xray tls hash --cert fullchain.pem` prints it. Not Base64: Xray refuses the config when this is anything but hex.':
+        'SHA-256 ожидаемого сертификата — самого сервера или УЦ из цепочки, которую он присылает, — в виде 64 шестнадцатеричных цифр. Двоеточия между байтами допустимы, несколько хешей пишутся в это же поле через запятую. Хеш печатает `xray tls hash --cert fullchain.pem`. Не Base64: если здесь не hex, Xray не примет конфиг.',
+    '64 hex digits, e.g. e3b0c44298fc1c14…7852b855':
+        '64 шестнадцатеричные цифры, например e3b0c44298fc1c14…7852b855',
+    '{name} holds {value}, and Xray reads an object here — it cannot read the config until this is replaced or removed.':
+        'В {name} записано {value}, а Xray ждёт здесь объект — он не прочитает конфиг, пока это не заменить или не убрать.',
+    'Set its three numbers in the REALITY settings, or remove the key.':
+        'Задайте три его числа в настройках REALITY или уберите ключ.',
+    'This is not text, and Xray {tag} reads text here — it cannot read the config. Write the hashes on one line, separated by commas.':
+        'Это не текст, а Xray {tag} ждёт здесь текст — он не прочитает конфиг. Запишите хеши одной строкой через запятую.',
+    '“{entry}” is not hex. Xray {tag} reads each hash as 64 hex digits and refuses the config otherwise — a Base64 hash has to be converted first.':
+        '«{entry}» — не шестнадцатеричное значение. Xray {tag} читает каждый хеш как 64 hex-цифры и иначе не принимает конфиг; хеш в Base64 нужно сначала перевести.',
+    '“{entry}” has {n} hex digits where a SHA-256 hash has 64 — Xray {tag} refuses the config.':
+        'В «{entry}» {n} hex-цифр, а у хеша SHA-256 их 64 — Xray {tag} не примет конфиг.',
+    'There is no hash in this value, so Xray {tag} pins nothing and checks the certificate the ordinary way.':
+        'В этом значении нет ни одного хеша, поэтому Xray {tag} ничего не закрепляет и проверяет сертификат обычным образом.',
+    '{key} holds {value}; it has to be a whole number of bytes, 0 or more — Xray {tag} cannot read the config otherwise.':
+        'В {key} записано {value}; здесь должно быть целое число байт, 0 или больше, — иначе Xray {tag} не прочитает конфиг.',
+    '{key} has to be an object — Xray {tag} cannot read the config with anything else there.':
+        '{key} должен быть объектом — с чем-либо другим Xray {tag} не прочитает конфиг.',
+    '{protocol} settings': 'Настройки {protocol}',
+    '{protocol} accounts': 'Учётные записи {protocol}',
+    'One port for SOCKS and HTTP proxy clients alike. Xray builds it exactly as it builds a socks inbound, so the settings are the same.':
+        'Один порт и для SOCKS-, и для HTTP-клиентов. Xray собирает его точно так же, как inbound socks, поэтому настройки те же.',
+    'WireGuard interface': 'Интерфейс WireGuard',
+    'This server\'s private key. It stays in this config; clients are given the public key under it.':
+        'Приватный ключ этого сервера. Он остаётся в этом конфиге; клиентам выдают публичный ключ, показанный ниже.',
+    'Worked out from the secret key, not stored in the config. Every client needs it as the public key of its peer.':
+        'Вычисляется из секретного ключа и в конфиге не хранится. Каждому клиенту он нужен как публичный ключ его пира.',
+    'Appears once the secret key is a valid one. Every client needs it as the public key of its peer.':
+        'Появится, когда секретный ключ станет корректным. Каждому клиенту он нужен как публичный ключ его пира.',
+    'Interface address': 'Адрес интерфейса',
+    'The server\'s own addresses inside the tunnel, separated by commas. Left empty, Xray uses {v4} and {v6}.':
+        'Собственные адреса сервера внутри туннеля, через запятую. Если оставить пустым, Xray возьмёт {v4} и {v6}.',
+    'The largest packet the tunnel carries. Left empty, Xray uses 1420.':
+        'Самый большой пакет, который проходит через туннель. Если оставить пустым, Xray возьмёт 1420.',
+    '{key} is an empty list, which is not the same as leaving it out: Xray then uses none at all, not its default.':
+        '{key} — пустой список, а это не то же самое, что отсутствие ключа: Xray тогда не берёт ничего вовсе, а не значение по умолчанию.',
+    '{key} is set to {value}. Only a WireGuard outbound uses it — on an inbound it changes nothing.':
+        'В {key} записано {value}. Этот ключ использует только outbound WireGuard — на inbound он ничего не меняет.',
+    'Arrived in Xray 26.7; {tag} drops it, so it does nothing here.':
+        'Появилось в Xray 26.7; {tag} это отбрасывает, поэтому здесь оно ни на что не влияет.',
+    'A new key gives this server a new public key. Every client set up with the old one stops connecting until it is given the new one.':
+        'С новым ключом у сервера будет новый публичный ключ. Все клиенты, настроенные на старый, перестанут подключаться, пока не получат новый.',
+    'Replace the key': 'Заменить ключ',
+    'Generate a new key': 'Сгенерировать новый ключ',
+    'Generate a key': 'Сгенерировать ключ',
+    'Copy public key': 'Скопировать публичный ключ',
+    'Each peer is one client. It is recognised by its public key and may only send from the addresses listed for it, so give every client an address of its own.':
+        'Каждый пир — один клиент. Его узнают по публичному ключу, и слать он может только с перечисленных для него адресов, поэтому дайте каждому клиенту свой адрес.',
+    'Peer {n}': 'Пир {n}',
+    'The client\'s own public key — the one its WireGuard app shows for its interface, not this server\'s.':
+        'Публичный ключ самого клиента — тот, что его приложение WireGuard показывает для своего интерфейса, а не ключ этого сервера.',
+    'The tunnel addresses this client may send from, as networks: a single address is written with /32. Left empty, Xray lets the peer use every address.':
+        'Адреса туннеля, с которых этот клиент может слать, в виде сетей: один адрес пишется с /32. Если оставить пустым, Xray разрешит пиру любые адреса.',
+    'An extra secret shared with this one client, which must hold the same value. Optional.':
+        'Дополнительный секрет, общий с этим одним клиентом: у него должно быть то же значение. Необязательно.',
+    'Generate a pre-shared key': 'Сгенерировать pre-shared ключ',
+    'Seconds between the packets this server sends to keep the peer\'s path open. Empty or 0 sends none.':
+        'Интервал в секундах между пакетами, которыми сервер держит путь к пиру открытым. Пусто или 0 — не слать.',
+    'The user this peer\'s traffic is counted and routed as.':
+        'Пользователь, от имени которого трафик этого пира считается и маршрутизируется.',
+    'The policy level this peer\'s connections run at. Empty is level 0.':
+        'Уровень политики, на котором работают соединения этого пира. Пусто — уровень 0.',
+    'Where Xray {tag} first sends to this peer. A server usually leaves it out and learns the address when the peer calls.':
+        'Куда Xray {tag} отправляет первый пакет этому пиру. Сервер обычно его не задаёт и узнаёт адрес, когда пир выходит на связь сам.',
+    'Xray {tag} does not use a peer\'s endpoint on an inbound: it learns the address when the peer calls. It does nothing here.':
+        'Xray {tag} не использует endpoint пира на inbound: адрес он узнаёт, когда пир выходит на связь. Здесь это ни на что не влияет.',
+    'Remove peer': 'Удалить пир',
+    'No peers yet. The inbound loads without any — and nobody can connect to it.':
+        'Пиров пока нет. Inbound загрузится и без них — но подключиться к нему никто не сможет.',
+    'A key is 32 bytes — 44 characters of base64, or 64 of hex.':
+        'Ключ — это 32 байта: 44 символа base64 или 64 символа hex.',
+    '{what} is not a WireGuard key: Xray cannot decode it, and the config will not load.':
+        '{what} — не ключ WireGuard: Xray не сможет его раскодировать, и конфиг не загрузится.',
+    '{what} decodes to {bytes} bytes and a WireGuard key is 32, so the inbound will not start.':
+        '{what} раскодируется в {bytes} байт, а ключ WireGuard — это 32, поэтому inbound не запустится.',
+    '{what} is empty. Every supported Xray refuses a WireGuard inbound without its secret key — the config will not load.':
+        '{what} не задан. Любой поддерживаемый Xray отвергает inbound WireGuard без секретного ключа — конфиг не загрузится.',
+    'Generate one in the WireGuard card, or paste the key this server already uses.':
+        'Сгенерируйте его в карточке WireGuard или вставьте ключ, которым этот сервер уже пользуется.',
+    '{what} lists "{value}", which is not an IP address — the inbound will not start.':
+        'В {what} указано «{value}», а это не IP-адрес — inbound не запустится.',
+    '{what} lists "{value}": Xray {tag} takes an interface address only as a single host — /32 for IPv4, /128 for IPv6 — and refuses any other prefix.':
+        'В {what} указано «{value}»: Xray {tag} принимает адрес интерфейса только как один хост — /32 для IPv4, /128 для IPv6 — и отвергает любой другой префикс.',
+    '{what} must be empty or exactly 3 bytes; Xray refuses any other length and the config will not load.':
+        '{what} должен быть пустым или ровно из 3 байт; любую другую длину Xray отвергает, и конфиг не загрузится.',
+    'An inbound does not use it — only a WireGuard outbound does — so it can simply be removed.':
+        'Inbound его не использует — только outbound WireGuard, — поэтому его можно просто убрать.',
+    '{what} is empty. A peer is known by its public key, so nothing can connect as this one.':
+        '{what} не задан. Пира узнают по публичному ключу, поэтому под этим никто подключиться не сможет.',
+    '{what} is empty. A peer is known by its public key, and Xray {tag} refuses the inbound without one — the config will not load.':
+        '{what} не задан. Пира узнают по публичному ключу, и Xray {tag} отвергает inbound без него — конфиг не загрузится.',
+    '{what} is empty. A peer is known by its public key; Xray {tag} leaves the key out and sends the peer\'s other settings on their own.':
+        '{what} не задан. Пира узнают по публичному ключу; Xray {tag} пропускает ключ и передаёт остальные настройки пира без него.',
+    'Paste the public key the client shows for its own interface, or remove the peer.':
+        'Вставьте публичный ключ, который клиент показывает для своего интерфейса, или удалите пир.',
+    '{what} lists "{value}", which is not a network written as address/prefix — the inbound will not start.':
+        'В {what} указано «{value}», а это не сеть в виде адрес/префикс — inbound не запустится.',
+    'Write a single address as {example}.': 'Один адрес записывается как {example}.',
     // ── Freedom: fragment, noises and the rest of its settings ──────────────
     'Domain Strategy (legacy key)': 'Стратегия доменов (старый ключ)',
     'TLS Fragmentation': 'Фрагментация TLS',
@@ -2041,9 +2185,6 @@ export const ru: Record<string, string> = {
     'File path to write TLS master keys for Wireshark traffic inspection/debugging.':
         'Путь к файлу, куда писать мастер-ключи TLS для разбора трафика в Wireshark.',
     'Pinned Peer Certificate SHA-256': 'Закреплённый SHA-256 сертификата',
-    'Base64 SHA-256 hash for strict certificate pinning.':
-        'Хеш SHA-256 в base64 для строгого пиннинга сертификата.',
-    'Base64 hash string': 'Строка хеша в base64',
     'ML-DSA-65 Public Key (PQ-REALITY)': 'Публичный ключ ML-DSA-65 (PQ-REALITY)',
     'Post-Quantum signature verification key for client.':
         'Ключ проверки постквантовой подписи для клиента.',

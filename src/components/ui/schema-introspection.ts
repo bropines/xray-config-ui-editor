@@ -15,14 +15,33 @@ import type { TimeUnit } from './duration';
 const defTag = (schema: unknown): string | undefined =>
     (schema as { _def?: { type?: string } } | null)?._def?.type;
 
+/**
+ * What a form can draw for a schema.
+ *
+ * `object`, `record` and `unknown` are the three a text box cannot hold: the
+ * value is (or may be) a JSON object, and a text box writes a string. Xray
+ * decodes such a key into a Go struct, pointer or map, where a string is a
+ * type error that fails the whole config, so the form gives all three a
+ * structured editor — see SchemaField. `unknown` is everything not recognised
+ * here, including `any` and a union that mixes a scalar with a structure.
+ */
+export type SchemaFieldKind = 'string' | 'number' | 'boolean' | 'enum' | 'object' | 'record' | 'array' | 'unknown';
+
+/** Kinds whose value is a container, not something one text box can hold. */
+const CONTAINER_KINDS: SchemaFieldKind[] = ['object', 'record', 'array'];
+
+/** A camelCase key as a label: `limitFallbackUpload` → "Limit Fallback Upload". */
+export const humanizeKey = (name: string): string =>
+    name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
 // Helper to inspect the Zod type at runtime
 export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
-    type: 'string' | 'number' | 'boolean' | 'enum' | 'object' | 'array' | 'unknown';
+    type: SchemaFieldKind;
     options?: string[];
     innerSchema?: z.ZodTypeAny;
 } {
     let current = schema;
-    
+
     // Unwrap optional, nullable, default
     while (
         current instanceof z.ZodOptional ||
@@ -54,9 +73,14 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     if (current instanceof z.ZodArray || typeName === 'array') {
         return { type: 'array', innerSchema: (current as any).element };
     }
+    // A map of names to values — HTTP headers, socket options. It has no
+    // shape to draw fields from, but it is an object all the same.
+    if (current instanceof z.ZodRecord || typeName === 'record') {
+        return { type: 'record' };
+    }
     if (current instanceof z.ZodUnion || typeName === 'union') {
         const options = (current as any)._def.options || [];
-        
+
         // 1. Check if any union branch is an enum with defined options
         for (const opt of options) {
             const details = getSchemaTypeAndDetails(opt);
@@ -73,7 +97,17 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
             return { type: 'enum', options: literalValues };
         }
 
-        // 3. Check for string fallback
+        // 3. A structure next to a scalar — `"url" | { url, headers }`. The
+        // string fallback below would hand it a text box, which shows the
+        // object branch as "[object Object]" and replaces it with a string on
+        // the first keystroke. Neither branch alone can draw it.
+        const kinds: SchemaFieldKind[] = options.map((opt: any) => getSchemaTypeAndDetails(opt).type);
+        const containers = kinds.filter(kind => CONTAINER_KINDS.includes(kind));
+        if (containers.length > 0 && containers.length < kinds.length) {
+            return { type: 'unknown' };
+        }
+
+        // 4. Check for string fallback
         const hasString = options.some((opt: any) => {
             let u = opt;
             while (

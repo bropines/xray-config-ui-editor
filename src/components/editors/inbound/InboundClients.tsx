@@ -167,18 +167,32 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
         );
     }
 
-    // 2. Socks / HTTP
-    if (proto === 'socks' || proto === 'http') {
+    // 2. Socks / Mixed / HTTP
+    //
+    // `mixed` is not a third kind of proxy: the loader builds it from the
+    // struct it builds `socks` from (SocksServerConfig —
+    // v26.3.27:infra/conf/xray.go:30-31, v26.7.28:infra/conf/xray.go:27-28,
+    // v26.9.9:infra/conf/xray.go:28-29), and that server answers HTTP on the
+    // same port under either name (v26.7.28:proxy/socks/server.go:87-89). So
+    // it gets the socks card, field for field, rather than one of its own.
+    const isSocks = proto === 'socks' || proto === 'mixed';
+    if (isSocks || proto === 'http') {
         const accountItems = accounts.items;
+        const protocolName = proto.toUpperCase();
 
         return (
             <div className="space-y-4 mt-4">
                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                     <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-                        <Icon name="Gear" /> {proto.toUpperCase()} Settings
+                        <Icon name="Gear" /> {t("{protocol} settings", { protocol: protocolName })}
                     </h4>
+                    {proto === 'mixed' && (
+                        <p className="text-[10px] text-slate-500 leading-relaxed mb-3">
+                            {t("One port for SOCKS and HTTP proxy clients alike. Xray builds it exactly as it builds a socks inbound, so the settings are the same.")}
+                        </p>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {proto === 'socks' && (
+                        {isSocks && (
                             <Select
                                 label={t("Auth Type")}
                                 value={auth.value || "noauth"}
@@ -190,7 +204,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
                             />
                         )}
                         <div className="flex items-center gap-6">
-                            {proto === 'socks' && (
+                            {isSocks && (
                                 <div className="flex items-center gap-2">
                                     <Switch
                                         id="socks-udp"
@@ -216,11 +230,11 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
                     </div>
                 </div>
 
-                {(proto === 'http' || (proto === 'socks' && auth.value === 'password')) && (
+                {(proto === 'http' || (isSocks && auth.value === 'password')) && (
                     <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                                <Icon name="Users" /> {proto.toUpperCase()} Accounts
+                                <Icon name="Users" /> {t("{protocol} accounts", { protocol: protocolName })}
                             </h4>
                             <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={() => accounts.add({ user: 'admin', pass: generateShortId() })} icon="Plus">{t("Add Account")}</Button>
                         </div>

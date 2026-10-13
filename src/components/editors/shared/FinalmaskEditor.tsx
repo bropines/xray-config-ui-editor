@@ -4,6 +4,10 @@ import { Button } from '../../ui/Button';
 import { Help } from '../../ui/Help';
 import { Select } from '../../ui/Select';
 import { Switch } from '../../ui/Switch';
+// The JSON box and the text-for-a-value hook started here and moved out when
+// SchemaForm needed the same box for object-typed keys: one, not two.
+import { JsonInput } from '../../ui/JsonInput';
+import { useSyncedText } from '../../../hooks/useSyncedText';
 import {
     useFinalmaskEditor,
     type ChainView,
@@ -371,27 +375,6 @@ const FlagsInput = ({ options, value, onChange }: { options: string[]; value: un
     );
 };
 
-/**
- * Text that stands for a value: kept as typed while it still means that
- * value, refilled when the value changes underneath it — the same check
- * JsonField makes, done during render so the box is never a frame behind.
- */
-const useSyncedText = (value: unknown, format: (value: unknown) => string, parse: (text: string) => unknown) => {
-    const [text, setText] = useState(() => format(value));
-    const [seen, setSeen] = useState(value);
-    if (value !== seen) {
-        setSeen(value);
-        let same: boolean;
-        try {
-            same = JSON.stringify(parse(text)) === JSON.stringify(value);
-        } catch {
-            same = false;
-        }
-        if (!same) setText(format(value));
-    }
-    return [text, setText] as const;
-};
-
 const linesOf = (text: string) => text.split('\n').map(line => line.trim()).filter(Boolean);
 
 const LinesInput = ({ value, onChange }: { value: unknown; onChange: (value: unknown) => void }) => {
@@ -410,32 +393,6 @@ const LinesInput = ({ value, onChange }: { value: unknown; onChange: (value: unk
                 onChange(parse(e.target.value));
             }}
         />
-    );
-};
-
-const JsonInput = ({ value, onChange }: { value: unknown; onChange: (value: unknown) => void }) => {
-    const format = (v: unknown) => (v === undefined ? '' : JSON.stringify(v, null, 2));
-    const parse = (text: string) => (text.trim() === '' ? undefined : JSON.parse(text));
-    const [text, setText] = useSyncedText(value, format, parse);
-    const [invalid, setInvalid] = useState(false);
-    return (
-        <div className="flex flex-col gap-1">
-            <textarea
-                className={`input-base text-xs font-mono min-h-[80px] resize-y ${invalid ? 'border-rose-500/70' : ''}`}
-                value={text}
-                spellCheck={false}
-                onChange={e => {
-                    setText(e.target.value);
-                    try {
-                        onChange(parse(e.target.value));
-                        setInvalid(false);
-                    } catch {
-                        setInvalid(true);
-                    }
-                }}
-            />
-            {invalid && <span className="text-[10px] text-rose-400">{t("Not valid JSON yet — the config keeps the last valid value.")}</span>}
-        </div>
     );
 };
 

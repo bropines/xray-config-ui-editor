@@ -65,8 +65,20 @@ export const REALITY_FIELDS: Record<string, FieldSpec> = {
     maxClientVer: { direction: 'server', advanced: true },
     maxTimeDiff: { direction: 'server', advanced: true },
     mldsa65Seed: { direction: 'server', advanced: true },
-    limitFallbackUpload: { direction: 'server', advanced: true },
-    limitFallbackDownload: { direction: 'server', advanced: true },
+    limitFallbackUpload: {
+        direction: 'server',
+        advanced: true,
+        note: 'Copied only in the server branch of Build() '
+            + '(v26.7.28:infra/conf/transport_security.go:171-174, same at v26.9.9; '
+            + 'v26.3.27:infra/conf/transport_internet.go:918-921). Caps what a '
+            + 'connection REALITY forwards to the target may send there.',
+    },
+    limitFallbackDownload: {
+        direction: 'server',
+        advanced: true,
+        note: 'As limitFallbackUpload, for the other direction '
+            + '(v26.7.28:infra/conf/transport_security.go:175-178).',
+    },
 
     // ── Client ──────────────────────────────────────────────────────────────
     serverName: { direction: 'client' },
@@ -111,7 +123,12 @@ export const TLS_FIELDS: Record<string, FieldSpec> = {
     },
     fingerprint: { direction: 'client', note: 'uTLS Client Hello fingerprint.' },
     verifyPeerCertByName: { direction: 'client', advanced: true },
-    pinnedPeerCertSha256: { direction: 'client', advanced: true },
+    pinnedPeerCertSha256: {
+        direction: 'client',
+        advanced: true,
+        note: 'Hex, comma-separated; see core/xray/security-fields. Checked against the '
+            + 'certificates the peer presents (v26.7.28:transport/internet/tls/config.go:298-311).',
+    },
     disableSystemRoot: { direction: 'client', advanced: true, note: 'Trust store is a client concern.' },
     echConfigList: { direction: 'client', advanced: true },
     echForceQuery: {
@@ -119,6 +136,15 @@ export const TLS_FIELDS: Record<string, FieldSpec> = {
         advanced: true,
         note: 'Only 26.3 reads it (v26.3.27:infra/conf/transport_internet.go:756); '
             + 'the editor offers it on that line alone, via the feature table.',
+    },
+    echSockopt: {
+        direction: 'client',
+        advanced: true,
+        note: 'Was listed as `both`. Its one reader is the DNS query that fetches the ECH '
+            + 'config, inside the branch ApplyECH() runs only when echConfigList — a client '
+            + 'key — is set (v26.7.28:transport/internet/tls/ech.go:50 and :72, same at '
+            + 'v26.9.9; v26.3.27:transport/internet/tls/ech.go:51 and :86). The server '
+            + 'half of ApplyECH() reads echServerKeys alone.',
     },
 
     // ── Both ────────────────────────────────────────────────────────────────
@@ -130,7 +156,6 @@ export const TLS_FIELDS: Record<string, FieldSpec> = {
     curvePreferences: { direction: 'both', advanced: true },
     enableSessionResumption: { direction: 'both', advanced: true },
     masterKeyLog: { direction: 'both', advanced: true },
-    echSockopt: { direction: 'both', advanced: true },
 };
 
 const visibleOn = (spec: FieldSpec, side: Side): boolean =>

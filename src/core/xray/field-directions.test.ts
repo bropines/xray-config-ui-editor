@@ -60,6 +60,29 @@ describe('field directions', () => {
         expect(hidden('outbound').filter(k => k === 'certificates')).toHaveLength(1);
     });
 
+    it('gives the ECH query socket to the side that makes the query', () => {
+        // echSockopt is read only where echConfigList is — the client branch
+        // of ApplyECH() (v26.7.28:transport/internet/tls/ech.go:50, :72). It
+        // was declared `both`, which offered it on every server inbound.
+        expect(TLS_FIELDS.echSockopt!.direction).toBe(TLS_FIELDS.echConfigList!.direction);
+        for (const level of ['basic', 'advanced'] as const) {
+            expect(hiddenKeysFor(tlsKeys, TLS_FIELDS, 'inbound', level)).toContain('echSockopt');
+        }
+        expect(hiddenKeysFor(tlsKeys, TLS_FIELDS, 'outbound', 'advanced')).not.toContain('echSockopt');
+        // A server that already has one still sees it, and is told it is foreign.
+        expect(hiddenKeysFor(tlsKeys, TLS_FIELDS, 'inbound', 'basic', { echSockopt: { mark: 1 } })).not.toContain('echSockopt');
+        expect(foreignFieldsIn(TLS_FIELDS, 'inbound', { echSockopt: { mark: 1 } })).toEqual(['echSockopt']);
+    });
+
+    it('keeps the REALITY fallback limits on the server, where Build() copies them', () => {
+        // v26.7.28:infra/conf/transport_security.go:171-178, inside `if c.Dest != nil`.
+        for (const key of ['limitFallbackUpload', 'limitFallbackDownload']) {
+            expect(REALITY_FIELDS[key]!.direction).toBe('server');
+            expect(hiddenKeysFor(realityKeys, REALITY_FIELDS, 'inbound', 'advanced')).not.toContain(key);
+            expect(hiddenKeysFor(realityKeys, REALITY_FIELDS, 'outbound', 'advanced')).toContain(key);
+        }
+    });
+
     it('splits basic and advanced without dropping anything', () => {
         for (const side of ['inbound', 'outbound'] as const) {
             for (const [keys, fields] of [[realityKeys, REALITY_FIELDS], [tlsKeys, TLS_FIELDS]] as const) {

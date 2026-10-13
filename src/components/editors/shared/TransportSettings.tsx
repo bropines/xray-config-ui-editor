@@ -9,7 +9,10 @@ import { FinalmaskEditor } from './FinalmaskEditor';
 import { Select } from '../../ui/Select';
 import { NumberInput } from '../../ui/NumberInput';
 import { RealitySchema, TlsSchema } from '../../../core/xray/schemas';
-import { SchemaForm } from '../../ui/SchemaForm';
+import { SchemaForm, type FieldEditorProps } from '../../ui/SchemaForm';
+import { WrongTypeNotice } from '../../ui/WrongTypeNotice';
+import { FallbackLimitEditor } from './FallbackLimitEditor';
+import { checkPinnedCertSha256 } from '../../../core/xray/security-fields';
 import { ExtendedSection } from '../../ui/ExtendedSection';
 import { useConfigStore } from '../../../store/configStore';
 import { useTransportFields } from '../../../hooks/useTransportFields';
@@ -106,6 +109,70 @@ const withFirstCertificate = (list: any[] | undefined, patch: Record<string, str
     return certificates;
 };
 
+/**
+ * REALITY's two fallback limits are a struct of three numbers each, so they
+ * are drawn as three numbers — see FallbackLimitEditor. Handed to every
+ * REALITY form, basic and extended: a limit a config holds on the side that
+ * does not read it is shown at the basic level, next to the warning about it.
+ */
+const REALITY_FIELD_EDITORS = {
+    limitFallbackUpload: (field: FieldEditorProps) => (
+        <FallbackLimitEditor limit="limitFallbackUpload" value={field.value} onChange={field.onChange} error={field.error} />
+    ),
+    limitFallbackDownload: (field: FieldEditorProps) => (
+        <FallbackLimitEditor limit="limitFallbackDownload" value={field.value} onChange={field.onChange} error={field.error} />
+    ),
+};
+
+/**
+ * `tlsSettings.echSockopt`: the socket the ECH config is fetched over.
+ *
+ * It decodes into `*SocketConfig` — the very struct `streamSettings.sockopt`
+ * decodes into — on every supported line
+ * (v26.7.28:infra/conf/transport_security.go:318, the same at v26.9.9;
+ * v26.3.27:infra/conf/transport_internet.go:666), is built by the same
+ * SocketConfig.Build() (v26.7.28:infra/conf/transport_security.go:399-405),
+ * and is handed to internet.DialSystem for the DNS query, over DoH or UDP
+ * (v26.7.28:transport/internet/tls/ech.go:207 and :272).
+ *
+ * So it gets SockoptEditor rather than the JSON box, for two reasons. One
+ * struct should have one editor: the fields, their types and the per-version
+ * value sets are already right there, and a JSON box would only move the
+ * wrong-type bug one level down — `{"mark": "5"}` is as unloadable as the
+ * string the old text input wrote. And DialSystem is the dialing half of
+ * SocketConfig on all three lines — addressPortStrategy, domainStrategy,
+ * happyEyeballs and dialerProxy are all read there
+ * (v26.7.28:transport/internet/dialer.go:246-279) — which is exactly what
+ * SockoptEditor draws for a client. Hence `isClient` whatever side the TLS
+ * settings are on: this socket is always dialed, never accepted, so tproxy,
+ * acceptProxyProtocol and v6only have nothing to act on.
+ *
+ * No `protocol` is passed: the freedom-only narrowing of addressPortStrategy
+ * (v26.9.9:infra/conf/xray.go:344) is a check on the outbound's own sockopt.
+ */
+const EchSockoptEditor = ({ value, onChange }: FieldEditorProps) => {
+    // The old form's string. SockoptEditor would spread it into one key per
+    // character, so it never sees it: the notice shows it, ADD replaces it.
+    const wrongType = value !== undefined && value !== null && (typeof value !== 'object' || Array.isArray(value));
+    return (
+        <div className="space-y-3" data-ech-sockopt>
+            {wrongType && <WrongTypeNotice field="echSockopt" held={value} onRemove={() => onChange(undefined)} />}
+            <SockoptEditor
+                sockopt={wrongType ? undefined : value ?? undefined}
+                // SockoptEditor says "removed" with null; the form removes a key on undefined.
+                onChange={next => onChange(next === null ? undefined : next)}
+                isClient
+                title={t("ECH Query Socket Options (echSockopt)")}
+                hint={t("Socket options for the DNS query that fetches the ECH config. Xray makes that query only when ECH Config List names a DNS server instead of holding the config itself, so without one these do nothing.")}
+            />
+        </div>
+    );
+};
+
+const TLS_FIELD_EDITORS = {
+    echSockopt: (field: FieldEditorProps) => <EchSockoptEditor {...field} />,
+};
+
 /** Labels for TLS keys SchemaForm has no standard entry for. */
 const TLS_FIELD_CONFIGS = () => ({
     echForceQuery: {
@@ -181,6 +248,11 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
         statusAt(side, `streamSettings.tlsSettings.${key}`, protocol) !== 'accepted');
     const tlsExclude = (level: 'basic' | 'advanced') =>
         [...hiddenKeysFor(tlsKeys, TLS_FIELDS, side, level, tlsSettings.value), ...tlsVersionHidden];
+    // Said next to the field as well as in diagnostics: a hash that is not
+    // hex is the one mistake here that stops the whole config loading, and
+    // the help under this field used to ask for exactly that.
+    const pinProblem = checkPinnedCertSha256(tlsValue.pinnedPeerCertSha256, tag).problem;
+    const tlsFieldErrors = pinProblem ? { ...tlsErrors, pinnedPeerCertSha256: pinProblem.message } : tlsErrors;
 
     return (
         <div className="bg-slate-900/40 p-5 rounded-2xl border border-slate-800/80 space-y-6 animate-in fade-in duration-300">
@@ -306,6 +378,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         errors={realityErrors}
                         excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'basic', realitySettings.value)}
                         spiderPaths={spiderPaths}
+                        fieldEditors={REALITY_FIELD_EDITORS}
                     />
 
                     {/* REALITY EXTENDED SECTION */}
@@ -321,6 +394,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             errors={realityErrors}
                             excludeKeys={hiddenKeysFor(realityKeys, REALITY_FIELDS, side, 'advanced', realitySettings.value)}
                             spiderPaths={spiderPaths}
+                            fieldEditors={REALITY_FIELD_EDITORS}
                         />
                     </ExtendedSection>
                 </div>
@@ -375,9 +449,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                         schema={TlsSchema}
                         value={tlsSettings.value || {}}
                         onChange={val => tlsSettings.onChange(val)}
-                        errors={tlsErrors}
+                        errors={tlsFieldErrors}
                         excludeKeys={tlsExclude('basic')}
                         fieldConfigs={TLS_FIELD_CONFIGS()}
+                        fieldEditors={TLS_FIELD_EDITORS}
                     />
 
                     {/* TLS EXTENDED SECTION */}
@@ -390,9 +465,10 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                             schema={TlsSchema}
                             value={tlsSettings.value || {}}
                             onChange={val => tlsSettings.onChange(val)}
-                            errors={tlsErrors}
+                            errors={tlsFieldErrors}
                             excludeKeys={tlsExclude('advanced')}
                             fieldConfigs={TLS_FIELD_CONFIGS()}
+                            fieldEditors={TLS_FIELD_EDITORS}
                         />
                     </ExtendedSection>
                 </div>

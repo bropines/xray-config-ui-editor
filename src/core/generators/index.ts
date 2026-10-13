@@ -5,6 +5,10 @@ export {
     generateRealityShortIds,
     generateX25519Keys,
     publicKeyFromPrivateKey,
+    generateWireguardKeyPair,
+    generateWireguardPresharedKey,
+    parseWireguardKey,
+    wireguardPublicKey,
 } from './crypto';
 // spiderX is a browsing path, not a secret — see spider-path for why it is
 // built out of words rather than random characters.

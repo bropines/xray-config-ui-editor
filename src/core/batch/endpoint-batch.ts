@@ -4,6 +4,8 @@
 
 import type { Inbound, Outbound } from '../types';
 import type { EndpointDirection } from '../generators/endpoint-factory';
+import { networkProblem, securityProblem } from '../xray/transport-networks';
+import { DEFAULT_CORE_VERSION, type CoreVersionId } from '../xray/versions';
 
 /**
  * Editing thirty nodes one modal at a time is how a config ends up with
@@ -110,6 +112,8 @@ export const applyBatch = <T extends Endpoint>(
     selection: Iterable<number>,
     direction: EndpointDirection,
     patch: BatchPatch,
+    /** The core the config is for: what a protocol may run over differs by line. */
+    version: CoreVersionId = DEFAULT_CORE_VERSION,
 ): BatchResult<T> => {
     const indexes = [...new Set([...selection])].filter(i => i >= 0 && i < items.length).sort((a, b) => a - b);
     const next = items.map(item => clone(item)) as T[];
@@ -131,8 +135,21 @@ export const applyBatch = <T extends Endpoint>(
 
         // ── Transport ───────────────────────────────────────────────────────
         if (patch.network !== undefined || patch.security !== undefined) {
+            // What the item would end up with, asked of the same rule the
+            // single editor asks. A combination the chosen core refuses is
+            // skipped with the reason, not written: hysteria over anything but
+            // its own transport is "not hysteria transport" from 26.7
+            // (v26.7.28:proxy/hysteria/client.go:36), REALITY over WebSocket
+            // is refused on every line, and so on.
+            const network = patch.network ?? item.streamSettings?.network ?? 'raw';
+            const security = patch.security ?? item.streamSettings?.security ?? 'none';
+            const refusal = (patch.network !== undefined ? networkProblem(protocol, patch.network, version) : undefined)
+                ?? securityProblem(protocol, network, security, version);
+
             if (NO_TRANSPORT.has(protocol)) {
                 skip('streamSettings', `${protocol} carries no transport settings`);
+            } else if (refusal) {
+                skip('streamSettings', refusal);
             } else {
                 if (!item.streamSettings) item.streamSettings = {};
                 if (patch.network !== undefined) {

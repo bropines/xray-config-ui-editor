@@ -162,3 +162,155 @@ describe('a list of objects', () => {
         expect(container.textContent).toContain('http/1.1');
     });
 });
+
+/**
+ * The fallback used to be a text input for every type the form did not
+ * recognise — objects included. A text input writes a string, and the core
+ * decodes these keys into structs and maps, where a string fails the config.
+ * These are the shapes that reached it, each from a real schema.
+ */
+describe('a key that holds an object', () => {
+    const structured = z.object({
+        tag: z.string().optional(),
+        // RealitySchema.limitFallbackUpload: an object with a shape.
+        limit: z.object({ bytesPerSec: z.number().optional() }).passthrough().optional(),
+        // WebhookObjectSchema.headers, TlsSchema.echSockopt: a map.
+        headers: z.record(z.string(), z.string()).optional(),
+        // InboundSchema.settings.
+        settings: z.record(z.string(), z.unknown()).optional(),
+        // RoutingRuleSchema.webhook: a string or an object.
+        webhook: z.union([z.string(), z.object({ url: z.string() })]).optional(),
+        // DnsSchema.servers: a list of strings and objects mixed.
+        servers: z.array(z.union([z.string(), z.object({ address: z.string() })])).optional(),
+        // Nothing the form recognises at all.
+        anything: z.any().optional(),
+    });
+    const KEYS = ['limit', 'headers', 'settings', 'webhook', 'servers', 'anything'];
+
+    const typeInto = (box: HTMLTextAreaElement, text: string) => {
+        fireEvent.change(box, { target: { value: text } });
+    };
+
+    const draw = (value: Record<string, unknown>, only?: string) => {
+        const writes: any[] = [];
+        const view = render(
+            <SchemaForm
+                schema={structured}
+                value={value}
+                onChange={next => writes.push(next)}
+                excludeKeys={only ? Object.keys(structured.shape).filter(key => key !== only) : []}
+            />,
+        );
+        const boxOf = (key: string) =>
+            view.container.querySelector(`[data-structured-field="${key}"] textarea`) as HTMLTextAreaElement | null;
+        return { ...view, writes, last: () => writes[writes.length - 1], boxOf };
+    };
+
+    it('is never a text input', () => {
+        const { container, boxOf } = draw({});
+        // One text input in the whole form: the string key.
+        expect(container.querySelectorAll('input[type="text"]')).toHaveLength(1);
+        for (const key of KEYS) expect(boxOf(key)).not.toBeNull();
+    });
+
+    it('is never shown as [object Object]', () => {
+        const { container, boxOf } = draw({
+            limit: { bytesPerSec: 5 },
+            headers: { Authorization: 'Bearer x' },
+            webhook: { url: 'https://a.example' },
+            servers: ['1.1.1.1', { address: '8.8.8.8' }],
+        });
+        expect(container.textContent).not.toContain('[object Object]');
+        const values = Array.from(container.querySelectorAll('input')).map(i => (i as HTMLInputElement).value);
+        expect(values.join('|')).not.toContain('[object Object]');
+        expect(boxOf('headers')!.value).toContain('"Authorization": "Bearer x"');
+        expect(boxOf('servers')!.value).toContain('"address": "8.8.8.8"');
+    });
+
+    it('writes an object, not the text of one', () => {
+        for (const key of ['limit', 'headers', 'settings']) {
+            const { boxOf, last } = draw({}, key);
+            typeInto(boxOf(key)!, '{"a": "b"}');
+            expect(last()).toEqual({ [key]: { a: 'b' } });
+            expect(typeof last()[key]).toBe('object');
+            cleanup();
+        }
+    });
+
+    it('does not write a string into an object key, however it is typed', () => {
+        const { boxOf, writes, container } = draw({ headers: { a: 'b' } }, 'headers');
+        typeInto(boxOf('headers')!, 'Authorization: Bearer token');
+        typeInto(boxOf('headers')!, '"Authorization: Bearer token"');
+        expect(writes).toEqual([]);
+        expect(container.textContent).toContain('keeps the last valid value');
+    });
+
+    it('removes the key when the box is emptied, rather than writing ""', () => {
+        const { boxOf, last } = draw({ tag: 'a', headers: { a: 'b' } }, 'headers');
+        typeInto(boxOf('headers')!, '');
+        expect(last()).toEqual({ tag: 'a' });
+        expect('headers' in last()).toBe(false);
+    });
+
+    it('shows a string the old form wrote, says the core refuses it, and removes it', () => {
+        const { container, boxOf, last } = draw({ tag: 'a', limit: '1048576' }, 'limit');
+        const notice = container.querySelector('[data-wrong-type="limit"]')!;
+        expect(notice).not.toBeNull();
+        expect(notice.textContent).toContain('"1048576"');
+        expect(notice.textContent).toContain('cannot read the config');
+        // The box is for the replacement; the wrong value is not offered back.
+        expect(boxOf('limit')!.value).toBe('');
+
+        fireEvent.click(notice.querySelector('button')!);
+        expect(last()).toEqual({ tag: 'a' });
+    });
+
+    it('replaces such a string with an object once one is typed', () => {
+        const { boxOf, last } = draw({ limit: 'oops' }, 'limit');
+        typeInto(boxOf('limit')!, '{"bytesPerSec": 5}');
+        expect(last()).toEqual({ limit: { bytesPerSec: 5 } });
+    });
+
+    it('does not call a string wrong where the schema takes one too', () => {
+        const { container, boxOf, last } = draw({ webhook: 'https://a.example' }, 'webhook');
+        expect(container.querySelector('[data-wrong-type]')).toBeNull();
+        expect(boxOf('webhook')!.value).toBe('"https://a.example"');
+        typeInto(boxOf('webhook')!, '{"url": "https://b.example"}');
+        expect(last()).toEqual({ webhook: { url: 'https://b.example' } });
+    });
+
+    it('keeps a mixed list a list', () => {
+        const { boxOf, last, writes } = draw({}, 'servers');
+        typeInto(boxOf('servers')!, '{"address": "8.8.8.8"}');
+        expect(writes).toEqual([]);
+        typeInto(boxOf('servers')!, '["1.1.1.1", {"address": "8.8.8.8"}]');
+        expect(last()).toEqual({ servers: ['1.1.1.1', { address: '8.8.8.8' }] });
+    });
+
+    it('hands a key to its own editor when the form is given one', () => {
+        let seen: any = null;
+        const writes: any[] = [];
+        const { container } = render(
+            <SchemaForm
+                schema={structured}
+                value={{ tag: 'a', limit: { bytesPerSec: 5 } }}
+                onChange={next => writes.push(next)}
+                excludeKeys={['headers', 'settings', 'webhook', 'servers', 'anything']}
+                errors={{ limit: 'too fast' }}
+                fieldEditors={{
+                    limit: field => {
+                        seen = field;
+                        return <button data-own-editor onClick={() => field.onChange(undefined)}>{field.label}</button>;
+                    },
+                }}
+            />,
+        );
+        expect(container.querySelector('[data-structured-field="limit"]')).toBeNull();
+        expect(seen.value).toEqual({ bytesPerSec: 5 });
+        expect(seen.error).toBe('too fast');
+        expect(seen.label).toBe('Limit');
+        // undefined from an editor removes the key, the same as the JSON box.
+        fireEvent.click(container.querySelector('[data-own-editor]')!);
+        expect(writes[0]).toEqual({ tag: 'a' });
+    });
+});

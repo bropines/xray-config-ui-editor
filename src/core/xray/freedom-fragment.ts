@@ -48,3 +48,54 @@ export const fragmentProblems = (fragment: unknown): FragmentProblem[] => {
 
     return problems;
 };
+
+// ── Noises ───────────────────────────────────────────────────────────────
+
+export interface NoiseProblem {
+    field: 'type' | 'packet';
+    message: string;
+}
+
+/** The four the core switches on, matched exactly — `Rand` is the default case. */
+const NOISE_TYPES = ['rand', 'str', 'hex', 'base64'];
+
+/**
+ * What one `settings.noises[]` entry has wrong, as the core will see it.
+ *
+ * `ParseNoise` is the same on all three tags (v26.7.28:infra/conf/freedom.go:
+ * 194-249) and refuses the whole config on any of these: a type that is not
+ * one of the four, a `rand` whose packet is not a range or starts at 0 —
+ * which is what an empty box parses as — and `hex` or `base64` that will not
+ * decode. `str` takes anything, and an empty `hex` or `base64` is an empty
+ * packet rather than an error.
+ */
+export const noiseProblem = (noise: unknown): NoiseProblem | null => {
+    if (!noise || typeof noise !== 'object' || Array.isArray(noise)) return null;
+    const { type, packet } = noise as Record<string, unknown>;
+    const text = typeof packet === 'string' ? packet.trim() : packet === undefined || packet === null ? '' : String(packet);
+
+    if (typeof type !== 'string' || !NOISE_TYPES.includes(type)) {
+        return { field: 'type', message: t("A noise needs a type of rand, str, hex or base64, written exactly so: the core refuses anything else.") };
+    }
+
+    if (type === 'rand') {
+        const range = /^\d+(-\d+)?$/.test(text);
+        if (!range) return { field: 'packet', message: t("A rand noise needs a length or a range, like 50-100: the core refuses the config without one.") };
+        if (lowerBound(text) === 0) return { field: 'packet', message: t("A rand noise cannot start at 0 bytes: the core refuses it.") };
+    }
+
+    if (type === 'hex' && (text.length % 2 !== 0 || /[^0-9a-fA-F]/.test(text))) {
+        return { field: 'packet', message: t("Not hex: pairs of 0-9 and a-f are what the core decodes.") };
+    }
+
+    if (type === 'base64') {
+        // The core folds the standard alphabet into the URL one and drops the
+        // padding before decoding, so both spellings are fine (freedom.go:226).
+        const folded = text.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        if (/[^A-Za-z0-9_-]/.test(folded) || folded.length % 4 === 1) {
+            return { field: 'packet', message: t("Not base64: the core cannot decode it.") };
+        }
+    }
+
+    return null;
+};

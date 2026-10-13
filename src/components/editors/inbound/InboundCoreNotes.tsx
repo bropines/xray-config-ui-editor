@@ -2,6 +2,7 @@ import React from 'react';
 import { Icon } from '../../ui/Icon';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import { adoptAlias, dropAlias } from '../../../core/generators/endpoint-factory';
+import { generateWireguardKeyPair } from '../../../core/generators/crypto';
 import type { FieldPath } from '../../../hooks/useField';
 import { inboundNotes, topKeyOf, withoutPath, type InboundNote } from './core-notes';
 import { t } from '../../../i18n';
@@ -14,7 +15,8 @@ interface InboundCoreNotesProps {
 
 /**
  * The keys in this inbound that the chosen core refuses or silently drops,
- * each with the one action that fixes it.
+ * and what it refuses the inbound for lacking, each with the one action that
+ * fixes it.
  *
  * Nothing here is deleted behind the user's back: a key that does nothing is
  * shown doing nothing until someone presses Remove. Information on top,
@@ -26,7 +28,9 @@ export const InboundCoreNotes = ({ inbound, onChange }: InboundCoreNotesProps) =
     if (!notes.length) return null;
 
     const refused = notes.some(note =>
-        (note.kind === 'feature' && note.status === 'rejected') || (note.kind === 'value' && note.set.outside === 'rejected'));
+        note.kind === 'problem'
+        || (note.kind === 'feature' && note.status === 'rejected')
+        || (note.kind === 'value' && note.set.outside === 'rejected'));
 
     const setSettings = (next: any) => onChange('settings', next.settings);
     const remove = (path: string) => {
@@ -35,6 +39,20 @@ export const InboundCoreNotes = ({ inbound, onChange }: InboundCoreNotesProps) =
     };
 
     const describe = (note: InboundNote): { text: string; hint?: string; actions: { label: string; run: () => void }[] } => {
+        if (note.kind === 'problem') {
+            const { kind, message, suggestion } = note.problem;
+            return {
+                text: message,
+                hint: suggestion,
+                // An empty key has one fix that takes nothing away, so it is
+                // offered here as well as on the card: on a phone the card is
+                // a screen further down. A key that is there and wrong is
+                // somebody's key — replacing it is theirs to decide, below.
+                actions: kind === 'secretKey.empty'
+                    ? [{ label: t("Generate a key"), run: () => onChange(['settings', 'secretKey'], generateWireguardKeyPair().secretKey) }]
+                    : [],
+            };
+        }
         if (note.kind === 'conflict') {
             const { key, alias } = note.pair;
             return {

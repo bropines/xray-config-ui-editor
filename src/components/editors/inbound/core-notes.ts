@@ -7,6 +7,12 @@
  * each answer with the one action that fixes it: take the key out, or move a
  * 26.7-only spelling onto the one every line reads.
  *
+ * Not everything a core refuses is a key or a value in that table. A
+ * WireGuard inbound with no secret key is refused for what is missing, and
+ * those come from core/xray/wireguard-inbound.ts, which the diagnostics read
+ * too — an inbound the factory had just built used to pass through here
+ * without a word while every supported core would have refused it.
+ *
  * Transport keys (`streamSettings.*`) are left to the transport editor, which
  * draws them.
  */
@@ -15,8 +21,15 @@ import { CORE_VERSIONS, type CoreVersionId } from '../../../core/xray/versions';
 import type { CoreFeature, CoreValueSet, FeatureStatus } from '../../../core/xray/versions/features';
 import { acceptsValue, featureUses, valueUses } from '../../../core/xray/versions/check';
 import { spellingConflicts, spellingForPath, type SpellingPair } from '../../../core/generators/endpoint-factory';
+import { wireguardInboundProblems, type WireguardInboundProblem } from '../../../core/xray/wireguard-inbound';
 
 export type InboundNote =
+    /**
+     * Something the core refuses that is not one key or one value — a
+     * WireGuard inbound with no secret key, a peer with no public key. The
+     * words come from where the diagnostics get theirs, so the two agree.
+     */
+    | { kind: 'problem'; problem: WireguardInboundProblem }
     /** Both spellings set: the alias is ignored on every line. */
     | { kind: 'conflict'; pair: SpellingPair; keyEmpty: boolean }
     | {
@@ -36,6 +49,8 @@ const isTransportPath = (path: string) => path.startsWith('streamSettings');
 /** Worst first: what stops the config loading, then what silently does nothing. */
 const rankOf = (note: InboundNote): number => {
     switch (note.kind) {
+        case 'problem':
+            return 0;
         case 'feature':
             return note.status === 'rejected' ? 0 : note.status === 'absent' ? 2 : 3;
         case 'value':
@@ -49,6 +64,12 @@ export const inboundNotes = (inbound: Inbound, version: CoreVersionId): InboundN
     if (!inbound || typeof inbound !== 'object') return [];
     const config = { inbounds: [inbound] };
     const notes: InboundNote[] = [];
+
+    // First in the list as well as in rank: nothing below matters while the
+    // inbound cannot be built at all.
+    for (const problem of wireguardInboundProblems(inbound, version)) {
+        notes.push({ kind: 'problem', problem });
+    }
 
     const conflicts = spellingConflicts(inbound);
     const settings = (inbound.settings ?? {}) as Record<string, unknown>;

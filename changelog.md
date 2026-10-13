@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.28.0] - 2026-10-14
+
+### Added
+- **A WireGuard inbound can be set up in the form.** It had no fields at all: choosing the protocol gave a card with nothing in it and a default the core refuses twice over — an empty secret key, and a peer with an empty public key. There is now a WireGuard card: the server's secret key with a **Generate** button, the public key worked out from it with a **Copy**, interface address, MTU, and a list of peers — public key, allowed IPs, pre-shared key (with its own generator), keep-alive, and on 26.7+ the email and level the peer is counted and routed as. **Add Peer** gives each new client the next free `/32` beside the interface instead of the core's default of every address. Replacing an existing key takes a second press, since it cuts off every client set up with the old one.
+- **`mixed` is an inbound protocol you can choose.** Xray registers it beside `socks` on every supported core and builds it from the same settings — one port that answers SOCKS and HTTP proxy clients alike. It was missing from the chooser, and a config that already had one opened with the protocol box blank.
+- **SOCKS and HTTP outbounds have a user name and a password.** The server card showed them a "UUID / ID" box that wrote into a key neither protocol reads, and gave no way to enter a login. They now get the two fields the core does read, in whichever of the two shapes the config already uses (`settings.user` beside a flat address, or `servers[0].users[0]`). A password with no user name is pointed out.
+- **REALITY fallback limits have an editor.** `limitFallbackUpload` and `limitFallbackDownload` were drawn as one text box each and saved a string where the core reads an object — a config that then does not load. Each is now three numbers: rate, the free allowance before it applies, and burst, with a line saying what they limit (connections REALITY forwards to the target site, never your clients).
+- **`echSockopt` is edited as socket options**, with the same editor as the transport's own sockopt, instead of a text box that wrote a string into an object.
+- **Routing webhook `headers`** is a JSON box that only writes an object.
+
+### Fixed
+- **Certificate pinning asked for the wrong format.** The help under `pinnedPeerCertSha256` said Base64; the core reads hex — 64 digits per hash, colons allowed, several separated by commas — and refuses the config for anything else. The help and placeholder say so now, with the `xray tls hash` command that prints it, and a pin that is not hex or not 32 bytes is reported and stops a save to the panel.
+- **A WireGuard inbound the core will not start is reported, and stops a save to the panel:** an empty or undecodable secret key, a key that is not 32 bytes, a peer with no public key (26.7 and 26.9 refuse the inbound; 26.3 builds a peer nobody can connect as), allowed IPs that are not written as a network, a `reserved` of the wrong length, and an interface address with a prefix on 26.3, which takes a single host only. Keys that only a WireGuard *outbound* uses are shown with a note and a Remove when an inbound holds them.
+- **The Hysteria outbound's "UUID / ID" box did nothing.** Hysteria's password is the transport's Auth; the box is gone and a line says where the password goes.
+- **Freedom noises could be saved in a state the core refuses.** Emptying a `rand` noise's length, a length starting at 0, hex that is not hex, base64 that will not decode, or a noise with no type each refuse the whole config. The row says which, and it stops a save. The type box no longer shows `rand` for an entry that has no type written.
+- **Batch edit could write a transport the protocol cannot run over.** Selecting a hysteria outbound among others and choosing WebSocket produced "not hysteria transport" on load. The batch now asks the same rule the single editor asks, for the chosen core, and skips that item with the reason.
+- **An outbound whose protocol this app does not list** (`direct`, `block`, a typo) opened with the protocol box blank; it shows what the config says.
+- A string, or anything else that is not an object, in `limitFallbackUpload`, `limitFallbackDownload` or `echSockopt` is reported as what it is — a config Xray cannot read — with a button to clear it, rather than being shown as text to edit.
+
 ## [1.27.0] - 2026-10-13
 
 ### Fixed

@@ -5,6 +5,13 @@ import { Switch } from '../../ui/Switch';
 import { Select } from '../../ui/Select';
 import { useField } from '../../../hooks/useField';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
+import {
+    hasLogin,
+    loginProblem,
+    readCredentials,
+    serverShape,
+    withCredentials,
+} from '../../../core/xray/outbound-credentials';
 import { t } from '../../../i18n';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
@@ -19,11 +26,20 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
      * nil, and Build() dereferences it: the core does not start. Its password
      * is the transport's `hysteriaSettings.auth`, not a setting here.
      */
-    const isFlat = outbound.protocol === 'hysteria';
-    // Only these protocols expose a single ID/password field in this UI —
-    // matches the previous getUserId()/updateUserId() behavior, where every
-    // other protocol (socks, http, hysteria, ...) left the field inert.
+    const isHysteria = outbound.protocol === 'hysteria';
+    // SOCKS and HTTP have the flat shape too, and the core reads it in
+    // preference to `servers` whenever `settings.address` is there — so the
+    // card follows whichever the config uses instead of always writing
+    // `servers[0]`, which on a flat config is a key nothing reads.
+    const withLogin = hasLogin(outbound.protocol);
+    const isFlat = isHysteria || (withLogin && serverShape(outbound) === 'flat');
+    // One identifier: a UUID for vless and vmess, a password for trojan and
+    // shadowsocks. Nothing else has one — this box used to be drawn for
+    // socks, http and hysteria as well, bound to nothing.
     const supportsUserId = isVnextProtocol || outbound.protocol === 'trojan' || isShadowsocks;
+    const login = readCredentials(outbound);
+    const setLogin = (patch: Partial<typeof login>) =>
+        onChange('settings', withCredentials(outbound, { ...login, ...patch }).settings);
 
     // `outbound` is the editor's `local` state and `onChange` is its
     // `updateField(path, value)` (see OutboundModal.tsx). The active server
@@ -155,13 +171,52 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <FormField label={isShadowsocks || outbound.protocol === 'trojan' ? t("Password") : t("UUID / ID")}>
-                    <input
-                        className="input-base font-mono text-xs"
-                        value={userId.value || ""}
-                        onChange={e => userId.onChange(e.target.value)}
-                    />
-                </FormField>
+                {supportsUserId && (
+                    <FormField label={isShadowsocks || outbound.protocol === 'trojan' ? t("Password") : t("UUID / ID")}>
+                        <input
+                            className="input-base font-mono text-xs"
+                            value={userId.value || ""}
+                            onChange={e => userId.onChange(e.target.value)}
+                        />
+                    </FormField>
+                )}
+
+                {/* The proxy's own login. Both empty means none is sent. */}
+                {withLogin && (
+                    <>
+                        <FormField
+                            label={t("Username")}
+                            help={t("The login this proxy asks for. Leave both boxes empty for a proxy that takes anyone.")}
+                        >
+                            <input
+                                className="input-base font-mono text-xs"
+                                autoComplete="off"
+                                value={login.user}
+                                onChange={e => setLogin({ user: e.target.value })}
+                            />
+                        </FormField>
+                        <FormField
+                            label={t("Password")}
+                            error={loginProblem(login) ? t("A password with no user name: the proxy would be offered an empty login.") : undefined}
+                        >
+                            <input
+                                className="input-base font-mono text-xs"
+                                autoComplete="off"
+                                value={login.pass}
+                                onChange={e => setLogin({ pass: e.target.value })}
+                            />
+                        </FormField>
+                    </>
+                )}
+
+                {/* Hysteria has no credential of its own here: its password
+                    is the transport's, and saying so beats a box that looks
+                    like the place for it. */}
+                {isHysteria && (
+                    <p className="md:col-span-2 text-[11px] text-slate-500 leading-relaxed">
+                        {t("Hysteria's password is not set here: it is the transport's Auth, under Stream Settings below.")}
+                    </p>
+                )}
 
                 {isShadowsocks && (
                     <Select

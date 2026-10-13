@@ -13,6 +13,7 @@ import { t } from '../../../i18n';
 import { compareCoreVersions, coreVersion, type CoreVersionId } from './index';
 import { finalmaskIssues } from './finalmask-rules';
 import { effectiveNetwork, hysteriaUdpIdleProblem, kcpProblems, REALITY_NETWORKS } from '../transport-networks';
+import { checkPinnedCertSha256, echSockoptProblem, fallbackLimitProblems } from '../security-fields';
 
 // ── What the core calls a private address ─────────────────────────────
 // common/geodata/consts.go (v26.7.28, same in v26.9.9): privateIPMatcher and
@@ -304,6 +305,63 @@ const streamRules = (config: any, version: CoreVersionId): Diagnostic[] => {
     return out;
 };
 
+/**
+ * TLS and REALITY values of the wrong type or form — the same on every line.
+ *
+ * The form drew `realitySettings.limitFallbackUpload/Download` and
+ * `tlsSettings.echSockopt` as text inputs for a long time, so configs holding
+ * a string there exist, and asked for a Base64 `pinnedPeerCertSha256` where
+ * the core takes hex. All of them stop the config loading:
+ *   - a wrong JSON type fails the decode of the document, so it counts
+ *     whenever the settings object is present, whatever `security` says
+ *     (v26.7.28:infra/conf/serial/loader.go:57-69);
+ *   - a pinned hash that is not 64 hex digits is returned from
+ *     TLSConfig.Build(), which runs only for `security: "tls"`
+ *     (v26.7.28:infra/conf/transport_internet.go:85-98,
+ *     transport_security.go:364-380).
+ * The reading of each value and the words are in security-fields.ts, which
+ * the editors use too.
+ */
+const securityFieldRules = (config: any, version: CoreVersionId): Diagnostic[] => {
+    const { tag } = coreVersion(version);
+    const out: Diagnostic[] = [];
+    for (const section of ['inbounds', 'outbounds'] as const) {
+        list(config[section]).forEach((item, index) => {
+            if (!item || isSnippetRef(item) || !item.streamSettings) return;
+            const stream = item.streamSettings;
+            const push = (field: string, severity: Diagnostic['severity'], message: string, suggestion?: string) =>
+                out.push({ section, itemIndex: index, field, severity, message, suggestion });
+
+            const reality = stream.realitySettings;
+            if (reality && typeof reality === 'object') {
+                for (const name of ['limitFallbackUpload', 'limitFallbackDownload'] as const) {
+                    for (const problem of fallbackLimitProblems(reality[name], name, tag)) {
+                        push(
+                            `streamSettings.realitySettings.${name}${problem.key ? `.${problem.key}` : ''}`,
+                            'critical',
+                            problem.message,
+                            problem.key ? undefined : t("Set its three numbers in the REALITY settings, or remove the key."),
+                        );
+                    }
+                }
+            }
+
+            const tls = stream.tlsSettings;
+            if (tls && typeof tls === 'object') {
+                const sockopt = echSockoptProblem(tls.echSockopt, tag);
+                if (sockopt) push('streamSettings.tlsSettings.echSockopt', 'critical', sockopt);
+
+                const pin = checkPinnedCertSha256(tls.pinnedPeerCertSha256, tag).problem;
+                const built = String(stream.security ?? '').toLowerCase() === 'tls';
+                if (pin && (pin.kind === 'not-text' || built)) {
+                    push('streamSettings.tlsSettings.pinnedPeerCertSha256', pin.severity, pin.message);
+                }
+            }
+        });
+    }
+    return out;
+};
+
 /** Every rule here, for one config and line. */
 export const ruleDiagnostics = (config: unknown, version: CoreVersionId): Diagnostic[] => {
     if (!config || typeof config !== 'object') return [];
@@ -314,5 +372,6 @@ export const ruleDiagnostics = (config: unknown, version: CoreVersionId): Diagno
         ...hysteriaShape(config, version),
         ...finalmaskChains(config, version),
         ...streamRules(config, version),
+        ...securityFieldRules(config, version),
     ];
 };

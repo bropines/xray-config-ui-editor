@@ -125,7 +125,10 @@ export const CertificateUsageSchema = z.enum([
 // Supports both new and legacy names
 export const InboundProtocolSchema = z.enum([
   'vless', 'vmess', 'trojan', 'shadowsocks',
-  'socks', 'http',
+  // `mixed` is registered beside `socks` on every supported line and builds
+  // the same SocksServerConfig (v26.3.27:infra/conf/xray.go:30,
+  // v26.7.28:infra/conf/xray.go:27, v26.9.9:infra/conf/xray.go:28).
+  'socks', 'mixed', 'http',
   'dokodemo-door', 'tunnel', // tunnel is new name for dokodemo-door
   'hysteria', 'masque', 'wireguard', 'tun',
 ]);

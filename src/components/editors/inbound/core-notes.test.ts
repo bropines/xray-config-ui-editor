@@ -1,18 +1,49 @@
 import { describe, expect, it } from 'bun:test';
 import { inboundNotes, topKeyOf, withoutPath } from './core-notes';
 import { createDefaultInbound } from '../../../core/generators/endpoint-factory';
+import { generateWireguardKeyPair } from '../../../core/generators/crypto';
 import { CORE_VERSIONS } from '../../../core/xray/versions';
 
 const kinds = (notes: ReturnType<typeof inboundNotes>) =>
-    notes.map(note => note.kind === 'feature' ? `${note.status}:${note.feature.path}:${note.action}` : note.kind === 'value' ? `value:${note.set.path}=${note.value}` : `conflict:${note.pair.alias}`);
+    notes.map(note => note.kind === 'feature' ? `${note.status}:${note.feature.path}:${note.action}`
+        : note.kind === 'value' ? `value:${note.set.path}=${note.value}`
+            : note.kind === 'problem' ? `problem:${note.problem.kind}`
+                : `conflict:${note.pair.alias}`);
 
 describe('inboundNotes', () => {
     it('has nothing to say about what the factory builds, on any line', () => {
         for (const line of CORE_VERSIONS) {
-            for (const protocol of ['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http', 'hysteria', 'tun', 'dokodemo-door', 'tunnel', 'wireguard']) {
+            for (const protocol of ['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'mixed', 'http', 'hysteria', 'tun', 'dokodemo-door', 'tunnel']) {
                 expect(inboundNotes(createDefaultInbound(protocol), line.id)).toEqual([]);
             }
         }
+    });
+
+    it('says the WireGuard inbound the factory builds will not load until it has a key', () => {
+        // This list used to end in 'wireguard' and expect silence for it. The
+        // silence was the bug: the factory writes an empty secretKey, every
+        // line refuses that (v26.7.28:infra/conf/wireguard.go:75-78), and
+        // nothing here said so — the inbound looked finished and was not.
+        for (const line of CORE_VERSIONS) {
+            const made = createDefaultInbound('wireguard');
+            expect(kinds(inboundNotes(made, line.id))).toEqual(['problem:secretKey.empty']);
+            // The one thing wrong with it: given a key, there is nothing left to say.
+            const keyed = { ...made, settings: { ...made.settings, secretKey: generateWireguardKeyPair().secretKey } };
+            expect(inboundNotes(keyed, line.id)).toEqual([]);
+        }
+    });
+
+    it('puts what stops the inbound being built ahead of a key that does nothing', () => {
+        const notes = inboundNotes({
+            protocol: 'wireguard', port: 51820,
+            settings: { secretKey: '', workers: 2, peers: [{ publicKey: '' }], domainStrategy: 'AsIs' },
+        }, '26.7');
+        expect(kinds(notes)).toEqual([
+            'problem:secretKey.empty',
+            'problem:publicKey.empty',
+            'value:settings.domainStrategy=AsIs',
+            'absent:settings.workers:remove',
+        ]);
     });
 
     it('calls allocate a key no line reads, and offers to remove it', () => {

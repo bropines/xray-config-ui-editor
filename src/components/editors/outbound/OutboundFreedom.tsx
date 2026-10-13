@@ -9,7 +9,7 @@ import { useField } from '../../../hooks/useField';
 import { DOMAIN_STRATEGY_OPTIONS } from './domain-strategies';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import { t } from '../../../i18n';
-import { fragmentProblems } from '../../../core/xray/freedom-fragment';
+import { fragmentProblems, noiseProblem } from '../../../core/xray/freedom-fragment';
 
 /**
  * Freedom, with the fields it actually has.
@@ -159,13 +159,20 @@ export const OutboundFreedom = ({ outbound, onChange }: any) => {
                 </div>
 
                 <div className="space-y-2">
-                    {noises.map((noise, index) => (
+                    {noises.map((noise, index) => {
+                        // What the core will refuse this entry for, said on
+                        // the field that causes it.
+                        const problem = noiseProblem(noise);
+                        return (
                         <div key={index} className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
                             <div className="flex items-start gap-2">
                                 <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <Select
                                         label={t("Type")}
-                                        value={noise.type || 'rand'}
+                                        hint={problem?.field === 'type' ? problem.message : undefined}
+                                        // Not `|| 'rand'`: an entry with no type is refused by
+                                        // the core, and showing it as rand hid that.
+                                        value={typeof noise.type === 'string' ? noise.type : ''}
                                         onChange={val => patchNoise(index, { type: val })}
                                         options={[
                                             { value: 'rand', label: 'rand', description: t("Random bytes, packet is a length range") },
@@ -174,9 +181,9 @@ export const OutboundFreedom = ({ outbound, onChange }: any) => {
                                             { value: 'base64', label: 'base64', description: t("Base64-decoded bytes") },
                                         ]}
                                     />
-                                    <FormField label={t("Packet")}>
+                                    <FormField label={t("Packet")} error={problem?.field === 'packet' ? problem.message : undefined}>
                                         <input
-                                            className="input-base font-mono text-xs"
+                                            className={`input-base font-mono text-xs ${problem?.field === 'packet' ? 'border-rose-500' : ''}`}
                                             placeholder={noise.type === 'rand' ? '50-100' : 'hello'}
                                             value={noise.packet ?? ''}
                                             onChange={e => patchNoise(index, { packet: e.target.value || undefined })}
@@ -211,7 +218,8 @@ export const OutboundFreedom = ({ outbound, onChange }: any) => {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

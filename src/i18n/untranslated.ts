@@ -63,7 +63,7 @@ export const UNTRANSLATED = new Set([
     'e.g. TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384',
     'e.g. 1.2.3.4 or 1.2.3.0/24', 'dns_inbound', 'e.g. google-dns',
     'e.g. user@xray.com', 'e.g. curl, self/', 'e.g. windows, linux',
-    'e.g. Authorization: Bearer token', 'e.g. half',
+    'e.g. half',
     'e.g. HandlerService, LoggerService, StatsService',
     'proxy, proxy-2, proxy-3', 'fb-0, fb-1, fb-2', 'proxy-Amsterdam-1',
     'e.g. 100, 200...',

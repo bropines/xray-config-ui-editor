@@ -4,10 +4,11 @@ import { FormField } from './FormField';
 import { Select } from './Select';
 import { Switch } from './Switch';
 import { SmartTagInput } from './SmartTagInput';
-import { JsonField } from './JsonField';
+import { JsonInput, type JsonKind } from './JsonInput';
+import { WrongTypeNotice } from './WrongTypeNotice';
 import { NumberInput } from './NumberInput';
 import { DurationInput } from './DurationInput';
-import { DURATION_FIELD_SPECS, getSchemaTypeAndDetails } from './schema-introspection';
+import { DURATION_FIELD_SPECS, getSchemaTypeAndDetails, humanizeKey } from './schema-introspection';
 import type { TimeUnit } from './duration';
 import { Icon } from './Icon';
 import { Button } from './Button';
@@ -38,6 +39,53 @@ export interface SchemaFieldProps {
     spiderPaths?: string[];
 }
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * The editor for a key whose value is a JSON object or list and that no one
+ * has drawn real fields for.
+ *
+ * This is the fallback that used to be a text input. A text input writes a
+ * string, and the core decodes these keys into a Go struct, pointer or map:
+ * `"realitySettings": { "limitFallbackUpload": "1000" }` is a type error that
+ * fails the whole config (v26.7.28:infra/conf/serial/loader.go:57-69), not a
+ * limit of 1000. So the fallback is a JSON box that writes the parsed value —
+ * an object where the schema says object — and removes the key when emptied.
+ *
+ * A config that already holds something else under an object key is shown
+ * for what it is, with a way to remove it, and the box below starts empty:
+ * it is where the replacement goes, not a second copy of the wrong value.
+ * `any` and lists get no such notice, because the core is not that strict
+ * about them — several of its list types take a bare string too.
+ */
+const StructuredField = ({ name, label, help, error, value, onChange, expects, placeholder }: {
+    name: string;
+    label: string;
+    help?: string;
+    error?: string;
+    value: unknown;
+    onChange: (value: unknown) => void;
+    expects: JsonKind;
+    placeholder?: string;
+}) => {
+    const wrong = expects === 'object' && value !== undefined && value !== null && !isObject(value);
+    return (
+        <FormField label={label} help={help} error={error}>
+            <div className="flex flex-col gap-2" data-structured-field={name}>
+                {wrong && <WrongTypeNotice field={name} held={value} onRemove={() => onChange(undefined)} />}
+                <JsonInput
+                    value={wrong ? undefined : value}
+                    onChange={onChange}
+                    expects={expects}
+                    placeholder={placeholder}
+                    ariaLabel={label}
+                />
+            </div>
+        </FormField>
+    );
+};
+
 export const SchemaField = ({
     name,
     schema,
@@ -59,7 +107,7 @@ export const SchemaField = ({
 
     // Check if explicitly configured as duration or recognized by field name
     const isDuration = type === 'duration' || name in DURATION_FIELD_SPECS || !!durationMode;
-    const fieldLabel = label ?? name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    const fieldLabel = label ?? humanizeKey(name);
 
     if (isDuration) {
         const spec = DURATION_FIELD_SPECS[name];
@@ -135,6 +183,25 @@ export const SchemaField = ({
                 }
             };
 
+            // A list of maps, of lists, or of text and objects mixed
+            // (`servers: ["1.1.1.1", { address: … }]`) has no one set of
+            // fields to repeat, and the tag input further down would write
+            // String(entry) for each — "[object Object]" again.
+            if (innerDetails.type === 'record' || innerDetails.type === 'unknown' || innerDetails.type === 'array') {
+                return (
+                    <StructuredField
+                        name={name}
+                        label={fieldLabel}
+                        help={help}
+                        error={error}
+                        value={value}
+                        onChange={onChange}
+                        expects="array"
+                        placeholder={placeholder}
+                    />
+                );
+            }
+
             // A list of objects — TLS certificates, fallbacks, peers. The tag
             // input calls String() on each entry, which is where the
             // "[object Object]" tags came from; but the answer is not a JSON
@@ -154,18 +221,16 @@ export const SchemaField = ({
                 // has no fields to draw, and then the JSON is all there is.
                 if (!elementShape) {
                     return (
-                        <FormField label={fieldLabel} help={help} error={error}>
-                            <div className="h-48">
-                                <JsonField
-                                    label=""
-                                    value={entries}
-                                    onChange={(next: any) => onChange(next)}
-                                    schemaMode="none"
-                                    className="h-full"
-                                    inline
-                                />
-                            </div>
-                        </FormField>
+                        <StructuredField
+                            name={name}
+                            label={fieldLabel}
+                            help={help}
+                            error={error}
+                            value={value}
+                            onChange={onChange}
+                            expects="array"
+                            placeholder={placeholder}
+                        />
                     );
                 }
 
@@ -251,6 +316,23 @@ export const SchemaField = ({
                 </FormField>
             );
         }
+        // An object with a shape, a map without one, and anything this file
+        // does not recognise. None of them may reach the text input below.
+        case 'object':
+        case 'record':
+        case 'unknown':
+            return (
+                <StructuredField
+                    name={name}
+                    label={fieldLabel}
+                    help={help}
+                    error={error}
+                    value={value}
+                    onChange={onChange}
+                    expects={details.type === 'unknown' ? 'any' : 'object'}
+                    placeholder={placeholder}
+                />
+            );
         case 'string':
         default: {
             const isPortField = name.toLowerCase().includes('port');

@@ -22,8 +22,11 @@ describe('applyBatch', () => {
     });
 
     it('changes only the selected items', () => {
-        const result = applyBatch(outbounds, [0], 'outbound', { network: 'ws' });
-        expect(result.items[0]!.streamSettings.network).toBe('ws');
+        // gRPC, not WebSocket: these outbounds use REALITY, which the core
+        // only runs over raw, XHTTP and gRPC. This test used to write `ws`
+        // here and so pinned a config that does not load.
+        const result = applyBatch(outbounds, [0], 'outbound', { network: 'grpc' });
+        expect(result.items[0]!.streamSettings.network).toBe('grpc');
         expect(result.items[1]!.streamSettings.network).toBe('tcp');
         expect(result.changes.map(c => c.tag)).toEqual(['proxy-1']);
     });
@@ -34,7 +37,7 @@ describe('applyBatch', () => {
     });
 
     it('refuses a transport on protocols that have none, with a reason', () => {
-        const result = applyBatch(outbounds, [0, 2, 3], 'outbound', { network: 'ws' });
+        const result = applyBatch(outbounds, [0, 2, 3], 'outbound', { network: 'grpc' });
         expect(result.changes.map(c => c.tag)).toEqual(['proxy-1']);
         expect(result.skipped.map(s => `${s.tag}:${s.field}`).sort())
             .toEqual(['direct:streamSettings', 'warp:streamSettings']);
@@ -127,6 +130,54 @@ describe('applyBatch', () => {
         const result = applyBatch(outbounds, [0, 0, 0], 'outbound', { tagSuffix: '-a' });
         expect(result.items[0]!.tag).toBe('proxy-1-a');
         expect(result.changes).toHaveLength(1);
+    });
+});
+
+describe('a transport the protocol cannot run over', () => {
+    // The single editor has asked core/xray/transport-networks.ts about this
+    // for a while; the batch wrote whatever was chosen onto whatever was
+    // selected. These are the combinations that produced a refused config.
+    const mixed: any[] = [
+        { tag: 'hy', protocol: 'hysteria', streamSettings: { network: 'hysteria', security: 'tls' } },
+        { tag: 'reality', protocol: 'vless', streamSettings: { network: 'tcp', security: 'reality' } },
+        { tag: 'plain', protocol: 'vless', streamSettings: { network: 'tcp', security: 'tls' } },
+    ];
+
+    it('leaves hysteria on its own transport, and says why', () => {
+        // v26.7.28:proxy/hysteria/client.go:36 — "not hysteria transport".
+        const result = applyBatch(mixed, [0, 2], 'outbound', { network: 'ws' }, '26.7');
+        expect(result.items[0]!.streamSettings.network).toBe('hysteria');
+        expect(result.items[2]!.streamSettings.network).toBe('ws');
+        expect(result.changes.map(change => change.tag)).toEqual(['plain']);
+        expect(result.skipped.map(skip => skip.tag)).toEqual(['hy']);
+        expect(result.skipped[0]!.reason.length).toBeGreaterThan(0);
+    });
+
+    it('lets hysteria move on the one line that has no such check', () => {
+        // v26.3.27:proxy/hysteria/client.go has no transport test at all.
+        const result = applyBatch(mixed, [0], 'outbound', { network: 'ws' }, '26.3');
+        expect(result.items[0]!.streamSettings.network).toBe('ws');
+        expect(result.skipped).toEqual([]);
+    });
+
+    it('does not put REALITY under a transport it cannot run over', () => {
+        const result = applyBatch(mixed, [1], 'outbound', { network: 'ws' }, '26.7');
+        expect(result.items[1]!.streamSettings).toEqual({ network: 'tcp', security: 'reality' });
+        expect(result.skipped.map(skip => `${skip.tag}:${skip.field}`)).toEqual(['reality:streamSettings']);
+    });
+
+    it('judges the pair it would end up with, not each half alone', () => {
+        // Changing both at once is fine where changing only the network was not.
+        const result = applyBatch(mixed, [1], 'outbound', { network: 'ws', security: 'tls' }, '26.7');
+        expect(result.items[1]!.streamSettings).toEqual({ network: 'ws', security: 'tls' });
+        expect(result.skipped).toEqual([]);
+    });
+
+    it('does not put REALITY onto a transport that is already wrong for it', () => {
+        const ws: any[] = [{ tag: 'ws', protocol: 'vless', streamSettings: { network: 'ws', security: 'tls' } }];
+        const result = applyBatch(ws, [0], 'outbound', { security: 'reality' }, '26.7');
+        expect(result.items[0]!.streamSettings.security).toBe('tls');
+        expect(result.skipped).toHaveLength(1);
     });
 });
 

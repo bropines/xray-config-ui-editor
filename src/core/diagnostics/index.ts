@@ -8,7 +8,8 @@ import {
 } from '../snippets';
 import { versionDiagnostics } from '../xray/versions/check';
 import { chainProblems } from '../xray/outbound-chain';
-import { fragmentProblems } from '../xray/freedom-fragment';
+import { fragmentProblems, noiseProblem } from '../xray/freedom-fragment';
+import { wireguardInboundProblems } from '../xray/wireguard-inbound';
 import { t } from '../../i18n';
 import type { CoreVersionId } from '../xray/versions';
 
@@ -80,6 +81,21 @@ export const runFullDiagnostics = (
                     severity: 'critical', message: problem.message,
                 });
             }
+            // Same for a noise the core will not parse: one bad entry refuses
+            // the whole config (see noiseProblem for the source lines). A type
+            // that is written but is not one of the four is already reported
+            // by the version table (`settings.noises[].type`), so only the
+            // missing one is said here — once is enough.
+            const noises = Array.isArray(o.settings?.noises) ? o.settings.noises : [];
+            noises.forEach((noise: any, n: number) => {
+                const problem = noiseProblem(noise);
+                if (!problem) return;
+                if (problem.field === 'type' && typeof noise?.type === 'string') return;
+                diagnostics.push({
+                    section: 'outbounds', itemIndex: i, field: `noises.${n}.${problem.field}`,
+                    severity: 'critical', message: problem.message,
+                });
+            });
         }
         const stream = o.streamSettings || {};
         const net = stream.network || 'tcp';
@@ -144,6 +160,20 @@ export const runFullDiagnostics = (
     };
 
     const checkInbound = (inb: any, i: number) => {
+        // A WireGuard inbound the core will not build or will not start: an
+        // empty secret key first of all, which is what the factory hands back
+        // and what every line refuses. Reported here rather than with the
+        // version table because most of it is the same on all three lines —
+        // the list, and the source line for each entry, is in
+        // core/xray/wireguard-inbound.ts. With a `version` it also says what
+        // only that line refuses.
+        for (const problem of wireguardInboundProblems(inb, version)) {
+            diagnostics.push({
+                section: 'inbounds', itemIndex: i, field: problem.field,
+                severity: 'critical', message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
         const stream = inb.streamSettings || {};
         const sec = stream.security || 'none';
 

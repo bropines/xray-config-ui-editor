@@ -1,7 +1,7 @@
 import React from 'react';
 import { z } from 'zod';
 import { SchemaField } from './SchemaField';
-import { getSchemaTypeAndDetails } from './schema-introspection';
+import { getSchemaTypeAndDetails, humanizeKey } from './schema-introspection';
 import type { TimeUnit } from './duration';
 import { perLanguage, t } from '../../i18n';
 
@@ -333,10 +333,21 @@ const standardFieldConfigs = perLanguage((): Record<string, FieldConfig> => ({
         help: t("File path to write TLS master keys for Wireshark traffic inspection/debugging."),
         placeholder: t("e.g. /var/log/xray/sslkey.log")
     },
+    // Hex, not Base64: Build() splits on commas, strips colons and runs
+    // hex.DecodeString, then demands 32 bytes — and returns the error, so a
+    // Base64 hash stops the config loading rather than failing to match
+    // (v26.7.28:infra/conf/transport_security.go:364-380, identical in
+    // v26.9.9 and at v26.3.27:infra/conf/transport_internet.go:717-733). What
+    // is hashed is the whole certificate, DER
+    // (v26.7.28:transport/internet/tls/pin.go:14), the leaf or a CA the peer
+    // sends (v26.7.28:transport/internet/tls/config.go:561-580; :559-578 at
+    // v26.3.27) — the number `xray tls hash` prints on every line
+    // (v26.7.28:main/commands/all/tls/hash.go:70). The reading itself, and the
+    // check the editor shows next to this field, is core/xray/security-fields.
     pinnedPeerCertSha256: {
         label: t("Pinned Peer Certificate SHA-256"),
-        help: t("Base64 SHA-256 hash for strict certificate pinning."),
-        placeholder: t("Base64 hash string")
+        help: t("SHA-256 of the certificate to expect — the server's own, or a CA in the chain it sends — as 64 hex digits. Colons between bytes are fine, and several hashes go in this one field separated by commas. `xray tls hash --cert fullchain.pem` prints it. Not Base64: Xray refuses the config when this is anything but hex."),
+        placeholder: t("64 hex digits, e.g. e3b0c44298fc1c14…7852b855")
     },
     mldsa65Verify: {
         label: t("ML-DSA-65 Public Key (PQ-REALITY)"),
@@ -398,6 +409,28 @@ interface SchemaFormProps {
      * the store.
      */
     spiderPaths?: string[];
+    /**
+     * Editors for keys that deserve better than the generic one — a key whose
+     * object has a small fixed shape is drawn as its real fields, with units,
+     * instead of as JSON. The form still decides whether the key is shown
+     * (`excludeKeys`) and where; the editor decides how.
+     *
+     * A prop rather than a registry inside this folder, because such an
+     * editor usually wants the core version or the store, and nothing under
+     * `ui/` may read either.
+     */
+    fieldEditors?: Record<string, (field: FieldEditorProps) => React.ReactNode>;
+}
+
+export interface FieldEditorProps {
+    name: string;
+    /** Whatever the config holds, of whatever type — the editor must cope. */
+    value: unknown;
+    /** `undefined` removes the key. */
+    onChange: (next: unknown) => void;
+    label: string;
+    help?: string;
+    error?: string;
 }
 
 export const SchemaForm = ({
@@ -407,7 +440,8 @@ export const SchemaForm = ({
     errors = {},
     fieldConfigs = {},
     excludeKeys = [],
-    spiderPaths
+    spiderPaths,
+    fieldEditors = {}
 }: SchemaFormProps) => {
     const shape = schema.shape;
     const keys = Object.keys(shape).filter(k => !excludeKeys.includes(k));
@@ -427,6 +461,12 @@ export const SchemaForm = ({
             key.toLowerCase().includes('path') ||
             key.toLowerCase().includes('cert')
         ) {
+            return 'col-span-full';
+        }
+        // A JSON box, or a custom editor with fields of its own, in half a
+        // row is a box nobody can read.
+        const kind = getSchemaTypeAndDetails(shape[key]).type;
+        if (fieldEditors[key] || kind === 'object' || kind === 'record' || kind === 'unknown') {
             return 'col-span-full';
         }
         return '';
@@ -483,6 +523,22 @@ export const SchemaForm = ({
                         const options = customConfig.options ?? standardConfig.options;
 
                         const colSpanClass = getColSpanClass(key);
+
+                        const custom = fieldEditors[key];
+                        if (custom) {
+                            return (
+                                <div key={key} className={colSpanClass}>
+                                    {custom({
+                                        name: key,
+                                        value: value[key],
+                                        onChange: val => handleFieldChange(key, val),
+                                        label: label ?? humanizeKey(key),
+                                        help,
+                                        error: errors[key],
+                                    })}
+                                </div>
+                            );
+                        }
 
                         return (
                             <div key={key} className={colSpanClass}>

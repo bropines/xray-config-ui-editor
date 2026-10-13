@@ -20,12 +20,19 @@ import { t } from '../../../i18n';
  * core treats a few keys differently per protocol — 26.9 refuses a freedom
  * outbound that sets addressPortStrategy — and without it this editor could
  * only offer what every protocol takes.
+ *
+ * `title` and `hint` name the block when it is not the stream's own sockopt.
+ * The core has one SocketConfig struct and reads it in more than one place
+ * (`tlsSettings.echSockopt` is another), and two blocks both headed "Socket
+ * Options" on one screen would not say which socket each one sets up.
  */
-export const SockoptEditor = ({ sockopt, onChange, isClient, protocol }: {
+export const SockoptEditor = ({ sockopt, onChange, isClient, protocol, title, hint }: {
     sockopt: any;
     onChange: (value: any) => void;
     isClient?: boolean;
     protocol?: string;
+    title?: string;
+    hint?: string;
 }) => {
     const { local, update, add, remove, hasExtendedValues } = useSockoptEditor(sockopt, onChange);
     const config = useConfigStore(state => state.config);
@@ -61,15 +68,21 @@ export const SockoptEditor = ({ sockopt, onChange, isClient, protocol }: {
     // settings.domainStrategy is copied over this one with a warning
     // (v26.9.9:infra/conf/xray.go:349-362).
     const freedomOverwritesStrategy = protocol === 'freedom' && compareCoreVersions(version, '26.9') >= 0;
+    const heading = (
+        <>
+            <Icon name="Sliders" size={14} />
+            {title ?? t("Socket Options (Sockopt)")}
+            {hint && <Help>{hint}</Help>}
+        </>
+    );
 
     if (!sockopt) {
         return (
             <div className="border-t border-slate-800 pt-4 space-y-4 animate-in fade-in">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
-                        <Icon name="Sliders" size={14} />
-{t("Socket Options (Sockopt)")}
-</label>
+                        {heading}
+                    </label>
                     <button className="bg-blue-500/10 border border-blue-500/50 text-blue-500 hover:bg-blue-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={add}>
                         {t("ADD")}
                         </button>
@@ -82,9 +95,8 @@ export const SockoptEditor = ({ sockopt, onChange, isClient, protocol }: {
         <div className="border-t border-slate-800/60 pt-6 space-y-4">
             <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-blue-400 flex items-center gap-2">
-                    <Icon name="Sliders" size={14} />
-{t("Socket Options (Sockopt)")}
-</label>
+                    {heading}
+                </label>
                 <button className="bg-rose-500/10 border border-rose-500/50 text-rose-500 hover:bg-rose-500/20 text-[10px] font-bold px-2 py-0.5 rounded transition-colors" onClick={remove}>
                     {t("REMOVE")}
                     </button>
