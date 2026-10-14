@@ -22,9 +22,10 @@
  *                          included in the refusal, on every line). An empty
  *                          list is a server with no accounts, which loads.
  *
- * Per line:
+ * Per line (v26.9.30 already has what 26.10 has here: its infra/conf/shadowsocks.go
+ * and proxy/shadowsocks_2022 are the same files as v26.10.10's):
  *
- *                      26.3            26.7, 26.9        26.10
+ *                      26.3            26.7, 26.9        26.9.30, 26.10
  *   users list read    `clients`       `clients`, else   as 26.7
  *                                      `users`
  *   2022 name matched  exactly         exactly           lower-cased first
@@ -50,10 +51,11 @@
  *           present, even empty :54-56; 2022 :58; multi-user :65-91; single
  *           :92-108; buildShadowsocks2022 :113 — "aes" :126, multi/relay :130,
  *           user method :139 and :163, relay address :166.
- *   26.10   v26.10.10:infra/conf/shadowsocks.go, the same shape: 2022 chosen by
- *           `GetCipherMethod` :56, which lower-cases (proxy/shadowsocks_2022/
- *           cipher.go:24-30), and the name lower-cased again :112. The classic
- *           branches are at :63-106, the 2022 ones at :111-178.
+ *   26.9.30, 26.10   v26.9.30:infra/conf/shadowsocks.go, the same file at
+ *           v26.10.10, the same shape: 2022 chosen by `GetCipherMethod` :56,
+ *           which lower-cases (proxy/shadowsocks_2022/cipher.go:24-30), and the
+ *           name lower-cased again :112. The classic branches are at :63-106,
+ *           the 2022 ones at :111-178.
  *
  * Keys, which the loader passes on untouched:
  *
@@ -71,12 +73,13 @@
  *                      service.go:59-64 and :99-107, service_multi.go:40-46
  *                      and :78-82 and :106-112, relay.go:58-62 and :86-92 and
  *                      :99-105 and :133-139, protocol.go:153-156).
- *   26.10              no dependency: `ParseKey` decodes base64 and, when that
+ *   26.9.30, 26.10    no dependency: `ParseKey` decodes base64 and, when that
  *                      fails, takes the string's own bytes; the length must be
- *                      N exactly (v26.10.10:proxy/shadowsocks_2022/kdf.go:16-25,
+ *                      N exactly (v26.9.30:proxy/shadowsocks_2022/kdf.go:16-25,
  *                      used by inbound.go:51, inbound_multi.go:66,
  *                      inbound_relay.go:64 and :90; a user's key
- *                      config.go:19-27 and inbound_multi.go:124).
+ *                      config.go:19-27 and inbound_multi.go:124; the same lines
+ *                      at v26.10.10).
  *
  * The same words are shown beside the inbound (editors/inbound/core-notes) and
  * in the diagnostics (versions/rules.ts); this is the only place that decides.

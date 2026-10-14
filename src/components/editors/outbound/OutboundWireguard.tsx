@@ -90,8 +90,8 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
     const { offersAt, tag: coreTag, version } = useCoreVersion();
     const workersWork = offersAt('outbound', 'settings.workers', 'wireguard');
     const remoteDnsWorks = offersAt('outbound', 'settings.remoteDNS', 'wireguard');
-    // `domainStrategy` is the other way round: every line before 26.10 reads it and 26.10 dropped
-    // the field (v26.10.10:infra/conf/wireguard.go:59-69), so it is offered where it works.
+    // `domainStrategy` is the other way round: every line before v26.9.30 reads it and v26.9.30 dropped
+    // the field (v26.9.30:infra/conf/wireguard.go:59-69, the same at v26.10.10), so it is offered where it works.
     const strategyWorks = offersAt('outbound', 'settings.domainStrategy', 'wireguard');
     const showStrategy = strategyWorks || domainStrategy.value !== undefined;
     const showWorkers = workersWork || workers.value !== undefined;
@@ -352,7 +352,7 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                         label={t("Domain Strategy")}
                         hint={strategyWorks
                             ? t("How the peer's endpoint domain is resolved. WireGuard accepts only the Force variants; anything else stops the core from starting.")
-                            : t("Xray 26.10 dropped this setting; {tag} ignores it, so it does nothing here.", { tag: coreTag })}
+                            : t("Xray 26.9.30 dropped this setting; {tag} ignores it, so it does nothing here.", { tag: coreTag })}
                         value={domainStrategy.value || "ForceIP"}
                         onChange={val => domainStrategy.onChange(val)}
                         options={domainStrategyOptions}

@@ -17,7 +17,9 @@ import { CORE_VERSIONS, type CoreVersionId } from './versions';
 
 const LINES = CORE_VERSIONS.map(line => line.id);
 const UP_TO_26_9: CoreVersionId[] = ['26.3', '26.7', '26.9'];
-const FROM_26_7: CoreVersionId[] = ['26.7', '26.9', '26.10'];
+const FROM_26_7: CoreVersionId[] = ['26.7', '26.9', '26.9.30', '26.10'];
+/** Shadowsocks reads a cipher and a key the same way from v26.9.30 on: its own 2022 package, not sing-shadowsocks. */
+const FROM_26_9_30: CoreVersionId[] = ['26.9.30', '26.10'];
 
 const KEY16 = Buffer.alloc(16, 7).toString('base64');
 const KEY32 = Buffer.alloc(32, 7).toString('base64');
@@ -143,18 +145,18 @@ describe('the cipher', () => {
             shadowsocksOutboundProblems(listed({ ...SERVER, method: 'x' }), line)[0]!.suggestion!;
         expect(suggestion('26.3')).toContain('none');
         expect(suggestion('26.7')).not.toContain('none');
-        expect(suggestion('26.10')).toContain(AES128);
+        for (const line of FROM_26_9_30) expect(suggestion(line)).toContain(AES128);
     });
 
-    it('matches a 2022 name exactly up to 26.9 and in lower case from 26.10', () => {
-        // C.Contains(shadowaead_2022.List, ...) — v26.3.27 :207, v26.7.28 :219 — against GetCipherMethod, v26.10.10 :229.
+    it('matches a 2022 name exactly up to 26.9 and in lower case from v26.9.30', () => {
+        // C.Contains(shadowaead_2022.List, ...) — v26.3.27 :207, v26.7.28 :219 — against GetCipherMethod, v26.9.30 and v26.10.10 :229.
         const upper = '2022-BLAKE3-AES-128-GCM';
         for (const line of UP_TO_26_9) {
             const [problem] = shadowsocksOutboundProblems(listed({ ...SERVER, method: upper, password: KEY16 }), line);
             expect(problem).toMatchObject({ kind: 'method.unknown' });
             expect(problem!.suggestion).toContain(AES128);
         }
-        expect(found(listed({ ...SERVER, method: upper, password: KEY16 }), '26.10')).toEqual([]);
+        for (const line of FROM_26_9_30) expect(found(listed({ ...SERVER, method: upper, password: KEY16 }), line)).toEqual([]);
     });
 });
 
@@ -174,22 +176,22 @@ describe('a 2022 password', () => {
         for (const line of LINES) expect(found(with2022(''), line)).toEqual(['password.empty settings.servers[0].password']);
     });
 
-    it('is base64 up to 26.9, and the string itself from 26.10', () => {
+    it('is base64 up to 26.9, and the string itself from v26.9.30', () => {
         for (const line of UP_TO_26_9) {
             expect(found(with2022('not base64!!'), line)).toEqual(['key.base64 settings.servers[0].password']);
             expect(found(with2022(KEY16.replace(/=+$/, '')), line)).toEqual(['key.base64 settings.servers[0].password']);
         }
-        expect(found(with2022('exactly16bytes!?'), '26.10')).toEqual([]);
-        expect(found(with2022('abcdefghijklmnop!'), '26.10')).toEqual(['key.size settings.servers[0].password']);
+        for (const line of FROM_26_9_30) expect(found(with2022('exactly16bytes!?'), line)).toEqual([]);
+        for (const line of FROM_26_9_30) expect(found(with2022('abcdefghijklmnop!'), line)).toEqual(['key.size settings.servers[0].password']);
     });
 
-    it('may be longer than needed up to 26.9, and must be exact from 26.10', () => {
+    it('may be longer than needed up to 26.9, and must be exact from v26.9.30', () => {
         for (const line of UP_TO_26_9) {
             expect(found(with2022(KEY32), line)).toEqual([]);
             expect(found(with2022(KEY16, AES256), line)).toEqual(['key.short settings.servers[0].password']);
         }
-        expect(found(with2022(KEY32), '26.10')).toEqual(['key.size settings.servers[0].password']);
-        expect(found(with2022(KEY16, AES256), '26.10')).toEqual(['key.size settings.servers[0].password']);
+        for (const line of FROM_26_9_30) expect(found(with2022(KEY32), line)).toEqual(['key.size settings.servers[0].password']);
+        for (const line of FROM_26_9_30) expect(found(with2022(KEY16, AES256), line)).toEqual(['key.size settings.servers[0].password']);
     });
 
     it('joins a master key and a user key with a colon, and checks each', () => {
@@ -203,7 +205,7 @@ describe('a 2022 password', () => {
         expect(bad[0]!.message).toContain('key 2 of 2');
         // An empty part is a missing key, not an empty password.
         expect(found(with2022(`${KEY16}:`), '26.7')).toEqual(['key.empty settings.servers[0].password']);
-        expect(found(with2022(`${KEY16}:`), '26.10')).toEqual(['key.empty settings.servers[0].password']);
+        for (const line of FROM_26_9_30) expect(found(with2022(`${KEY16}:`), line)).toEqual(['key.empty settings.servers[0].password']);
     });
 
     it('takes one key only with chacha20', () => {
@@ -256,7 +258,7 @@ describe('UDP over TCP', () => {
         const rows = (outbound: unknown, line: CoreVersionId) =>
             versionDiagnostics({ outbounds: [outbound] }, line).filter(d => /uot/i.test(d.field ?? '')).map(d => `${d.severity} ${d.field}`);
         expect(rows(flat({ ...SERVER, uot: true, uotVersion: 2 }), '26.7')).toEqual(['warning settings.uot', 'warning settings.uotVersion']);
-        expect(rows(listed({ ...SERVER, uot: true, uotVersion: 2 }), '26.10')).toEqual(['warning settings.servers[].uot', 'warning settings.servers[].uotVersion']);
+        for (const line of FROM_26_9_30) expect(rows(listed({ ...SERVER, uot: true, uotVersion: 2 }), line)).toEqual(['warning settings.servers[].uot', 'warning settings.servers[].uotVersion']);
         // 26.3 reads both keys: with a 2022 name nothing is said, beside a classic one the rule above says it.
         expect(rows(listed({ ...SERVER, method: AES128, password: KEY16, uot: true, uotVersion: 2 }), '26.3')).toEqual([]);
         expect(rows(listed({ ...SERVER, uot: true, uotVersion: 2 }), '26.3')).toEqual(['warning settings.servers[0].uot', 'warning settings.servers[0].uotVersion']);

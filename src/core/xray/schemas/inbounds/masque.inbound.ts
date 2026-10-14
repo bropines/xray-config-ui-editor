@@ -31,7 +31,7 @@ const MasqueMtuSchema = z.number().int().refine(
 );
 
 /**
- * The server end of CONNECT-IP over HTTP/3 or HTTP/2, from 26.10.
+ * The server end of CONNECT-IP over HTTP/3 or HTTP/2, from v26.9.30.
  *
  * `address` is the prefix pool handed to clients, not a listen address: at
  * least one, at most one IPv4 and one IPv6 prefix, each a valid CIDR (:84-98).

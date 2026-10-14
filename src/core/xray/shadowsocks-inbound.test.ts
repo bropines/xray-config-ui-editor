@@ -17,7 +17,9 @@ import { CORE_VERSIONS, type CoreVersionId } from './versions';
 
 const LINES = CORE_VERSIONS.map(line => line.id);
 const UP_TO_26_9: CoreVersionId[] = ['26.3', '26.7', '26.9'];
-const FROM_26_7: CoreVersionId[] = ['26.7', '26.9', '26.10'];
+const FROM_26_7: CoreVersionId[] = ['26.7', '26.9', '26.9.30', '26.10'];
+/** Shadowsocks reads a cipher and a key the same way from v26.9.30 on: its own 2022 package, not sing-shadowsocks. */
+const FROM_26_9_30: CoreVersionId[] = ['26.9.30', '26.10'];
 
 const inbound = (settings: Record<string, unknown>, protocol = 'shadowsocks') => ({ tag: 'ss', protocol, port: 8388, settings });
 const found = (settings: Record<string, unknown>, version: CoreVersionId) =>
@@ -139,8 +141,8 @@ describe('a 2022 method', () => {
         }
     });
 
-    it('is matched exactly up to 26.9 and in lower case from 26.10', () => {
-        // v26.7.28:infra/conf/shadowsocks.go:58 (C.Contains) against v26.10.10 :56 (GetCipherMethod lower-cases).
+    it('is matched exactly up to 26.9 and in lower case from v26.9.30', () => {
+        // v26.7.28:infra/conf/shadowsocks.go:58 (C.Contains) against v26.9.30 and v26.10.10 :56 (GetCipherMethod lower-cases).
         const upper = '2022-BLAKE3-AES-128-GCM';
         for (const line of UP_TO_26_9) {
             const single = shadowsocksInboundProblems(inbound({ method: upper, password: KEY16 }), line);
@@ -148,7 +150,7 @@ describe('a 2022 method', () => {
             // It says how to write it.
             expect(single[0]!.suggestion).toContain(AES128);
         }
-        expect(found({ method: upper, password: KEY16 }, '26.10')).toEqual([]);
+        for (const line of FROM_26_9_30) expect(found({ method: upper, password: KEY16 }, line)).toEqual([]);
     });
 
     it('explains a mis-cased name that fell through to a classic multi-user server', () => {
@@ -159,7 +161,7 @@ describe('a 2022 method', () => {
             expect(problems.map(problem => problem.kind)).toEqual(['user.method']);
             expect(problems[0]!.suggestion).toContain(AES128);
         }
-        expect(found(settings, '26.10')).toEqual([]);
+        for (const line of FROM_26_9_30) expect(found(settings, line)).toEqual([]);
     });
 
     describe('with users', () => {
@@ -212,9 +214,9 @@ describe('a 2022 method', () => {
             }
         });
 
-        it('are base64 up to 26.9, where the string itself is the key from 26.10', () => {
+        it('are base64 up to 26.9, where the string itself is the key from v26.9.30', () => {
             // v26.7.28 (sing-shadowsocks) refuses what StdEncoding cannot decode;
-            // v26.10.10:proxy/shadowsocks_2022/kdf.go:17-20 falls back to the raw bytes.
+            // v26.9.30 and v26.10.10:proxy/shadowsocks_2022/kdf.go:17-20 fall back to the raw bytes.
             const raw16 = 'abcdefghijklmnop!';
             expect(raw16.length).toBe(17);
             for (const line of UP_TO_26_9) {
@@ -224,19 +226,19 @@ describe('a 2022 method', () => {
                 // Neither is the URL-safe alphabet.
                 expect(found(single('-_-_-_-_-_-_-_-_-_-_-w=='), line)).toEqual(['key.base64 settings.password']);
             }
-            expect(found(single('exactly16bytes!?'), '26.10')).toEqual([]);
-            expect(found(single(raw16), '26.10')).toEqual(['key.size settings.password']);
+            for (const line of FROM_26_9_30) expect(found(single('exactly16bytes!?'), line)).toEqual([]);
+            for (const line of FROM_26_9_30) expect(found(single(raw16), line)).toEqual(['key.size settings.password']);
         });
 
-        it('may be longer than needed up to 26.9, where they are cut down, and must be exact from 26.10', () => {
+        it('may be longer than needed up to 26.9, where they are cut down, and must be exact from v26.9.30', () => {
             // sing-shadowsocks@v0.2.7:shadowaead_2022/service.go:99-107 hashes a longer key down;
-            // v26.10.10:proxy/shadowsocks_2022/kdf.go:21 wants N exactly.
+            // v26.9.30 and v26.10.10:proxy/shadowsocks_2022/kdf.go:21 want N exactly.
             for (const line of UP_TO_26_9) {
                 expect(found(single(KEY32), line)).toEqual([]);
                 expect(found(single(KEY16, AES256), line)).toEqual(['key.short settings.password']);
             }
-            expect(found(single(KEY32), '26.10')).toEqual(['key.size settings.password']);
-            expect(found(single(KEY16, AES256), '26.10')).toEqual(['key.size settings.password']);
+            for (const line of FROM_26_9_30) expect(found(single(KEY32), line)).toEqual(['key.size settings.password']);
+            for (const line of FROM_26_9_30) expect(found(single(KEY16, AES256), line)).toEqual(['key.size settings.password']);
         });
 
         it('are 16 bytes for aes-128 and 32 for the other two', () => {
@@ -244,7 +246,7 @@ describe('a 2022 method', () => {
                 expect(found(single(KEY16, AES128), line)).toEqual([]);
                 expect(found(single(KEY32, AES256), line)).toEqual([]);
                 expect(found(single(KEY32, CHACHA), line)).toEqual([]);
-                expect(found(single(KEY16, CHACHA), line)).toEqual([line === '26.10' ? 'key.size settings.password' : 'key.short settings.password']);
+                expect(found(single(KEY16, CHACHA), line)).toEqual([FROM_26_9_30.includes(line) ? 'key.size settings.password' : 'key.short settings.password']);
             }
         });
 

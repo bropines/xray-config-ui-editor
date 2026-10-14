@@ -291,7 +291,7 @@ export function useFinalmaskEditor(finalmask: any, onChange: (v: any) => void, s
 
     /**
      * The generator rebuilds the whole list from hex packets and junk, so
-     * applying it over a list with an item written as an expression (26.10's
+     * applying it over a list with an item written as an expression (v26.9.30's
      * `exp`) would turn that item into hex nonsense. It stays off until the
      * expression is gone; every other edit leaves the item as it was.
      */

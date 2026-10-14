@@ -13,33 +13,33 @@
  * is there — `null` is not there — and replaces `servers` with it, so a config
  * holding both is the flat one as far as the core is concerned
  * (v26.3.27:infra/conf/shadowsocks.go:187-200, v26.7.28 :201-212,
- * v26.10.10 :202-213; the same test as socks and http, core/xray/outbound-
+ * v26.9.30 and v26.10.10 :202-213; the same test as socks and http, core/xray/outbound-
  * credentials.ts, which this reads the shape through). v26.9.9 is the same file
  * as v26.7.28. The list must have exactly one member (v26.3.27 :201-203,
- * v26.7.28 :213-215, v26.10.10 :214-216) — checked after the flat copy, so a flat
- * config never fails on `servers`.
+ * v26.7.28 :213-215, v26.9.30 and v26.10.10 :214-216) — checked after the flat
+ * copy, so a flat config never fails on `servers`.
  *
  * What `Build()` then refuses, the same on every line, for the one server:
  *
- *                     26.3 (2022 / classic)   26.7, 26.9 (2022 / classic)   26.10
+ *                     26.3 (2022 / classic)   26.7, 26.9 (2022 / classic)   26.9.30, 26.10
  *   address missing   :208 / :234             :220 / :244                   :219
  *   port 0 or missing :211 / :237             :223 / :247                   :222
  *   password empty    :214 / :240             :226 / :250                   :225
  *
  * `method` is never defaulted. It is looked up as a 2022 name first — exactly up
- * to 26.9 (v26.3.27 :207, v26.7.28 :219; both with `C.Contains`), lower-cased
- * from 26.10 (v26.10.10 :229, `GetCipherMethod`) — and anything else goes to the
+ * to v26.9.9 (v26.3.27 :207, v26.7.28 :219; both with `C.Contains`), lower-cased
+ * from v26.9.30 (v26.9.30 :229, `GetCipherMethod`) — and anything else goes to the
  * classic builder, where an empty or unknown name is "unknown cipher method"
- * (v26.3.27 :246-249, v26.7.28 :256-259, v26.10.10 :241-244). So an empty
+ * (v26.3.27 :246-249, v26.7.28 :256-259, v26.9.30 and v26.10.10 :241-244). So an empty
  * `method` is refused on every line, unlike the inbound, which does not read it
  * at all when users are listed. The classic names are lower-cased first;
  * `none` and `plain` are ciphers on 26.3 only (v26.3.27 :26, gone from
  * v26.7.28 :17-30).
  *
  * The 2022 password is read when the outbound is created, by
- * `shadowaead_2022.NewWithPassword` up to 26.9 (v26.3.27:proxy/shadowsocks_2022/
- * outbound.go:46-57, v26.7.28 :45-56, v26.9.9 :45-56) and `ParsePSKList` on 26.10
- * (v26.10.10:proxy/shadowsocks_2022/outbound.go:37-71, kdf.go:27-38). Both split
+ * `shadowaead_2022.NewWithPassword` up to v26.9.9 (v26.3.27:proxy/shadowsocks_2022/
+ * outbound.go:46-57, v26.7.28 :45-56, v26.9.9 :45-56) and `ParsePSKList` from v26.9.30
+ * (v26.9.30 and v26.10.10:proxy/shadowsocks_2022/outbound.go:37-71, kdf.go:27-38). Both split
  * it on `:` — a client of a multi-user server sends `masterKey:userKey` — and
  * read each part as one key (sing-shadowsocks@v0.2.7:shadowaead_2022/
  * protocol.go:67-82, v26.10.10 kdf.go:28); the rule for one key, per line, is
@@ -56,8 +56,8 @@
  * at them, so beside a classic cipher they are read and thrown away. The 2022
  * outbound of 26.3 does use them (v26.3.27:proxy/shadowsocks_2022/outbound.go:58-60,
  * :84-88 and :148-153). From 26.7 the structs have no such fields
- * (v26.7.28:infra/conf/shadowsocks.go:179-186 and :188-196, v26.10.10 :180-187
- * and :189-197) and the 2022 outbound has no UoT code (v26.7.28 and v26.10.10:
+ * (v26.7.28:infra/conf/shadowsocks.go:179-186 and :188-196, v26.9.30 and
+ * v26.10.10 :180-187 and :189-197) and the 2022 outbound has no UoT code (v26.7.28, v26.9.30 and v26.10.10:
  * proxy/shadowsocks_2022/outbound.go) — Go's decoder drops the keys. So it
  * does something only on 26.3, only beside a 2022 cipher.
  *

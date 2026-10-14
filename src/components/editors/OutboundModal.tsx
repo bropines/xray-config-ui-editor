@@ -3,7 +3,7 @@ import { Button } from '../ui/Button';
 import { useConfigStore } from '../../store/configStore';
 import { useShallow } from 'zustand/react/shallow';
 import { toast } from 'sonner';
-import { generateXrayLink } from '../../utils/link-generator';
+import { generateXrayLink, linkProblem } from '../../utils/link-generator';
 import { useOutboundEditor } from '../../hooks/useOutboundEditor';
 import { EditorLayout } from '../ui/EditorLayout';
 
@@ -75,7 +75,7 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
     const handleCopyLink = () => {
         const link = generateXrayLink(local);
         if (!link) {
-            toast.error(t("Error generating link"), { description: t("Protocol might not be supported.") });
+            toast.error(t("Error generating link"), { description: linkProblem(local) ?? t("Protocol might not be supported.") });
             return;
         }
         navigator.clipboard.writeText(link).then(() => toast.success(t("Copied to clipboard!")));

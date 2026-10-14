@@ -7,7 +7,9 @@ import { featureStatus } from './versions/features';
  * xdrive's refusals, read from v26.10.10: XDriveConfig.Build()
  * (infra/conf/transport_method.go:985-998) fails the config; building the
  * store (transport/internet/xdrive/storage.go:29-48 and the three stores)
- * stops an inbound or fails an outbound's every connection.
+ * stops an inbound or fails an outbound's every connection. v26.9.30 has the
+ * same package and the same struct (v26.9.30:infra/conf/transport_method.go:876-889),
+ * so what holds on 26.10 holds there.
  */
 
 const at = 'streamSettings.xdriveSettings';
@@ -24,17 +26,38 @@ const TEMPLATE = {
 };
 
 describe('which lines have xdrive', () => {
-    it('is 26.10 alone, and nothing is said on the others', () => {
+    it('are v26.9.30 and 26.10, and nothing is said on the others', () => {
         expect(lineHasXDrive('26.10')).toBe(true);
+        expect(lineHasXDrive('26.9.30')).toBe(true);
         for (const version of ['26.3', '26.7', '26.9'] as const) {
             expect(lineHasXDrive(version)).toBe(false);
             expect(xdriveSettingsProblems({ service: 'Dropbox' }, { side: 'outbound', version })).toEqual([]);
         }
     });
 
+    it('refuses the same things on v26.9.30 as on 26.10', () => {
+        const run = (settings: unknown, version: '26.9.30' | '26.10', side: 'inbound' | 'outbound' = 'outbound') =>
+            xdriveSettingsProblems(settings, { side, runs: true, version }).map(problem => `${problem.kind} ${problem.field}`);
+        for (const settings of [
+            { service: 'Dropbox' },
+            { service: 'local' },
+            { service: 'Google Drive', remoteFolder: '1', secrets: ['a', 'b'] },
+            { service: 'template', remoteFolder: 'x', template: {} },
+            { remoteFolder: '/x', service: 'local', segmentBytes: -1 },
+        ]) {
+            for (const side of ['inbound', 'outbound'] as const) {
+                expect(run(settings, '26.9.30', side)).toEqual(run(settings, '26.10', side));
+            }
+        }
+        expect(run({ service: 'Dropbox' }, '26.9.30')).toHaveLength(1);
+        const stream = { protocol: 'vless', streamSettings: { network: 'xdrive' } };
+        expect(xdriveProblems(stream, 'outbound', '26.9.30').map(problem => problem.kind)).toEqual(['settings.missing']);
+    });
+
     it('has a row for every field, covered by the key on the lines that drop it', () => {
         for (const key of ['remoteFolder', 'service', 'secrets', 'segmentBytes', 'template', 'holeTimeoutMs']) {
             expect(featureStatus('26.9', `outbound.xdriveSettings.${key}`)).toBe('absent');
+            expect(featureStatus('26.9.30', `outbound.xdriveSettings.${key}`)).toBe('accepted');
             expect(featureStatus('26.10', `inbound.xdriveSettings.${key}`)).toBe('accepted');
         }
     });
@@ -192,7 +215,7 @@ describe('an inbound or outbound', () => {
         expect(xdriveProblems({ protocol: 'freedom' }, 'outbound', '26.10')).toEqual([]);
     });
 
-    it('reaches the diagnostics as critical, on 26.10 only', () => {
+    it('reaches the diagnostics as critical, on v26.9.30 and 26.10', () => {
         const config = {
             inbounds: [{ tag: 'in', protocol: 'vless', port: 443, settings: { clients: [] }, streamSettings: { network: 'xdrive', xdriveSettings: { service: 'local' } } }],
             outbounds: [{ tag: 'out', protocol: 'vless', streamSettings: { network: 'xdrive', xdriveSettings: { service: 'Dropbox', remoteFolder: '/x' } } }],
@@ -204,6 +227,8 @@ describe('an inbound or outbound', () => {
             ['outbounds', 0, `${at}.service`, 'critical'],
         ]);
         expect(found('26.9').filter(d => d.severity === 'critical')).toEqual([]);
+        const same = (version: '26.9.30') => runFullDiagnostics(config as any, [], version).filter(d => d.field?.startsWith('streamSettings.xdriveSettings.'));
+        expect(same('26.9.30').map(d => [d.section, d.itemIndex, d.field, d.severity])).toEqual(found('26.10').map(d => [d.section, d.itemIndex, d.field, d.severity]));
     });
 });
 

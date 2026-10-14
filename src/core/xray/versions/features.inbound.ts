@@ -11,13 +11,13 @@
  * read, plus the value lists the choosers are built from.
  */
 import type { CoreFeature, CoreValueSet } from './features';
-import type { CoreVersionId } from './index';
+import { byLine, onEveryLine } from './by-line';
 
 type Status = CoreFeature['status'];
 
-const everywhere = (status: Status['26.3']): Status => ({ '26.3': status, '26.7': status, '26.9': status, '26.10': status });
+const everywhere = (status: Status['26.3']): Status => onEveryLine(status);
 
-const same = (values: string[]): Record<CoreVersionId, string[]> => ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
+const same = (values: string[]) => onEveryLine(values);
 
 /** HysteriaServerConfig is {version, clients} on 26.3 and {version, users, clients} after. */
 const HYSTERIA_SERVER = ['v26.3.27:infra/conf/hysteria.go:39', 'v26.7.28:infra/conf/hysteria.go:39', 'v26.9.9:infra/conf/hysteria.go:39', 'v26.10.10:infra/conf/hysteria.go:39'];
@@ -72,7 +72,7 @@ export const INBOUND_FEATURES: CoreFeature[] = [
         protocol: ['tun'],
         path: 'settings.autoOutboundsInterface',
         value,
-        status: { '26.3': 'absent', '26.7': 'rejected', '26.9': 'rejected', '26.10': 'rejected' },
+        status: byLine<Status['26.3']>('absent', 'rejected', 'rejected'),
         replacement: 'settings.autoOutboundsInterface: "auto"',
         detail: 'autoOutboundsInterface is a string; a boolean fails to decode on the lines that read it.',
         evidence: ['v26.7.28:infra/conf/tun.go:22', 'v26.9.9:infra/conf/tun.go:22', 'v26.10.10:infra/conf/tun.go:26'],
@@ -87,7 +87,7 @@ export const INBOUND_FEATURES: CoreFeature[] = [
         scope: 'inbound',
         path: 'listen',
         value: '',
-        status: { '26.3': 'rejected', '26.7': 'rejected', '26.9': 'accepted', '26.10': 'accepted' },
+        status: byLine<Status['26.3']>('rejected', 'rejected', 'accepted'),
         detail: 'An empty listen string crashes the loader before 26.9; leave the key out to listen on every address.',
         evidence: ['v26.3.27:infra/conf/xray.go:152', 'v26.7.28:infra/conf/xray.go:152', 'v26.9.9:infra/conf/xray.go:144', 'v26.10.10:infra/conf/xray.go:147'],
     },
@@ -95,8 +95,8 @@ export const INBOUND_FEATURES: CoreFeature[] = [
 
 /**
  * Classic cipher names are lower-cased before the switch; the 2022 names are
- * looked up case-sensitively in sing-shadowsocks' list up to 26.9 and
- * lower-cased first from 26.10. Canonical spellings come first — the choosers
+ * looked up case-sensitively in sing-shadowsocks' list up to v26.9.9 and
+ * lower-cased first from v26.9.30. Canonical spellings come first — the choosers
  * show those and hide the `aead_*` and `plain` aliases, which the core still
  * accepts. These are what a chooser offers; whether a config's method is
  * accepted depends on more than the name, and is judged by
@@ -130,20 +130,15 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'inbound',
         protocol: ['shadowsocks', 'shadowsocks-2022'],
         path: 'settings.method',
-        allowed: {
-            '26.3': [...SS_2022, ...SS_CLASSIC, 'none', 'plain'],
-            '26.7': [...SS_2022, ...SS_CLASSIC],
-            '26.9': [...SS_2022, ...SS_CLASSIC],
-            '26.10': [...SS_2022, ...SS_CLASSIC],
-        },
+        allowed: byLine([...SS_2022, ...SS_CLASSIC, 'none', 'plain'], [...SS_2022, ...SS_CLASSIC], [...SS_2022, ...SS_CLASSIC]),
         outside: 'rejected',
         // The list is for the chooser. `method` is not read at all by a
         // multi-user classic server, is compared exactly for 2022 names up to
-        // 26.9, and may not be empty for one account — none of which a flat
+        // v26.9.9, and may not be empty for one account — none of which a flat
         // list can say. shadowsocksInboundProblems does.
         offeredOnly: true,
         detail: '"none"/"plain" were removed in 26.7 and fail with "unknown cipher method", as does any other unknown name.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:101', 'v26.9.9:infra/conf/shadowsocks.go:101', 'v26.10.10:infra/conf/shadowsocks.go:99'],
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:101', 'v26.9.9:infra/conf/shadowsocks.go:101', 'v26.9.30:infra/conf/shadowsocks.go:99', 'v26.10.10:infra/conf/shadowsocks.go:99'],
     },
     ...([
         ['inbound.vless.flow', 'settings.flow'],
@@ -191,10 +186,16 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'inbound',
         protocol: ['wireguard'],
         path: 'settings.domainStrategy',
-        // 26.10 has no such field, so nothing checks the value.
-        allowed: { ...same(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']), '26.10': null },
+        // v26.9.30 and 26.10 have no such field, so nothing checks the value.
+        allowed: byLine<string[] | null>(
+            ['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4'],
+            ['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4'],
+            ['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4'],
+            null,
+            null,
+        ),
         outside: 'rejected',
-        detail: 'Lower-cased and switched on for an inbound too; anything outside the ForceIP family fails with "unsupported domain strategy". 26.10 dropped the key.',
-        evidence: ['v26.3.27:infra/conf/wireguard.go:105', 'v26.7.28:infra/conf/wireguard.go:127', 'v26.9.9:infra/conf/wireguard.go:128', 'v26.10.10:infra/conf/wireguard.go:59-69'],
+        detail: 'Lower-cased and switched on for an inbound too; anything outside the ForceIP family fails with "unsupported domain strategy". v26.9.30 dropped the key.',
+        evidence: ['v26.3.27:infra/conf/wireguard.go:105', 'v26.7.28:infra/conf/wireguard.go:127', 'v26.9.9:infra/conf/wireguard.go:128', 'v26.9.30:infra/conf/wireguard.go:59-69', 'v26.10.10:infra/conf/wireguard.go:59-69'],
     },
 ];

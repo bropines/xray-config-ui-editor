@@ -20,6 +20,7 @@ import {
     isNoiseExpItem,
     masqueReadsQuicParams,
     udphopDefaultsInterval,
+    xdnsReadsOneName,
     type FinalmaskIssue,
     type MaskKey,
     type MaskList,
@@ -244,13 +245,15 @@ const hintFor = (spec: MaskKey, line: CoreVersionId): string | undefined => {
     const objects = spec.shape === 'objects';
     switch (spec.key) {
         case 'domains':
-            return objects
-                ? t("Domains the tunnel runs under, as a JSON list of objects: names, and optionally lenLimit, labelLimit, types (1 A, 5 CNAME, 16 TXT, 28 AAAA) and edns0. Both the server and the client read it.")
-                : t("Domains this server answers for, one per line: example.com or example.com:txt.");
+            if (!objects) return t("Domains this server answers for, one per line: example.com or example.com:txt.");
+            return xdnsReadsOneName(line)
+                ? t("Domains the tunnel runs under, as a JSON list of objects: name, types (at least one of 1 A, 5 CNAME, 16 TXT, 28 AAAA), and optionally lenLimit, labelLimit and edns0. Both the server and the client read it.")
+                : t("Domains the tunnel runs under, as a JSON list of objects: names, and optionally lenLimit, labelLimit, types (1 A, 5 CNAME, 16 TXT, 28 AAAA) and edns0. Both the server and the client read it.");
         case 'resolvers':
-            return objects
-                ? t("Resolvers the client queries through, as a JSON list of objects holding addrs: 1.1.1.1:53, or tcp://8.8.8.8. A bare address is UDP on port 53.")
-                : t("Resolvers the client queries through, one per line: example.com+udp://1.1.1.1:53.");
+            if (!objects) return t("Resolvers the client queries through, one per line: example.com+udp://1.1.1.1:53.");
+            return xdnsReadsOneName(line)
+                ? t("Resolvers the client queries through, as a JSON list of objects: type (udp or tcp) and settings holding addr, such as 1.1.1.1:53.")
+                : t("Resolvers the client queries through, as a JSON list of objects holding addrs: 1.1.1.1:53, or tcp://8.8.8.8. A bare address is UDP on port 53.");
         case 'extraPoll': return t("Extra empty polling queries sent after each packet and each poll, 0 to 3.");
         case 'interval':
             return udphopDefaultsInterval(line)

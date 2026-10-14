@@ -25,10 +25,10 @@
  *                           v26.9.9:infra/conf/wireguard.go:32-44,
  *                           v26.10.10:infra/conf/wireguard.go:32-44)
  *   reserved                "should be empty or 3 bytes" (see wireguard-config.ts)
- *   domainStrategy          26.3 to 26.9: "unsupported domain strategy" — a value
+ *   domainStrategy          26.3 to v26.9.9: "unsupported domain strategy" — a value
  *                           set, not a rule: `outbound.wireguard.domainStrategy`
- *                           in versions/features.ts. 26.10 has no such field
- *                           (below), so nothing is checked there.
+ *                           in versions/features.ts. v26.9.30 and 26.10 have no
+ *                           such field (below), so nothing is checked there.
  *
  * Refused when the outbound is created, so the core does not start (every
  * outbound is added while the instance is built, and an error there ends it:
@@ -84,11 +84,13 @@
  *                           v26.7.28:proxy/wireguard/bind.go:128-138, the same file
  *                           at v26.9.9).
  *
- * v26.10.10 asks the same of a client: the peer and address checks are at
+ * v26.9.30 and v26.10.10 (whose proxy/wireguard/client.go is the same file) ask
+ * the same of a client: the peer and address checks are at
  * proxy/wireguard/client.go:74-99, the device is configured at :328, and
- * ParseEndpoint reads host:port at proxy/wireguard/bind.go:138-148. Its
+ * ParseEndpoint reads host:port at proxy/wireguard/bind.go:138-148. Their
  * WireGuardConfig no longer has `domainStrategy` at all
- * (v26.10.10:infra/conf/wireguard.go:59-69), so that key is dropped there.
+ * (v26.9.30:infra/conf/wireguard.go:59-69, v26.10.10:infra/conf/wireguard.go:59-69),
+ * so that key is dropped there.
  *
  * Without `version` the answer is what holds on every line, and what only some
  * lines read (`remoteDNS`, the host-only address rule) is left out.

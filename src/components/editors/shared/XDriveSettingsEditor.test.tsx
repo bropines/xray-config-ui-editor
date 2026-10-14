@@ -169,6 +169,15 @@ describe('what the config already holds', () => {
     });
 });
 
+describe('the xdrive form on v26.9.30', () => {
+    it('is the form 26.10 draws: the line registers the transport', () => {
+        onLine('26.9.30');
+        const form = mount({ service: 'local', remoteFolder: '/x' });
+        expect(form.$('[data-xdrive-settings="unknown-line"]')).toBeNull();
+        expect(form.folder()).not.toBeNull();
+    });
+});
+
 describe('the transport section on network xdrive', () => {
     const mountSection = (stream: any) => {
         let latest: any = stream;

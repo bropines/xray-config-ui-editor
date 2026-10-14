@@ -384,7 +384,7 @@ export const NetworkSection = ({
             />
         )}
 
-        {/* 26.10's other new transport: a shared store as the carrier. What
+        {/* v26.9.30's other new transport: a shared store as the carrier. What
             Build() and the store refuse is core/xray/xdrive's, said beside the
             fields and in the diagnostics alike. */}
         {section === 'xdrive' && (

@@ -19,6 +19,16 @@
  *                   transport or without TLS
  *                   (v26.10.10:proxy/masque/client.go:58-63, server.go:126-131).
  *
+ * v26.9.30 has all of it but `warp`: infra/conf/masque.go (outbound :14-39,
+ * inbound :47-103), proxy/masque (client.go:58-63, server.go:126-131), the
+ * loader's checks (infra/conf/xray.go:209-211 and :351-353) and the
+ * listener's (transport/internet/masque/hub.go:54-56) are the same files and
+ * lines at v26.9.30 as at v26.10.10, and `MasqueConfig` is {host, path, user,
+ * pass, headers} there (v26.9.30:infra/conf/transport_method.go:793-848,
+ * whose Build() has no warp branch). The shared rules below hold on both
+ * lines; the warp ones are asked only of a line that reads the key
+ * (`lineReadsWarp`).
+ *
  * Everything here is critical: each is either an error from Build() — the
  * config does not load — or an error from the handler's constructor, which
  * stops the core starting. Which side a rule belongs to is in the note beside
@@ -65,6 +75,15 @@ const text = (value: unknown): string => (typeof value === 'string' ? value : ''
 /** Whether a line registers MASQUE at all — the version table's answer, asked once. */
 export const lineHasMasque = (version: CoreVersionId): boolean =>
     featureStatus(version, 'outbound.protocol.masque') !== 'rejected';
+
+/**
+ * Whether a line reads `masqueSettings.warp`: 26.10 only. v26.9.30 has the
+ * transport but not WARP over it — `MasqueConfig` has no `warp` field
+ * (v26.9.30:infra/conf/transport_method.go:793-799), so the key is dropped
+ * and a config that holds one is told so by the version table, not here.
+ */
+export const lineReadsWarp = (version: CoreVersionId): boolean =>
+    featureStatus(version, 'outbound.masqueSettings.warp') === 'accepted';
 
 const shorten = (value: unknown): string => {
     let out: string;
@@ -202,7 +221,7 @@ const hasControl = (value: string, allowTab = false): boolean => {
 
 /**
  * `url.Parse("https://" + host)` followed by `u.Host == host`
- * (v26.10.10:infra/conf/transport_method.go:853-857): the host may carry a
+ * (v26.10.10:infra/conf/transport_method.go:853-857, v26.9.30 :814-818): the host may carry a
  * port, and nothing else that makes a URL — no path, query, fragment or
  * credentials — and none of the characters Go's host parser refuses.
  */
@@ -219,15 +238,16 @@ const validHeaderName = (name: string): boolean => /^[!#$%&'*+\-.^_`|~0-9A-Za-z]
 /** `httpguts.ValidHeaderFieldValue`: no control characters but tab. */
 const validHeaderValue = (value: string): boolean => !hasControl(value, true);
 
-/** Headers the core sets itself (v26.10.10:infra/conf/transport_method.go:862-864). */
+/** Headers the core sets itself (v26.10.10:infra/conf/transport_method.go:862-864, v26.9.30 :824-826). */
 const RESERVED_HEADERS = ['host', 'capsule-protocol'];
 
 /**
  * Everything about `masqueSettings` that `MasqueConfig.Build()` refuses.
  *
  * Built whenever the object is there, whatever `network` says
- * (v26.10.10:infra/conf/transport_internet.go:201-210): a leftover one that is
- * wrong stops the whole config loading. The second argument is where it sits.
+ * (v26.10.10:infra/conf/transport_internet.go:201-210, the same lines at
+ * v26.9.30): a leftover one that is wrong stops the whole config loading. The
+ * second argument is where it sits.
  */
 export const masqueSettingsProblems = (
     settings: unknown,
@@ -256,7 +276,9 @@ export const masqueSettingsProblems = (
     const pass = text(settings.pass);
     const credentials = user !== '' || pass !== '';
     const warp = settings.warp;
-    const hasWarp = !unset(warp);
+    // A line that does not read `warp` drops it before Build() looks, so it can
+    // neither conflict with user and pass nor be wrong in itself.
+    const hasWarp = lineReadsWarp(version) && !unset(warp);
 
     if (hasWarp) {
         if (!isObject(warp)) {

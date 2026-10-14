@@ -14,6 +14,7 @@ import {
 } from '../xray/schemas/settings-by-protocol';
 
 import { isSnippetRef } from '../snippets';
+import { t } from '../../i18n';
 
 const { isIP, isFQDN, isPort, isUUID } = validator;
 
@@ -98,15 +99,30 @@ export const validateOutbound = (data: any): ValidationError[] => {
 
     if (!data.tag) errors.push({ field: 'tag', message: 'Tag is required' });
 
-    const VALID_PROTOCOLS = [
-        'vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http',
-        'freedom', 'blackhole', 'dns', 'wireguard', 'loopback',
-        'dokodemo-door', 'tunnel', 'tun', 'hysteria', 'hysteria2', 'shadowsocks-2022',
-        'masque',
+    // Exactly the names the loader registers for an outbound
+    // (v26.3.27, v26.7.28, v26.9.9: infra/conf/xray.go outboundConfigLoader;
+    // masque from v26.9.30/v26.10.10), compared lower-cased as the loader
+    // does (infra/conf/loader.go:46). Anything else stops the config at
+    // "unknown config id". This list used to accept `shadowsocks-2022` and
+    // `hysteria2` — names no core knows — and inbound-only `tun`, `tunnel`
+    // and `dokodemo-door`, while refusing `direct` and `block`, which every
+    // line registers. Which line has masque is the version table's question.
+    const OUTBOUND_PROTOCOLS = [
+        'block', 'blackhole', 'loopback', 'direct', 'freedom', 'http', 'shadowsocks',
+        'socks', 'vless', 'vmess', 'trojan', 'hysteria', 'masque', 'dns', 'wireguard',
     ];
 
-    if (!VALID_PROTOCOLS.includes(data.protocol)) {
-        errors.push({ field: 'protocol', message: `Protocol "${data.protocol}" is not supported.` });
+    const protocolName = typeof data.protocol === 'string' ? data.protocol.toLowerCase() : '';
+    if (protocolName === 'shadowsocks-2022') {
+        errors.push({
+            field: 'protocol',
+            message: t("{name} is not a protocol Xray knows — its loader stops at \"unknown config id\" and the config will not load. The 2022 ciphers are methods of shadowsocks.", { name: data.protocol }),
+        });
+    } else if (!OUTBOUND_PROTOCOLS.includes(protocolName)) {
+        errors.push({
+            field: 'protocol',
+            message: t("Xray has no outbound called \"{name}\": its loader stops at \"unknown config id\" and the config will not load.", { name: String(data.protocol ?? '') }),
+        });
     }
 
     // Schema Validation via Zod
@@ -125,7 +141,7 @@ export const validateOutbound = (data: any): ValidationError[] => {
     // Validate server address and port for proxy protocols
     // masque is here because the core checks it itself: Build() refuses the
     // config outright when `address` or `port` is missing.
-    if (['vless', 'vmess', 'trojan', 'shadowsocks', 'shadowsocks-2022', 'socks', 'http', 'hysteria', 'hysteria2', 'masque'].includes(protocol)) {
+    if (['vless', 'vmess', 'trojan', 'shadowsocks', 'socks', 'http', 'hysteria', 'masque'].includes(protocol)) {
         let address = '';
         let port = 0;
 

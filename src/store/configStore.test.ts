@@ -9,6 +9,18 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 const { useConfigStore } = await import('./configStore');
 const { parseJsonc } = await import('../utils/jsonc');
 
+// Connecting a panel starts its catalog fetches. Nothing here is about what
+// a panel answers, and those requests used to go out for real — to a real
+// host, with a made-up token, on every run. Every fetch in this file fails
+// at once instead, the way an unreachable panel would.
+const realFetch = globalThis.fetch;
+beforeEach(() => {
+    globalThis.fetch = (async () => { throw new TypeError('network is off in configStore tests'); }) as unknown as typeof fetch;
+});
+afterEach(() => {
+    globalThis.fetch = realFetch;
+});
+
 const BASE_CONFIG_TEXT = `{
   // top-level comment, unrelated to the item under test
   "inbounds": [

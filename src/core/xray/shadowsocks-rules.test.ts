@@ -34,24 +34,33 @@ describe('the lines', () => {
             ['26.3', { usersAlias: false, noneAtTop: true, exact2022Names: true, exactKeySize: false, readsUot: true }],
             ['26.7', { usersAlias: true, noneAtTop: false, exact2022Names: true, exactKeySize: false, readsUot: false }],
             ['26.9', { usersAlias: true, noneAtTop: false, exact2022Names: true, exactKeySize: false, readsUot: false }],
+            // v26.9.30 took the core's own 2022 package that 26.10 has: its infra/conf/shadowsocks.go
+            // and proxy/shadowsocks_2022 are the same files, and go.mod has no sing-shadowsocks.
+            ['26.9.30', { usersAlias: true, noneAtTop: false, exact2022Names: false, exactKeySize: true, readsUot: false }],
             ['26.10', { usersAlias: true, noneAtTop: false, exact2022Names: false, exactKeySize: true, readsUot: false }],
         ]);
     });
 });
 
 describe('cipher names', () => {
-    it('read a 2022 name exactly up to 26.9 and lower-cased from 26.10', () => {
-        expect(named2022(AES128, '26.7')).toBe(AES128);
-        expect(named2022('2022-Blake3-AES-128-GCM', '26.7')).toBeUndefined();
-        expect(miscased2022('2022-Blake3-AES-128-GCM', '26.7')).toBe(AES128);
-        expect(named2022('2022-Blake3-AES-128-GCM', '26.10')).toBe(AES128);
-        expect(miscased2022('2022-Blake3-AES-128-GCM', '26.10')).toBeUndefined();
-        expect(named2022('aes-128-gcm', '26.10')).toBeUndefined();
-        expect(named2022('', '26.10')).toBeUndefined();
+    it('read a 2022 name exactly up to 26.9 and lower-cased from v26.9.30', () => {
+        for (const line of ['26.7', '26.9'] as const) {
+            expect(named2022(AES128, line)).toBe(AES128);
+            expect(named2022('2022-Blake3-AES-128-GCM', line)).toBeUndefined();
+            expect(miscased2022('2022-Blake3-AES-128-GCM', line)).toBe(AES128);
+        }
+        for (const line of ['26.9.30', '26.10'] as const) {
+            expect(named2022('2022-Blake3-AES-128-GCM', line)).toBe(AES128);
+            expect(miscased2022('2022-Blake3-AES-128-GCM', line)).toBeUndefined();
+            expect(named2022('aes-128-gcm', line)).toBeUndefined();
+            expect(named2022('', line)).toBeUndefined();
+        }
     });
 
     it('say how to write a name the line did not match, only when the case is all that is wrong', () => {
         expect(caseHint('2022-BLAKE3-AES-256-GCM', '26.3')).toContain('2022-blake3-aes-256-gcm');
+        expect(caseHint('2022-BLAKE3-AES-256-GCM', '26.9')).toContain('2022-blake3-aes-256-gcm');
+        expect(caseHint('2022-BLAKE3-AES-256-GCM', '26.9.30')).toBeUndefined();
         expect(caseHint('2022-BLAKE3-AES-256-GCM', '26.10')).toBeUndefined();
         expect(caseHint('rc4', '26.3')).toBeUndefined();
     });
@@ -92,16 +101,21 @@ describe('keys', () => {
         expect(base64Bytes('-_-_')).toBeUndefined();
     });
 
-    it('are judged by the line: at least N and base64 up to 26.9, exactly N from 26.10', () => {
-        const kind = (key: string, method: string, line: '26.7' | '26.10') => keyProblem(key, 'k', method, line)?.kind;
-        expect(kind(KEY16, AES128, '26.7')).toBeUndefined();
-        expect(kind(KEY32, AES128, '26.7')).toBeUndefined();
-        expect(kind(KEY32, AES128, '26.10')).toBe('key.size');
-        expect(kind(KEY16, '2022-blake3-aes-256-gcm', '26.7')).toBe('key.short');
-        expect(kind('x!', AES128, '26.7')).toBe('key.base64');
-        expect(kind('exactly16bytes!?', AES128, '26.10')).toBeUndefined();
-        expect(kind('', AES128, '26.7')).toBe('key.empty');
-        expect(kind('', AES128, '26.10')).toBe('key.empty');
+    it('are judged by the line: at least N and base64 up to 26.9, exactly N from v26.9.30', () => {
+        const kind = (key: string, method: string, line: '26.7' | '26.9' | '26.9.30' | '26.10') => keyProblem(key, 'k', method, line)?.kind;
+        for (const line of ['26.7', '26.9'] as const) {
+            expect(kind(KEY16, AES128, line)).toBeUndefined();
+            expect(kind(KEY32, AES128, line)).toBeUndefined();
+            expect(kind(KEY16, '2022-blake3-aes-256-gcm', line)).toBe('key.short');
+            expect(kind('x!', AES128, line)).toBe('key.base64');
+            expect(kind('', AES128, line)).toBe('key.empty');
+        }
+        for (const line of ['26.9.30', '26.10'] as const) {
+            expect(kind(KEY32, AES128, line)).toBe('key.size');
+            expect(kind(KEY16, '2022-blake3-aes-256-gcm', line)).toBe('key.size');
+            expect(kind('exactly16bytes!?', AES128, line)).toBeUndefined();
+            expect(kind('', AES128, line)).toBe('key.empty');
+        }
     });
 
     it('name where they are, and say how to write one', () => {

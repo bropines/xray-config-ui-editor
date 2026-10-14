@@ -19,6 +19,7 @@
  * without a column here fails rather than defaulting silently.
  */
 import type { CoreVersionId } from './index';
+import { byLine, onEveryLine } from './by-line';
 import { GENERATED_FEATURES } from './features.data';
 import { FINALMASK_FEATURES, FINALMASK_VALUE_SETS } from './features.finalmask';
 import { TRANSPORT_FEATURES, TRANSPORT_VALUE_SETS } from './features.transport';
@@ -68,14 +69,11 @@ export interface CoreFeature {
     evidence: string[];
 }
 
-/** The 26.10 column follows 26.9 unless a row says otherwise — and a row says so wherever v26.10.10 differs. */
-const s = (
-    v263: FeatureStatus,
-    v267: FeatureStatus,
-    v269: FeatureStatus,
-    v2610: FeatureStatus = v269,
-): Record<CoreVersionId, FeatureStatus> =>
-    ({ '26.3': v263, '26.7': v267, '26.9': v269, '26.10': v2610 });
+/**
+ * 26.9.30 and 26.10 follow 26.9 unless a row says otherwise — and a row whose
+ * 26.9 and 26.10 differ has to say, for both (see by-line.ts).
+ */
+const s = byLine<FeatureStatus>;
 
 /**
  * Rows written by hand: the ones the editors ask about by id, and the ones
@@ -100,18 +98,18 @@ const HAND_FEATURES: CoreFeature[] = [
         scope: 'outbound',
         path: 'protocol',
         value: 'masque',
-        status: s('rejected', 'rejected', 'rejected', 'accepted'),
-        detail: 'MASQUE is registered as an outbound protocol from 26.10 (and in v26.9.30, a patch of the 26.9 line later than the v26.9.9 this app models); before that the loader fails on an unknown protocol.',
-        evidence: ['v26.9.9:infra/conf/xray.go:38', 'v26.10.10:infra/conf/xray.go:53'],
+        status: s('rejected', 'rejected', 'rejected', 'accepted', 'accepted'),
+        detail: 'MASQUE is registered as an outbound protocol from v26.9.30; before that the loader fails on an unknown protocol.',
+        evidence: ['v26.9.9:infra/conf/xray.go:38', 'v26.9.30:infra/conf/xray.go:53', 'v26.10.10:infra/conf/xray.go:53'],
     },
     {
         id: 'inbound.protocol.masque',
         scope: 'inbound',
         path: 'protocol',
         value: 'masque',
-        status: s('rejected', 'rejected', 'rejected', 'accepted'),
-        detail: 'MASQUE is registered as an inbound protocol from 26.10 (and in v26.9.30, a patch of the 26.9 line later than the v26.9.9 this app models); before that the loader fails on an unknown protocol.',
-        evidence: ['v26.9.9:infra/conf/xray.go:23', 'v26.10.10:infra/conf/xray.go:36'],
+        status: s('rejected', 'rejected', 'rejected', 'accepted', 'accepted'),
+        detail: 'MASQUE is registered as an inbound protocol from v26.9.30; before that the loader fails on an unknown protocol.',
+        evidence: ['v26.9.9:infra/conf/xray.go:23', 'v26.9.30:infra/conf/xray.go:36', 'v26.10.10:infra/conf/xray.go:36'],
     },
 
     // ── shadowsocks ─────────────────────────────────────────────────────
@@ -304,15 +302,18 @@ const FINALMASK_UDP_263 = [
 ];
 const FINALMASK_UDP_267 = ['header-custom', 'mkcp-legacy', 'noise', 'salamander', 'sudoku', 'xdns', 'xicmp', 'realm'];
 const FINALMASK_UDP_269 = both(FINALMASK_UDP_267, ['udphop']);
-// v26.10.10 registers the same types as v26.9.9 (transport_finalmask.go:72-77 for TCP, :79-89 for UDP);
-// its own lists, so a later release that changes one has somewhere to do it.
+// v26.9.30 and v26.10.10 register the same types as v26.9.9 (v26.9.9:transport_finalmask.go:72-77 for TCP,
+// :79-89 for UDP; v26.9.30:transport_finalmask.go:73-78 and :80-90; v26.10.10 the same lines); a list
+// of its own for each, so a later release that changes one has somewhere to do it.
+const FINALMASK_TCP_2693 = [...FINALMASK_TCP_267];
+const FINALMASK_UDP_2693 = [...FINALMASK_UDP_269];
 const FINALMASK_TCP_2610 = [...FINALMASK_TCP_267];
 const FINALMASK_UDP_2610 = [...FINALMASK_UDP_269];
 
 /**
  * Transport names `TransportProtocol.Build()` knows — the same on the first
- * three lines (26.10 adds two, below). Anything else is "unknown transport
- * protocol" and the config does not
+ * three lines (v26.9.30 and 26.10 add two, below). Anything else is "unknown
+ * transport protocol" and the config does not
  * load; `h2`/`h3`/`http`/`quic` are removed-feature errors, which amounts to
  * the same thing. `udp` is not a transport name either, though for a while
  * this editor wrote it into every WireGuard and Hysteria endpoint.
@@ -320,15 +321,15 @@ const FINALMASK_UDP_2610 = [...FINALMASK_UDP_269];
 const NETWORKS = ['raw', 'tcp', 'xhttp', 'splithttp', 'kcp', 'mkcp', 'grpc', 'ws', 'websocket', 'httpupgrade', 'hysteria'];
 
 /**
- * 26.10 registers two more: `masque` (CONNECT-IP over HTTP/3 or HTTP/2, only
- * for the masque proxy) and `xdrive` (a cloud drive as the carrier)
- * (v26.10.10:infra/conf/transport_internet.go:39-42).
+ * v26.9.30 registers two more, and v26.10.10 keeps them: `masque`
+ * (CONNECT-IP over HTTP/3 or HTTP/2, only for the masque proxy) and `xdrive`
+ * (a cloud drive as the carrier)
+ * (v26.9.30:infra/conf/transport_internet.go:39-42, v26.10.10:infra/conf/transport_internet.go:39-42).
  */
-const NETWORKS_2610 = [...NETWORKS, 'masque', 'xdrive'];
+const NETWORKS_2693 = [...NETWORKS, 'masque', 'xdrive'];
 
 /** The same value list on every line. */
-const everywhere = (values: string[]): Record<CoreVersionId, string[]> =>
-    ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
+const everywhere = (values: string[]): Record<CoreVersionId, string[]> => onEveryLine(values);
 
 /** Outbound protocol values, read from findings/protocols.json. */
 const DOMAIN_STRATEGIES = [
@@ -342,9 +343,9 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['blackhole', 'block'],
         path: 'settings.response.type',
-        allowed: { '26.3': ['none', 'http'], '26.7': ['none', 'http'], '26.9': ['none', 'http', 'custom'], '26.10': ['none', 'http', 'custom'] },
+        allowed: byLine(['none', 'http'], ['none', 'http'], ['none', 'http', 'custom']),
         outside: 'rejected',
-        detail: 'The custom response exists only in 26.9; before that a response type is looked up by id and anything unlisted is "unknown config id".',
+        detail: 'The custom response exists only from 26.9; before that a response type is looked up by id and anything unlisted is "unknown config id".',
         evidence: ['v26.7.28:infra/conf/blackhole.go', 'v26.9.9:infra/conf/blackhole.go', 'v26.10.10:infra/conf/blackhole.go'],
     },
     ...(['settings.method', 'settings.servers[].method'] as const).map((path, i): CoreValueSet => ({
@@ -352,33 +353,27 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['shadowsocks', 'shadowsocks-2022'],
         path,
-        allowed: {
-            '26.3': [...SS_2022, ...SS_CLASSIC, 'none', 'plain'],
-            '26.7': [...SS_2022, ...SS_CLASSIC],
-            '26.9': [...SS_2022, ...SS_CLASSIC],
-            '26.10': [...SS_2022, ...SS_CLASSIC],
-        },
+        allowed: byLine([...SS_2022, ...SS_CLASSIC, 'none', 'plain'], [...SS_2022, ...SS_CLASSIC], [...SS_2022, ...SS_CLASSIC]),
         outside: 'rejected',
         // The list is for the chooser. Whether a config's method is accepted
         // depends on more than the name — a 2022 name is compared exactly up
-        // to 26.9 and lower-cased from 26.10, the classic ones are lower-cased
-        // on every line, and an empty one is refused — none of which a flat
-        // list can say. shadowsocksOutboundProblems does.
+        // to 26.9 and lower-cased from v26.9.30, the classic ones are
+        // lower-cased on every line, and an empty one is refused — none of
+        // which a flat list can say. shadowsocksOutboundProblems does.
         offeredOnly: true,
         detail: 'The none and plain ciphers were removed in 26.7 and now fail with "unknown cipher method", as does any other unknown name.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:256-259', 'v26.9.9:infra/conf/shadowsocks.go:256-259', 'v26.10.10:infra/conf/shadowsocks.go:241-244'],
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:256-259', 'v26.9.9:infra/conf/shadowsocks.go:256-259', 'v26.9.30:infra/conf/shadowsocks.go:241-244', 'v26.10.10:infra/conf/shadowsocks.go:241-244'],
     })),
     ...(['settings.security', 'settings.vnext[].users[].security'] as const).map((path, i): CoreValueSet => ({
         id: i === 0 ? 'outbound.vmess.security' : 'outbound.vmess.users.security',
         scope: 'outbound',
         protocol: ['vmess'],
         path,
-        allowed: {
-            '26.3': ['auto', 'aes-128-gcm', 'chacha20-poly1305', 'none', 'zero'],
-            '26.7': ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
-            '26.9': ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
-            '26.10': ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
-        },
+        allowed: byLine(
+            ['auto', 'aes-128-gcm', 'chacha20-poly1305', 'none', 'zero'],
+            ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
+            ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
+        ),
         // Not an error: an unlisted value quietly becomes auto.
         outside: 'absent',
         replacedBy: { none: 'auto', zero: 'auto' },
@@ -423,7 +418,7 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['freedom', 'direct'],
         path: 'settings.finalRules[].action',
-        allowed: { '26.3': null, '26.7': ['allow', 'block'], '26.9': ['allow', 'block'], '26.10': ['allow', 'block'] },
+        allowed: byLine<string[] | null>(null, ['allow', 'block'], ['allow', 'block']),
         outside: 'rejected',
         detail: 'Required from 26.7; a missing or unlisted action fails with "unknown action".',
         evidence: ['v26.7.28:infra/conf/freedom.go', 'v26.10.10:infra/conf/freedom.go'],
@@ -433,7 +428,7 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['dns'],
         path: 'settings.rules[].action',
-        allowed: { '26.3': null, '26.7': ['direct', 'drop', 'return', 'hijack'], '26.9': ['direct', 'drop', 'return', 'hijack'], '26.10': ['direct', 'drop', 'return', 'hijack'] },
+        allowed: byLine<string[] | null>(null, ['direct', 'drop', 'return', 'hijack'], ['direct', 'drop', 'return', 'hijack']),
         outside: 'rejected',
         detail: 'Required from 26.7; a missing or unlisted action fails with "unknown action".',
         evidence: ['v26.7.28:infra/conf/dns_proxy.go', 'v26.10.10:infra/conf/dns_proxy.go'],
@@ -443,12 +438,11 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['loopback'],
         path: 'settings.sniffing.destOverride[]',
-        allowed: {
-            '26.3': null,
-            '26.7': ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
-            '26.9': ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
-            '26.10': ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
-        },
+        allowed: byLine<string[] | null>(
+            null,
+            ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
+            ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
+        ),
         outside: 'rejected',
         detail: 'https and ssl mean tls; any other entry fails with "unknown protocol".',
         evidence: ['v26.7.28:infra/conf/loopback.go', 'v26.10.10:infra/conf/loopback.go'],
@@ -472,11 +466,17 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['wireguard'],
         path: 'settings.domainStrategy',
-        // 26.10 has no such field, so nothing checks the value (a FEATURES row says the rest).
-        allowed: { ...everywhere(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']), '26.10': null },
+        // v26.9.30 and 26.10 have no such field, so nothing checks the value (a FEATURES row says the rest).
+        allowed: byLine<string[] | null>(
+            ['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4'],
+            ['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4'],
+            ['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4'],
+            null,
+            null,
+        ),
         outside: 'rejected',
-        detail: 'Only the ForceIP family is accepted; AsIs and UseIP fail the config. 26.10 dropped the key.',
-        evidence: ['v26.3.27:infra/conf/wireguard.go', 'v26.9.9:infra/conf/wireguard.go', 'v26.10.10:infra/conf/wireguard.go:59-69'],
+        detail: 'Only the ForceIP family is accepted; AsIs and UseIP fail the config. v26.9.30 dropped the key.',
+        evidence: ['v26.3.27:infra/conf/wireguard.go', 'v26.9.9:infra/conf/wireguard.go', 'v26.9.30:infra/conf/wireguard.go:59-69', 'v26.10.10:infra/conf/wireguard.go:59-69'],
     },
 ];
 
@@ -485,33 +485,33 @@ const BASE_VALUE_SETS: CoreValueSet[] = [
         id: 'stream.network',
         scope: 'outbound',
         path: 'streamSettings.network',
-        allowed: { '26.3': NETWORKS, '26.7': NETWORKS, '26.9': NETWORKS, '26.10': NETWORKS_2610 },
+        allowed: byLine(NETWORKS, NETWORKS, NETWORKS, NETWORKS_2693, NETWORKS_2693),
         outside: 'rejected',
         replacedBy: { h2: 'xhttp', h3: 'xhttp', http: 'xhttp', quic: 'xhttp', udp: 'raw' },
         detail: 'An unknown transport name fails the load; h2, h3, http and quic are removed features pointing at XHTTP.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go', 'v26.7.28:infra/conf/transport_internet.go', 'v26.9.9:infra/conf/transport_internet.go', 'v26.10.10:infra/conf/transport_internet.go:16-45'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go', 'v26.7.28:infra/conf/transport_internet.go', 'v26.9.9:infra/conf/transport_internet.go', 'v26.9.30:infra/conf/transport_internet.go:16-45', 'v26.10.10:infra/conf/transport_internet.go:16-45'],
     },
     {
         id: 'finalmask.tcp.type',
         scope: 'outbound',
         path: 'streamSettings.finalmask.tcp[].type',
-        allowed: { '26.3': FINALMASK_TCP_263, '26.7': FINALMASK_TCP_267, '26.9': FINALMASK_TCP_267, '26.10': FINALMASK_TCP_2610 },
+        allowed: byLine(FINALMASK_TCP_263, FINALMASK_TCP_267, FINALMASK_TCP_267, FINALMASK_TCP_2693, FINALMASK_TCP_2610),
         outside: 'rejected',
         detail: 'TCP mask types are looked up in their own table; a type missing from it — or one that belongs to the UDP list — fails with "unknown config id".',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1238', 'v26.7.28:infra/conf/transport_finalmask.go:70', 'v26.9.9:infra/conf/transport_finalmask.go:72', 'v26.10.10:infra/conf/transport_finalmask.go:72'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1238', 'v26.7.28:infra/conf/transport_finalmask.go:70', 'v26.9.9:infra/conf/transport_finalmask.go:72', 'v26.9.30:infra/conf/transport_finalmask.go:73', 'v26.10.10:infra/conf/transport_finalmask.go:72'],
     },
     {
         id: 'finalmask.udp.type',
         scope: 'outbound',
         path: 'streamSettings.finalmask.udp[].type',
-        allowed: { '26.3': FINALMASK_UDP_263, '26.7': FINALMASK_UDP_267, '26.9': FINALMASK_UDP_269, '26.10': FINALMASK_UDP_2610 },
+        allowed: byLine(FINALMASK_UDP_263, FINALMASK_UDP_267, FINALMASK_UDP_269, FINALMASK_UDP_2693, FINALMASK_UDP_2610),
         outside: 'rejected',
         replacedBy: Object.fromEntries(
             ['header-dns', 'header-dtls', 'header-srtp', 'header-utp', 'header-wechat', 'header-wireguard', 'mkcp-original', 'mkcp-aes128gcm']
                 .map(type => [type, 'mkcp-legacy']),
         ),
         detail: 'The six header-* masks and both mkcp-* masks were folded into mkcp-legacy in 26.7; an unknown UDP mask type fails the load.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1244', 'v26.7.28:infra/conf/transport_finalmask.go:77', 'v26.9.9:infra/conf/transport_finalmask.go:79', 'v26.10.10:infra/conf/transport_finalmask.go:79'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1244', 'v26.7.28:infra/conf/transport_finalmask.go:77', 'v26.9.9:infra/conf/transport_finalmask.go:79', 'v26.9.30:infra/conf/transport_finalmask.go:80', 'v26.10.10:infra/conf/transport_finalmask.go:79'],
     },
 ];
 

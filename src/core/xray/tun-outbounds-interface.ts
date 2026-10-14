@@ -14,8 +14,8 @@
  *
  *   v26.7.28:infra/conf/tun.go:22 (the field), :35-37 (a given value is copied
  *   as it is, an empty one included), :38-40 (the default, only when the key
- *   is nil); the same lines at v26.9.9, and v26.10.10:infra/conf/tun.go:26,
- *   :67-72.
+ *   is nil); the same lines at v26.9.9, and v26.9.30 and v26.10.10:infra/conf/tun.go:26,
+ *   :67-72 (the same file in both).
  *
  * and what the handler does with the result:
  *
@@ -25,7 +25,7 @@
  *   an empty fixed name, and the platform's findOutboundInterface picks one
  *   for an empty name and looks the name up otherwise (tun_linux.go:339-363,
  *   tun_windows.go:313-355). v26.9.9:proxy/tun/handler.go:92-101 is the same;
- *   v26.10.10:proxy/tun/handler.go:111-120.
+ *   v26.9.30 and v26.10.10:proxy/tun/handler.go:111-120 (the same file in both).
  *
  * So the only way to switch it off while routes are listed is to write `""`,
  * and a form that removes the key on an empty value cannot write it: the key

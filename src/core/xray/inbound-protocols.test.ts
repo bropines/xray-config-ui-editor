@@ -24,18 +24,19 @@ import { validateInbound } from '../validators';
  * The list below is `inboundConfigLoader`, which is the same twelve names on
  * the first three tags (v26.3.27:infra/conf/xray.go:25-38,
  * v26.7.28:infra/conf/xray.go:22-35, v26.9.9:infra/conf/xray.go:23-36) and
- * thirteen on v26.10.10, which adds `masque` (:24-38). It is written out rather
- * than read: a test that fetched the core would pass on a bad day and fail on
- * a good one.
+ * thirteen on v26.9.30 and v26.10.10, which add `masque`
+ * (v26.9.30:infra/conf/xray.go:24-38, v26.10.10:infra/conf/xray.go:24-38). It
+ * is written out rather than read: a test that fetched the core would pass on
+ * a bad day and fail on a good one.
  */
 const REGISTERED = [
     'tunnel', 'dokodemo-door', 'http', 'shadowsocks', 'mixed', 'socks',
     'vless', 'vmess', 'trojan', 'wireguard', 'hysteria', 'tun',
 ];
-const SINCE_2610 = ['masque'];
+const SINCE_2693 = ['masque'];
 
 type Line = (typeof CORE_VERSIONS)[number]['id'];
-const registeredOn = (line: Line) => (line === '26.10' ? [...REGISTERED, ...SINCE_2610] : REGISTERED);
+const registeredOn = (line: Line) => (line === '26.9.30' || line === '26.10' ? [...REGISTERED, ...SINCE_2693] : REGISTERED);
 
 const offeredOn = (line: Line) =>
     protocolsFor(line, 'inbound', InboundProtocolSchema.options);
@@ -75,7 +76,7 @@ describe('every registered inbound protocol', () => {
         // `shadowsocks-2022` is this app's name for shadowsocks with the 2022
         // ciphers — not a protocol the loader knows, and not offered.
         const extra = buildableProtocols('inbound').filter(protocol =>
-            !REGISTERED.includes(protocol) && !SINCE_2610.includes(protocol) && protocol !== 'shadowsocks-2022');
+            !REGISTERED.includes(protocol) && !SINCE_2693.includes(protocol) && protocol !== 'shadowsocks-2022');
         expect(extra).toEqual([]);
     });
 });

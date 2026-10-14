@@ -277,11 +277,11 @@ const shadowsocksOutbounds = (config: any, version: CoreVersionId): Diagnostic[]
             })));
 
 /**
- * MASQUE (26.10): the proxy, its transport and the pairing between them, from
- * core/xray/masque — which cites the source for each rule, answers nothing for
- * a line that does not register the protocol, and is what the editors show
- * beside the fields. Every one of them keeps the config from loading or the
- * handler from starting.
+ * MASQUE (v26.9.30 and 26.10): the proxy, its transport and the pairing
+ * between them, from core/xray/masque — which cites the source for each rule,
+ * answers nothing for a line that does not register the protocol, and is what
+ * the editors show beside the fields. Every one of them keeps the config from
+ * loading or the handler from starting.
  */
 const masqueRules = (config: any, version: CoreVersionId): Diagnostic[] =>
     (['inbounds', 'outbounds'] as const).flatMap(section =>
@@ -298,7 +298,7 @@ const masqueRules = (config: any, version: CoreVersionId): Diagnostic[] =>
                 }))));
 
 /**
- * xdrive (26.10): what XDriveConfig.Build() refuses — the config does not load
+ * xdrive (v26.9.30 and 26.10): what XDriveConfig.Build() refuses — the config does not load
  * — and, where the transport runs xdrive, what building its store refuses: an
  * inbound that does not start, an outbound whose every connection fails. From
  * core/xray/xdrive, which cites the source for each and answers nothing for a

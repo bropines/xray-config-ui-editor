@@ -48,8 +48,21 @@ describe('what the chooser offers', () => {
         expect(values(undefined, undefined, '26.10')).not.toContain('masque');
     });
 
+    it('offers masque and xdrive on v26.9.30 as on 26.10', () => {
+        // v26.9.30:infra/conf/transport_internet.go:39-42 registers both.
+        expect(values('masque', undefined, '26.9.30')).toEqual(['masque']);
+        expect(values('vless', undefined, '26.9.30')).not.toContain('masque');
+        expect(values('vless', undefined, '26.9.30')).toContain('xdrive');
+        expect(values('masque', undefined, '26.9.30')).not.toContain('xdrive');
+        expect(networkProblem('masque', 'masque', '26.9.30')).toBeUndefined();
+        expect(networkProblem('vless', 'masque', '26.9.30')).toContain('masque proxy');
+        expect(networkProblem('vless', 'xdrive', '26.9.30')).toBeUndefined();
+        expect(securityOptions('masque', 'masque', undefined, '26.9.30').map(option => option.value)).toEqual(['tls']);
+        expect(securityProblem('masque', 'masque', 'none', '26.9.30')).toContain('TLS');
+    });
+
     it('offers masque on no line that does not register it', () => {
-        // The transport name is "unknown transport protocol" before 26.10.
+        // The transport name is "unknown transport protocol" before v26.9.30.
         for (const version of ['26.3', '26.7', '26.9'] as const) {
             expect(values('masque', undefined, version)).not.toContain('masque');
             expect(values('vless', undefined, version)).not.toContain('masque');
@@ -167,6 +180,7 @@ describe('which transport runs', () => {
         // present; 26.9 and older have no such fields and drop them.
         const stream = { network: 'ws', wsSettings: {}, masqueSettings: { path: '/' }, xdriveSettings: { service: 'local' } };
         expect(leftoverTransportSettings(stream, 'ws', '26.10')).toEqual(['masqueSettings', 'xdriveSettings']);
+        expect(leftoverTransportSettings(stream, 'ws', '26.9.30')).toEqual(['masqueSettings', 'xdriveSettings']);
         expect(leftoverTransportSettings(stream, 'ws', '26.9')).toEqual([]);
         expect(leftoverTransportSettings({ network: 'masque', masqueSettings: {} }, 'masque', '26.10')).toEqual([]);
         // No supported line has quicSettings at all; it is dropped unread.

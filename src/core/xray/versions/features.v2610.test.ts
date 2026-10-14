@@ -8,7 +8,10 @@ import { TunInboundSettingsSchema } from '../schemas';
 /**
  * What 26.10 (v26.10.10) changed outside MASQUE and finalmask, and the guards
  * that keep the new column honest: every row that differs from 26.9 says where
- * v26.10.10 was read, and every finding has an answer for the new tag.
+ * v26.10.10 was read, and every finding has an answer for the new tag. Part of
+ * what this file's source lists arrived earlier, in v26.9.30 (the tun keys,
+ * WireGuard's lost domainStrategy, xdrive): features.v2693.test.ts holds that
+ * line to the same standard.
  */
 
 describe('the 26.10 column', () => {
@@ -59,7 +62,7 @@ describe('what 26.10 added', () => {
         }
     });
 
-    it('has two more tun keys, on 26.10 only', () => {
+    it('has two more tun keys, which v26.9.9 lacks (they arrived in v26.9.30)', () => {
         for (const key of ['autoSystemDnsToGateway', 'autoSystemWfpBlockLeak']) {
             expect(at('26.9', 'inbound', `settings.${key}`, 'tun')).toBe('absent');
             expect(at('26.10', 'inbound', `settings.${key}`, 'tun')).toBe('accepted');
@@ -80,7 +83,7 @@ describe('what 26.10 added', () => {
         }
     });
 
-    it('has the xdrive transport: a network name and a settings key', () => {
+    it('has the xdrive transport, which v26.9.9 lacks: a network name and a settings key', () => {
         expect(allowedValues('26.9', 'stream.network')).not.toContain('xdrive');
         expect(allowedValues('26.10', 'stream.network')).toContain('xdrive');
         expect(at('26.9', 'outbound', 'streamSettings.xdriveSettings')).toBe('absent');
@@ -88,8 +91,8 @@ describe('what 26.10 added', () => {
     });
 });
 
-describe('what 26.10 dropped', () => {
-    it('drops the WireGuard domain strategy, key and check both', () => {
+describe('what 26.9 lost between v26.9.9 and 26.10', () => {
+    it('drops the WireGuard domain strategy, key and check both (it went in v26.9.30)', () => {
         for (const scope of ['inbound', 'outbound'] as const) {
             expect(featureStatus('26.9', `${scope}.wireguard.domainStrategy.key`)).toBe('accepted');
             expect(featureStatus('26.10', `${scope}.wireguard.domainStrategy.key`)).toBe('absent');

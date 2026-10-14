@@ -8,9 +8,11 @@
  * the loader for each. They share three facts, and these are the ones that
  * differ from one line to the next.
  *
- * The lines:
+ * The lines (v26.9.30 took the core's own 2022 package that 26.10 has —
+ * `git diff v26.9.30 v26.10.10` is empty for infra/conf/shadowsocks.go and
+ * proxy/shadowsocks_2022 — so the two read a cipher and a key the same way):
  *
- *                      26.3            26.7, 26.9        26.10
+ *                      26.3            26.7, 26.9        26.9.30, 26.10
  *   users list read    `clients`       `clients`, else   as 26.7
  *   (inbound)                          `users`
  *   2022 name matched  exactly         exactly           lower-cased first
@@ -20,7 +22,8 @@
  *                      (more is cut down)                 N bytes
  *   UDP over TCP       read (outbound, 2022 builder only)  no such key
  *
- * where N is 16 for 2022-blake3-aes-128-gcm and 32 for the other two.
+ * where N is 16 for 2022-blake3-aes-128-gcm and 32 for the other two. "26.9"
+ * in this table is v26.9.9: v26.9.30 is the last column.
  *
  * Citations, `tag:file:line`:
  *
@@ -28,24 +31,28 @@
  *                  lower-cases first: v26.3.27:infra/conf/shadowsocks.go:16-31
  *                  (lower-cased :17, none/plain :26), v26.7.28:infra/conf/
  *                  shadowsocks.go:17-30 (the same file at v26.9.9),
- *                  v26.10.10:infra/conf/shadowsocks.go:15-28.
+ *                  v26.9.30:infra/conf/shadowsocks.go:15-28 (the same lines at
+ *                  v26.10.10).
  *   2022 names     chosen by an exact match against sing-shadowsocks' list up to
- *                  26.9 — `C.Contains(shadowaead_2022.List, ...)`, inbound
+ *                  v26.9.9 — `C.Contains(shadowaead_2022.List, ...)`, inbound
  *                  v26.3.27:infra/conf/shadowsocks.go:54, v26.7.28 :58, outbound
  *                  v26.3.27 :207 and :231, v26.7.28 :219 and :241 — and by
- *                  `GetCipherMethod` from 26.10, which lower-cases
- *                  (v26.10.10:proxy/shadowsocks_2022/cipher.go:24-30; inbound
- *                  infra/conf/shadowsocks.go:56, outbound :229).
+ *                  `GetCipherMethod` from v26.9.30, which lower-cases
+ *                  (v26.9.30:proxy/shadowsocks_2022/cipher.go:24-30; inbound
+ *                  v26.9.30:infra/conf/shadowsocks.go:56, outbound :229; the
+ *                  same lines at v26.10.10).
  *   keys           26.3, 26.7, 26.9 hand them to sing-shadowsocks v0.2.7 (go.mod
  *                  pins it on all three tags: v26.3.27:go.mod:18, v26.7.28:go.mod:21,
  *                  v26.9.9:go.mod:22). In the dependency (not in this
  *                  repository): an empty key is refused, one that is not base64 is
  *                  refused, one shorter than N is refused, one longer is cut down
  *                  to N through SHA-256 (sing-shadowsocks@v0.2.7:shadowaead_2022/
- *                  protocol.go:75-76 and :111-117, :153-156). 26.10 has no
- *                  dependency: `ParseKey` decodes base64 and, when that fails,
- *                  takes the string's own bytes; the length must be N exactly
- *                  (v26.10.10:proxy/shadowsocks_2022/kdf.go:16-25).
+ *                  protocol.go:75-76 and :111-117, :153-156). v26.9.30 and 26.10
+ *                  have no dependency (v26.9.30:go.mod has no sagernet module):
+ *                  `ParseKey` decodes base64 and, when that fails, takes the
+ *                  string's own bytes; the length must be N exactly
+ *                  (v26.9.30:proxy/shadowsocks_2022/kdf.go:16-25, the same
+ *                  lines at v26.10.10).
  *   the protocol   `shadowsocks` is the only name either loader registers —
  *                  inbounds v26.3.27:infra/conf/xray.go:29, v26.7.28 :26,
  *                  v26.9.9 :27, v26.10.10 :28; outbounds v26.3.27 :47,
@@ -74,8 +81,8 @@ export const present = (value: unknown): boolean => value !== undefined && value
 export const shadowsocksLine = (version: CoreVersionId) => ({
     usersAlias: compareCoreVersions(version, '26.7') >= 0,
     noneAtTop: compareCoreVersions(version, '26.7') < 0,
-    exact2022Names: compareCoreVersions(version, '26.10') < 0,
-    exactKeySize: compareCoreVersions(version, '26.10') >= 0,
+    exact2022Names: compareCoreVersions(version, '26.9.30') < 0,
+    exactKeySize: compareCoreVersions(version, '26.9.30') >= 0,
     /** The client config has `uot` and `uotVersion` (v26.3.27:infra/conf/shadowsocks.go:168-169 and :179-180); later lines do not. */
     readsUot: compareCoreVersions(version, '26.7') < 0,
 });
@@ -123,7 +130,7 @@ export const aeadNames = (): string[] => canonicalNames(SS_CLASSIC);
 
 /**
  * The 2022 name this line reads in `method`, lower case — undefined when the
- * line does not take it for one. Exact up to 26.9; lower-cased first from 26.10.
+ * line does not take it for one. Exact up to 26.9; lower-cased first from v26.9.30.
  */
 export const named2022 = (method: string, version: CoreVersionId): string | undefined => {
     const lowered = method.toLowerCase();
@@ -208,7 +215,7 @@ export const keyProblem = (key: string, what: string, method: string, version: C
         }
         return undefined;
     }
-    // 26.10: what base64 cannot read is taken as the bytes it is.
+    // v26.9.30 and later: what base64 cannot read is taken as the bytes it is.
     const bytes = decoded ?? new TextEncoder().encode(key).length;
     if (bytes !== need) {
         return { kind: 'key.size', message: t("{what} is {bytes} bytes, and {method} takes a key of exactly {need} — Xray {tag} refuses the config.", { what, bytes, method, need, tag }), suggestion };

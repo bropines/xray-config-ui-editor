@@ -144,6 +144,26 @@ describe('the outbounds interface of a tun inbound', () => {
         expect(held.effect()).toBeNull();
     });
 
+    it('draws the two keys v26.9.30 added where the line reads them, and not before', () => {
+        const dns = 'Auto System Dns To Gateway';
+        const wfp = 'Auto System Wfp Block Leak';
+        onLine('26.9');
+        const before = mount({ name: 'xray0' });
+        expect(before.container.textContent).not.toContain(dns);
+        expect(before.container.textContent).not.toContain(wfp);
+        cleanup();
+        for (const version of ['26.9.30', '26.10'] as const) {
+            onLine(version);
+            const view = mount({ name: 'xray0' });
+            expect(view.container.textContent).toContain(dns);
+            expect(view.container.textContent).toContain(wfp);
+            cleanup();
+        }
+        // A held one stays on screen on the line that drops it.
+        onLine('26.9');
+        expect(mount({ autoSystemDnsToGateway: true }).container.textContent).toContain(dns);
+    });
+
     it('leaves the other fields to drop out when they are emptied', () => {
         const view = mount({ name: 'xray0' });
         const name = Array.from(view.container.querySelectorAll('input')).find(box => box.value === 'xray0') as HTMLInputElement;

@@ -24,11 +24,12 @@ import {
     socketEnd,
     toMkcpLegacy,
     udphopDefaultsInterval,
+    xdnsReadsOneName,
     type MaskList,
 } from './finalmask-rules';
 
 const LINES = CORE_VERSIONS.map(version => version.id);
-const TAG: Record<CoreVersionId, string> = { '26.3': 'v26.3.27', '26.7': 'v26.7.28', '26.9': 'v26.9.9', '26.10': 'v26.10.10' };
+const TAG: Record<CoreVersionId, string> = { '26.3': 'v26.3.27', '26.7': 'v26.7.28', '26.9': 'v26.9.9', '26.9.30': 'v26.9.30', '26.10': 'v26.10.10' };
 
 const registered = (version: CoreVersionId, list: MaskList, type: string) =>
     allowedValues(version, `finalmask.${list}.type`).includes(type);
@@ -646,9 +647,10 @@ describe('the noise mask on 26.10', () => {
     const problem = (version: CoreVersionId, ...items: unknown[]) =>
         finalmaskIssues(noise(...items), version, 'outbound').filter(issue => issue.severity === 'critical');
 
-    it('takes exp as a packet encoding on 26.10 only', () => {
+    it('takes exp as a packet encoding from v26.9.30 on', () => {
         expect(noiseItemTypeAccepted('26.10', 'exp')).toBe(true);
         expect(noiseItemTypeAccepted('26.10', 'EXP')).toBe(true);
+        expect(noiseItemTypeAccepted('26.9.30', 'exp')).toBe(true);
         for (const version of ['26.3', '26.7', '26.9'] as const) {
             expect(noiseItemTypeAccepted(version, 'exp')).toBe(false);
             expect(noiseItemTypeAccepted(version, 'hex')).toBe(true);
@@ -656,6 +658,7 @@ describe('the noise mask on 26.10', () => {
             expect(allowedValues(version, 'finalmask.udp.noise.item.type')).toEqual(['', 'array', 'str', 'hex', 'base64']);
         }
         expect(allowedValues('26.10', 'finalmask.udp.noise.item.type')).toEqual(['', 'array', 'str', 'hex', 'base64', 'exp']);
+        expect(allowedValues('26.9.30', 'finalmask.udp.noise.item.type')).toEqual(['', 'array', 'str', 'hex', 'base64', 'exp']);
     });
 
     it('offers exp where it is taken, and keeps a held one on screen where it is not', () => {
@@ -684,6 +687,7 @@ describe('the noise mask on 26.10', () => {
         expect(at('26.7')).toEqual(['critical']);
         expect(at('26.3')).toEqual(['critical']);
         expect(at('26.10')).toEqual([]);
+        expect(at('26.9.30')).toEqual([]);
         // and hex stays fine everywhere
         const hex = { outbounds: [{ tag: 'w', protocol: 'wireguard', streamSettings: { finalmask: noise({ type: 'HEX', packet: 'aa' }) } }] };
         for (const version of LINES) {
@@ -766,5 +770,192 @@ describe('the 26.10 rows of the version check', () => {
         const rows = FEATURES.filter(row => row.path.startsWith('streamSettings.finalmask.') && row.status['26.10'] !== row.status['26.9']);
         expect(rows.length).toBeGreaterThanOrEqual(3);
         for (const row of rows) expect(row.evidence.some(cite => cite.startsWith('v26.10.10:')), row.id).toBe(true);
+    });
+});
+
+// ── Xray v26.9.30 ───────────────────────────────────────────────────────
+//
+// v26.9.30 shares every mask but xdns with 26.10 (`git diff v26.9.30 v26.10.10`
+// is empty for finalmask.go, xicmp, udphop, realm, sudoku, noise and the rest
+// of transport_finalmask.go), so the chain rules, udphop's interval and the
+// noise exp item are 26.10's. xdns is neither line's: it takes objects with a
+// single `name` and a `{type, settings}` resolver.
+
+describe('the 26.9.30 key table', () => {
+    it('keeps the quicParams keys, mask types and udphop keys 26.10 has', () => {
+        expect(offeredQuicKeys('26.9.30').map(spec => spec.key)).toEqual(offeredQuicKeys('26.10').map(spec => spec.key));
+        expect(maskTypeChoices('26.9.30', 'udp', 'outbound')).toEqual(maskTypeChoices('26.10', 'udp', 'outbound'));
+        expect(maskTypeChoices('26.9.30', 'tcp')).toEqual(maskTypeChoices('26.10', 'tcp'));
+        expect(offeredMaskKeys('26.9.30', 'udp', 'udphop').map(spec => spec.key)).toEqual(['mode', 'interval', 'remotePorts', 'remoteIPs']);
+        expect(maskKeyStatus('26.9.30', 'udp', 'udphop', 'sockopt').status).toBe('absent');
+        expect(quicKeyStatus('26.9.30', 'udpHop').status).toBe('absent');
+        expect(masqueReadsQuicParams('26.9.30')).toBe(true);
+    });
+
+    it('draws xdns domains and resolvers as objects of its own shape, and extraPoll', () => {
+        const keys = (side?: 'inbound' | 'outbound') => offeredMaskKeys('26.9.30', 'udp', 'xdns', side).map(spec => spec.key);
+        expect(keys('inbound')).toEqual(['domains']);
+        expect(keys('outbound')).toEqual(['domains', 'resolvers', 'extraPoll']);
+        const specs = offeredMaskKeys('26.9.30', 'udp', 'xdns');
+        expect(specs.map(spec => `${spec.key}:${spec.shape}`)).toEqual(['domains:objects', 'resolvers:objects', 'extraPoll:number']);
+        // The placeholder shows the shape this line reads, not 26.10's.
+        expect(specs.find(spec => spec.key === 'domains')!.example).toContain('"name"');
+        expect(specs.find(spec => spec.key === 'domains')!.example).not.toContain('"names"');
+        expect(specs.find(spec => spec.key === 'resolvers')!.example).toContain('"settings"');
+        expect(offeredMaskKeys('26.10', 'udp', 'xdns').find(spec => spec.key === 'domains')!.example).toContain('"names"');
+    });
+
+    it('says which line reads xdns with one name, so the form can word its hints', () => {
+        expect(LINES.filter(xdnsReadsOneName)).toEqual(['26.9.30']);
+    });
+
+    it('refuses the old xdns domain by dropping it, like 26.10', () => {
+        expect(maskKeyStatus('26.9', 'udp', 'xdns', 'domain').status).toBe('rejected');
+        expect(maskKeyStatus('26.9.30', 'udp', 'xdns', 'domain').status).toBe('absent');
+        expect(maskKeyStatus('26.9.30', 'udp', 'xdns', 'extraPoll', 'inbound').readBy).toBe('outbound');
+    });
+});
+
+describe('where a mask sits on 26.9.30', () => {
+    it('is where it sits on 26.10: xicmp, udphop and an xdns client last, realm and sudoku anywhere', () => {
+        for (const version of ['26.9.30', '26.10'] as const) {
+            const issue = finalmaskIssues(udp('xicmp', 'noise'), version, 'outbound').find(entry => entry.path.endsWith('udp[0]'))!;
+            expect(issue.message).toContain('incorrect index');
+            expect(paths(finalmaskIssues(udp('noise', 'xicmp'), version, 'outbound'))).not.toContain('streamSettings.finalmask.udp[1]');
+            for (const order of [['realm', 'noise'], ['noise', 'realm'], ['sudoku', 'noise'], ['noise', 'sudoku']]) {
+                expect(finalmaskIssues(udp(...order), version, 'outbound').filter(entry => entry.severity !== 'info')).toEqual([]);
+            }
+            expect(finalmaskIssues(udp('xdns', 'noise'), version, 'outbound').find(entry => entry.path.endsWith('udp[0]'))!.message).toContain('never uses the socket');
+            expect(pinnedEnd(version, 'xicmp')).toBe('last');
+            expect(pinnedEnd(version, 'udphop')).toBe('last');
+            expect(pinnedEnd(version, 'xdns')).toBe('last');
+            expect(pinnedEnd(version, 'realm')).toBeUndefined();
+            expect(pinnedEnd(version, 'sudoku')).toBeUndefined();
+        }
+        expect(pinnedEnd('26.9', 'realm')).toBe('last');
+    });
+
+    it('gives udphop a default interval and refuses a start under 5 at load, as 26.10 does', () => {
+        const hop = (interval: unknown) => finalmaskIssues({ udp: [{ type: 'udphop', settings: { mode: 'intervalLocal', interval } }] }, '26.9.30', 'outbound');
+        expect(hop(undefined)).toEqual([]);
+        expect(hop(0)).toEqual([]);
+        expect(hop('5-30')).toEqual([]);
+        expect(hop(3)).toEqual([expect.objectContaining({ severity: 'critical', path: 'streamSettings.finalmask.udp[0].settings.interval' })]);
+        expect(udphopDefaultsInterval('26.9.30')).toBe(true);
+    });
+
+    it('tells a xicmp client without ips that it pings the address it dials', () => {
+        const issues = finalmaskIssues({ udp: [{ type: 'xicmp', settings: {} }] }, '26.9.30', 'outbound');
+        expect(issues).toEqual([expect.objectContaining({ severity: 'info', path: 'streamSettings.finalmask.udp[0].settings.ips' })]);
+    });
+});
+
+describe('what xdns needs on 26.9.30', () => {
+    const xdns = (settings: unknown) => ({ udp: [{ type: 'xdns', settings }] });
+    const at = (suffix = '') => `streamSettings.finalmask.udp[0].settings${suffix}`;
+    const domains = [{ name: 't.example.com', types: [16] }];
+    const resolvers = [{ type: 'udp', settings: { addr: '1.1.1.1:53' } }];
+    const issues = (settings: unknown, direction: 'inbound' | 'outbound' = 'outbound') => finalmaskIssues(xdns(settings), '26.9.30', direction);
+
+    it('is happy with objects, on each side that reads them', () => {
+        expect(issues({ domains, resolvers, extraPoll: 2 })).toEqual([]);
+        expect(issues({ domains }, 'inbound')).toEqual([]);
+        // a server does not read resolvers, so they raise nothing there
+        expect(issues({ domains, resolvers: [{ type: 'tcp', settings: { addr: '8.8.8.8:53' } }] }, 'inbound')).toEqual([]);
+        // the type is lower-cased before it is looked up
+        expect(issues({ domains, resolvers: [{ type: 'UDP', settings: { addr: '1.1.1.1:53' } }] })).toEqual([]);
+    });
+
+    it('fails the load on strings, and on 26.10 shapes, where v26.9.30 reads its own', () => {
+        const strings = issues({ domains: ['t.example.com'], resolvers: ['t.example.com+udp://1.1.1.1:53'] });
+        expect(strings.map(issue => [issue.path, issue.severity])).toEqual([[at('.domains'), 'critical'], [at('.resolvers'), 'critical']]);
+        expect(strings[0]!.message).toContain('"name"');
+        expect(strings[0]!.message).not.toContain('"names"');
+        // `names` and `addrs` are keys it drops: what is left is incomplete, not unknown.
+        const names = issues({ domains: [{ names: ['t.example.com'] }], resolvers: [{ addrs: ['1.1.1.1:53'] }] });
+        expect(names.map(issue => issue.path)).toContain(at('.domains[0].types'));
+        expect(names.map(issue => issue.path)).toContain(at('.resolvers[0].type'));
+    });
+
+    it('needs the record types of a domain: with none, NewDomain answers "empty types" at load', () => {
+        expect(issues({ domains: [{ name: 't.example.com' }], resolvers })).toEqual([expect.objectContaining({ severity: 'critical', path: at('.domains[0].types') })]);
+        expect(issues({ domains: [{ name: 't.example.com', types: [] }], resolvers })[0]!.message).toContain('empty types');
+        // 26.10 fills the list in itself, and does not mind
+        expect(finalmaskIssues(xdns({ domains: [{ names: ['t.example.com'] }], resolvers: [{ addrs: ['1.1.1.1'] }] }), '26.10', 'outbound')).toEqual([]);
+    });
+
+    it('refuses a record type that is not A, CNAME, TXT or AAAA at load, as critical on both sides', () => {
+        for (const direction of ['inbound', 'outbound'] as const) {
+            const found = issues({ domains: [{ name: 't.example.com', types: [1, 16, 99] }], resolvers }, direction);
+            expect(found).toEqual([expect.objectContaining({ severity: 'critical', path: at('.domains[0].types') })]);
+        }
+        // uint16(types[j]): 65537 wraps to 1, which is an A record
+        expect(issues({ domains: [{ name: 't.example.com', types: [65537] }], resolvers })).toEqual([]);
+        expect(issues({ domains: [{ name: 't.example.com', types: [5, 28] }], resolvers })).toEqual([]);
+    });
+
+    it('checks what Build() checks, critically', () => {
+        const one = (domain: Record<string, unknown>) => issues({ domains: [{ name: 't.example.com', types: [16], ...domain }], resolvers });
+        expect(one({ name: 'a..example.com' })[0]).toMatchObject({ severity: 'critical', path: at('.domains[0].name') });
+        expect(one({ lenLimit: 300 })[0]).toMatchObject({ severity: 'critical', path: at('.domains[0].lenLimit') });
+        expect(one({ labelLimit: 64 })[0]).toMatchObject({ severity: 'critical', path: at('.domains[0].labelLimit') });
+        expect(one({ edns0: 100 })[0]).toMatchObject({ severity: 'critical', path: at('.domains[0].edns0') });
+        expect(one({ edns0: 65536 + 600 })).toEqual([]);
+        expect(one({ edns0: 4096, lenLimit: 200, labelLimit: 40 })).toEqual([]);
+        expect(one({ lenLimit: 40 })[0]).toMatchObject({ severity: 'critical', path: at('.domains[0].name') });
+        const poll = (extraPoll: unknown) => issues({ domains, resolvers, extraPoll });
+        expect(poll(3)).toEqual([]);
+        expect(poll(4)[0]).toMatchObject({ severity: 'critical', path: at('.extraPoll') });
+        expect(poll('2')[0]).toMatchObject({ severity: 'critical', path: at('.extraPoll') });
+    });
+
+    it('loads a resolver by its type: tcp or udp, with a settings object that has to be there', () => {
+        const one = (resolver: unknown) => issues({ domains, resolvers: [resolver] });
+        expect(one({ type: 'https', settings: { addr: 'x' } })[0]).toMatchObject({ severity: 'critical', path: at('.resolvers[0].type') });
+        expect(one({ settings: { addr: '1.1.1.1:53' } })[0]).toMatchObject({ severity: 'critical', path: at('.resolvers[0].type') });
+        expect(one({ type: 'udp' })[0]).toMatchObject({ severity: 'critical', path: at('.resolvers[0].settings') });
+        expect(one({ type: 'udp' })[0]!.message).toContain('unexpected end of JSON input');
+        expect(one({ type: 'udp', settings: '1.1.1.1:53' })[0]).toMatchObject({ severity: 'critical', path: at('.resolvers[0].settings') });
+        expect(one({ type: 'udp', settings: { addr: 53 } })[0]).toMatchObject({ severity: 'critical', path: at('.resolvers[0].settings.addr') });
+    });
+
+    it('lets an empty address through the load and fails it where the client dials', () => {
+        expect(issues({ domains, resolvers: [{ type: 'udp', settings: {} }] })).toEqual([expect.objectContaining({ severity: 'warning', path: at('.resolvers[0].settings.addr') })]);
+        expect(issues({ domains, resolvers: [{ type: 'udp', settings: null }] })).toEqual([expect.objectContaining({ severity: 'warning', path: at('.resolvers[0].settings.addr') })]);
+        // a server never dials one
+        expect(issues({ domains, resolvers: [{ type: 'udp', settings: {} }] }, 'inbound')).toEqual([]);
+    });
+
+    it('is refused for being empty only when it starts or dials', () => {
+        const server = issues({}, 'inbound');
+        expect(server).toEqual([expect.objectContaining({ severity: 'critical', path: at('.domains') })]);
+        const client = issues({});
+        expect(client.map(issue => [issue.path, issue.severity])).toEqual([[at('.domains'), 'warning'], [at('.resolvers'), 'warning']]);
+        expect(issues({ domains }).map(issue => issue.path)).toEqual([at('.resolvers')]);
+    });
+});
+
+describe('the 26.9.30 rows of the version check', () => {
+    const outbound = (finalmask: unknown) => ({ outbounds: [{ tag: 'o', protocol: 'wireguard', streamSettings: { finalmask } }] });
+    const fields = (config: unknown, version: CoreVersionId) => versionDiagnostics(config, version)
+        .filter(d => d.field?.startsWith('streamSettings.finalmask'))
+        .map(d => [d.field, d.severity]);
+
+    it('ignores the old xdns domain, takes extraPoll, and warns about the udphop sockopt it dropped', () => {
+        const xdns = outbound({ udp: [{ type: 'xdns', settings: { domain: 't.example.com', extraPoll: 1, domains: [{ name: 't.example.com', types: [16] }], resolvers: [{ type: 'udp', settings: { addr: '1.1.1.1:53' } }] } }] });
+        expect(fields(xdns, '26.9.30')).toEqual([['streamSettings.finalmask.udp[type=xdns].settings.domain', 'warning']]);
+        const hop = outbound({ udp: [{ type: 'udphop', settings: { mode: 'intervalLocal', interval: 10, sockopt: { mark: 255 } } }] });
+        expect(fields(hop, '26.9.30')).toEqual([['streamSettings.finalmask.udp[type=udphop].settings.sockopt', 'warning']]);
+    });
+
+    it('answers for the noise exp type on v26.9.30', () => {
+        const config = outbound({ udp: [{ type: 'noise', settings: { noise: [{ type: 'exp', packet: '<q>' }] } }] });
+        expect(fields(config, '26.9')).toEqual([['streamSettings.finalmask.udp[type=noise].settings.noise[].type', 'critical']]);
+        // The type itself is taken on v26.9.30: what is reported is the expression, by the chain rules.
+        expect(fields(config, '26.9.30')).toEqual([['streamSettings.finalmask.udp[0].settings.noise[0].packet', 'critical']]);
+        const good = outbound({ udp: [{ type: 'noise', settings: { noise: [{ type: 'exp', packet: '<b 0xDEADBEEF><r 8><t>' }] } }] });
+        expect(fields(good, '26.9.30')).toEqual([]);
+        const bad = finalmaskIssues({ udp: [{ type: 'noise', settings: { noise: [{ type: 'exp', packet: '<q>' }] } }] }, '26.9.30', 'outbound');
+        expect(bad).toEqual([expect.objectContaining({ severity: 'critical', path: 'streamSettings.finalmask.udp[0].settings.noise[0].packet' })]);
     });
 });

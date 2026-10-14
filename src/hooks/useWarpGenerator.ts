@@ -25,7 +25,8 @@ export type WarpTunnel = 'wireguard' | 'masque';
 /**
  * Where the MASQUE-to-WARP block lives, as the version table names it. Only a
  * line whose masque transport has `warp` can reach Cloudflare over MASQUE
- * (26.10 on; v26.10.10:infra/conf/transport_method.go:798-840).
+ * (26.10 on; v26.10.10:infra/conf/transport_method.go:798-840) — not v26.9.30, whose
+ * MasqueConfig has no warp field (v26.9.30:infra/conf/transport_method.go:793-799).
  */
 export const MASQUE_WARP_PATH = 'streamSettings.masqueSettings.warp';
 

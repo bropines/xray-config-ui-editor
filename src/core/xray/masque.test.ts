@@ -4,6 +4,7 @@ import {
     isIpLiteral,
     isMasque,
     lineHasMasque,
+    lineReadsWarp,
     masqueHostProblem,
     masquePathProblem,
     masqueProblems,
@@ -19,6 +20,7 @@ import { CORE_VERSIONS } from './versions';
 /**
  * MASQUE as v26.10.10 loads and starts it. Every rule here is one the source
  * refuses (the citations are in masque.ts); each case names what the core says.
+ * v26.9.30 has all of it but `warp`, which is the last describe block's subject.
  */
 
 const keyPair = () => {
@@ -56,8 +58,12 @@ const settingsKinds = (masqueSettings: unknown) =>
     masqueSettingsProblems(masqueSettings, 'streamSettings.masqueSettings', '26.10').map(problem => problem.kind);
 
 describe('which lines it answers for', () => {
-    it('only 26.10 registers the protocol', () => {
-        expect(CORE_VERSIONS.filter(line => lineHasMasque(line.id)).map(line => line.id)).toEqual(['26.10']);
+    it('v26.9.30 and 26.10 register the protocol, and nothing before them', () => {
+        expect(CORE_VERSIONS.filter(line => lineHasMasque(line.id)).map(line => line.id)).toEqual(['26.9.30', '26.10']);
+    });
+
+    it('only 26.10 reads WARP over it', () => {
+        expect(CORE_VERSIONS.filter(line => lineReadsWarp(line.id)).map(line => line.id)).toEqual(['26.10']);
     });
 
     it('is silent where the version table already refuses the protocol', () => {
@@ -347,7 +353,7 @@ describe('IP literals', () => {
 });
 
 describe('what the version table says about it', () => {
-    it('registers the protocol, the transport and its keys on 26.10 and nowhere before', () => {
+    it('registers the protocol, the transport and its keys on v26.9.30 and 26.10, and nowhere before', () => {
         for (const version of ['26.3', '26.7', '26.9'] as const) {
             expect(featureStatus(version, 'outbound.protocol.masque')).toBe('rejected');
             expect(featureStatus(version, 'inbound.protocol.masque')).toBe('rejected');
@@ -358,12 +364,47 @@ describe('what the version table says about it', () => {
                 expect(featureStatusAt(version, { scope: 'inbound', path: `streamSettings.masqueSettings${key}` })).toBe('absent');
             }
         }
-        expect(featureStatus('26.10', 'outbound.protocol.masque')).toBe('accepted');
-        expect(featureStatus('26.10', 'inbound.protocol.masque')).toBe('accepted');
-        expect(allowedValues('26.10', 'stream.network')).toContain('masque');
-        expect(allowedValues('26.10', 'inbound.stream.network')).toContain('masque');
-        for (const key of ['', '.host', '.path', '.user', '.pass', '.headers', '.warp', '.warp.privateKey', '.warp.publicKey', '.warp.address']) {
+        for (const version of ['26.9.30', '26.10'] as const) {
+            expect(featureStatus(version, 'outbound.protocol.masque')).toBe('accepted');
+            expect(featureStatus(version, 'inbound.protocol.masque')).toBe('accepted');
+            expect(allowedValues(version, 'stream.network')).toContain('masque');
+            expect(allowedValues(version, 'inbound.stream.network')).toContain('masque');
+            for (const key of ['', '.host', '.path', '.user', '.pass', '.headers']) {
+                expect(featureStatusAt(version, { scope: 'outbound', path: `streamSettings.masqueSettings${key}` })).toBe('accepted');
+                expect(featureStatusAt(version, { scope: 'inbound', path: `streamSettings.masqueSettings${key}` })).toBe('accepted');
+            }
+        }
+        for (const key of ['.warp', '.warp.privateKey', '.warp.publicKey', '.warp.address']) {
             expect(featureStatusAt('26.10', { scope: 'outbound', path: `streamSettings.masqueSettings${key}` })).toBe('accepted');
+        }
+    });
+
+    it('has no WARP on v26.9.30: MasqueConfig has no warp field, so the key is dropped', () => {
+        // v26.9.30:infra/conf/transport_method.go:793-799 — host, path, user, pass, headers.
+        for (const key of ['.warp', '.warp.privateKey', '.warp.publicKey', '.warp.address']) {
+            expect(featureStatusAt('26.9.30', { scope: 'outbound', path: `streamSettings.masqueSettings${key}` })).toBe('absent');
+            expect(featureStatusAt('26.9.30', { scope: 'inbound', path: `streamSettings.masqueSettings${key}` })).toBe('absent');
+        }
+        const item = { ...outbound(), streamSettings: { network: 'masque', security: 'tls', masqueSettings: { host: 'h.example', warp: { ...keyPair(), address: ['172.16.0.2/32'] } } } };
+        const found = versionDiagnostics({ outbounds: [item] }, '26.9.30').filter(d => d.severity !== 'info');
+        expect(found.map(d => `${d.severity} ${d.field}`)).toEqual(['warning streamSettings.masqueSettings.warp']);
+        // Nothing masque.ts says about warp holds there: a wrong block is dropped before Build() looks.
+        const wrong = { ...item, streamSettings: { network: 'masque', security: 'tls', masqueSettings: { user: 'a', pass: 'b', warp: {} } } };
+        expect(masqueProblems(wrong, 'outbound', '26.9.30')).toEqual([]);
+        expect(masqueProblems(wrong, 'outbound', '26.10').map(problem => problem.kind)).toEqual(['warp.credentials', 'warp.credentials', 'warp.privateKey', 'warp.publicKey', 'warp.address']);
+    });
+
+    it('holds the rest of the rules on v26.9.30 as on 26.10', () => {
+        // The pairing (xray.go:209-211 and :351-353), TLS and the transport (proxy/masque), mux: the same files.
+        const noTls = withStream(outbound(), { security: 'none' });
+        const wrongNetwork = withStream(outbound(), { network: 'ws' });
+        for (const version of ['26.9.30', '26.10'] as const) {
+            expect(masqueProblems(outbound(), 'outbound', version)).toEqual([]);
+            expect(masqueProblems(noTls, 'outbound', version).map(problem => problem.kind)).toEqual(['transport.security']);
+            expect(masqueProblems(wrongNetwork, 'outbound', version).map(problem => problem.kind)).toEqual(['transport.network']);
+            expect(masqueProblems(outbound({ settings: {} }), 'outbound', version).map(problem => problem.kind)).toEqual(['address', 'port']);
+            expect(masqueProblems(outbound({ mux: { enabled: true } }), 'outbound', version).map(problem => problem.kind)).toEqual(['mux']);
+            expect(masqueSettingsProblems({ path: 'no-slash', headers: { Host: 'x' } }, 'm', version).map(problem => problem.kind)).toEqual(['path', 'headers.reserved']);
         }
     });
 

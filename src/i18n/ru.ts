@@ -1313,8 +1313,6 @@ export const ru: Record<string, string> = {
     'Trust the system CA store': 'Доверять системному хранилищу УЦ',
     'From Xray 26.10 the certificates of a server are checked against a CA bundle built into Xray. Turn this on to use the operating system\'s store instead, which is where a private or corporate CA lives.':
         'С Xray 26.10 сертификаты сервера проверяются по набору УЦ, встроенному в Xray. Включите, чтобы вместо него использовать хранилище операционной системы — там живут частные и корпоративные УЦ.',
-    'Xray 26.10 dropped this setting; {tag} ignores it, so it does nothing here.':
-        'В Xray 26.10 эту настройку убрали; {tag} её игнорирует, поэтому здесь она ни на что не влияет.',
     'Previous release': 'Предыдущий релиз',
     'WARP Generator': 'Генератор WARP',
     '{what} has {count} entries, and Xray {tag} wants exactly one server — the config will not load.':
@@ -1458,6 +1456,27 @@ export const ru: Record<string, string> = {
         'Этот ключ принимает JSON-объект, все значения которого — строки в кавычках; в конфиге остаётся последнее корректное значение.',
     'Carries traffic as files in a shared folder or on a cloud drive':
         'Передаёт трафик файлами в общей папке или на облачном диске',
+    'Xray has no outbound called "{name}": its loader stops at "unknown config id" and the config will not load.':
+        'В Xray нет outbound с именем «{name}»: загрузчик останавливается на «unknown config id», и конфиг не загрузится.',
+    'This Shadowsocks outbound has no method, and a link has to name one. Choose the method first.':
+        'У этого outbound Shadowsocks нет метода, а ссылка обязана его указать. Сначала выберите метод.',
+    'An xdns domain on Xray {tag} needs its record types: with none the config does not load ("empty types").':
+        'Домену xdns на Xray {tag} нужны типы записей: без них конфиг не загрузится («empty types»).',
+    'Record type {kind} is not one xdns can use (1 A, 5 CNAME, 16 TXT, 28 AAAA), so Xray {tag} refuses the config at load.':
+        'Тип записи {kind} xdns использовать не может (1 A, 5 CNAME, 16 TXT, 28 AAAA), поэтому Xray {tag} отвергает конфиг при загрузке.',
+    'Resolver type "{value}" is not one Xray {tag} loads: only tcp and udp ("unknown config id").':
+        'Тип резолвера «{value}» Xray {tag} не загружает: только tcp и udp («unknown config id»).',
+    'A resolver needs its settings object, such as {example}; without it Xray {tag} fails to read the config ("unexpected end of JSON input").':
+        'Резолверу нужен объект settings, например {example}; без него Xray {tag} не прочитает конфиг («unexpected end of JSON input»).',
+    'An xdns client dials every resolver when it is set up, and a resolver with no addr fails that: every connection fails.':
+        'Клиент xdns при настройке подключается к каждому резолверу, и резолвер без addr на этом падает: падает каждое соединение.',
+    'Domains the tunnel runs under, as a JSON list of objects: name, types (at least one of 1 A, 5 CNAME, 16 TXT, 28 AAAA), and optionally lenLimit, labelLimit and edns0. Both the server and the client read it.':
+        'Домены, под которыми работает туннель, — JSON-список объектов: name, types (хотя бы один из 1 A, 5 CNAME, 16 TXT, 28 AAAA) и по желанию lenLimit, labelLimit и edns0. Читают и сервер, и клиент.',
+    'Resolvers the client queries through, as a JSON list of objects: type (udp or tcp) and settings holding addr, such as 1.1.1.1:53.':
+        'Резолверы, через которые клиент делает запросы, — JSON-список объектов: type (udp или tcp) и settings с addr, например 1.1.1.1:53.',
+    'Xray 26.9.30 dropped this setting; {tag} ignores it, so it does nothing here.':
+        'В Xray 26.9.30 эту настройку убрали; {tag} её игнорирует, поэтому здесь она ни на что не влияет.',
+    'Before MASQUE and xdrive': 'До MASQUE и xdrive',
     // ── Freedom: fragment, noises and the rest of its settings ──────────────
     'Domain Strategy (legacy key)': 'Стратегия доменов (старый ключ)',
     'TLS Fragmentation': 'Фрагментация TLS',

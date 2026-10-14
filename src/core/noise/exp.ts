@@ -3,12 +3,14 @@ import type { AwgTag } from './awg-tags';
 import type { Note } from './types';
 
 /**
- * Xray's noise expressions (26.10): a noise item of type `exp` builds its
- * datagram from a string of tags, such as `<b 0xDEADBEEF><r 8><t>`, instead of
- * holding the bytes (v26.10.10:infra/conf/transport_finalmask.go:317-332).
+ * Xray's noise expressions (v26.9.30 and later): a noise item of type `exp`
+ * builds its datagram from a string of tags, such as `<b 0xDEADBEEF><r 8><t>`,
+ * instead of holding the bytes (v26.9.30:infra/conf/transport_finalmask.go:318-333,
+ * v26.10.10:infra/conf/transport_finalmask.go:317-332).
  *
  * The grammar, read off parseNoiseExp and buildNoiseSegment
- * (v26.10.10:infra/conf/transport_finalmask.go:361-441):
+ * (v26.10.10:infra/conf/transport_finalmask.go:361-441, the same text at
+ * v26.9.30:infra/conf/transport_finalmask.go:362-442):
  *
  *   tags      `<\s*([a-z]+)(?:\s+([^>]*?))?\s*>`, separated by nothing but
  *             whitespace, at least one (:361-390)

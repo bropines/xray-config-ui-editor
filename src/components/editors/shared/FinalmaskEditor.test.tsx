@@ -447,3 +447,48 @@ describe('where xdns sits on 26.10', () => {
         expect(container.querySelector('[data-testid="finalmask-udp-0"] [data-tone="warning"]')?.textContent).toContain('never uses the socket');
     });
 });
+
+describe('xdns on v26.9.30', () => {
+    beforeEach(() => {
+        onLine('26.9.30');
+    });
+
+    const xdns = (settings: any = {}) => ({ udp: [{ type: 'xdns', settings }] });
+    const wrongKind = (container: HTMLElement, key: string) => container.querySelector(`[data-wrong-type="${key}"]`);
+
+    it('draws the lists the side reads, as on 26.10', () => {
+        expect(fieldsIn(draw(xdns(), 'inbound').container, UDP0)).toEqual(['domains']);
+        cleanup();
+        expect(fieldsIn(draw(xdns(), 'outbound').container, UDP0)).toEqual(['domains', 'resolvers', 'extraPoll']);
+    });
+
+    it('shows the shape this line reads in the placeholders, and writes objects of it', () => {
+        const { container, last } = draw(xdns(), 'outbound');
+        const box = (key: string) => container.querySelector(`[data-field="${key}"] textarea`) as HTMLTextAreaElement;
+        // One `name` and the record types it needs; a resolver is {type, settings} — not 26.10's {names} and {addrs}.
+        expect(box('domains').getAttribute('placeholder')).toBe('[{"name": "t.example.com", "types": [16]}]');
+        expect(box('resolvers').getAttribute('placeholder')).toBe('[{"type": "udp", "settings": {"addr": "1.1.1.1:53"}}]');
+        fireEvent.change(box('domains'), { target: { value: '[{"name": "t.example.com", "types": [16]}]' } });
+        expect(last().udp[0].settings).toEqual({ domains: [{ name: 't.example.com', types: [16] }] });
+        fireEvent.change(box('resolvers'), { target: { value: '[{"type": "udp", "settings": {"addr": "1.1.1.1:53"}}]' } });
+        expect(last().udp[0].settings.resolvers).toEqual([{ type: 'udp', settings: { addr: '1.1.1.1:53' } }]);
+    });
+
+    it('shows a held list of strings as the wrong kind, and says what the line reads', () => {
+        const { container } = draw(xdns({ domains: ['t.example.com'], resolvers: [{ type: 'udp', settings: { addr: '1.1.1.1:53' } }] }), 'outbound');
+        expect(wrongKind(container, 'domains')!.textContent).toContain('Xray v26.9.30 reads a list of objects here');
+        expect(wrongKind(container, 'resolvers')).toBeNull();
+        expect(container.querySelector('[data-testid="finalmask-udp-0"] [data-tone="critical"]')?.textContent).toContain('"name"');
+    });
+
+    it('shows the old single domain as ignored, not refused', () => {
+        const { container } = draw(xdns({ domain: 'old.example.com', domains: [{ name: 't.example.com', types: [16] }] }), 'inbound');
+        expect(extrasIn(container)).toEqual(['domain']);
+        expect(container.textContent).toContain('ignored by Xray v26.9.30');
+    });
+
+    it('says a domain without record types stops the load', () => {
+        const { container } = draw(xdns({ domains: [{ name: 't.example.com' }], resolvers: [{ type: 'udp', settings: { addr: '1.1.1.1:53' } }] }), 'outbound');
+        expect(container.querySelector('[data-testid="finalmask-udp-0"] [data-tone="critical"]')?.textContent).toContain('empty types');
+    });
+});

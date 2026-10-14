@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.31.0] - 2026-10-15
+
+### Added
+- **Xray v26.9.30 is a supported line of its own** (Settings → General, between v26.9.9 and v26.10.10; v26.9.9 is now "Before MASQUE and xdrive" and v26.9.30 the "Previous release"). It is not a patch of 26.9 with the same surface: it already has the `masque` protocol and transport, the `xdrive` transport, the two new tun keys, the noise `exp` item, Shadowsocks 2022 on Xray's own code and no chain levels in finalmask — and it has lost WireGuard's `domainStrategy` and `remoteDNS: ["local"]` and udphop's `sockopt`. Its xdns takes objects shaped like neither neighbour's: a domain is `{name, types, …}` with its record types required, a resolver `{type, settings: {addr}}`. What it does not have is what 26.10 added on top: WARP over MASQUE (`masqueSettings.warp`, so the WARP generator's MASQUE switch stays 26.10-only), `tlsSettings.useSystemCA`, the dns and routing scripts, the DNS server `id`, and xdns's `names`/`addrs`. The forms offer on it what it reads and show what a config holds, labelled; the diagnostics judge it the same way. A stored `v26.9.x` tag from patch 30 on is read as this line, anything below stays on v26.9.9.
+
+### Fixed
+- **Some of what v26.9.30 added had been filed under 26.10.** MASQUE, xdrive, the tun keys, the noise `exp` item, the Shadowsocks 2022 name and key rules, the finalmask chain rules and WireGuard losing `domainStrategy` were read from v26.10.10 and offered, refused or ignored as 26.10-only; on v26.9.30 they are all there (or gone) too.
+- **The outbound editor refused to save a `direct` or `block` outbound**, and let `shadowsocks-2022`, `hysteria2` and the inbound-only `tun`, `tunnel` and `dokodemo-door` through. Its list of protocols is now exactly what the loader registers for an outbound, compared without case as the loader does; `shadowsocks-2022` is told it is a method of `shadowsocks`, anything else that Xray has no outbound by that name.
+- **Copy Link no longer invents a Shadowsocks cipher.** For an outbound with no method it wrote `aes-256-gcm` into the `ss://` link, which hands a client a cipher the server does not use; now there is no link, and the message says to choose the method first.
+
 ## [1.30.0] - 2026-10-14
 
 ### Added

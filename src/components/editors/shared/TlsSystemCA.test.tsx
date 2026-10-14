@@ -73,4 +73,15 @@ describe('useSystemCA', () => {
         fireEvent.click(notice!.querySelector('button')!);
         expect('useSystemCA' in (form.last().tlsSettings ?? {})).toBe(false);
     });
+
+    it('is not on v26.9.30 either: that TLSConfig has no such field', () => {
+        // v26.9.30:infra/conf/transport_security.go:300-319 ends at echSockopt.
+        onLine('26.9.30');
+        expect(draw({ serverName: 'example.com' }).text()).not.toContain(t("Trust the system CA store"));
+        cleanup();
+        const form = draw({ serverName: 'example.com', useSystemCA: true });
+        const notice = form.container.querySelector('[data-version-notice="tlsSettings.useSystemCA"]');
+        expect(notice).not.toBeNull();
+        expect(notice!.textContent).toContain('v26.9.30');
+    });
 });

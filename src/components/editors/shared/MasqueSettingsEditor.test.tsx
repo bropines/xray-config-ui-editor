@@ -166,6 +166,40 @@ describe('the transport settings of a masque server', () => {
     });
 });
 
+describe('v26.9.30, which has the transport but not WARP over it', () => {
+    it('draws the request settings and no WARP switch', () => {
+        onLine('26.9.30');
+        const form = mountSettings({ path: '/x' });
+        expect(form.$('[data-masque-settings="unknown-line"]')).toBeNull();
+        expect(form.path()).not.toBeNull();
+        expect(form.host()).not.toBeNull();
+        expect(form.$('[data-masque-warp]')).toBeNull();
+    });
+
+    it('shows a held warp block as dropped by the line, with a way out, and judges nothing inside it', () => {
+        onLine('26.9.30');
+        const form = mountSettings({ path: '/', warp: {} });
+        expect(form.$('[data-masque-warp]')).not.toBeNull();
+        expect(form.$('[data-masque-warp] input[type="checkbox"]')).toBeNull();
+        expect(form.text()).toContain('v26.9.30');
+        // A block that would be refused on 26.10 raises nothing here: the line drops it unread.
+        expect(form.text()).not.toContain('masqueSettings.warp.privateKey');
+        fireEvent.click(form.$('[data-masque-warp] button')!);
+        expect(form.current()).toEqual({ path: '/' });
+    });
+
+    it('keeps the outbound card, and takes away only the button that registers a WARP device', () => {
+        const outbound = { ...createDefaultOutbound('masque'), tag: 'm' } as any;
+        onLine('26.10');
+        expect(render(<OutboundMasque outbound={outbound} onChange={() => {}} errors={{}} />).container.textContent).toContain('Register with WARP');
+        cleanup();
+        onLine('26.9.30');
+        const card = render(<OutboundMasque outbound={outbound} onChange={() => {}} errors={{}} />);
+        expect(card.container.textContent).toContain('MASQUE Server');
+        expect(card.container.textContent).not.toContain('Register with WARP');
+    });
+});
+
 describe('a line that does not know the key', () => {
     it('says so instead of drawing fields, and removes it on request', () => {
         onLine('26.9');

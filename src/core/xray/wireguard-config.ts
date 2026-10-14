@@ -6,9 +6,10 @@
  * with a flag it sets itself (`IsClient`, v26.7.28:infra/conf/xray.go:32 and
  * :51, v26.10.10:infra/conf/xray.go:34 and :55). Build() runs for both before
  * it knows which it is building, so what it refuses — a key it cannot decode,
- * a `reserved` of the wrong length — is refused for either. (Through 26.9 it
- * also switched on `domainStrategy`; 26.10's struct has no such field,
- * v26.10.10:infra/conf/wireguard.go:59-69.) Past Build() each side builds its own device, and the
+ * a `reserved` of the wrong length — is refused for either. (Through v26.9.9
+ * it also switched on `domainStrategy`; the struct of v26.9.30 and 26.10 has no
+ * such field, v26.9.30:infra/conf/wireguard.go:59-69 and the same lines at
+ * v26.10.10.) Past Build() each side builds its own device, and the
  * two read `address` and the peers differently; those rules live with their
  * side (wireguard-inbound.ts, wireguard-outbound.ts).
  *

@@ -15,7 +15,10 @@
  *
  * Adding a core line: run inventory.ts over the new tag, have the findings
  * re-derived with the new tag's column, add the line to CORE_VERSIONS and to
- * TAG_TO_ID below, and rerun this.
+ * TAG_TO_ID below, and rerun this. A line named by a patch (26.9.30) is a line
+ * like the others here: every finding carries its own status for it and cites
+ * where that was read — the generator refuses a finding that has none, so a
+ * new column cannot default to a neighbour's by omission.
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -28,9 +31,11 @@ const TAG_TO_ID: Record<string, string> = {
     'v26.3.27': '26.3',
     'v26.7.28': '26.7',
     'v26.9.9': '26.9',
+    'v26.9.30': '26.9.30',
     'v26.10.10': '26.10',
 };
 const TAGS = Object.keys(TAG_TO_ID);
+const SPLIT_TAG = 'v26.9.30';
 
 const PRESENCE_KINDS = new Set(['field', 'alias', 'rename', 'removed-feature', 'section']);
 
@@ -124,12 +129,15 @@ for (const area of ['protocols', 'transport', 'finalmask', 'toplevel']) {
         if (!status) { skipped.push(`${area}: ${item.path} (unreadable status)`); continue; }
         if (Object.values(status).every(value => value === 'accepted')) continue;
 
-        // Two citations from the older tags, plus one from the newest: the row
-        // has to say where its newest column was read, or nobody can check it.
+        // Two citations from the older tags, one from v26.9.30 and one from
+        // the newest: the row has to say where its newest columns were read,
+        // or nobody can check them.
         const cited: string[] = item.evidence ?? [];
         const newest = `${Object.keys(TAG_TO_ID).at(-1)}:`;
+        const split = `${SPLIT_TAG}:`;
         const evidence = [
-            ...cited.filter(entry => !entry.startsWith(newest)).slice(0, 2),
+            ...cited.filter(entry => !entry.startsWith(newest) && !entry.startsWith(split)).slice(0, 2),
+            ...cited.filter(entry => entry.startsWith(split)).slice(0, 1),
             ...cited.filter(entry => entry.startsWith(newest)).slice(0, 1),
         ];
         const detail = sentence(item.detail);
@@ -184,7 +192,7 @@ const body = rows.map(row => [
     `        path: ${literal(row.path)},`,
     row.value !== undefined ? `        value: ${literal(row.value)},` : null,
     row.nonEmpty ? '        nonEmpty: true,' : null,
-    `        status: { '26.3': ${literal(row.status['26.3'])}, '26.7': ${literal(row.status['26.7'])}, '26.9': ${literal(row.status['26.9'])}, '26.10': ${literal(row.status['26.10'])} },`,
+    `        status: { '26.3': ${literal(row.status['26.3'])}, '26.7': ${literal(row.status['26.7'])}, '26.9': ${literal(row.status['26.9'])}, '26.9.30': ${literal(row.status['26.9.30'])}, '26.10': ${literal(row.status['26.10'])} },`,
     row.replacement ? `        replacement: ${literal(row.replacement)},` : null,
     `        detail: ${literal(row.detail)},`,
     `        evidence: ${literal(row.evidence)},`,

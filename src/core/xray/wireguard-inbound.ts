@@ -25,16 +25,16 @@
  *                                    (v26.7.28:proxy/wireguard/config.go:26-31,
  *                                    the same lines at v26.10.10)
  *
- * 26.10 reads the same of a server as 26.7 and 26.9 do; what changed is the
- * struct around it, which lost `domainStrategy`
- * (v26.10.10:infra/conf/wireguard.go:59-69).
+ * v26.9.30 and 26.10 read the same of a server as 26.7 and 26.9 do; what
+ * changed is the struct around it, which lost `domainStrategy`
+ * (v26.9.30:infra/conf/wireguard.go:59-69, the same at v26.10.10).
  *
- * `reserved`, `noKernelTun`, `domainStrategy` (26.3 to 26.9) and `remoteDNS`
+ * `reserved`, `noKernelTun`, `domainStrategy` (26.3 to v26.9.9) and `remoteDNS`
  * (from 26.9) are decoded for an inbound as well and used by the client alone
  * — see CLIENT_ONLY_KEYS. Build() checks `reserved` before it knows which side
  * it is building, on every line, and `domainStrategy` too on the lines that
- * have it, so those still have to be valid; on 26.10 a `domainStrategy` is
- * dropped unread on either side.
+ * have it, so those still have to be valid; on v26.9.30 and later a
+ * `domainStrategy` is dropped unread on either side.
  */
 
 import validator from 'validator';
@@ -70,18 +70,18 @@ export const WIREGUARD_DEFAULT_ADDRESSES = ['10.0.0.1', 'fd59:7153:2388:b5fd::1'
  *   reserved        bytes written into each packet by the client's bind
  *                   (v26.3.27:proxy/wireguard/client.go:129, v26.7.28:proxy/wireguard/client.go:316,
  *                   v26.10.10:proxy/wireguard/client.go:295)
- *   domainStrategy  how a peer's endpoint name is resolved, 26.3 to 26.9
- *                   (v26.7.28:proxy/wireguard/client.go:345). 26.10 has no such
- *                   field on either side (v26.10.10:infra/conf/wireguard.go:59-69):
- *                   the client looks the name up for both families
- *                   (v26.10.10:proxy/wireguard/client.go:344) and the key is
- *                   dropped. Still listed, so one a config holds is shown.
+ *   domainStrategy  how a peer's endpoint name is resolved, 26.3 to v26.9.9
+ *                   (v26.7.28:proxy/wireguard/client.go:345). v26.9.30 and 26.10
+ *                   have no such field on either side (v26.9.30:infra/conf/wireguard.go:59-69,
+ *                   the same at v26.10.10): the client looks the name up for
+ *                   both families (v26.9.30:proxy/wireguard/client.go:344) and
+ *                   the key is dropped. Still listed, so one a config holds is shown.
  *   noKernelTun     a server is on gVisor whatever this says
  *                   (v26.3.27:proxy/wireguard/config.go:34-38, v26.7.28:proxy/wireguard/server.go:98,
  *                   v26.10.10:proxy/wireguard/server.go:98); the client reads it
  *                   (v26.10.10:proxy/wireguard/client.go:116)
  *   remoteDNS       the tunnel's own resolver, from 26.9 (v26.9.9:proxy/wireguard/client.go:113,
- *                   v26.10.10:proxy/wireguard/client.go:101-108)
+ *                   v26.9.30 and v26.10.10:proxy/wireguard/client.go:101-108)
  *
  * The inbound editor does not offer them. One a config already holds is
  * shown, with what it is, and stays until someone removes it.
@@ -90,13 +90,13 @@ export const CLIENT_ONLY_KEYS = ['reserved', 'domainStrategy', 'noKernelTun', 'r
 
 /**
  * Whether a WireGuard *outbound* on this line reads the key at all — what an
- * inbound holding it should be told. `domainStrategy` left the struct in 26.10
- * (v26.10.10:infra/conf/wireguard.go:59-69) and `remoteDNS` arrived in 26.9
- * (v26.9.9:proxy/wireguard/client.go:113); on the other lines nothing reads
- * them on either side.
+ * inbound holding it should be told. `domainStrategy` left the struct in
+ * v26.9.30 (v26.9.30:infra/conf/wireguard.go:59-69, v26.9.9's has it at :68)
+ * and `remoteDNS` arrived in 26.9 (v26.9.9:proxy/wireguard/client.go:113); on
+ * the other lines nothing reads them on either side.
  */
 export const outboundReadsClientKey = (key: (typeof CLIENT_ONLY_KEYS)[number], version: CoreVersionId): boolean => {
-    if (key === 'domainStrategy') return compareCoreVersions(version, '26.10') < 0;
+    if (key === 'domainStrategy') return compareCoreVersions(version, '26.9.30') < 0;
     if (key === 'remoteDNS') return compareCoreVersions(version, '26.9') >= 0;
     return true;
 };
@@ -170,11 +170,12 @@ const keyProblem = (
  *   reserved               "should be empty or 3 bytes" (v26.3.27:infra/conf/wireguard.go:100-102,
  *                          v26.7.28:infra/conf/wireguard.go:122-124, v26.9.9:infra/conf/wireguard.go:123-125,
  *                          v26.10.10:infra/conf/wireguard.go:122-124)
- *   domainStrategy         26.3 to 26.9: "unsupported domain strategy" — a value
+ *   domainStrategy         26.3 to v26.9.9: "unsupported domain strategy" — a value
  *                          set, not a rule: `inbound.wireguard.domainStrategy` in
- *                          versions/features.inbound.ts. 26.10 has no such field
- *                          (v26.10.10:infra/conf/wireguard.go:59-69), so nothing is
- *                          checked and the key is dropped
+ *                          versions/features.inbound.ts. v26.9.30 and 26.10 have no
+ *                          such field (v26.9.30:infra/conf/wireguard.go:59-69, the
+ *                          same at v26.10.10), so nothing is checked and the key is
+ *                          dropped
  *                          (`inbound.wireguard.domainStrategy.key` in
  *                          versions/features.v2610.ts).
  *

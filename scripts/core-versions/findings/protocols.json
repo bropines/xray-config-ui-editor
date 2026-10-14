@@ -11,6 +11,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -56,6 +57,21 @@
           "hysteria",
           "tun"
         ],
+        "v26.9.30": [
+          "tunnel",
+          "dokodemo-door",
+          "http",
+          "shadowsocks",
+          "mixed",
+          "socks",
+          "vless",
+          "vmess",
+          "trojan",
+          "wireguard",
+          "hysteria",
+          "masque",
+          "tun"
+        ],
         "v26.10.10": [
           "tunnel",
           "dokodemo-door",
@@ -72,13 +88,16 @@
           "tun"
         ]
       },
-      "detail": "Inbound protocol registry is identical in v26.3.27, v26.7.28 and v26.9.9, and v26.10.10 adds masque; the name is lower-cased before lookup and any other name fails the whole config with \"unknown config id\".",
+      "detail": "Inbound protocol registry is identical in v26.3.27, v26.7.28 and v26.9.9, and v26.9.30 and v26.10.10 add masque; the name is lower-cased before lookup and any other name fails the whole config with \"unknown config id\".",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:25",
         "v26.7.28:infra/conf/xray.go:22",
         "v26.9.9:infra/conf/xray.go:23",
         "v26.3.27:infra/conf/loader.go:46",
         "v26.3.27:infra/conf/loader.go:26",
+        "v26.9.30:infra/conf/xray.go:24",
+        "v26.9.30:infra/conf/xray.go:36",
+        "v26.9.30:infra/conf/loader.go:26",
         "v26.10.10:infra/conf/xray.go:24",
         "v26.10.10:infra/conf/xray.go:36",
         "v26.10.10:infra/conf/loader.go:26"
@@ -93,6 +112,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -141,6 +161,23 @@
           "vmess",
           "trojan",
           "hysteria",
+          "dns",
+          "wireguard"
+        ],
+        "v26.9.30": [
+          "block",
+          "blackhole",
+          "loopback",
+          "direct",
+          "freedom",
+          "http",
+          "shadowsocks",
+          "socks",
+          "vless",
+          "vmess",
+          "trojan",
+          "hysteria",
+          "masque",
           "dns",
           "wireguard"
         ],
@@ -162,13 +199,16 @@
           "wireguard"
         ]
       },
-      "detail": "Outbound protocol registry is identical in v26.3.27, v26.7.28 and v26.9.9, and v26.10.10 adds masque; the name is lower-cased before lookup and any other name fails the whole config with \"unknown config id\".",
+      "detail": "Outbound protocol registry is identical in v26.3.27, v26.7.28 and v26.9.9, and v26.9.30 and v26.10.10 add masque; the name is lower-cased before lookup and any other name fails the whole config with \"unknown config id\".",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:40",
         "v26.7.28:infra/conf/xray.go:37",
         "v26.9.9:infra/conf/xray.go:38",
         "v26.9.9:infra/conf/loader.go:46",
         "v26.9.9:infra/conf/loader.go:26",
+        "v26.9.30:infra/conf/xray.go:40",
+        "v26.9.30:infra/conf/xray.go:53",
+        "v26.9.30:infra/conf/loader.go:26",
         "v26.10.10:infra/conf/xray.go:40",
         "v26.10.10:infra/conf/xray.go:53",
         "v26.10.10:infra/conf/loader.go:26"
@@ -183,9 +223,10 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
-      "detail": "\"masque\" is registered as an inbound and an outbound protocol only from v26.10.10 (and v26.9.30, which is not a supported tag); in the three earlier tags a masque outbound fails to load with \"unknown config id: masque\".",
+      "detail": "\"masque\" is registered as an inbound and an outbound protocol from v26.9.30; in the three earlier tags a masque outbound fails to load with \"unknown config id: masque\".",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:40",
         "v26.7.28:infra/conf/xray.go:37",
@@ -193,6 +234,8 @@
         "v26.3.27:infra/conf/loader.go:26",
         "v26.7.28:infra/conf/loader.go:26",
         "v26.9.9:infra/conf/loader.go:26",
+        "v26.9.30:infra/conf/xray.go:53",
+        "v26.9.30:infra/conf/loader.go:26",
         "v26.10.10:infra/conf/xray.go:53",
         "v26.10.10:infra/conf/loader.go:26"
       ]
@@ -206,6 +249,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "\"tunnel\" and \"dokodemo-door\" share DokodemoConfig, and \"mixed\" and \"socks\" share SocksServerConfig, so each pair accepts identical settings in every tag.",
@@ -214,6 +258,8 @@
         "v26.3.27:infra/conf/xray.go:30",
         "v26.9.9:infra/conf/xray.go:24",
         "v26.9.9:infra/conf/xray.go:28",
+        "v26.9.30:infra/conf/xray.go:25",
+        "v26.9.30:infra/conf/xray.go:29",
         "v26.10.10:infra/conf/xray.go:25",
         "v26.10.10:infra/conf/xray.go:29"
       ]
@@ -227,6 +273,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "\"block\"/\"blackhole\" and \"direct\"/\"freedom\" are pairs of names for the same settings struct in every tag.",
@@ -235,6 +282,8 @@
         "v26.3.27:infra/conf/xray.go:44",
         "v26.9.9:infra/conf/xray.go:39",
         "v26.9.9:infra/conf/xray.go:42",
+        "v26.9.30:infra/conf/xray.go:41",
+        "v26.9.30:infra/conf/xray.go:44",
         "v26.10.10:infra/conf/xray.go:41",
         "v26.10.10:infra/conf/xray.go:44"
       ]
@@ -248,6 +297,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "A missing \"settings\" is decoded as {} in every tag, so it only fails when the protocol has a required field (vless decryption/encryption, hysteria version, wireguard secretKey, trojan/ss/vmess/vless server, etc.).",
@@ -255,6 +305,7 @@
         "v26.3.27:infra/conf/xray.go:190",
         "v26.7.28:infra/conf/xray.go:190",
         "v26.9.9:infra/conf/xray.go:191",
+        "v26.9.30:infra/conf/xray.go:194",
         "v26.10.10:infra/conf/xray.go:194"
       ]
     },
@@ -267,6 +318,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Settings are decoded with encoding/json, which matches keys case-insensitively, so e.g. \"MTU\"/\"mtu\" or \"Clients\"/\"clients\" all bind the same field; only spelling differences (not case) make a key unknown and silently ignored.",
@@ -274,6 +326,7 @@
         "v26.3.27:infra/conf/loader.go:51",
         "v26.7.28:infra/conf/loader.go:51",
         "v26.9.9:infra/conf/loader.go:51",
+        "v26.9.30:infra/conf/loader.go:51",
         "v26.10.10:infra/conf/loader.go:51"
       ]
     },
@@ -286,6 +339,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "A missing \"settings\" is decoded as {} in every tag, so it only fails when the protocol has a required field (vless decryption/encryption, hysteria version, wireguard secretKey, trojan/ss/vmess/vless server, etc.).",
@@ -293,6 +347,7 @@
         "v26.3.27:infra/conf/xray.go:319",
         "v26.7.28:infra/conf/xray.go:353",
         "v26.9.9:infra/conf/xray.go:325",
+        "v26.9.30:infra/conf/xray.go:331",
         "v26.10.10:infra/conf/xray.go:331"
       ]
     },
@@ -305,6 +360,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Settings are decoded with encoding/json, which matches keys case-insensitively, so e.g. \"MTU\"/\"mtu\" or \"Clients\"/\"clients\" all bind the same field; only spelling differences (not case) make a key unknown and silently ignored.",
@@ -312,6 +368,7 @@
         "v26.3.27:infra/conf/loader.go:51",
         "v26.7.28:infra/conf/loader.go:51",
         "v26.9.9:infra/conf/loader.go:51",
+        "v26.9.30:infra/conf/loader.go:51",
         "v26.10.10:infra/conf/loader.go:51"
       ]
     },
@@ -324,6 +381,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Before v26.9.9 the response object is parsed by a sub-loader keyed on \"type\" (other keys ignored); v26.9.9 decodes it into a typed struct {type, customResponseData}.",
@@ -331,6 +389,7 @@
         "v26.3.27:infra/conf/blackhole.go:25",
         "v26.7.28:infra/conf/blackhole.go:31",
         "v26.9.9:infra/conf/blackhole.go:18",
+        "v26.9.30:infra/conf/blackhole.go:18",
         "v26.10.10:infra/conf/blackhole.go:18"
       ]
     },
@@ -343,6 +402,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -355,6 +415,11 @@
           "http"
         ],
         "v26.9.9": [
+          "none",
+          "http",
+          "custom"
+        ],
+        "v26.9.30": [
           "none",
           "http",
           "custom"
@@ -372,6 +437,8 @@
         "v26.7.28:infra/conf/blackhole.go:48",
         "v26.9.9:infra/conf/blackhole.go:30",
         "v26.9.9:infra/conf/blackhole.go:37",
+        "v26.9.30:infra/conf/blackhole.go:30",
+        "v26.9.30:infra/conf/blackhole.go:37",
         "v26.10.10:infra/conf/blackhole.go:30",
         "v26.10.10:infra/conf/blackhole.go:37"
       ]
@@ -385,6 +452,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "A response object without \"type\" (e.g. {}) fails with \"type not found in JSON context\" in v26.3.27/v26.7.28, but is treated as \"none\" in v26.9.9.",
@@ -392,6 +460,7 @@
         "v26.3.27:infra/conf/loader.go:64",
         "v26.7.28:infra/conf/loader.go:64",
         "v26.9.9:infra/conf/blackhole.go:26",
+        "v26.9.30:infra/conf/blackhole.go:26",
         "v26.10.10:infra/conf/blackhole.go:26"
       ]
     },
@@ -404,6 +473,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "absent",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Only read when type is \"custom\"; must be standard (padded) base64, and a decode failure fails the config.",
@@ -411,6 +481,9 @@
         "v26.9.9:infra/conf/blackhole.go:14",
         "v26.9.9:infra/conf/blackhole.go:31",
         "v26.9.9:infra/conf/blackhole.go:33",
+        "v26.9.30:infra/conf/blackhole.go:14",
+        "v26.9.30:infra/conf/blackhole.go:31",
+        "v26.9.30:infra/conf/blackhole.go:33",
         "v26.10.10:infra/conf/blackhole.go:14",
         "v26.10.10:infra/conf/blackhole.go:31",
         "v26.10.10:infra/conf/blackhole.go:33"
@@ -425,6 +498,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Same shape as inbound sniffing (enabled, destOverride, domainsExcluded, ipsExcluded, metadataOnly, routeOnly); an invalid destOverride or unparsable domain/IP rule fails the config.",
@@ -432,6 +506,7 @@
         "v26.7.28:infra/conf/loopback.go:11",
         "v26.7.28:infra/conf/loopback.go:19",
         "v26.9.9:infra/conf/loopback.go:11",
+        "v26.9.30:infra/conf/loopback.go:11",
         "v26.10.10:infra/conf/loopback.go:11"
       ]
     },
@@ -444,6 +519,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -458,6 +534,15 @@
           "fakedns+others"
         ],
         "v26.9.9": [
+          "http",
+          "tls",
+          "https",
+          "ssl",
+          "quic",
+          "fakedns",
+          "fakedns+others"
+        ],
+        "v26.9.30": [
           "http",
           "tls",
           "https",
@@ -481,6 +566,7 @@
         "v26.7.28:infra/conf/xray.go:71",
         "v26.7.28:infra/conf/xray.go:78",
         "v26.9.9:infra/conf/xray.go:79",
+        "v26.9.30:infra/conf/xray.go:82",
         "v26.10.10:infra/conf/xray.go:82"
       ]
     },
@@ -493,6 +579,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Ordered list of {action, qType, domain, rCode}; first match wins, and with no match A/AAAA are hijacked and everything else gets an empty reply.",
@@ -500,6 +587,7 @@
         "v26.7.28:infra/conf/dns_proxy.go:68",
         "v26.9.9:infra/conf/dns_proxy.go:68",
         "v26.7.28:proxy/dns/dns.go:141",
+        "v26.9.30:infra/conf/dns_proxy.go:68",
         "v26.10.10:infra/conf/dns_proxy.go:68"
       ]
     },
@@ -512,6 +600,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -523,6 +612,12 @@
           "hijack"
         ],
         "v26.9.9": [
+          "direct",
+          "drop",
+          "return",
+          "hijack"
+        ],
+        "v26.9.30": [
           "direct",
           "drop",
           "return",
@@ -540,6 +635,7 @@
         "v26.7.28:infra/conf/dns_proxy.go:30",
         "v26.7.28:infra/conf/dns_proxy.go:33",
         "v26.9.9:infra/conf/dns_proxy.go:33",
+        "v26.9.30:infra/conf/dns_proxy.go:33",
         "v26.10.10:infra/conf/dns_proxy.go:33"
       ]
     },
@@ -552,12 +648,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "rCode above 65535 fails the config; it is only meaningful with action \"return\".",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:53",
         "v26.9.9:infra/conf/dns_proxy.go:53",
+        "v26.9.30:infra/conf/dns_proxy.go:53",
         "v26.10.10:infra/conf/dns_proxy.go:53"
       ]
     },
@@ -570,12 +668,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Parsed as a port-list (number, \"1,28\" or \"1-5\" ranges expanded); an unparsable value fails JSON decoding.",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:15",
         "v26.9.9:infra/conf/dns_proxy.go:15",
+        "v26.9.30:infra/conf/dns_proxy.go:15",
         "v26.10.10:infra/conf/dns_proxy.go:15"
       ]
     },
@@ -588,12 +688,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Parsed with the routing domain-rule syntax where a bare string is a substring match; an invalid rule (e.g. bad regexp, missing geosite) fails the config.",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:45",
         "v26.9.9:infra/conf/dns_proxy.go:45",
+        "v26.9.30:infra/conf/dns_proxy.go:45",
         "v26.10.10:infra/conf/dns_proxy.go:45"
       ]
     },
@@ -606,6 +708,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "deprecated",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "detail": "From v26.7.28 its presence logs a deprecation warning and it is translated into equivalent \"rules\" (blockTypes rule, hijack A/AAAA, then a catch-all per mode).",
@@ -614,6 +717,7 @@
         "v26.7.28:infra/conf/dns_proxy.go:99",
         "v26.9.9:infra/conf/dns_proxy.go:99",
         "v26.7.28:infra/conf/dns_proxy.go:120",
+        "v26.9.30:infra/conf/dns_proxy.go:99",
         "v26.10.10:infra/conf/dns_proxy.go:99"
       ]
     },
@@ -626,6 +730,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "deprecated",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "values": {
@@ -640,6 +745,11 @@
           "skip"
         ],
         "v26.9.9": [
+          "reject",
+          "drop",
+          "skip"
+        ],
+        "v26.9.30": [
           "reject",
           "drop",
           "skip"
@@ -656,6 +766,7 @@
         "v26.3.27:infra/conf/dns_proxy.go:33",
         "v26.7.28:infra/conf/dns_proxy.go:130",
         "v26.9.9:infra/conf/dns_proxy.go:130",
+        "v26.9.30:infra/conf/dns_proxy.go:130",
         "v26.10.10:infra/conf/dns_proxy.go:130"
       ]
     },
@@ -668,6 +779,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "deprecated",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "detail": "Deprecated in favour of \"rules\" from v26.7.28, where each entry must also be 0..65535 or the config fails (v26.3.27 had no range check).",
@@ -675,6 +787,7 @@
         "v26.3.27:infra/conf/dns_proxy.go:16",
         "v26.7.28:infra/conf/dns_proxy.go:141",
         "v26.9.9:infra/conf/dns_proxy.go:141",
+        "v26.9.30:infra/conf/dns_proxy.go:141",
         "v26.10.10:infra/conf/dns_proxy.go:141"
       ]
     },
@@ -687,12 +800,14 @@
         "v26.3.27": "accepted",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28, nonIPQuery or blockTypes together with any \"rules\" key (even an empty array) fails the config; v26.3.27 simply ignores \"rules\".",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:97",
         "v26.9.9:infra/conf/dns_proxy.go:97",
+        "v26.9.30:infra/conf/dns_proxy.go:97",
         "v26.10.10:infra/conf/dns_proxy.go:97"
       ]
     },
@@ -705,6 +820,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Default non-A/AAAA handling changed: v26.3.27 answers REFUSED (nonIPQuery defaults to reject), while from v26.7.28 a config with neither rules nor legacy keys returns an empty NOERROR reply.",
@@ -712,6 +828,7 @@
         "v26.3.27:proxy/dns/dns.go:70",
         "v26.7.28:proxy/dns/dns.go:151",
         "v26.9.9:proxy/dns/dns.go:151",
+        "v26.9.30:proxy/dns/dns.go:151",
         "v26.10.10:proxy/dns/dns.go:151"
       ]
     },
@@ -724,12 +841,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New name for \"network\" from v26.7.28; v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:61",
         "v26.9.9:infra/conf/dns_proxy.go:61",
+        "v26.9.30:infra/conf/dns_proxy.go:61",
         "v26.10.10:infra/conf/dns_proxy.go:61"
       ]
     },
@@ -742,12 +861,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New name for \"address\" from v26.7.28; v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:62",
         "v26.9.9:infra/conf/dns_proxy.go:62",
+        "v26.9.30:infra/conf/dns_proxy.go:62",
         "v26.10.10:infra/conf/dns_proxy.go:62"
       ]
     },
@@ -760,12 +881,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New name for \"port\" from v26.7.28; v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/dns_proxy.go:63",
         "v26.9.9:infra/conf/dns_proxy.go:63",
+        "v26.9.30:infra/conf/dns_proxy.go:63",
         "v26.10.10:infra/conf/dns_proxy.go:63"
       ]
     },
@@ -778,6 +901,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "From v26.7.28 network/address/port are legacy aliases of rewriteNetwork/rewriteAddress/rewritePort and win whenever set (non-empty / non-zero); they are the only spelling v26.3.27 understands.",
@@ -786,6 +910,7 @@
         "v26.7.28:infra/conf/dns_proxy.go:75",
         "v26.7.28:infra/conf/dns_proxy.go:78",
         "v26.9.9:infra/conf/dns_proxy.go:81",
+        "v26.9.30:infra/conf/dns_proxy.go:81",
         "v26.10.10:infra/conf/dns_proxy.go:81"
       ]
     },
@@ -798,12 +923,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New name for \"network\" from v26.7.28 (also for protocol \"tunnel\"); v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/dokodemo.go:11",
         "v26.9.9:infra/conf/dokodemo.go:11",
+        "v26.9.30:infra/conf/dokodemo.go:11",
         "v26.10.10:infra/conf/dokodemo.go:11"
       ]
     },
@@ -816,12 +943,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New name for \"address\" from v26.7.28 (also for protocol \"tunnel\"); v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/dokodemo.go:12",
         "v26.9.9:infra/conf/dokodemo.go:12",
+        "v26.9.30:infra/conf/dokodemo.go:12",
         "v26.10.10:infra/conf/dokodemo.go:12"
       ]
     },
@@ -834,12 +963,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New name for \"port\" from v26.7.28 (also for protocol \"tunnel\"); v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/dokodemo.go:13",
         "v26.9.9:infra/conf/dokodemo.go:13",
+        "v26.9.30:infra/conf/dokodemo.go:13",
         "v26.10.10:infra/conf/dokodemo.go:13"
       ]
     },
@@ -852,6 +983,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "From v26.7.28 network/address/port are legacy aliases of allowedNetwork/rewriteAddress/rewritePort and win whenever set; only they work on v26.3.27.",
@@ -859,6 +991,7 @@
         "v26.3.27:infra/conf/dokodemo.go:14",
         "v26.7.28:infra/conf/dokodemo.go:24",
         "v26.9.9:infra/conf/dokodemo.go:27",
+        "v26.9.30:infra/conf/dokodemo.go:27",
         "v26.10.10:infra/conf/dokodemo.go:27"
       ]
     },
@@ -871,6 +1004,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Every portMap value must be \"host:port\" (host may be empty, e.g. \":80\"); anything else fails the config with \"invalid portMap\".",
@@ -878,6 +1012,7 @@
         "v26.3.27:infra/conf/dokodemo.go:28",
         "v26.7.28:infra/conf/dokodemo.go:41",
         "v26.9.9:infra/conf/dokodemo.go:41",
+        "v26.9.30:infra/conf/dokodemo.go:41",
         "v26.10.10:infra/conf/dokodemo.go:41"
       ]
     },
@@ -890,6 +1025,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "When omitted only TCP is accepted; names other than tcp/udp/unix are not an error but become \"unknown\" and match nothing.",
@@ -898,6 +1034,7 @@
         "v26.7.28:infra/conf/common.go:112",
         "v26.9.9:infra/conf/common.go:115",
         "v26.3.27:infra/conf/common.go:81",
+        "v26.9.30:infra/conf/common.go:115",
         "v26.10.10:infra/conf/common.go:115"
       ]
     },
@@ -910,6 +1047,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "detail": "In v26.9.9 the freedom proxy no longer reads it: Build logs a deprecation warning and copies it into streamSettings.sockopt.domainStrategy, overwriting any sockopt.domainStrategy you set (and it is dropped if the outbound-level targetStrategy is non-AsIs).",
@@ -918,6 +1056,9 @@
         "v26.9.9:infra/conf/xray.go:353",
         "v26.9.9:infra/conf/xray.go:362",
         "v26.9.9:proxy/freedom/freedom.go:57",
+        "v26.9.30:infra/conf/xray.go:367",
+        "v26.9.30:infra/conf/xray.go:376",
+        "v26.9.30:proxy/freedom/freedom.go:57",
         "v26.10.10:infra/conf/xray.go:367",
         "v26.10.10:infra/conf/xray.go:376",
         "v26.10.10:proxy/freedom/freedom.go:57"
@@ -932,6 +1073,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "detail": "settings.targetStrategy is an alias of settings.domainStrategy and wins when non-empty; in v26.9.9 both are deprecated together.",
@@ -939,6 +1081,7 @@
         "v26.3.27:infra/conf/freedom.go:46",
         "v26.7.28:infra/conf/freedom.go:63",
         "v26.9.9:infra/conf/freedom.go:63",
+        "v26.9.30:infra/conf/freedom.go:63",
         "v26.10.10:infra/conf/freedom.go:63"
       ]
     },
@@ -951,6 +1094,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "values": {
@@ -981,6 +1125,19 @@
           "forceipv6v4"
         ],
         "v26.9.9": [
+          "asis",
+          "useip",
+          "useipv4",
+          "useipv6",
+          "useipv4v6",
+          "useipv6v4",
+          "forceip",
+          "forceipv4",
+          "forceipv6",
+          "forceipv4v6",
+          "forceipv6v4"
+        ],
+        "v26.9.30": [
           "asis",
           "useip",
           "useipv4",
@@ -1013,6 +1170,7 @@
         "v26.7.28:infra/conf/freedom.go:87",
         "v26.9.9:infra/conf/freedom.go:87",
         "v26.3.27:infra/conf/freedom.go:73",
+        "v26.9.30:infra/conf/freedom.go:87",
         "v26.10.10:infra/conf/freedom.go:87"
       ]
     },
@@ -1025,12 +1183,15 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "detail": "In v26.9.9 an outbound-level targetStrategy on a freedom outbound is moved to sockopt.domainStrategy with a warning and takes precedence over settings.domainStrategy.",
       "evidence": [
         "v26.9.9:infra/conf/xray.go:350",
         "v26.9.9:infra/conf/xray.go:351",
+        "v26.9.30:infra/conf/xray.go:364",
+        "v26.9.30:infra/conf/xray.go:365",
         "v26.10.10:infra/conf/xray.go:364",
         "v26.10.10:infra/conf/xray.go:365"
       ]
@@ -1044,6 +1205,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "v26.9.9 fails a freedom outbound whose sockopt.addressPortStrategy is anything but none/empty.",
@@ -1051,6 +1213,7 @@
         "v26.3.27:infra/conf/transport_internet.go:1077",
         "v26.7.28:infra/conf/transport_sockopt.go:63",
         "v26.9.9:infra/conf/xray.go:345",
+        "v26.9.30:infra/conf/xray.go:359",
         "v26.10.10:infra/conf/xray.go:359"
       ]
     },
@@ -1063,6 +1226,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "The singular \"noise\" object fails the config in every tag; use the \"noises\" array.",
@@ -1070,6 +1234,7 @@
         "v26.3.27:infra/conf/freedom.go:129",
         "v26.7.28:infra/conf/freedom.go:146",
         "v26.9.9:infra/conf/freedom.go:146",
+        "v26.9.30:infra/conf/freedom.go:146",
         "v26.10.10:infra/conf/freedom.go:146"
       ]
     },
@@ -1082,6 +1247,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1098,6 +1264,12 @@
           "<from>-<to>"
         ],
         "v26.9.9": [
+          "tlshello",
+          "",
+          "<from>",
+          "<from>-<to>"
+        ],
+        "v26.9.30": [
           "tlshello",
           "",
           "<from>",
@@ -1116,6 +1288,7 @@
         "v26.7.28:infra/conf/freedom.go:97",
         "v26.9.9:infra/conf/freedom.go:97",
         "v26.3.27:infra/conf/freedom.go:97",
+        "v26.9.30:infra/conf/freedom.go:97",
         "v26.10.10:infra/conf/freedom.go:97"
       ]
     },
@@ -1128,6 +1301,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "When fragment is present, length is required and its minimum must be at least 1, otherwise the config fails.",
@@ -1136,6 +1310,7 @@
         "v26.7.28:infra/conf/freedom.go:120",
         "v26.9.9:infra/conf/freedom.go:120",
         "v26.3.27:infra/conf/freedom.go:108",
+        "v26.9.30:infra/conf/freedom.go:120",
         "v26.10.10:infra/conf/freedom.go:120"
       ]
     },
@@ -1148,6 +1323,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "When fragment is present, interval is required (0 is allowed), otherwise the config fails.",
@@ -1155,6 +1331,7 @@
         "v26.3.27:infra/conf/freedom.go:114",
         "v26.7.28:infra/conf/freedom.go:131",
         "v26.9.9:infra/conf/freedom.go:131",
+        "v26.9.30:infra/conf/freedom.go:131",
         "v26.10.10:infra/conf/freedom.go:131"
       ]
     },
@@ -1167,6 +1344,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1183,6 +1361,12 @@
           "base64"
         ],
         "v26.9.9": [
+          "rand",
+          "str",
+          "hex",
+          "base64"
+        ],
+        "v26.9.30": [
           "rand",
           "str",
           "hex",
@@ -1201,6 +1385,7 @@
         "v26.7.28:infra/conf/freedom.go:201",
         "v26.9.9:infra/conf/freedom.go:201",
         "v26.3.27:infra/conf/freedom.go:204",
+        "v26.9.30:infra/conf/freedom.go:201",
         "v26.10.10:infra/conf/freedom.go:201"
       ]
     },
@@ -1213,6 +1398,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "For rand it must be an integer range with minimum at least 1; for hex it must decode as hex; for base64 it accepts std or URL alphabet with optional padding; a bad value fails the config.",
@@ -1220,6 +1406,7 @@
         "v26.3.27:infra/conf/freedom.go:182",
         "v26.3.27:infra/conf/freedom.go:193",
         "v26.9.9:infra/conf/freedom.go:228",
+        "v26.9.30:infra/conf/freedom.go:228",
         "v26.10.10:infra/conf/freedom.go:228"
       ]
     },
@@ -1232,6 +1419,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1250,6 +1438,13 @@
           "ipv6"
         ],
         "v26.9.9": [
+          "",
+          "ip",
+          "all",
+          "ipv4",
+          "ipv6"
+        ],
+        "v26.9.30": [
           "",
           "ip",
           "all",
@@ -1270,6 +1465,8 @@
         "v26.7.28:infra/conf/freedom.go:240",
         "v26.9.9:infra/conf/freedom.go:240",
         "v26.9.9:infra/conf/freedom.go:247",
+        "v26.9.30:infra/conf/freedom.go:240",
+        "v26.9.30:infra/conf/freedom.go:247",
         "v26.10.10:infra/conf/freedom.go:240",
         "v26.10.10:infra/conf/freedom.go:247"
       ]
@@ -1283,6 +1480,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Must be \"host:port\" (host may be empty) with a valid port, otherwise the config fails.",
@@ -1291,6 +1489,8 @@
         "v26.7.28:infra/conf/freedom.go:164",
         "v26.9.9:infra/conf/freedom.go:164",
         "v26.9.9:infra/conf/freedom.go:168",
+        "v26.9.30:infra/conf/freedom.go:164",
+        "v26.9.30:infra/conf/freedom.go:168",
         "v26.10.10:infra/conf/freedom.go:164",
         "v26.10.10:infra/conf/freedom.go:168"
       ]
@@ -1304,6 +1504,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1318,6 +1519,11 @@
           2
         ],
         "v26.9.9": [
+          0,
+          1,
+          2
+        ],
+        "v26.9.30": [
           0,
           1,
           2
@@ -1333,6 +1539,7 @@
         "v26.3.27:infra/conf/freedom.go:162",
         "v26.7.28:infra/conf/freedom.go:181",
         "v26.9.9:infra/conf/freedom.go:181",
+        "v26.9.30:infra/conf/freedom.go:181",
         "v26.10.10:infra/conf/freedom.go:181"
       ]
     },
@@ -1345,12 +1552,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "deprecated",
         "v26.9.9": "deprecated",
+        "v26.9.30": "deprecated",
         "v26.10.10": "deprecated"
       },
       "detail": "From v26.7.28 it only logs \"has been removed and migrated to finalRules\"; the value is not migrated and has no effect, and the config still loads.",
       "evidence": [
         "v26.7.28:infra/conf/freedom.go:58",
         "v26.9.9:infra/conf/freedom.go:58",
+        "v26.9.30:infra/conf/freedom.go:58",
         "v26.10.10:infra/conf/freedom.go:58"
       ]
     },
@@ -1363,6 +1572,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "First matching rule wins; after user rules an implicit rule blocks private IPs when the inbound is vless/vmess/trojan/hysteria/wireguard/shadowsocks (block-all for VLESS reverse). v26.9.9 ignores finalRules, with a warning, when sockopt.dialerProxy is set.",
@@ -1371,6 +1581,8 @@
         "v26.7.28:proxy/freedom/freedom.go:161",
         "v26.9.9:proxy/freedom/freedom.go:167",
         "v26.9.9:proxy/freedom/freedom.go:195",
+        "v26.9.30:proxy/freedom/freedom.go:167",
+        "v26.9.30:proxy/freedom/freedom.go:195",
         "v26.10.10:proxy/freedom/freedom.go:167",
         "v26.10.10:proxy/freedom/freedom.go:195"
       ]
@@ -1384,6 +1596,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1393,6 +1606,10 @@
           "block"
         ],
         "v26.9.9": [
+          "allow",
+          "block"
+        ],
+        "v26.9.30": [
           "allow",
           "block"
         ],
@@ -1406,6 +1623,7 @@
         "v26.7.28:infra/conf/freedom.go:256",
         "v26.7.28:infra/conf/freedom.go:261",
         "v26.9.9:infra/conf/freedom.go:261",
+        "v26.9.30:infra/conf/freedom.go:261",
         "v26.10.10:infra/conf/freedom.go:261"
       ]
     },
@@ -1418,12 +1636,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Parsed with the routing IP-rule syntax (CIDR, geoip:...); an unparsable entry fails the config. network/port use the usual network-list and port-list forms.",
       "evidence": [
         "v26.7.28:infra/conf/freedom.go:273",
         "v26.9.9:infra/conf/freedom.go:273",
+        "v26.9.30:infra/conf/freedom.go:273",
         "v26.10.10:infra/conf/freedom.go:273"
       ]
     },
@@ -1436,12 +1656,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Integer or \"min-max\" range applied before closing a blocked connection.",
       "evidence": [
         "v26.7.28:infra/conf/freedom.go:51",
         "v26.9.9:infra/conf/freedom.go:281",
+        "v26.9.30:infra/conf/freedom.go:281",
         "v26.10.10:infra/conf/freedom.go:281"
       ]
     },
@@ -1454,12 +1676,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"accounts\" ({user, pass} items); v26.3.27 silently ignores it, leaving the inbound without authentication.",
       "evidence": [
         "v26.7.28:infra/conf/http.go:26",
         "v26.9.9:infra/conf/http.go:26",
+        "v26.9.30:infra/conf/http.go:26",
         "v26.10.10:infra/conf/http.go:26"
       ]
     },
@@ -1472,6 +1696,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "From v26.7.28 \"accounts\" wins over \"users\" whenever the key is present, even as an empty array.",
@@ -1479,6 +1704,7 @@
         "v26.3.27:infra/conf/http.go:26",
         "v26.7.28:infra/conf/http.go:38",
         "v26.9.9:infra/conf/http.go:38",
+        "v26.9.30:infra/conf/http.go:38",
         "v26.10.10:infra/conf/http.go:38"
       ]
     },
@@ -1491,6 +1717,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Flat form (address, port, user, pass, level, email) replaces \"servers\" whenever address is set; otherwise servers[] is used.",
@@ -1498,6 +1725,7 @@
         "v26.3.27:infra/conf/http.go:67",
         "v26.7.28:infra/conf/http.go:72",
         "v26.9.9:infra/conf/http.go:72",
+        "v26.9.30:infra/conf/http.go:72",
         "v26.10.10:infra/conf/http.go:72"
       ]
     },
@@ -1510,6 +1738,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "servers must have exactly one entry and that entry at most one user, otherwise the config fails.",
@@ -1518,6 +1747,7 @@
         "v26.7.28:infra/conf/http.go:83",
         "v26.9.9:infra/conf/http.go:83",
         "v26.3.27:infra/conf/http.go:82",
+        "v26.9.30:infra/conf/http.go:83",
         "v26.10.10:infra/conf/http.go:83"
       ]
     },
@@ -1530,6 +1760,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "A server without address dereferences a nil pointer and crashes the core in v26.3.27/v26.7.28; v26.9.9 builds it with no address, so treat address as required everywhere.",
@@ -1537,6 +1768,7 @@
         "v26.3.27:infra/conf/http.go:85",
         "v26.3.27:infra/conf/common.go:67",
         "v26.9.9:infra/conf/common.go:68",
+        "v26.9.30:infra/conf/common.go:68",
         "v26.10.10:infra/conf/common.go:68"
       ]
     },
@@ -1549,6 +1781,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1561,6 +1794,10 @@
           "password"
         ],
         "v26.9.9": [
+          "noauth",
+          "password"
+        ],
+        "v26.9.30": [
           "noauth",
           "password"
         ],
@@ -1575,6 +1812,7 @@
         "v26.7.28:infra/conf/socks.go:27",
         "v26.9.9:infra/conf/socks.go:27",
         "v26.3.27:infra/conf/socks.go:46",
+        "v26.9.30:infra/conf/socks.go:27",
         "v26.10.10:infra/conf/socks.go:27"
       ]
     },
@@ -1587,12 +1825,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"accounts\" (also for \"mixed\"); v26.3.27 silently ignores it.",
       "evidence": [
         "v26.7.28:infra/conf/socks.go:32",
         "v26.9.9:infra/conf/socks.go:32",
+        "v26.9.30:infra/conf/socks.go:32",
         "v26.10.10:infra/conf/socks.go:32"
       ]
     },
@@ -1605,6 +1845,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "From v26.7.28 \"accounts\" wins over \"users\" whenever the key is present, even as an empty array.",
@@ -1612,6 +1853,7 @@
         "v26.3.27:infra/conf/socks.go:32",
         "v26.7.28:infra/conf/socks.go:51",
         "v26.9.9:infra/conf/socks.go:51",
+        "v26.9.30:infra/conf/socks.go:50",
         "v26.10.10:infra/conf/socks.go:50"
       ]
     },
@@ -1624,6 +1866,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Flat form (address, port, user, pass, level, email) replaces \"servers\" whenever address is set.",
@@ -1631,6 +1874,7 @@
         "v26.3.27:infra/conf/socks.go:85",
         "v26.7.28:infra/conf/socks.go:90",
         "v26.9.9:infra/conf/socks.go:90",
+        "v26.9.30:infra/conf/socks.go:89",
         "v26.10.10:infra/conf/socks.go:89"
       ]
     },
@@ -1643,6 +1887,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "servers must have exactly one entry and that entry at most one user, otherwise the config fails.",
@@ -1651,6 +1896,7 @@
         "v26.7.28:infra/conf/socks.go:101",
         "v26.9.9:infra/conf/socks.go:101",
         "v26.3.27:infra/conf/socks.go:100",
+        "v26.9.30:infra/conf/socks.go:100",
         "v26.10.10:infra/conf/socks.go:100"
       ]
     },
@@ -1663,6 +1909,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "A server without address crashes the core (nil pointer) in v26.3.27/v26.7.28 and builds an address-less endpoint in v26.9.9; treat it as required.",
@@ -1670,6 +1917,7 @@
         "v26.3.27:infra/conf/socks.go:103",
         "v26.3.27:infra/conf/common.go:67",
         "v26.9.9:infra/conf/common.go:68",
+        "v26.9.30:infra/conf/common.go:68",
         "v26.10.10:infra/conf/common.go:68"
       ]
     },
@@ -1682,6 +1930,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "v26.3.27 decodes but never checks it; from v26.7.28 anything but 2 (including a missing key) fails the config with \"version != 2\".",
@@ -1689,6 +1938,7 @@
         "v26.3.27:infra/conf/hysteria.go:40",
         "v26.7.28:infra/conf/hysteria.go:46",
         "v26.9.9:infra/conf/hysteria.go:46",
+        "v26.9.30:infra/conf/hysteria.go:46",
         "v26.10.10:infra/conf/hysteria.go:46"
       ]
     },
@@ -1701,6 +1951,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Must be 2 in every tag; a missing or other value fails the config.",
@@ -1708,6 +1959,7 @@
         "v26.3.27:infra/conf/hysteria.go:19",
         "v26.7.28:infra/conf/hysteria.go:20",
         "v26.9.9:infra/conf/hysteria.go:20",
+        "v26.9.30:infra/conf/hysteria.go:20",
         "v26.10.10:infra/conf/hysteria.go:20"
       ]
     },
@@ -1720,6 +1972,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Missing address dereferences a nil pointer (core crash) in v26.3.27/v26.7.28; v26.9.9 builds an address-less endpoint. Treat as required.",
@@ -1727,6 +1980,7 @@
         "v26.3.27:infra/conf/hysteria.go:26",
         "v26.3.27:infra/conf/common.go:67",
         "v26.9.9:infra/conf/common.go:68",
+        "v26.9.30:infra/conf/common.go:68",
         "v26.10.10:infra/conf/common.go:68"
       ]
     },
@@ -1739,6 +1993,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"clients\" ({auth, level, email}); v26.3.27 silently ignores it, and from v26.7.28 \"clients\" wins whenever present, even empty.",
@@ -1747,6 +2002,7 @@
         "v26.7.28:infra/conf/hysteria.go:41",
         "v26.7.28:infra/conf/hysteria.go:52",
         "v26.9.9:infra/conf/hysteria.go:52",
+        "v26.9.30:infra/conf/hysteria.go:52",
         "v26.10.10:infra/conf/hysteria.go:52"
       ]
     },
@@ -1759,6 +2015,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1809,6 +2066,21 @@
           "2022-blake3-aes-256-gcm",
           "2022-blake3-chacha20-poly1305"
         ],
+        "v26.9.30": [
+          "aes-128-gcm",
+          "aead_aes_128_gcm",
+          "aes-256-gcm",
+          "aead_aes_256_gcm",
+          "chacha20-poly1305",
+          "aead_chacha20_poly1305",
+          "chacha20-ietf-poly1305",
+          "xchacha20-poly1305",
+          "aead_xchacha20_poly1305",
+          "xchacha20-ietf-poly1305",
+          "2022-blake3-aes-128-gcm",
+          "2022-blake3-aes-256-gcm",
+          "2022-blake3-chacha20-poly1305"
+        ],
         "v26.10.10": [
           "aes-128-gcm",
           "aead_aes_128_gcm",
@@ -1825,13 +2097,16 @@
           "2022-blake3-chacha20-poly1305"
         ]
       },
-      "detail": "Classic names are case-insensitive; \"none\"/\"plain\" were removed in v26.7.28 and now fail with \"unknown cipher method\"; 2022 names come from sing-shadowsocks v0.2.7 up to v26.9.9 (matched case-sensitively, with the base64 key only validated when the core starts) and, in v26.10.10, from the core's own shadowsocks_2022 package, which lower-cases the name first.",
+      "detail": "Classic names are case-insensitive; \"none\"/\"plain\" were removed in v26.7.28 and now fail with \"unknown cipher method\"; 2022 names come from sing-shadowsocks v0.2.7 up to v26.9.9 (matched case-sensitively, with the base64 key only validated when the core starts) and, from v26.9.30, from the core's own shadowsocks_2022 package, which lower-cases the name first.",
       "evidence": [
         "v26.3.27:infra/conf/shadowsocks.go:26",
         "v26.7.28:infra/conf/shadowsocks.go:25",
         "v26.9.9:infra/conf/shadowsocks.go:58",
         "v26.9.9:infra/conf/shadowsocks.go:101",
         "v26.9.9:go.mod:22",
+        "v26.9.30:infra/conf/shadowsocks.go:56",
+        "v26.9.30:infra/conf/shadowsocks.go:98-100",
+        "v26.9.30:proxy/shadowsocks_2022/cipher.go:24-30",
         "v26.10.10:infra/conf/shadowsocks.go:56",
         "v26.10.10:infra/conf/shadowsocks.go:98-100",
         "v26.10.10:proxy/shadowsocks_2022/cipher.go:24-30"
@@ -1846,6 +2121,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -1896,6 +2172,21 @@
           "2022-blake3-aes-256-gcm",
           "2022-blake3-chacha20-poly1305"
         ],
+        "v26.9.30": [
+          "aes-128-gcm",
+          "aead_aes_128_gcm",
+          "aes-256-gcm",
+          "aead_aes_256_gcm",
+          "chacha20-poly1305",
+          "aead_chacha20_poly1305",
+          "chacha20-ietf-poly1305",
+          "xchacha20-poly1305",
+          "aead_xchacha20_poly1305",
+          "xchacha20-ietf-poly1305",
+          "2022-blake3-aes-128-gcm",
+          "2022-blake3-aes-256-gcm",
+          "2022-blake3-chacha20-poly1305"
+        ],
         "v26.10.10": [
           "aes-128-gcm",
           "aead_aes_128_gcm",
@@ -1912,13 +2203,16 @@
           "2022-blake3-chacha20-poly1305"
         ]
       },
-      "detail": "Classic names are case-insensitive; \"none\"/\"plain\" were removed in v26.7.28 and now fail with \"unknown cipher method\"; 2022 names come from sing-shadowsocks v0.2.7 up to v26.9.9 (matched case-sensitively, with the base64 key only validated when the core starts) and, in v26.10.10, from the core's own shadowsocks_2022 package, which lower-cases the name first.",
+      "detail": "Classic names are case-insensitive; \"none\"/\"plain\" were removed in v26.7.28 and now fail with \"unknown cipher method\"; 2022 names come from sing-shadowsocks v0.2.7 up to v26.9.9 (matched case-sensitively, with the base64 key only validated when the core starts) and, from v26.9.30, from the core's own shadowsocks_2022 package, which lower-cases the name first.",
       "evidence": [
         "v26.3.27:infra/conf/shadowsocks.go:26",
         "v26.7.28:infra/conf/shadowsocks.go:25",
         "v26.9.9:infra/conf/shadowsocks.go:219",
         "v26.9.9:infra/conf/shadowsocks.go:258",
         "v26.9.9:go.mod:22",
+        "v26.9.30:infra/conf/shadowsocks.go:229",
+        "v26.9.30:infra/conf/shadowsocks.go:241-244",
+        "v26.9.30:proxy/shadowsocks_2022/cipher.go:24-30",
         "v26.10.10:infra/conf/shadowsocks.go:229",
         "v26.10.10:infra/conf/shadowsocks.go:241-244",
         "v26.10.10:proxy/shadowsocks_2022/cipher.go:24-30"
@@ -1933,6 +2227,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "For non-2022 multi-user inbounds each client method must be one of the AEAD ciphers; none/plain or unknown fails with \"unsupported cipher method\" in every tag.",
@@ -1940,6 +2235,7 @@
         "v26.3.27:infra/conf/shadowsocks.go:72",
         "v26.7.28:infra/conf/shadowsocks.go:79",
         "v26.9.9:infra/conf/shadowsocks.go:79",
+        "v26.9.30:infra/conf/shadowsocks.go:77",
         "v26.10.10:infra/conf/shadowsocks.go:77"
       ]
     },
@@ -1952,6 +2248,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "For non-2022 methods an empty password (server-level or any client) fails the config.",
@@ -1959,6 +2256,7 @@
         "v26.3.27:infra/conf/shadowsocks.go:68",
         "v26.7.28:infra/conf/shadowsocks.go:75",
         "v26.9.9:infra/conf/shadowsocks.go:75",
+        "v26.9.30:infra/conf/shadowsocks.go:73",
         "v26.10.10:infra/conf/shadowsocks.go:73"
       ]
     },
@@ -1971,6 +2269,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "With a 2022 method and clients: the server method must be a blake3-aes one, every client method must be empty, and if the first client has an address (relay mode) all must have one; violations fail the config.",
@@ -1980,6 +2279,7 @@
         "v26.9.9:infra/conf/shadowsocks.go:127",
         "v26.3.27:infra/conf/shadowsocks.go:126",
         "v26.3.27:infra/conf/shadowsocks.go:149",
+        "v26.9.30:infra/conf/shadowsocks.go:127",
         "v26.10.10:infra/conf/shadowsocks.go:127"
       ]
     },
@@ -1992,6 +2292,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"clients\"; v26.3.27 silently ignores it (single-user fallback then demands a server password), and \"clients\" wins whenever present.",
@@ -1999,6 +2300,7 @@
         "v26.7.28:infra/conf/shadowsocks.go:46",
         "v26.7.28:infra/conf/shadowsocks.go:54",
         "v26.9.9:infra/conf/shadowsocks.go:54",
+        "v26.9.30:infra/conf/shadowsocks.go:52",
         "v26.10.10:infra/conf/shadowsocks.go:52"
       ]
     },
@@ -2011,6 +2313,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "When omitted the inbound accepts TCP only; UDP must be listed explicitly (\"tcp,udp\").",
@@ -2019,6 +2322,7 @@
         "v26.7.28:infra/conf/shadowsocks.go:63",
         "v26.9.9:infra/conf/shadowsocks.go:63",
         "v26.3.27:infra/conf/common.go:111",
+        "v26.9.30:infra/conf/shadowsocks.go:61",
         "v26.10.10:infra/conf/shadowsocks.go:61"
       ]
     },
@@ -2031,12 +2335,14 @@
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
         "v26.9.9": "absent",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "detail": "Also valid inside servers[]; in v26.3.27 it only takes effect with a 2022 method, and from v26.7.28 it is no longer declared and is silently ignored.",
       "evidence": [
         "v26.3.27:infra/conf/shadowsocks.go:168",
         "v26.3.27:infra/conf/shadowsocks.go:223",
+        "v26.9.30:infra/conf/shadowsocks.go:189-197",
         "v26.10.10:infra/conf/shadowsocks.go:189-197"
       ]
     },
@@ -2049,12 +2355,14 @@
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
         "v26.9.9": "absent",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "detail": "Also valid inside servers[]; in v26.3.27 it only takes effect with a 2022 method, and from v26.7.28 it is no longer declared and is silently ignored.",
       "evidence": [
         "v26.3.27:infra/conf/shadowsocks.go:169",
         "v26.3.27:infra/conf/shadowsocks.go:224",
+        "v26.9.30:infra/conf/shadowsocks.go:189-197",
         "v26.10.10:infra/conf/shadowsocks.go:189-197"
       ]
     },
@@ -2067,6 +2375,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Exactly one server is required, with address, non-zero port and non-empty password; anything else fails the config.",
@@ -2076,6 +2385,7 @@
         "v26.9.9:infra/conf/shadowsocks.go:214",
         "v26.3.27:infra/conf/shadowsocks.go:212",
         "v26.3.27:infra/conf/shadowsocks.go:209",
+        "v26.9.30:infra/conf/shadowsocks.go:215",
         "v26.10.10:infra/conf/shadowsocks.go:215"
       ]
     },
@@ -2088,6 +2398,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Flat form (address, port, method, password, level, email) replaces \"servers\" whenever address is set.",
@@ -2095,6 +2406,7 @@
         "v26.3.27:infra/conf/shadowsocks.go:188",
         "v26.7.28:infra/conf/shadowsocks.go:202",
         "v26.9.9:infra/conf/shadowsocks.go:202",
+        "v26.9.30:infra/conf/shadowsocks.go:203",
         "v26.10.10:infra/conf/shadowsocks.go:203"
       ]
     },
@@ -2107,6 +2419,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Any non-empty flow on a trojan client fails the config (\"Flow for Trojan\" removed) in every tag.",
@@ -2114,6 +2427,7 @@
         "v26.3.27:infra/conf/trojan.go:128",
         "v26.7.28:infra/conf/trojan.go:135",
         "v26.9.9:infra/conf/trojan.go:135",
+        "v26.9.30:infra/conf/trojan.go:135",
         "v26.10.10:infra/conf/trojan.go:135"
       ]
     },
@@ -2126,6 +2440,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Any non-empty flow (flat or in servers[]) fails the config in every tag.",
@@ -2133,6 +2448,7 @@
         "v26.3.27:infra/conf/trojan.go:73",
         "v26.7.28:infra/conf/trojan.go:74",
         "v26.9.9:infra/conf/trojan.go:74",
+        "v26.9.30:infra/conf/trojan.go:74",
         "v26.10.10:infra/conf/trojan.go:74"
       ]
     },
@@ -2145,6 +2461,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"clients\"; v26.3.27 silently ignores it (inbound loads with zero users), and \"clients\" wins whenever present.",
@@ -2152,6 +2469,7 @@
         "v26.7.28:infra/conf/trojan.go:115",
         "v26.7.28:infra/conf/trojan.go:124",
         "v26.9.9:infra/conf/trojan.go:124",
+        "v26.9.30:infra/conf/trojan.go:124",
         "v26.10.10:infra/conf/trojan.go:124"
       ]
     },
@@ -2164,6 +2482,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Each fallback path must be empty or start with \"/\", dest must be a port, host:port, absolute/@ unix path or \"serve-ws-none\" unless type is given, and xver must be 0-2; otherwise the config fails.",
@@ -2173,6 +2492,7 @@
         "v26.9.9:infra/conf/trojan.go:175",
         "v26.3.27:infra/conf/trojan.go:186",
         "v26.3.27:infra/conf/trojan.go:189",
+        "v26.9.30:infra/conf/trojan.go:175",
         "v26.10.10:infra/conf/trojan.go:175"
       ]
     },
@@ -2185,6 +2505,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Exactly one server is required, with address, non-zero port and non-empty password.",
@@ -2193,6 +2514,7 @@
         "v26.7.28:infra/conf/trojan.go:58",
         "v26.9.9:infra/conf/trojan.go:58",
         "v26.3.27:infra/conf/trojan.go:70",
+        "v26.9.30:infra/conf/trojan.go:58",
         "v26.10.10:infra/conf/trojan.go:58"
       ]
     },
@@ -2205,6 +2527,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Flat form (address, port, password, level, email) replaces \"servers\" whenever address is set.",
@@ -2212,6 +2535,7 @@
         "v26.3.27:infra/conf/trojan.go:45",
         "v26.7.28:infra/conf/trojan.go:46",
         "v26.9.9:infra/conf/trojan.go:46",
+        "v26.9.30:infra/conf/trojan.go:46",
         "v26.10.10:infra/conf/trojan.go:46"
       ]
     },
@@ -2224,6 +2548,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28 a trojan outbound whose security is not tls/reality fails unless the server is a private IP or a private/dotless name (lan, local, localhost, internal, home.arpa, test, ...); v26.7.28 checks only the flat \"address\" form, v26.9.9 also servers[].",
@@ -2232,6 +2557,7 @@
         "v26.7.28:infra/conf/xray.go:260",
         "v26.9.9:infra/conf/xray.go:251",
         "v26.7.28:common/geodata/consts.go:43",
+        "v26.9.30:infra/conf/xray.go:257",
         "v26.10.10:infra/conf/xray.go:257"
       ]
     },
@@ -2244,6 +2570,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"clients\"; v26.3.27 silently ignores it so the inbound loads with zero users, and \"clients\" wins whenever present (even empty).",
@@ -2251,6 +2578,7 @@
         "v26.7.28:infra/conf/vless.go:34",
         "v26.7.28:infra/conf/vless.go:46",
         "v26.9.9:infra/conf/vless.go:46",
+        "v26.9.30:infra/conf/vless.go:46",
         "v26.10.10:infra/conf/vless.go:46"
       ]
     },
@@ -2263,6 +2591,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Required in every tag: empty fails with \"please add/set decryption:none\", and anything that is neither \"none\" nor a well-formed mlkem768x25519plus string fails.",
@@ -2271,6 +2600,7 @@
         "v26.7.28:infra/conf/vless.go:152",
         "v26.9.9:infra/conf/vless.go:152",
         "v26.3.27:infra/conf/vless.go:142",
+        "v26.9.30:infra/conf/vless.go:152",
         "v26.10.10:infra/conf/vless.go:152"
       ]
     },
@@ -2283,6 +2613,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -2295,6 +2626,10 @@
           "mlkem768x25519plus.<native|xorpub|random>.<N>s|<N-M>s[.<padding>...].<key>"
         ],
         "v26.9.9": [
+          "none",
+          "mlkem768x25519plus.<native|xorpub|random>.<N>s|<N-M>s[.<padding>...].<key>"
+        ],
+        "v26.9.30": [
           "none",
           "mlkem768x25519plus.<native|xorpub|random>.<N>s|<N-M>s[.<padding>...].<key>"
         ],
@@ -2308,6 +2643,7 @@
         "v26.3.27:infra/conf/vless.go:97",
         "v26.7.28:infra/conf/vless.go:109",
         "v26.9.9:infra/conf/vless.go:109",
+        "v26.9.30:infra/conf/vless.go:109",
         "v26.10.10:infra/conf/vless.go:109"
       ]
     },
@@ -2320,6 +2656,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "fallbacks with decryption other than \"none\" fail; each fallback also needs a path starting with \"/\" (or empty), a resolvable dest (unless type is set) and xver 0-2.",
@@ -2329,6 +2666,7 @@
         "v26.9.9:infra/conf/vless.go:158",
         "v26.3.27:infra/conf/vless.go:195",
         "v26.3.27:infra/conf/vless.go:198",
+        "v26.9.30:infra/conf/vless.go:158",
         "v26.10.10:infra/conf/vless.go:158"
       ]
     },
@@ -2341,6 +2679,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -2353,6 +2692,10 @@
           "xtls-rprx-vision"
         ],
         "v26.9.9": [
+          "",
+          "xtls-rprx-vision"
+        ],
+        "v26.9.30": [
           "",
           "xtls-rprx-vision"
         ],
@@ -2370,6 +2713,8 @@
         "v26.7.28:infra/conf/vless.go:77",
         "v26.9.9:infra/conf/vless.go:77",
         "v26.3.27:proxy/vless/vless.go:10",
+        "v26.9.30:infra/conf/vless.go:53",
+        "v26.9.30:infra/conf/vless.go:77",
         "v26.10.10:infra/conf/vless.go:53",
         "v26.10.10:infra/conf/vless.go:77"
       ]
@@ -2383,6 +2728,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "A non-empty encryption on an inbound client fails the config; inbound uses settings.decryption.",
@@ -2390,6 +2736,7 @@
         "v26.3.27:infra/conf/vless.go:78",
         "v26.7.28:infra/conf/vless.go:85",
         "v26.9.9:infra/conf/vless.go:85",
+        "v26.9.30:infra/conf/vless.go:85",
         "v26.10.10:infra/conf/vless.go:85"
       ]
     },
@@ -2402,6 +2749,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "An inbound client's reverse needs a non-empty tag and must not carry sniffing; otherwise the config fails.",
@@ -2409,6 +2757,7 @@
         "v26.3.27:infra/conf/vless.go:83",
         "v26.7.28:infra/conf/vless.go:90",
         "v26.9.9:infra/conf/vless.go:90",
+        "v26.9.30:infra/conf/vless.go:90",
         "v26.10.10:infra/conf/vless.go:90"
       ]
     },
@@ -2421,12 +2770,14 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Users are decoded straight into the protobuf account, so these internal fields are recognised keys, but they are derived from decryption/encryption parsing; never emit them.",
       "evidence": [
         "v26.3.27:proxy/vless/account.pb.go:84",
         "v26.9.9:proxy/vless/account.pb.go:86",
+        "v26.9.30:proxy/vless/account.pb.go:86",
         "v26.10.10:proxy/vless/account.pb.go:86"
       ]
     },
@@ -2439,6 +2790,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "id must be a 32-36 char hex UUID or a 1-30 char string (mapped to a UUIDv5); empty, 31 chars or 37+ chars fails the config (same for vnext users[].id).",
@@ -2447,6 +2799,7 @@
         "v26.7.28:infra/conf/vless.go:66",
         "v26.9.9:infra/conf/vless.go:66",
         "v26.3.27:common/uuid/uuid.go:72",
+        "v26.9.30:infra/conf/vless.go:66",
         "v26.10.10:infra/conf/vless.go:66"
       ]
     },
@@ -2459,6 +2812,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "id must be a 32-36 char hex UUID or a 1-30 char string (mapped to a UUIDv5); empty, 31 chars or 37+ chars fails the config (same for vnext users[].id).",
@@ -2467,6 +2821,7 @@
         "v26.7.28:infra/conf/vless.go:320",
         "v26.9.9:infra/conf/vless.go:323",
         "v26.3.27:common/uuid/uuid.go:72",
+        "v26.9.30:infra/conf/vless.go:323",
         "v26.10.10:infra/conf/vless.go:323"
       ]
     },
@@ -2479,6 +2834,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "id must be a 32-36 char hex UUID or a 1-30 char string (mapped to a UUIDv5); empty, 31 chars or 37+ chars fails the config (same for vnext users[].id).",
@@ -2487,6 +2843,7 @@
         "v26.7.28:infra/conf/vmess.go:88",
         "v26.9.9:infra/conf/vmess.go:88",
         "v26.3.27:common/uuid/uuid.go:72",
+        "v26.9.30:infra/conf/vmess.go:88",
         "v26.10.10:infra/conf/vmess.go:88"
       ]
     },
@@ -2499,6 +2856,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "id must be a 32-36 char hex UUID or a 1-30 char string (mapped to a UUIDv5); empty, 31 chars or 37+ chars fails the config (same for vnext users[].id).",
@@ -2507,6 +2865,7 @@
         "v26.7.28:infra/conf/vmess.go:171",
         "v26.9.9:infra/conf/vmess.go:171",
         "v26.3.27:common/uuid/uuid.go:72",
+        "v26.9.30:infra/conf/vmess.go:171",
         "v26.10.10:infra/conf/vmess.go:171"
       ]
     },
@@ -2519,6 +2878,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Required in every tag (flat or vnext users[]): empty fails with \"please add/set encryption:none\", and a malformed mlkem string fails.",
@@ -2527,6 +2887,7 @@
         "v26.7.28:infra/conf/vless.go:372",
         "v26.9.9:infra/conf/vless.go:375",
         "v26.3.27:infra/conf/vless.go:362",
+        "v26.9.30:infra/conf/vless.go:375",
         "v26.10.10:infra/conf/vless.go:375"
       ]
     },
@@ -2539,6 +2900,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -2551,6 +2913,10 @@
           "mlkem768x25519plus.<native|xorpub|random>.<1rtt|0rtt>[.<padding>...].<key>"
         ],
         "v26.9.9": [
+          "none",
+          "mlkem768x25519plus.<native|xorpub|random>.<1rtt|0rtt>[.<padding>...].<key>"
+        ],
+        "v26.9.30": [
           "none",
           "mlkem768x25519plus.<native|xorpub|random>.<1rtt|0rtt>[.<padding>...].<key>"
         ],
@@ -2565,6 +2931,7 @@
         "v26.7.28:infra/conf/vless.go:349",
         "v26.9.9:infra/conf/vless.go:352",
         "v26.3.27:infra/conf/vless.go:348",
+        "v26.9.30:infra/conf/vless.go:352",
         "v26.10.10:infra/conf/vless.go:352"
       ]
     },
@@ -2577,6 +2944,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -2591,6 +2959,11 @@
           "xtls-rprx-vision-udp443"
         ],
         "v26.9.9": [
+          "",
+          "xtls-rprx-vision",
+          "xtls-rprx-vision-udp443"
+        ],
+        "v26.9.30": [
           "",
           "xtls-rprx-vision",
           "xtls-rprx-vision-udp443"
@@ -2607,6 +2980,8 @@
         "v26.7.28:infra/conf/vless.go:328",
         "v26.9.9:infra/conf/vless.go:331",
         "v26.9.9:infra/conf/vless.go:333",
+        "v26.9.30:infra/conf/vless.go:331",
+        "v26.9.30:infra/conf/vless.go:333",
         "v26.10.10:infra/conf/vless.go:331",
         "v26.10.10:infra/conf/vless.go:333"
       ]
@@ -2620,6 +2995,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "vnext must have exactly one entry with an address and exactly one user; otherwise the config fails.",
@@ -2629,6 +3005,7 @@
         "v26.9.9:infra/conf/vless.go:273",
         "v26.3.27:infra/conf/vless.go:265",
         "v26.3.27:infra/conf/vless.go:268",
+        "v26.9.30:infra/conf/vless.go:273",
         "v26.10.10:infra/conf/vless.go:273"
       ]
     },
@@ -2641,6 +3018,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Flat form (address, port, id, flow, encryption, reverse, level, email, testpre, testseed) replaces \"vnext\" whenever address is set.",
@@ -2648,6 +3026,7 @@
         "v26.3.27:infra/conf/vless.go:252",
         "v26.7.28:infra/conf/vless.go:264",
         "v26.9.9:infra/conf/vless.go:264",
+        "v26.9.30:infra/conf/vless.go:264",
         "v26.10.10:infra/conf/vless.go:264"
       ]
     },
@@ -2660,6 +3039,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "reverse is only allowed in the flat form; inside vnext users it fails the config.",
@@ -2667,6 +3047,7 @@
         "v26.3.27:infra/conf/vless.go:304",
         "v26.7.28:infra/conf/vless.go:316",
         "v26.9.9:infra/conf/vless.go:319",
+        "v26.9.30:infra/conf/vless.go:319",
         "v26.10.10:infra/conf/vless.go:319"
       ]
     },
@@ -2679,6 +3060,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "reverse needs a non-empty tag; its optional sniffing uses the normal sniffing validation.",
@@ -2686,6 +3068,7 @@
         "v26.3.27:infra/conf/vless.go:212",
         "v26.7.28:infra/conf/vless.go:224",
         "v26.9.9:infra/conf/vless.go:224",
+        "v26.9.30:infra/conf/vless.go:224",
         "v26.10.10:infra/conf/vless.go:224"
       ]
     },
@@ -2698,6 +3081,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Declared but never used (the assignment is commented out) in all three tags, so it has no effect.",
@@ -2705,6 +3089,7 @@
         "v26.3.27:infra/conf/vless.go:288",
         "v26.7.28:infra/conf/vless.go:300",
         "v26.9.9:infra/conf/vless.go:300",
+        "v26.9.30:infra/conf/vless.go:300",
         "v26.10.10:infra/conf/vless.go:300"
       ]
     },
@@ -2717,6 +3102,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28 a vless outbound with encryption \"none\" and security not tls/reality fails unless the server is a private IP or private/dotless name; v26.7.28 checks only the flat \"address\" form, v26.9.9 also vnext.",
@@ -2727,6 +3113,8 @@
         "v26.9.9:infra/conf/xray.go:337",
         "v26.9.9:infra/conf/vless.go:317",
         "v26.7.28:common/geodata/consts.go:45",
+        "v26.9.30:infra/conf/xray.go:343",
+        "v26.9.30:infra/conf/vless.go:317",
         "v26.10.10:infra/conf/xray.go:343",
         "v26.10.10:infra/conf/vless.go:317"
       ]
@@ -2740,6 +3128,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "values": {
@@ -2760,6 +3149,11 @@
           "chacha20-poly1305",
           "auto"
         ],
+        "v26.9.30": [
+          "aes-128-gcm",
+          "chacha20-poly1305",
+          "auto"
+        ],
         "v26.10.10": [
           "aes-128-gcm",
           "chacha20-poly1305",
@@ -2772,6 +3166,7 @@
         "v26.7.28:infra/conf/vmess.go:32",
         "v26.7.28:infra/conf/vmess.go:35",
         "v26.9.9:infra/conf/vmess.go:35",
+        "v26.9.30:infra/conf/vmess.go:35",
         "v26.10.10:infra/conf/vmess.go:35"
       ]
     },
@@ -2784,6 +3179,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "New spelling of \"clients\"; v26.3.27 silently ignores it (zero users), and \"clients\" wins whenever present.",
@@ -2791,6 +3187,7 @@
         "v26.7.28:infra/conf/vmess.go:58",
         "v26.7.28:infra/conf/vmess.go:73",
         "v26.9.9:infra/conf/vmess.go:73",
+        "v26.9.30:infra/conf/vmess.go:73",
         "v26.10.10:infra/conf/vmess.go:73"
       ]
     },
@@ -2803,6 +3200,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "vnext must have exactly one entry with an address and exactly one user; otherwise the config fails.",
@@ -2811,6 +3209,7 @@
         "v26.7.28:infra/conf/vmess.go:137",
         "v26.9.9:infra/conf/vmess.go:137",
         "v26.3.27:infra/conf/vmess.go:138",
+        "v26.9.30:infra/conf/vmess.go:137",
         "v26.10.10:infra/conf/vmess.go:137"
       ]
     },
@@ -2823,6 +3222,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Flat form (address, port, id, security, experiments, level, email) replaces \"vnext\" whenever address is set.",
@@ -2830,6 +3230,7 @@
         "v26.3.27:infra/conf/vmess.go:122",
         "v26.7.28:infra/conf/vmess.go:128",
         "v26.9.9:infra/conf/vmess.go:128",
+        "v26.9.30:infra/conf/vmess.go:128",
         "v26.10.10:infra/conf/vmess.go:128"
       ]
     },
@@ -2842,6 +3243,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "absent",
         "v26.9.9": "absent",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "detail": "alterId is not declared in any tag (user keys are id, security, experiments, level, email), so it is silently ignored.",
@@ -2849,6 +3251,7 @@
         "v26.3.27:infra/conf/vmess.go:17",
         "v26.7.28:infra/conf/vmess.go:18",
         "v26.9.9:infra/conf/vmess.go:18",
+        "v26.9.30:infra/conf/vmess.go:18",
         "v26.10.10:infra/conf/vmess.go:18"
       ]
     },
@@ -2861,6 +3264,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "absent",
         "v26.9.9": "absent",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "detail": "alterId is not declared in any tag (user keys are id, security, experiments, level, email), so it is silently ignored.",
@@ -2868,6 +3272,7 @@
         "v26.3.27:infra/conf/vmess.go:17",
         "v26.7.28:infra/conf/vmess.go:18",
         "v26.9.9:infra/conf/vmess.go:18",
+        "v26.9.30:infra/conf/vmess.go:18",
         "v26.10.10:infra/conf/vmess.go:18"
       ]
     },
@@ -2880,6 +3285,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Required; keys (secretKey, peers[].publicKey, peers[].preSharedKey) must be 64 hex chars or base64 (std or URL, padding optional), otherwise the config fails.",
@@ -2888,6 +3294,7 @@
         "v26.7.28:infra/conf/wireguard.go:152",
         "v26.9.9:infra/conf/wireguard.go:154",
         "v26.3.27:infra/conf/wireguard.go:151",
+        "v26.9.30:infra/conf/wireguard.go:138",
         "v26.10.10:infra/conf/wireguard.go:138"
       ]
     },
@@ -2900,6 +3307,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "values": {
@@ -2924,14 +3332,17 @@
           "forceipv4v6",
           "forceipv6v4"
         ],
+        "v26.9.30": null,
         "v26.10.10": null
       },
-      "detail": "Up to v26.9.9: case-insensitive and \"\" means forceip; the AsIs/UseIP family is not accepted and fails the config. v26.10.10 has no such field at all, so the key is silently ignored and nothing validates it.",
+      "detail": "Up to v26.9.9: case-insensitive and \"\" means forceip; the AsIs/UseIP family is not accepted and fails the config. v26.9.30 and v26.10.10 have no such field at all, so the key is silently ignored and nothing validates it.",
       "evidence": [
         "v26.3.27:infra/conf/wireguard.go:106",
         "v26.7.28:infra/conf/wireguard.go:128",
         "v26.9.9:infra/conf/wireguard.go:129",
         "v26.3.27:infra/conf/wireguard.go:117",
+        "v26.9.30:infra/conf/wireguard.go:59-69",
+        "v26.9.30:proxy/wireguard/client.go:344",
         "v26.10.10:infra/conf/wireguard.go:59-69",
         "v26.10.10:proxy/wireguard/client.go:344"
       ]
@@ -2945,6 +3356,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Must be empty or exactly 3 bytes (JSON array of 0-255 numbers, or a base64 string); any other length fails the config.",
@@ -2952,6 +3364,7 @@
         "v26.3.27:infra/conf/wireguard.go:101",
         "v26.7.28:infra/conf/wireguard.go:123",
         "v26.9.9:infra/conf/wireguard.go:124",
+        "v26.9.30:infra/conf/wireguard.go:123",
         "v26.10.10:infra/conf/wireguard.go:123"
       ]
     },
@@ -2964,12 +3377,14 @@
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
         "v26.9.9": "absent",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "detail": "Removed in v26.7.28 and silently ignored from then on.",
       "evidence": [
         "v26.3.27:infra/conf/wireguard.go:59",
         "v26.3.27:infra/conf/wireguard.go:98",
+        "v26.9.30:infra/conf/wireguard.go:59-69",
         "v26.10.10:infra/conf/wireguard.go:59-69"
       ]
     },
@@ -2982,13 +3397,16 @@
         "v26.3.27": "absent",
         "v26.7.28": "absent",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
-      "detail": "v26.9.9 and v26.10.10 decode it for inbounds too, but only the client (outbound) side reads it.",
+      "detail": "v26.9.9, v26.9.30 and v26.10.10 decode it for inbounds too, but only the client (outbound) side reads it.",
       "evidence": [
         "v26.9.9:infra/conf/wireguard.go:69",
         "v26.9.9:proxy/wireguard/client.go:117",
         "v26.9.9:proxy/wireguard/client.go:123",
+        "v26.9.30:infra/conf/wireguard.go:68",
+        "v26.9.30:proxy/wireguard/client.go:101-108",
         "v26.10.10:infra/conf/wireguard.go:68",
         "v26.10.10:proxy/wireguard/client.go:101-108"
       ]
@@ -3002,6 +3420,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "From v26.7.28 inbound peers are built as users and carry level/email.",
@@ -3009,6 +3428,7 @@
         "v26.7.28:infra/conf/wireguard.go:24",
         "v26.7.28:infra/conf/wireguard.go:97",
         "v26.9.9:infra/conf/wireguard.go:25",
+        "v26.9.30:infra/conf/wireguard.go:25",
         "v26.10.10:infra/conf/wireguard.go:25"
       ]
     },
@@ -3021,6 +3441,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Must be a JSON array of strings (a single comma string fails decoding); each entry must be an IP or CIDR or the core fails to start; default 10.0.0.1 and fd59:7153:2388:b5fd::1.",
@@ -3029,6 +3450,7 @@
         "v26.7.28:infra/conf/wireguard.go:64",
         "v26.9.9:infra/conf/wireguard.go:64",
         "v26.7.28:proxy/wireguard/server.go:90",
+        "v26.9.30:infra/conf/wireguard.go:64",
         "v26.10.10:infra/conf/wireguard.go:64"
       ]
     },
@@ -3041,6 +3463,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "v26.3.27 only accepts a CIDR entry if it is a host prefix (/32 IPv4, /128 IPv6) and the core fails to start otherwise; from v26.7.28 any prefix length is accepted and only its address part is used.",
@@ -3048,6 +3471,7 @@
         "v26.3.27:proxy/wireguard/wireguard.go:38",
         "v26.3.27:proxy/wireguard/server.go:39",
         "v26.9.9:proxy/wireguard/server.go:92",
+        "v26.9.30:proxy/wireguard/server.go:92",
         "v26.10.10:proxy/wireguard/server.go:92"
       ]
     },
@@ -3060,6 +3484,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "The Go field has an empty json tag, so an \"isClient\" key (any case) is decoded and overrides the inbound/outbound mode; the editor must never emit it.",
@@ -3067,6 +3492,7 @@
         "v26.3.27:infra/conf/wireguard.go:52",
         "v26.7.28:infra/conf/wireguard.go:60",
         "v26.9.9:infra/conf/wireguard.go:60",
+        "v26.9.30:infra/conf/wireguard.go:60",
         "v26.10.10:infra/conf/wireguard.go:60"
       ]
     },
@@ -3079,6 +3505,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Required; keys (secretKey, peers[].publicKey, peers[].preSharedKey) must be 64 hex chars or base64 (std or URL, padding optional), otherwise the config fails.",
@@ -3087,6 +3514,7 @@
         "v26.7.28:infra/conf/wireguard.go:152",
         "v26.9.9:infra/conf/wireguard.go:154",
         "v26.3.27:infra/conf/wireguard.go:151",
+        "v26.9.30:infra/conf/wireguard.go:138",
         "v26.10.10:infra/conf/wireguard.go:138"
       ]
     },
@@ -3099,6 +3527,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "values": {
@@ -3123,14 +3552,17 @@
           "forceipv4v6",
           "forceipv6v4"
         ],
+        "v26.9.30": null,
         "v26.10.10": null
       },
-      "detail": "Up to v26.9.9: case-insensitive and \"\" means forceip; the AsIs/UseIP family is not accepted and fails the config. v26.10.10 has no such field at all, so the key is silently ignored and nothing validates it.",
+      "detail": "Up to v26.9.9: case-insensitive and \"\" means forceip; the AsIs/UseIP family is not accepted and fails the config. v26.9.30 and v26.10.10 have no such field at all, so the key is silently ignored and nothing validates it.",
       "evidence": [
         "v26.3.27:infra/conf/wireguard.go:106",
         "v26.7.28:infra/conf/wireguard.go:128",
         "v26.9.9:infra/conf/wireguard.go:129",
         "v26.3.27:infra/conf/wireguard.go:117",
+        "v26.9.30:infra/conf/wireguard.go:59-69",
+        "v26.9.30:proxy/wireguard/client.go:344",
         "v26.10.10:infra/conf/wireguard.go:59-69",
         "v26.10.10:proxy/wireguard/client.go:344"
       ]
@@ -3144,6 +3576,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Must be empty or exactly 3 bytes (JSON array of 0-255 numbers, or a base64 string); any other length fails the config.",
@@ -3151,6 +3584,7 @@
         "v26.3.27:infra/conf/wireguard.go:101",
         "v26.7.28:infra/conf/wireguard.go:123",
         "v26.9.9:infra/conf/wireguard.go:124",
+        "v26.9.30:infra/conf/wireguard.go:123",
         "v26.10.10:infra/conf/wireguard.go:123"
       ]
     },
@@ -3163,12 +3597,14 @@
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
         "v26.9.9": "absent",
+        "v26.9.30": "absent",
         "v26.10.10": "absent"
       },
       "detail": "Removed in v26.7.28 and silently ignored from then on.",
       "evidence": [
         "v26.3.27:infra/conf/wireguard.go:59",
         "v26.3.27:infra/conf/wireguard.go:98",
+        "v26.9.30:infra/conf/wireguard.go:59-69",
         "v26.10.10:infra/conf/wireguard.go:59-69"
       ]
     },
@@ -3181,13 +3617,16 @@
         "v26.3.27": "absent",
         "v26.7.28": "absent",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
-      "detail": "v26.9.9: IP literals or [\"local\"] (default 1.1.1.1/1.0.0.1 and their IPv6); a non-IP entry panics when the core starts (MustParseAddr). v26.10.10: IP literals only: \"local\" is gone and now panics like any other name.",
+      "detail": "v26.9.9: IP literals or [\"local\"] (default 1.1.1.1/1.0.0.1 and their IPv6); a non-IP entry panics when the core starts (MustParseAddr). v26.9.30 and v26.10.10: IP literals only: \"local\" is gone and now panics like any other name.",
       "evidence": [
         "v26.9.9:infra/conf/wireguard.go:69",
         "v26.9.9:proxy/wireguard/client.go:117",
         "v26.9.9:proxy/wireguard/client.go:123",
+        "v26.9.30:infra/conf/wireguard.go:68",
+        "v26.9.30:proxy/wireguard/client.go:101-108",
         "v26.10.10:infra/conf/wireguard.go:68",
         "v26.10.10:proxy/wireguard/client.go:101-108"
       ]
@@ -3201,6 +3640,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Decoded from v26.7.28 but only used on the inbound side; no effect on an outbound.",
@@ -3208,6 +3648,7 @@
         "v26.7.28:infra/conf/wireguard.go:24",
         "v26.7.28:infra/conf/wireguard.go:97",
         "v26.9.9:infra/conf/wireguard.go:25",
+        "v26.9.30:infra/conf/wireguard.go:25",
         "v26.10.10:infra/conf/wireguard.go:25"
       ]
     },
@@ -3220,6 +3661,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Must be a JSON array of strings (a single comma string fails decoding); each entry must be an IP or CIDR or the core fails to start; default 10.0.0.1 and fd59:7153:2388:b5fd::1.",
@@ -3228,6 +3670,7 @@
         "v26.7.28:infra/conf/wireguard.go:64",
         "v26.9.9:infra/conf/wireguard.go:64",
         "v26.7.28:proxy/wireguard/client.go:93",
+        "v26.9.30:infra/conf/wireguard.go:64",
         "v26.10.10:infra/conf/wireguard.go:64"
       ]
     },
@@ -3240,6 +3683,7 @@
         "v26.3.27": "rejected",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "v26.3.27 only accepts a CIDR entry if it is a host prefix (/32 IPv4, /128 IPv6) and the core fails to start otherwise; from v26.7.28 any prefix length is accepted and only its address part is used.",
@@ -3247,6 +3691,7 @@
         "v26.3.27:proxy/wireguard/wireguard.go:38",
         "v26.3.27:proxy/wireguard/client.go:64",
         "v26.9.9:proxy/wireguard/client.go:106",
+        "v26.9.30:proxy/wireguard/client.go:95",
         "v26.10.10:proxy/wireguard/client.go:95"
       ]
     },
@@ -3259,6 +3704,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "The Go field has an empty json tag, so an \"isClient\" key (any case) is decoded and overrides the inbound/outbound mode; the editor must never emit it.",
@@ -3266,6 +3712,7 @@
         "v26.3.27:infra/conf/wireguard.go:52",
         "v26.7.28:infra/conf/wireguard.go:60",
         "v26.9.9:infra/conf/wireguard.go:60",
+        "v26.9.30:infra/conf/wireguard.go:60",
         "v26.10.10:infra/conf/wireguard.go:60"
       ]
     },
@@ -3278,6 +3725,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28 the client checks at core start that peers is non-empty and every peer has publicKey and endpoint; v26.3.27 only discovered this on first use.",
@@ -3285,6 +3733,7 @@
         "v26.7.28:proxy/wireguard/client.go:75",
         "v26.7.28:proxy/wireguard/client.go:79",
         "v26.9.9:proxy/wireguard/client.go:93",
+        "v26.9.30:proxy/wireguard/client.go:82",
         "v26.10.10:proxy/wireguard/client.go:82"
       ]
     },
@@ -3297,6 +3746,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "The tag is \"MTU\" in v26.3.27 and \"mtu\" later, but key matching is case-insensitive so either spelling works in every tag; 0/omitted means 1500.",
@@ -3304,6 +3754,7 @@
         "v26.3.27:infra/conf/tun.go:10",
         "v26.7.28:infra/conf/tun.go:17",
         "v26.9.9:infra/conf/tun.go:53",
+        "v26.9.30:infra/conf/tun.go:85",
         "v26.10.10:infra/conf/tun.go:85"
       ]
     },
@@ -3316,12 +3767,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Adapter description (Windows), default \"Wintun\"; silently ignored in v26.3.27.",
       "evidence": [
         "v26.7.28:infra/conf/tun.go:16",
         "v26.9.9:infra/conf/tun.go:16",
+        "v26.9.30:infra/conf/tun.go:20",
         "v26.10.10:infra/conf/tun.go:20"
       ]
     },
@@ -3334,12 +3787,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "JSON array of strings only (a comma string fails decoding); silently ignored in v26.3.27.",
       "evidence": [
         "v26.7.28:infra/conf/tun.go:18",
         "v26.9.9:infra/conf/tun.go:18",
+        "v26.9.30:infra/conf/tun.go:22",
         "v26.10.10:infra/conf/tun.go:22"
       ]
     },
@@ -3352,12 +3807,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "JSON array of strings only (a comma string fails decoding); silently ignored in v26.3.27.",
       "evidence": [
         "v26.7.28:infra/conf/tun.go:19",
         "v26.9.9:infra/conf/tun.go:19",
+        "v26.9.30:infra/conf/tun.go:23",
         "v26.10.10:infra/conf/tun.go:23"
       ]
     },
@@ -3370,12 +3827,14 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "JSON array of strings only (a comma string fails decoding); silently ignored in v26.3.27.",
       "evidence": [
         "v26.7.28:infra/conf/tun.go:21",
         "v26.9.9:infra/conf/tun.go:21",
+        "v26.9.30:infra/conf/tun.go:25",
         "v26.10.10:infra/conf/tun.go:25"
       ]
     },
@@ -3388,6 +3847,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "\"auto\" (the default whenever autoSystemRoutingTable is non-empty), an interface name, or \"\" to disable; silently ignored in v26.3.27.",
@@ -3396,6 +3856,7 @@
         "v26.9.9:infra/conf/tun.go:22",
         "v26.7.28:infra/conf/tun.go:39",
         "v26.7.28:proxy/tun/handler.go:98",
+        "v26.9.30:infra/conf/tun.go:26",
         "v26.10.10:infra/conf/tun.go:26"
       ]
     },
@@ -3408,6 +3869,7 @@
         "v26.3.27": "absent",
         "v26.7.28": "rejected",
         "v26.9.9": "rejected",
+        "v26.9.30": "rejected",
         "v26.10.10": "rejected"
       },
       "detail": "Entries are CIDR prefixes (e.g. \"10.0.0.1/24\"), validated only when the core starts; on Windows a bare IP panics via MustParsePrefix.",
@@ -3415,6 +3877,8 @@
         "v26.7.28:proxy/tun/tun_windows.go:122",
         "v26.9.9:proxy/tun/tun_windows.go:93",
         "v26.9.9:proxy/tun/tun_linux.go:243",
+        "v26.9.30:proxy/tun/tun_windows.go:110",
+        "v26.9.30:proxy/tun/tun_linux.go:494",
         "v26.10.10:proxy/tun/tun_windows.go:111",
         "v26.10.10:proxy/tun/tun_linux.go:494"
       ]
@@ -3428,6 +3892,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "Default name changed from \"xray0\" (v26.3.27) to a random free \"utun10\"-\"utun1024\" (v26.7.28+).",
@@ -3435,6 +3900,7 @@
         "v26.3.27:infra/conf/tun.go:22",
         "v26.7.28:infra/conf/tun.go:59",
         "v26.9.9:infra/conf/tun.go:43",
+        "v26.9.30:infra/conf/tun.go:75",
         "v26.10.10:infra/conf/tun.go:75"
       ]
     },
@@ -3447,6 +3913,7 @@
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
         "v26.9.9": "accepted",
+        "v26.9.30": "accepted",
         "v26.10.10": "accepted"
       },
       "detail": "A tun inbound skips the listen/port validation every other inbound gets, so port may be omitted in every tag.",
@@ -3454,6 +3921,7 @@
         "v26.3.27:infra/conf/xray.go:141",
         "v26.7.28:infra/conf/xray.go:141",
         "v26.9.9:infra/conf/xray.go:142",
+        "v26.9.30:infra/conf/xray.go:145",
         "v26.10.10:infra/conf/xray.go:145"
       ]
     }
@@ -3480,6 +3948,17 @@
         "userLevel"
       ],
       "v26.9.9": [
+        "allowedNetwork",
+        "rewriteAddress",
+        "rewritePort",
+        "network",
+        "address",
+        "port",
+        "portMap",
+        "followRedirect",
+        "userLevel"
+      ],
+      "v26.9.30": [
         "allowedNetwork",
         "rewriteAddress",
         "rewritePort",
@@ -3533,6 +4012,17 @@
         "followRedirect",
         "userLevel"
       ],
+      "v26.9.30": [
+        "allowedNetwork",
+        "rewriteAddress",
+        "rewritePort",
+        "network",
+        "address",
+        "port",
+        "portMap",
+        "followRedirect",
+        "userLevel"
+      ],
       "v26.10.10": [
         "allowedNetwork",
         "rewriteAddress",
@@ -3563,6 +4053,12 @@
         "allowTransparent",
         "userLevel"
       ],
+      "v26.9.30": [
+        "users",
+        "accounts",
+        "allowTransparent",
+        "userLevel"
+      ],
       "v26.10.10": [
         "users",
         "accounts",
@@ -3583,6 +4079,10 @@
         "user",
         "pass"
       ],
+      "v26.9.30": [
+        "user",
+        "pass"
+      ],
       "v26.10.10": [
         "user",
         "pass"
@@ -3595,6 +4095,10 @@
         "pass"
       ],
       "v26.9.9": [
+        "user",
+        "pass"
+      ],
+      "v26.9.30": [
         "user",
         "pass"
       ],
@@ -3622,6 +4126,15 @@
         "network"
       ],
       "v26.9.9": [
+        "method",
+        "password",
+        "level",
+        "email",
+        "users",
+        "clients",
+        "network"
+      ],
+      "v26.9.30": [
         "method",
         "password",
         "level",
@@ -3665,6 +4178,14 @@
         "address",
         "port"
       ],
+      "v26.9.30": [
+        "method",
+        "password",
+        "level",
+        "email",
+        "address",
+        "port"
+      ],
       "v26.10.10": [
         "method",
         "password",
@@ -3685,6 +4206,14 @@
         "port"
       ],
       "v26.9.9": [
+        "method",
+        "password",
+        "level",
+        "email",
+        "address",
+        "port"
+      ],
+      "v26.9.30": [
         "method",
         "password",
         "level",
@@ -3725,6 +4254,14 @@
         "ip",
         "userLevel"
       ],
+      "v26.9.30": [
+        "auth",
+        "users",
+        "accounts",
+        "udp",
+        "ip",
+        "userLevel"
+      ],
       "v26.10.10": [
         "auth",
         "users",
@@ -3758,6 +4295,14 @@
         "ip",
         "userLevel"
       ],
+      "v26.9.30": [
+        "auth",
+        "users",
+        "accounts",
+        "udp",
+        "ip",
+        "userLevel"
+      ],
       "v26.10.10": [
         "auth",
         "users",
@@ -3780,6 +4325,10 @@
         "user",
         "pass"
       ],
+      "v26.9.30": [
+        "user",
+        "pass"
+      ],
       "v26.10.10": [
         "user",
         "pass"
@@ -3798,6 +4347,10 @@
         "user",
         "pass"
       ],
+      "v26.9.30": [
+        "user",
+        "pass"
+      ],
       "v26.10.10": [
         "user",
         "pass"
@@ -3813,6 +4366,10 @@
         "user",
         "pass"
       ],
+      "v26.9.30": [
+        "user",
+        "pass"
+      ],
       "v26.10.10": [
         "user",
         "pass"
@@ -3825,6 +4382,10 @@
         "pass"
       ],
       "v26.9.9": [
+        "user",
+        "pass"
+      ],
+      "v26.9.30": [
         "user",
         "pass"
       ],
@@ -3850,6 +4411,14 @@
         "testseed"
       ],
       "v26.9.9": [
+        "users",
+        "clients",
+        "decryption",
+        "fallbacks",
+        "flow",
+        "testseed"
+      ],
+      "v26.9.30": [
         "users",
         "clients",
         "decryption",
@@ -3906,6 +4475,19 @@
         "level",
         "email"
       ],
+      "v26.9.30": [
+        "id",
+        "flow",
+        "encryption",
+        "xorMode",
+        "seconds",
+        "padding",
+        "reverse",
+        "testpre",
+        "testseed",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "id",
         "flow",
@@ -3948,6 +4530,19 @@
         "level",
         "email"
       ],
+      "v26.9.30": [
+        "id",
+        "flow",
+        "encryption",
+        "xorMode",
+        "seconds",
+        "padding",
+        "reverse",
+        "testpre",
+        "testseed",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "id",
         "flow",
@@ -3972,6 +4567,10 @@
         "sniffing"
       ],
       "v26.9.9": [
+        "tag",
+        "sniffing"
+      ],
+      "v26.9.30": [
         "tag",
         "sniffing"
       ],
@@ -4005,6 +4604,14 @@
         "dest",
         "xver"
       ],
+      "v26.9.30": [
+        "name",
+        "alpn",
+        "path",
+        "type",
+        "dest",
+        "xver"
+      ],
       "v26.10.10": [
         "name",
         "alpn",
@@ -4025,6 +4632,11 @@
         "default"
       ],
       "v26.9.9": [
+        "users",
+        "clients",
+        "default"
+      ],
+      "v26.9.30": [
         "users",
         "clients",
         "default"
@@ -4057,6 +4669,13 @@
         "level",
         "email"
       ],
+      "v26.9.30": [
+        "id",
+        "security",
+        "experiments",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "id",
         "security",
@@ -4081,6 +4700,13 @@
         "level",
         "email"
       ],
+      "v26.9.30": [
+        "id",
+        "security",
+        "experiments",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "id",
         "security",
@@ -4099,6 +4725,9 @@
       "v26.9.9": [
         "level"
       ],
+      "v26.9.30": [
+        "level"
+      ],
       "v26.10.10": [
         "level"
       ]
@@ -4114,6 +4743,11 @@
         "fallbacks"
       ],
       "v26.9.9": [
+        "users",
+        "clients",
+        "fallbacks"
+      ],
+      "v26.9.30": [
         "users",
         "clients",
         "fallbacks"
@@ -4143,6 +4777,12 @@
         "email",
         "flow"
       ],
+      "v26.9.30": [
+        "password",
+        "level",
+        "email",
+        "flow"
+      ],
       "v26.10.10": [
         "password",
         "level",
@@ -4159,6 +4799,12 @@
         "flow"
       ],
       "v26.9.9": [
+        "password",
+        "level",
+        "email",
+        "flow"
+      ],
+      "v26.9.30": [
         "password",
         "level",
         "email",
@@ -4189,6 +4835,14 @@
         "xver"
       ],
       "v26.9.9": [
+        "name",
+        "alpn",
+        "path",
+        "type",
+        "dest",
+        "xver"
+      ],
+      "v26.9.30": [
         "name",
         "alpn",
         "path",
@@ -4235,6 +4889,15 @@
         "domainStrategy",
         "remoteDNS"
       ],
+      "v26.9.30": [
+        "noKernelTun",
+        "secretKey",
+        "address",
+        "peers",
+        "mtu",
+        "reserved",
+        "remoteDNS"
+      ],
       "v26.10.10": [
         "noKernelTun",
         "secretKey",
@@ -4275,6 +4938,15 @@
         "domainStrategy",
         "remoteDNS"
       ],
+      "v26.9.30": [
+        "noKernelTun",
+        "secretKey",
+        "address",
+        "peers",
+        "mtu",
+        "reserved",
+        "remoteDNS"
+      ],
       "v26.10.10": [
         "noKernelTun",
         "secretKey",
@@ -4303,6 +4975,15 @@
         "email"
       ],
       "v26.9.9": [
+        "publicKey",
+        "preSharedKey",
+        "endpoint",
+        "keepAlive",
+        "allowedIPs",
+        "level",
+        "email"
+      ],
+      "v26.9.30": [
         "publicKey",
         "preSharedKey",
         "endpoint",
@@ -4347,6 +5028,15 @@
         "level",
         "email"
       ],
+      "v26.9.30": [
+        "publicKey",
+        "preSharedKey",
+        "endpoint",
+        "keepAlive",
+        "allowedIPs",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "publicKey",
         "preSharedKey",
@@ -4368,6 +5058,11 @@
         "clients"
       ],
       "v26.9.9": [
+        "version",
+        "users",
+        "clients"
+      ],
+      "v26.9.30": [
         "version",
         "users",
         "clients"
@@ -4394,6 +5089,11 @@
         "level",
         "email"
       ],
+      "v26.9.30": [
+        "auth",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "auth",
         "level",
@@ -4408,6 +5108,11 @@
         "email"
       ],
       "v26.9.9": [
+        "auth",
+        "level",
+        "email"
+      ],
+      "v26.9.30": [
         "auth",
         "level",
         "email"
@@ -4444,6 +5149,18 @@
         "autoSystemRoutingTable",
         "autoOutboundsInterface"
       ],
+      "v26.9.30": [
+        "name",
+        "desc",
+        "mtu",
+        "gateway",
+        "dns",
+        "userLevel",
+        "autoSystemRoutingTable",
+        "autoOutboundsInterface",
+        "autoSystemDnsToGateway",
+        "autoSystemWfpBlockLeak"
+      ],
       "v26.10.10": [
         "name",
         "desc",
@@ -4467,6 +5184,9 @@
       "v26.9.9": [
         "response"
       ],
+      "v26.9.30": [
+        "response"
+      ],
       "v26.10.10": [
         "response"
       ]
@@ -4479,6 +5199,9 @@
         "response"
       ],
       "v26.9.9": [
+        "response"
+      ],
+      "v26.9.30": [
         "response"
       ],
       "v26.10.10": [
@@ -4496,6 +5219,10 @@
         "type",
         "customResponseData"
       ],
+      "v26.9.30": [
+        "type",
+        "customResponseData"
+      ],
       "v26.10.10": [
         "type",
         "customResponseData"
@@ -4509,6 +5236,10 @@
         "type"
       ],
       "v26.9.9": [
+        "type",
+        "customResponseData"
+      ],
+      "v26.9.30": [
         "type",
         "customResponseData"
       ],
@@ -4529,6 +5260,10 @@
         "inboundTag",
         "sniffing"
       ],
+      "v26.9.30": [
+        "inboundTag",
+        "sniffing"
+      ],
       "v26.10.10": [
         "inboundTag",
         "sniffing"
@@ -4545,6 +5280,14 @@
         "routeOnly"
       ],
       "v26.9.9": [
+        "enabled",
+        "destOverride",
+        "domainsExcluded",
+        "ipsExcluded",
+        "metadataOnly",
+        "routeOnly"
+      ],
+      "v26.9.30": [
         "enabled",
         "destOverride",
         "domainsExcluded",
@@ -4585,6 +5328,18 @@
         "finalRules"
       ],
       "v26.9.9": [
+        "targetStrategy",
+        "domainStrategy",
+        "redirect",
+        "userLevel",
+        "fragment",
+        "noise",
+        "noises",
+        "proxyProtocol",
+        "ipsBlocked",
+        "finalRules"
+      ],
+      "v26.9.30": [
         "targetStrategy",
         "domainStrategy",
         "redirect",
@@ -4644,6 +5399,18 @@
         "ipsBlocked",
         "finalRules"
       ],
+      "v26.9.30": [
+        "targetStrategy",
+        "domainStrategy",
+        "redirect",
+        "userLevel",
+        "fragment",
+        "noise",
+        "noises",
+        "proxyProtocol",
+        "ipsBlocked",
+        "finalRules"
+      ],
       "v26.10.10": [
         "targetStrategy",
         "domainStrategy",
@@ -4676,6 +5443,12 @@
         "interval",
         "maxSplit"
       ],
+      "v26.9.30": [
+        "packets",
+        "length",
+        "interval",
+        "maxSplit"
+      ],
       "v26.10.10": [
         "packets",
         "length",
@@ -4697,6 +5470,12 @@
         "maxSplit"
       ],
       "v26.9.9": [
+        "packets",
+        "length",
+        "interval",
+        "maxSplit"
+      ],
+      "v26.9.30": [
         "packets",
         "length",
         "interval",
@@ -4728,6 +5507,12 @@
         "delay",
         "applyTo"
       ],
+      "v26.9.30": [
+        "type",
+        "packet",
+        "delay",
+        "applyTo"
+      ],
       "v26.10.10": [
         "type",
         "packet",
@@ -4749,6 +5534,12 @@
         "applyTo"
       ],
       "v26.9.9": [
+        "type",
+        "packet",
+        "delay",
+        "applyTo"
+      ],
+      "v26.9.30": [
         "type",
         "packet",
         "delay",
@@ -4777,6 +5568,13 @@
         "ip",
         "blockDelay"
       ],
+      "v26.9.30": [
+        "action",
+        "network",
+        "port",
+        "ip",
+        "blockDelay"
+      ],
       "v26.10.10": [
         "action",
         "network",
@@ -4795,6 +5593,13 @@
         "blockDelay"
       ],
       "v26.9.9": [
+        "action",
+        "network",
+        "port",
+        "ip",
+        "blockDelay"
+      ],
+      "v26.9.30": [
         "action",
         "network",
         "port",
@@ -4840,6 +5645,16 @@
         "servers",
         "headers"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "user",
+        "pass",
+        "servers",
+        "headers"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -4867,6 +5682,11 @@
         "port",
         "users"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "users"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -4887,6 +5707,12 @@
         "email"
       ],
       "v26.9.9": [
+        "user",
+        "pass",
+        "level",
+        "email"
+      ],
+      "v26.9.30": [
         "user",
         "pass",
         "level",
@@ -4921,6 +5747,15 @@
         "servers"
       ],
       "v26.9.9": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "method",
+        "password",
+        "servers"
+      ],
+      "v26.9.30": [
         "address",
         "port",
         "level",
@@ -4966,6 +5801,14 @@
         "method",
         "password"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "method",
+        "password"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5003,6 +5846,15 @@
         "pass",
         "servers"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "user",
+        "pass",
+        "servers"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5029,6 +5881,11 @@
         "port",
         "users"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "users"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5049,6 +5906,12 @@
         "email"
       ],
       "v26.9.9": [
+        "user",
+        "pass",
+        "level",
+        "email"
+      ],
+      "v26.9.30": [
         "user",
         "pass",
         "level",
@@ -5104,6 +5967,20 @@
         "testseed",
         "vnext"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "id",
+        "flow",
+        "seed",
+        "encryption",
+        "reverse",
+        "testpre",
+        "testseed",
+        "vnext"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5129,6 +6006,10 @@
         "sniffing"
       ],
       "v26.9.9": [
+        "tag",
+        "sniffing"
+      ],
+      "v26.9.30": [
         "tag",
         "sniffing"
       ],
@@ -5161,6 +6042,14 @@
         "metadataOnly",
         "routeOnly"
       ],
+      "v26.9.30": [
+        "enabled",
+        "destOverride",
+        "domainsExcluded",
+        "ipsExcluded",
+        "metadataOnly",
+        "routeOnly"
+      ],
       "v26.10.10": [
         "enabled",
         "destOverride",
@@ -5182,6 +6071,11 @@
         "users"
       ],
       "v26.9.9": [
+        "address",
+        "port",
+        "users"
+      ],
+      "v26.9.30": [
         "address",
         "port",
         "users"
@@ -5220,6 +6114,19 @@
         "email"
       ],
       "v26.9.9": [
+        "id",
+        "flow",
+        "encryption",
+        "xorMode",
+        "seconds",
+        "padding",
+        "reverse",
+        "testpre",
+        "testseed",
+        "level",
+        "email"
+      ],
+      "v26.9.30": [
         "id",
         "flow",
         "encryption",
@@ -5277,6 +6184,16 @@
         "experiments",
         "vnext"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "id",
+        "security",
+        "experiments",
+        "vnext"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5304,6 +6221,11 @@
         "port",
         "users"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "users"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5326,6 +6248,13 @@
         "email"
       ],
       "v26.9.9": [
+        "id",
+        "security",
+        "experiments",
+        "level",
+        "email"
+      ],
+      "v26.9.30": [
         "id",
         "security",
         "experiments",
@@ -5360,6 +6289,15 @@
         "servers"
       ],
       "v26.9.9": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "password",
+        "flow",
+        "servers"
+      ],
+      "v26.9.30": [
         "address",
         "port",
         "level",
@@ -5403,6 +6341,14 @@
         "password",
         "flow"
       ],
+      "v26.9.30": [
+        "address",
+        "port",
+        "level",
+        "email",
+        "password",
+        "flow"
+      ],
       "v26.10.10": [
         "address",
         "port",
@@ -5424,6 +6370,11 @@
         "port"
       ],
       "v26.9.9": [
+        "version",
+        "address",
+        "port"
+      ],
+      "v26.9.30": [
         "version",
         "address",
         "port"
@@ -5467,6 +6418,18 @@
         "nonIPQuery",
         "blockTypes"
       ],
+      "v26.9.30": [
+        "rewriteNetwork",
+        "rewriteAddress",
+        "rewritePort",
+        "network",
+        "address",
+        "port",
+        "userLevel",
+        "rules",
+        "nonIPQuery",
+        "blockTypes"
+      ],
       "v26.10.10": [
         "rewriteNetwork",
         "rewriteAddress",
@@ -5494,6 +6457,12 @@
         "domain",
         "rCode"
       ],
+      "v26.9.30": [
+        "action",
+        "qType",
+        "domain",
+        "rCode"
+      ],
       "v26.10.10": [
         "action",
         "qType",
@@ -5505,6 +6474,12 @@
       "v26.3.27": null,
       "v26.7.28": null,
       "v26.9.9": null,
+      "v26.9.30": [
+        "users",
+        "clients",
+        "address",
+        "mtu"
+      ],
       "v26.10.10": [
         "users",
         "clients",
@@ -5516,6 +6491,11 @@
       "v26.3.27": null,
       "v26.7.28": null,
       "v26.9.9": null,
+      "v26.9.30": [
+        "pass",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "pass",
         "level",
@@ -5526,6 +6506,11 @@
       "v26.3.27": null,
       "v26.7.28": null,
       "v26.9.9": null,
+      "v26.9.30": [
+        "pass",
+        "level",
+        "email"
+      ],
       "v26.10.10": [
         "pass",
         "level",
@@ -5536,6 +6521,11 @@
       "v26.3.27": null,
       "v26.7.28": null,
       "v26.9.9": null,
+      "v26.9.30": [
+        "address",
+        "port",
+        "remoteDNS"
+      ],
       "v26.10.10": [
         "address",
         "port",

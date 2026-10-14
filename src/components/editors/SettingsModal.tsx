@@ -22,6 +22,7 @@ import { t } from '../../i18n';
 const VERSION_ROLE_LABELS = (): Record<CoreVersion['role'], string> => ({
     minimum: t("Oldest supported release"),
     remnawave: t("What Remnawave nodes run"),
+    'before-masque': t("Before MASQUE and xdrive"),
     previous: t("Previous release"),
     latest: t("Newest release"),
 });

@@ -22,7 +22,7 @@ export const MasqueWarpSchema = z.object({
 }).passthrough();
 
 /**
- * How the tunnel dresses itself up as a web request, from 26.10.
+ * How the tunnel dresses itself up as a web request, from v26.9.30.
  *
  * `path` falls back to the well-known one (/.well-known/masque/ip/ followed by
  * two wildcard segments) when empty; it may use the variables target and

@@ -1,5 +1,30 @@
+import { t } from '../i18n';
+
+/** The method a Shadowsocks item holds: the flat one, else its first server's. */
+const shadowsocksMethod = (settings: any): string => {
+    const flat = typeof settings?.method === 'string' ? settings.method : '';
+    const server = typeof settings?.servers?.[0]?.method === 'string' ? settings.servers[0].method : '';
+    return flat || server;
+};
+
+const isShadowsocks = (protocol: unknown) => protocol === 'shadowsocks' || protocol === 'shadowsocks-2022';
+
+/**
+ * Why there is no link for an item this generator otherwise handles, or null.
+ * An ss:// link names its cipher, and a client takes it at its word: writing
+ * one the config does not hold (this used to put aes-256-gcm) hands out a link
+ * that cannot connect.
+ */
+export const linkProblem = (item: any): string | null => {
+    if (item && isShadowsocks(item.protocol) && !shadowsocksMethod(item.settings)) {
+        return t("This Shadowsocks outbound has no method, and a link has to name one. Choose the method first.");
+    }
+    return null;
+};
+
 export const generateXrayLink = (item: any) => {
     if (!item) return "";
+    if (linkProblem(item)) return "";
 
     const { protocol, settings, streamSettings, tag } = item;
     const stream = streamSettings || {};
@@ -108,8 +133,8 @@ export const generateXrayLink = (item: any) => {
     }
 
     // 4. Shadowsocks
-    if (protocol === 'shadowsocks' || protocol === 'shadowsocks-2022') {
-        const method = settings?.method || (settings?.servers?.[0]?.method) || "aes-256-gcm";
+    if (isShadowsocks(protocol)) {
+        const method = shadowsocksMethod(settings);
         const userInfo = btoa(`${method}:${creds}`).replace(/=/g, "");
         return `ss://${userInfo}@${address}:${port}#${encodeURIComponent(tag || 'SS')}`;
     }

@@ -1,6 +1,6 @@
 {
   "area": "toplevel",
-  "tags": ["v26.3.27", "v26.7.28", "v26.9.9", "v26.10.10"],
+  "tags": ["v26.3.27", "v26.7.28", "v26.9.9", "v26.9.30", "v26.10.10"],
   "legend": {
     "status.field|section|removed-feature": "what happens when the key is present: absent = not declared, silently ignored; accepted = parsed and used; deprecated = loads with a warning/auto-migration; rejected = Build()/startup fails",
     "status.value": "whether the listed value or syntax loads (absent = parsed but meaningless / taken literally)",
@@ -12,8 +12,8 @@
     {
       "path": "env",
       "kind": "section",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["object<string,string>"], "v26.9.9": ["object<string,string>"], "v26.10.10": ["object<string,string>"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["object<string,string>"], "v26.9.9": ["object<string,string>"], "v26.9.30": ["object<string,string>"], "v26.10.10": ["object<string,string>"] },
       "detail": "Map of environment variables that Config.Build applies with os.Setenv before post-processing and every other section (merged key-by-key across multiple config files); values must be JSON strings, and it does not affect `env:NAME` address/port references, which are resolved earlier while the JSON is decoded.",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:346",
@@ -23,6 +23,8 @@
         "v26.7.28:infra/conf/xray.go:533",
         "v26.9.9:infra/conf/xray.go:530",
         "v26.9.9:infra/conf/common.go:59",
+        "v26.9.30:infra/conf/xray.go:544",
+        "v26.9.30:infra/conf/common.go:59",
         "v26.10.10:infra/conf/xray.go:544",
         "v26.10.10:infra/conf/common.go:59"
       ]
@@ -30,8 +32,8 @@
     {
       "path": "geodata",
       "kind": "section",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["cron", "outbound", "assets[].url", "assets[].file"], "v26.9.9": ["cron", "outbound", "assets[].url", "assets[].file"], "v26.10.10": ["cron", "outbound", "assets[].url", "assets[].file"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["cron", "outbound", "assets[].url", "assets[].file"], "v26.9.9": ["cron", "outbound", "assets[].url", "assets[].file"], "v26.9.30": ["cron", "outbound", "assets[].url", "assets[].file"], "v26.10.10": ["cron", "outbound", "assets[].url", "assets[].file"] },
       "detail": "Scheduled geo-asset refresh: `cron` (robfig standard 5-field or @descriptor, validated at load) reloads the geoip/geosite registries, and when `assets` is non-empty each run first downloads every `url` through the outbound tagged `outbound` and atomically swaps it into `file`; without `cron` the section is a no-op.",
       "evidence": [
         "v26.7.28:infra/conf/geodata.go:42",
@@ -40,20 +42,24 @@
         "v26.7.28:app/geodata/geodata.go:40",
         "v26.7.28:infra/conf/xray.go:411",
         "v26.9.9:infra/conf/xray.go:408",
+        "v26.9.30:infra/conf/xray.go:422",
         "v26.10.10:infra/conf/xray.go:422"
       ]
     },
     {
       "path": "geodata.assets[]",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": ["url: https://host/...", "file: existing relative path inside the asset dir"], "v26.9.9": ["url: https://host/...", "file: existing relative path inside the asset dir"], "v26.10.10": ["url: https://host/...", "file: existing relative path inside the asset dir"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": ["url: https://host/...", "file: existing relative path inside the asset dir"], "v26.9.9": ["url: https://host/...", "file: existing relative path inside the asset dir"], "v26.9.30": ["url: https://host/...", "file: existing relative path inside the asset dir"], "v26.10.10": ["url: https://host/...", "file: existing relative path inside the asset dir"] },
       "detail": "An asset whose `url` is not https with a host, or whose `file` is absolute, escapes the asset directory, or does not already exist at load time fails the config.",
       "evidence": [
         "v26.7.28:infra/conf/geodata.go:19",
         "v26.7.28:infra/conf/geodata.go:22",
         "v26.7.28:infra/conf/geodata.go:36",
         "v26.7.28:common/platform/filesystem/file.go:56",
+        "v26.9.30:infra/conf/geodata.go:19",
+        "v26.9.30:infra/conf/geodata.go:22",
+        "v26.9.30:infra/conf/geodata.go:36",
         "v26.10.10:infra/conf/geodata.go:19",
         "v26.10.10:infra/conf/geodata.go:22",
         "v26.10.10:infra/conf/geodata.go:36"
@@ -62,8 +68,8 @@
     {
       "path": "reverse",
       "kind": "removed-feature",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": ["bridges[].tag", "bridges[].domain", "portals[].tag", "portals[].domain"], "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": ["bridges[].tag", "bridges[].domain", "portals[].tag", "portals[].domain"], "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "replacedBy": "VLESS Reverse Proxy (outbounds[].settings.reverse, available in all three tags)",
       "detail": "Legacy bridge/portal reverse works in v26.3.27; from v26.7.28 any non-null `reverse` object, even `{}`, fails with PrintRemovedFeatureError(\"legacy reverse\" -> \"VLESS Reverse Proxy\").",
       "evidence": [
@@ -72,33 +78,37 @@
         "v26.7.28:infra/conf/xray.go:608",
         "v26.9.9:infra/conf/xray.go:605",
         "v26.3.27:infra/conf/vless.go:242",
+        "v26.9.30:infra/conf/xray.go:619",
         "v26.10.10:infra/conf/xray.go:619"
       ]
     },
     {
       "path": "transport",
       "kind": "removed-feature",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "replacedBy": "streamSettings in inbounds and outbounds",
       "detail": "A non-empty top-level `transport` object fails the load in every tag (an empty `{}` or null is tolerated), so the editor must never emit it.",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:592",
         "v26.7.28:infra/conf/xray.go:663",
         "v26.9.9:infra/conf/xray.go:660",
+        "v26.9.30:infra/conf/xray.go:674",
         "v26.10.10:infra/conf/xray.go:674"
       ]
     },
     {
       "path": "(all keys)",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "Configs are decoded by Go encoding/json, so key names match case-insensitively (`fakedns` and `fakeDns` are the same key and collide) and misspelled/undeclared keys are dropped without any error.",
       "evidence": [
         "v26.3.27:infra/conf/serial/loader.go:52",
         "v26.9.9:infra/conf/serial/loader.go:55",
         "v26.9.9:infra/conf/xray.go:404",
+        "v26.9.30:infra/conf/serial/loader.go:55",
+        "v26.9.30:infra/conf/xray.go:418",
         "v26.10.10:infra/conf/serial/loader.go:55",
         "v26.10.10:infra/conf/xray.go:418"
       ]
@@ -106,8 +116,8 @@
     {
       "path": "(JSONC comments)",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["always stripped"], "v26.7.28": ["stripped unless XRAY_JSON_STRICT=true"], "v26.9.9": ["stripped unless XRAY_JSON_STRICT=true"], "v26.10.10": ["stripped unless XRAY_JSON_STRICT=true"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["always stripped"], "v26.7.28": ["stripped unless XRAY_JSON_STRICT=true"], "v26.9.9": ["stripped unless XRAY_JSON_STRICT=true"], "v26.9.30": ["stripped unless XRAY_JSON_STRICT=true"], "v26.10.10": ["stripped unless XRAY_JSON_STRICT=true"] },
       "detail": "Comments load by default in every tag, but from v26.7.28 a node started with env xray.json.strict / XRAY_JSON_STRICT=true decodes plain RFC 8259 JSON and a commented config fails; the flag is read at process start, so the config's own `env` cannot set it.",
       "evidence": [
         "v26.3.27:infra/conf/serial/loader.go:49",
@@ -115,14 +125,15 @@
         "v26.7.28:infra/conf/serial/builder.go:45",
         "v26.7.28:infra/conf/serial/loader.go:80",
         "v26.9.9:main/json/json.go:44",
+        "v26.9.30:main/json/json.go:44",
         "v26.10.10:main/json/json.go:44"
       ]
     },
     {
       "path": "version.min / version.max",
       "kind": "field",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["core=26.3.27"], "v26.7.28": ["core=26.7.28"], "v26.9.9": ["core=26.9.9"], "v26.10.10": ["core=26.10.10"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["core=26.3.27"], "v26.7.28": ["core=26.7.28"], "v26.9.9": ["core=26.9.9"], "v26.9.30": ["core=26.9.30"], "v26.10.10": ["core=26.10.10"] },
       "detail": "The running core refuses to start when its version is below `min` or above `max`, so an editor can stamp `version.min` on configs that rely on keys introduced in a later tag.",
       "evidence": [
         "v26.9.9:infra/conf/version.go:11",
@@ -130,14 +141,15 @@
         "v26.7.28:core/core.go:22",
         "v26.9.9:core/core.go:22",
         "v26.7.28:app/version/version.go:24",
+        "v26.9.30:core/core.go:21-23",
         "v26.10.10:core/core.go:22-23"
       ]
     },
     {
       "path": "outbounds[].proxySettings",
       "kind": "removed-feature",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": ["tag (required)", "transportLayer"], "v26.7.28": ["tag (required)", "transportLayer"], "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": ["tag (required)", "transportLayer"], "v26.7.28": ["tag (required)", "transportLayer"], "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "replacedBy": "streamSettings.sockopt.dialerProxy",
       "detail": "Up to v26.7.28 `{tag, transportLayer}` chains through another outbound (empty tag errors, transportLayer:true is rewritten into sockopt.dialerProxy, and setting both proxySettings.tag and sockopt.dialerProxy is a load error); v26.9.9 rejects any non-null proxySettings, including `{}`.",
       "evidence": [
@@ -150,6 +162,8 @@
         "v26.7.28:infra/conf/transport_internet.go:322",
         "v26.9.9:infra/conf/xray.go:220",
         "v26.9.9:infra/conf/xray.go:262",
+        "v26.9.30:infra/conf/xray.go:226",
+        "v26.9.30:infra/conf/xray.go:268",
         "v26.10.10:infra/conf/xray.go:226",
         "v26.10.10:infra/conf/xray.go:268"
       ]
@@ -157,11 +171,12 @@
     {
       "path": "outbounds[protocol=vless|trojan] without TLS/REALITY",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
       "values": {
         "v26.3.27": null,
         "v26.7.28": ["checked only for flat settings.address form; vnext/servers form is not checked"],
         "v26.9.9": ["checked for both flat and vnext/servers forms"],
+        "v26.9.30": ["checked for both flat and vnext/servers forms"],
         "v26.10.10": ["checked for both flat and vnext/servers forms"]
       },
       "detail": "From v26.7.28 a vless outbound with encryption \"\"/\"none\", or any trojan outbound, whose streamSettings.security is not tls/reality fails to load unless the server address is a private IP (0/8, 10/8, 100.64/10, 127/8, 169.254/16, 172.16/12, 192.168/16, 198.18/15, test nets, multicast, fc00::/7, fe80::/10, ...) or a private/dotless domain (lan, localdomain, example, invalid, localhost, test, local, home.arpa, internal).",
@@ -176,6 +191,12 @@
         "v26.9.9:infra/conf/vless.go:317",
         "v26.9.9:common/geodata/consts.go:9",
         "v26.9.9:common/geodata/consts.go:34",
+        "v26.9.30:infra/conf/xray.go:251",
+        "v26.9.30:infra/conf/xray.go:257",
+        "v26.9.30:infra/conf/xray.go:343",
+        "v26.9.30:infra/conf/vless.go:317",
+        "v26.9.30:common/geodata/consts.go:9",
+        "v26.9.30:common/geodata/consts.go:34",
         "v26.10.10:infra/conf/xray.go:251",
         "v26.10.10:infra/conf/xray.go:257",
         "v26.10.10:infra/conf/xray.go:343",
@@ -187,11 +208,12 @@
     {
       "path": "outbounds[].targetStrategy",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv4v6", "UseIPv6v4", "ForceIP", "ForceIPv4", "ForceIPv6", "ForceIPv4v6", "ForceIPv6v4"],
         "v26.7.28": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv4v6", "UseIPv6v4", "ForceIP", "ForceIPv4", "ForceIPv6", "ForceIPv4v6", "ForceIPv6v4"],
         "v26.9.9": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv4v6", "UseIPv6v4", "ForceIP", "ForceIPv4", "ForceIPv6", "ForceIPv4v6", "ForceIPv6v4"],
+        "v26.9.30": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv4v6", "UseIPv6v4", "ForceIP", "ForceIPv4", "ForceIPv6", "ForceIPv4v6", "ForceIPv6v4"],
         "v26.10.10": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv4v6", "UseIPv6v4", "ForceIP", "ForceIPv4", "ForceIPv6", "ForceIPv4v6", "ForceIPv6v4"]
       },
       "detail": "Matched case-insensitively (empty = AsIs); any other string fails the load in every tag.",
@@ -201,6 +223,8 @@
         "v26.7.28:infra/conf/xray.go:295",
         "v26.9.9:infra/conf/xray.go:267",
         "v26.9.9:infra/conf/xray.go:290",
+        "v26.9.30:infra/conf/xray.go:273",
+        "v26.9.30:infra/conf/xray.go:296",
         "v26.10.10:infra/conf/xray.go:273",
         "v26.10.10:infra/conf/xray.go:296"
       ]
@@ -208,12 +232,14 @@
     {
       "path": "outbounds[protocol=freedom].targetStrategy",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "deprecated", "v26.10.10": "deprecated" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["non-AsIs value is moved to streamSettings.sockopt.domainStrategy"], "v26.10.10": ["non-AsIs value is moved to streamSettings.sockopt.domainStrategy"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "deprecated", "v26.9.30": "deprecated", "v26.10.10": "deprecated" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["non-AsIs value is moved to streamSettings.sockopt.domainStrategy"], "v26.9.30": ["non-AsIs value is moved to streamSettings.sockopt.domainStrategy"], "v26.10.10": ["non-AsIs value is moved to streamSettings.sockopt.domainStrategy"] },
       "detail": "In v26.9.9 a non-AsIs wrapper targetStrategy on a freedom outbound is cleared and copied into sockopt.domainStrategy with a warning, and it takes precedence over freedom settings.domainStrategy.",
       "evidence": [
         "v26.9.9:infra/conf/xray.go:341",
         "v26.9.9:infra/conf/xray.go:350",
+        "v26.9.30:infra/conf/xray.go:355",
+        "v26.9.30:infra/conf/xray.go:364",
         "v26.10.10:infra/conf/xray.go:355",
         "v26.10.10:infra/conf/xray.go:364"
       ]
@@ -221,14 +247,17 @@
     {
       "path": "outbounds[protocol=freedom].settings.domainStrategy",
       "kind": "field",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "deprecated", "v26.10.10": "deprecated" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "deprecated", "v26.9.30": "deprecated", "v26.10.10": "deprecated" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "replacedBy": "streamSettings.sockopt.domainStrategy",
       "detail": "The warning and migration are emitted by the outbound wrapper in v26.9.9: a non-AsIs freedom domainStrategy (when the wrapper targetStrategy is AsIs) is copied into sockopt.domainStrategy and flagged for future removal.",
       "evidence": [
         "v26.9.9:infra/conf/xray.go:352",
         "v26.9.9:infra/conf/xray.go:353",
         "v26.9.9:infra/conf/freedom.go:21",
+        "v26.9.30:infra/conf/xray.go:366",
+        "v26.9.30:infra/conf/xray.go:367",
+        "v26.9.30:infra/conf/freedom.go:21",
         "v26.10.10:infra/conf/xray.go:366",
         "v26.10.10:infra/conf/xray.go:367",
         "v26.10.10:infra/conf/freedom.go:21"
@@ -237,23 +266,25 @@
     {
       "path": "outbounds[protocol=freedom].streamSettings.sockopt.addressPortStrategy",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["only none/empty allowed on freedom"], "v26.10.10": ["only none/empty allowed on freedom"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["only none/empty allowed on freedom"], "v26.9.30": ["only none/empty allowed on freedom"], "v26.10.10": ["only none/empty allowed on freedom"] },
       "detail": "v26.9.9 fails a freedom outbound whose sockopt.addressPortStrategy is anything other than none.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1077",
         "v26.9.9:infra/conf/xray.go:345",
+        "v26.9.30:infra/conf/xray.go:359",
         "v26.10.10:infra/conf/xray.go:359"
       ]
     },
     {
       "path": "outbounds[].sendThrough",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["IPv4/IPv6 literal", "CIDR a.b.c.d/n or v6/n (random source per connection)", "origin", "srcip"],
         "v26.7.28": ["IPv4/IPv6 literal", "CIDR a.b.c.d/n or v6/n (random source per connection)", "origin", "srcip"],
         "v26.9.9": ["IPv4/IPv6 literal", "CIDR a.b.c.d/n or v6/n (random source per connection)", "origin", "srcip"],
+        "v26.9.30": ["IPv4/IPv6 literal", "CIDR a.b.c.d/n or v6/n (random source per connection)", "origin", "srcip"],
         "v26.10.10": ["IPv4/IPv6 literal", "CIDR a.b.c.d/n or v6/n (random source per connection)", "origin", "srcip"]
       },
       "detail": "Unchanged across tags; any other domain-like value without a slash fails the load, and anything containing `/` is taken as CIDR with no prefix validation at load.",
@@ -263,6 +294,9 @@
         "v26.9.9:infra/conf/xray.go:297",
         "v26.9.9:infra/conf/xray.go:302",
         "v26.9.9:app/proxyman/outbound/handler.go:289",
+        "v26.9.30:infra/conf/xray.go:303",
+        "v26.9.30:infra/conf/xray.go:308",
+        "v26.9.30:app/proxyman/outbound/handler.go:289",
         "v26.10.10:infra/conf/xray.go:303",
         "v26.10.10:infra/conf/xray.go:308",
         "v26.10.10:app/proxyman/outbound/handler.go:289"
@@ -271,11 +305,12 @@
     {
       "path": "outbounds[].mux",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["xudpProxyUDP443: \"\"(=reject) | reject | allow | skip (exact case)", "concurrency/xudpConcurrency: int16; <0 disables, 0 = default"],
         "v26.7.28": ["xudpProxyUDP443: \"\"(=reject) | reject | allow | skip (exact case)", "concurrency/xudpConcurrency: int16; <0 disables, 0 = default"],
         "v26.9.9": ["xudpProxyUDP443: \"\"(=reject) | reject | allow | skip (exact case)", "concurrency/xudpConcurrency: int16; <0 disables, 0 = default"],
+        "v26.9.30": ["xudpProxyUDP443: \"\"(=reject) | reject | allow | skip (exact case)", "concurrency/xudpConcurrency: int16; <0 disables, 0 = default"],
         "v26.10.10": ["xudpProxyUDP443: \"\"(=reject) | reject | allow | skip (exact case)", "concurrency/xudpConcurrency: int16; <0 disables, 0 = default"]
       },
       "detail": "Unchanged across tags: xudpProxyUDP443 is compared case-sensitively and any other value fails, and concurrency values outside int16 fail JSON decoding (concurrency 0 means 8; xudpConcurrency 0 means no separate XUDP pool).",
@@ -284,6 +319,8 @@
         "v26.3.27:infra/conf/xray.go:116",
         "v26.9.9:infra/conf/xray.go:117",
         "v26.9.9:app/proxyman/outbound/handler.go:126",
+        "v26.9.30:infra/conf/xray.go:120",
+        "v26.9.30:app/proxyman/outbound/handler.go:126",
         "v26.10.10:infra/conf/xray.go:120",
         "v26.10.10:app/proxyman/outbound/handler.go:126"
       ]
@@ -291,24 +328,26 @@
     {
       "path": "inbounds[].listen = \"\"",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["panics (index out of range)"], "v26.7.28": ["panics (index out of range)"], "v26.9.9": ["treated as no listen (any IP, port required)"], "v26.10.10": ["treated as no listen (any IP, port required)"] },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["panics (index out of range)"], "v26.7.28": ["panics (index out of range)"], "v26.9.9": ["treated as no listen (any IP, port required)"], "v26.9.30": ["treated as no listen (any IP, port required)"], "v26.10.10": ["treated as no listen (any IP, port required)"] },
       "detail": "An empty-string listen parses as an empty domain and crashes the build on `Domain()[0]` before v26.9.9, so the editor must omit the key rather than write \"\".",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:152",
         "v26.7.28:infra/conf/xray.go:152",
         "v26.9.9:infra/conf/xray.go:144",
+        "v26.9.30:infra/conf/xray.go:147",
         "v26.10.10:infra/conf/xray.go:147"
       ]
     },
     {
       "path": "inbounds[].listen / inbounds[].port",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
       "values": {
         "v26.3.27": ["IP literal", "localhost", "/absolute/unix/path", "@abstract", "env:NAME"],
         "v26.7.28": ["IP literal", "localhost", "/absolute/unix/path", "@abstract", "env:NAME"],
         "v26.9.9": ["IP literal", "localhost", "/absolute/unix/path", "@abstract", "env:NAME"],
+        "v26.9.30": ["IP literal", "localhost", "/absolute/unix/path", "@abstract", "env:NAME"],
         "v26.10.10": ["IP literal", "localhost", "/absolute/unix/path", "@abstract", "env:NAME"]
       },
       "detail": "Listening on any other domain fails, and `port` is mandatory unless protocol is tun or listen is a Unix socket (where port is dropped).",
@@ -317,6 +356,8 @@
         "v26.3.27:infra/conf/xray.go:167",
         "v26.9.9:infra/conf/xray.go:144",
         "v26.9.9:infra/conf/xray.go:168",
+        "v26.9.30:infra/conf/xray.go:147",
+        "v26.9.30:infra/conf/xray.go:171",
         "v26.10.10:infra/conf/xray.go:147",
         "v26.10.10:infra/conf/xray.go:171"
       ]
@@ -324,21 +365,22 @@
     {
       "path": "inbounds[].allocate",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.10.10": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.9.30": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "Not declared on InboundDetourConfig in any tag, so it is silently ignored.",
       "evidence": [
         "v26.3.27:infra/conf/xray.go:126",
         "v26.7.28:infra/conf/xray.go:126",
         "v26.9.9:infra/conf/xray.go:127",
+        "v26.9.30:infra/conf/xray.go:130",
         "v26.10.10:infra/conf/xray.go:130"
       ]
     },
     {
       "path": "inbounds[].sniffing.ipsExcluded",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"], "v26.9.9": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"], "v26.10.10": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"], "v26.9.9": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"], "v26.9.30": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"], "v26.10.10": ["CIDR/IP", "geoip:CC", "ext:file:code", "ext-ip:file:code", "!-prefixed negation"] },
       "detail": "New in v26.7.28: when the original destination is an IP matching this list, sniffing results do not override the destination; invalid rules or unknown geoip codes fail the load.",
       "evidence": [
         "v26.7.28:infra/conf/xray.go:59",
@@ -346,17 +388,19 @@
         "v26.7.28:app/proxyman/config.go:27",
         "v26.7.28:app/dispatcher/default.go:240",
         "v26.9.9:infra/conf/xray.go:60",
+        "v26.9.30:infra/conf/xray.go:63",
         "v26.10.10:infra/conf/xray.go:63"
       ]
     },
     {
       "path": "inbounds[].sniffing.domainsExcluded",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["plain = exact (lowercased) match", "regexp:"],
         "v26.7.28": ["plain = substring match", "full:", "domain:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"],
         "v26.9.9": ["plain = substring match", "full:", "domain:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"],
+        "v26.9.30": ["plain = substring match", "full:", "domain:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"],
         "v26.10.10": ["plain = substring match", "full:", "domain:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"]
       },
       "detail": "Semantics changed in v26.7.28: a plain entry that meant an exact domain now matches as a substring (use `full:` to keep exact), routing-style prefixes and geosite lists now work, and a bad regexp or unknown geosite code now fails the load instead of being skipped at runtime.",
@@ -368,6 +412,8 @@
         "v26.7.28:app/proxyman/config.go:20",
         "v26.9.9:infra/conf/xray.go:83",
         "v26.9.9:common/geodata/rule_parser.go:258",
+        "v26.9.30:infra/conf/xray.go:86",
+        "v26.9.30:common/geodata/rule_parser.go:258",
         "v26.10.10:infra/conf/xray.go:86",
         "v26.10.10:common/geodata/rule_parser.go:258"
       ]
@@ -375,11 +421,12 @@
     {
       "path": "inbounds[].sniffing.destOverride",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["http", "tls", "https", "ssl", "quic", "fakedns", "fakedns+others"],
         "v26.7.28": ["http", "tls", "https", "ssl", "quic", "fakedns", "fakedns+others"],
         "v26.9.9": ["http", "tls", "https", "ssl", "quic", "fakedns", "fakedns+others"],
+        "v26.9.30": ["http", "tls", "https", "ssl", "quic", "fakedns", "fakedns+others"],
         "v26.10.10": ["http", "tls", "https", "ssl", "quic", "fakedns", "fakedns+others"]
       },
       "detail": "Case-insensitive in every tag (https/ssl alias tls, fakedns+others collapses to fakedns); any other string fails the load.",
@@ -388,6 +435,8 @@
         "v26.3.27:infra/conf/xray.go:81",
         "v26.9.9:infra/conf/xray.go:69",
         "v26.9.9:infra/conf/xray.go:79",
+        "v26.9.30:infra/conf/xray.go:72",
+        "v26.9.30:infra/conf/xray.go:82",
         "v26.10.10:infra/conf/xray.go:72",
         "v26.10.10:infra/conf/xray.go:82"
       ]
@@ -395,14 +444,16 @@
     {
       "path": "inbounds[].tag / outbounds[].tag duplicates",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "Two inbounds or two outbounds sharing a non-empty tag fail at startup with \"existing tag found\" in every tag.",
       "evidence": [
         "v26.3.27:app/proxyman/inbound/inbound.go:46",
         "v26.3.27:app/proxyman/outbound/outbound.go:116",
         "v26.9.9:app/proxyman/inbound/inbound.go:46",
         "v26.9.9:app/proxyman/outbound/outbound.go:116",
+        "v26.9.30:app/proxyman/inbound/inbound.go:46",
+        "v26.9.30:app/proxyman/outbound/outbound.go:116",
         "v26.10.10:app/proxyman/inbound/inbound.go:46",
         "v26.10.10:app/proxyman/outbound/outbound.go:116"
       ]
@@ -410,14 +461,18 @@
     {
       "path": "routing.rules[].localOS",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["Go GOOS names, case-insensitive: linux, windows, darwin, android, ios, freebsd, ..."], "v26.10.10": ["Go GOOS names, case-insensitive: linux, windows, darwin, android, ios, freebsd, ..."] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["Go GOOS names, case-insensitive: linux, windows, darwin, android, ios, freebsd, ..."], "v26.9.30": ["Go GOOS names, case-insensitive: linux, windows, darwin, android, ios, freebsd, ..."], "v26.10.10": ["Go GOOS names, case-insensitive: linux, windows, darwin, android, ios, freebsd, ..."] },
       "detail": "New in v26.9.9 (string or array): the rule matches only when the core itself runs on one of the listed OSes, resolved once at startup, and it counts as an effective condition.",
       "evidence": [
         "v26.9.9:infra/conf/router.go:151",
         "v26.9.9:infra/conf/router.go:266",
         "v26.9.9:app/router/condition.go:404",
         "v26.9.9:app/router/config.go:36",
+        "v26.9.30:infra/conf/router.go:151",
+        "v26.9.30:infra/conf/router.go:266",
+        "v26.9.30:app/router/condition.go:404",
+        "v26.9.30:app/router/config.go:36",
         "v26.10.10:infra/conf/router.go:162",
         "v26.10.10:infra/conf/router.go:277",
         "v26.10.10:app/router/condition.go:404",
@@ -427,8 +482,8 @@
     {
       "path": "routing.rules[].domain + routing.rules[].domains",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["union of both lists"], "v26.7.28": ["domains replaces domain"], "v26.9.9": ["domains replaces domain"], "v26.10.10": ["domains replaces domain"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["union of both lists"], "v26.7.28": ["domains replaces domain"], "v26.9.9": ["domains replaces domain"], "v26.9.30": ["domains replaces domain"], "v26.10.10": ["domains replaces domain"] },
       "detail": "When a rule carries both keys, v26.3.27 appends them while v26.7.28+ silently discards `domain`, so the editor should write only one of them.",
       "evidence": [
         "v26.3.27:infra/conf/router.go:579",
@@ -436,17 +491,19 @@
         "v26.7.28:infra/conf/router.go:179",
         "v26.7.28:infra/conf/router.go:187",
         "v26.9.9:infra/conf/router.go:188",
+        "v26.9.30:infra/conf/router.go:188",
         "v26.10.10:infra/conf/router.go:199"
       ]
     },
     {
       "path": "routing.rules[].ip|source|sourceIP|localIP, dns.servers[].expectedIPs|unexpectedIPs: '!' negation",
       "kind": "value",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["geoip:!CC", "ext:file:!code"],
         "v26.7.28": ["geoip:!CC", "ext:file:!code", "!geoip:CC", "!ext:file:code", "!CIDR", "!!x (double negation)"],
         "v26.9.9": ["geoip:!CC", "ext:file:!code", "!geoip:CC", "!ext:file:code", "!CIDR", "!!x (double negation)"],
+        "v26.9.30": ["geoip:!CC", "ext:file:!code", "!geoip:CC", "!ext:file:code", "!CIDR", "!!x (double negation)"],
         "v26.10.10": ["geoip:!CC", "ext:file:!code", "!geoip:CC", "!ext:file:code", "!CIDR", "!!x (double negation)"]
       },
       "detail": "A leading `!` on any IP rule (plain CIDR or geoip) fails as an invalid IP in v26.3.27 but is a negated match from v26.7.28 via the shared geodata parser.",
@@ -455,17 +512,19 @@
         "v26.3.27:infra/conf/router.go:176",
         "v26.7.28:common/geodata/rule_parser.go:20",
         "v26.9.9:common/geodata/rule_parser.go:20",
+        "v26.9.30:common/geodata/rule_parser.go:20",
         "v26.10.10:common/geodata/rule_parser.go:20"
       ]
     },
     {
       "path": "routing.rules[].domain|domains, dns.servers[].domains, dns.hosts keys: ext-site: prefix",
       "kind": "value",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["geosite:", "ext:", "ext-domain:", "regexp:", "domain:", "full:", "keyword:", "dotless:"],
         "v26.7.28": ["geosite:", "ext:", "ext-domain:", "ext-site:", "regexp:", "domain:", "full:", "keyword:", "dotless:"],
         "v26.9.9": ["geosite:", "ext:", "ext-domain:", "ext-site:", "regexp:", "domain:", "full:", "keyword:", "dotless:"],
+        "v26.9.30": ["geosite:", "ext:", "ext-domain:", "ext-site:", "regexp:", "domain:", "full:", "keyword:", "dotless:"],
         "v26.10.10": ["geosite:", "ext:", "ext-domain:", "ext-site:", "regexp:", "domain:", "full:", "keyword:", "dotless:"]
       },
       "detail": "`ext-site:file:code` is new in v26.7.28; in v26.3.27 it is taken as a literal substring and never matches, and from v26.7.28 an empty geosite attribute (`geosite:cn@`) is a load error.",
@@ -474,20 +533,23 @@
         "v26.7.28:common/geodata/rule_parser.go:141",
         "v26.7.28:common/geodata/rule_parser.go:170",
         "v26.9.9:common/geodata/rule_parser.go:204",
+        "v26.9.30:common/geodata/rule_parser.go:204",
         "v26.10.10:common/geodata/rule_parser.go:204"
       ]
     },
     {
       "path": "routing.rules[] target",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "A rule with neither outboundTag nor balancerTag fails, and a balancerTag that names no balancer fails at router start, in every tag (outboundTag wins if both are set).",
       "evidence": [
         "v26.3.27:infra/conf/router.go:570",
         "v26.3.27:app/router/router.go:84",
         "v26.9.9:infra/conf/router.go:172",
         "v26.9.9:app/router/router.go:136",
+        "v26.9.30:infra/conf/router.go:172",
+        "v26.9.30:app/router/router.go:136",
         "v26.10.10:infra/conf/router.go:183",
         "v26.10.10:app/router/router.go:143"
       ]
@@ -495,34 +557,36 @@
     {
       "path": "routing.rules[] with no condition",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "A rule whose only keys are ruleTag/outboundTag/balancerTag/webhook (or empty lists) fails with \"this rule has no effective fields\", so a catch-all needs a condition such as network \"tcp,udp\" or port \"0-65535\".",
       "evidence": [
         "v26.3.27:app/router/config.go:140",
         "v26.7.28:app/router/config.go:114",
         "v26.9.9:app/router/config.go:118",
+        "v26.9.30:app/router/config.go:118",
         "v26.10.10:app/router/config.go:118"
       ]
     },
     {
       "path": "routing.rules[].attrs",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "Attribute values are compiled with regexp.MustCompile when the router starts, so an invalid Go regexp crashes the core in every tag.",
       "evidence": [
         "v26.3.27:app/router/config.go:74",
         "v26.7.28:app/router/config.go:71",
         "v26.9.9:app/router/config.go:75",
+        "v26.9.30:app/router/config.go:75",
         "v26.10.10:app/router/config.go:75"
       ]
     },
     {
       "path": "routing.rules[].ruleTag / routing.balancers[].tag duplicates",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": ["last balancer with a tag wins; duplicate ruleTags coexist"], "v26.7.28": ["last balancer with a tag wins; duplicate ruleTags coexist"], "v26.9.9": ["startup error"], "v26.10.10": ["startup error"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": ["last balancer with a tag wins; duplicate ruleTags coexist"], "v26.7.28": ["last balancer with a tag wins; duplicate ruleTags coexist"], "v26.9.9": ["startup error"], "v26.9.30": ["startup error"], "v26.10.10": ["startup error"] },
       "detail": "Before v26.9.9 Router.Init built rules without duplicate checks (only the API AddRule path checked); v26.9.9 routes startup through ReloadRules and fails on a repeated non-empty ruleTag or balancer tag.",
       "evidence": [
         "v26.3.27:app/router/router.go:53",
@@ -530,6 +594,9 @@
         "v26.9.9:app/router/router.go:50",
         "v26.9.9:app/router/router.go:102",
         "v26.9.9:app/router/router.go:123",
+        "v26.9.30:app/router/router.go:50",
+        "v26.9.30:app/router/router.go:102",
+        "v26.9.30:app/router/router.go:123",
         "v26.10.10:app/router/router.go:53",
         "v26.10.10:app/router/router.go:109",
         "v26.10.10:app/router/router.go:130"
@@ -538,13 +605,15 @@
     {
       "path": "routing.domainStrategy",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.7.28": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.9.9": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.10.10": ["AsIs", "IPIfNonMatch", "IPOnDemand"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.7.28": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.9.9": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.9.30": ["AsIs", "IPIfNonMatch", "IPOnDemand"], "v26.10.10": ["AsIs", "IPIfNonMatch", "IPOnDemand"] },
       "detail": "Case-insensitive in every tag; an unknown value silently becomes AsIs rather than failing.",
       "evidence": [
         "v26.3.27:infra/conf/router.go:92",
         "v26.9.9:infra/conf/router.go:77",
         "v26.9.9:infra/conf/router.go:86",
+        "v26.9.30:infra/conf/router.go:77",
+        "v26.9.30:infra/conf/router.go:86",
         "v26.10.10:infra/conf/router.go:79",
         "v26.10.10:infra/conf/router.go:88"
       ]
@@ -552,30 +621,34 @@
     {
       "path": "routing.domainMatcher",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.10.10": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.9.30": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "RouterConfig only declares rules, domainStrategy and balancers in all three tags (and DNSConfig has no domainMatcher either), so the key is silently ignored.",
       "evidence": [
         "v26.3.27:infra/conf/router.go:77",
         "v26.7.28:infra/conf/router.go:71",
         "v26.9.9:infra/conf/router.go:71",
+        "v26.9.30:infra/conf/router.go:71",
         "v26.10.10:infra/conf/router.go:72"
       ]
     },
     {
       "path": "routing.rules[].network / routing.rules[].protocol",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["network: tcp | udp | unix (array or comma string)", "protocol: http | tls | quic | bittorrent (not validated)"],
         "v26.7.28": ["network: tcp | udp | unix (array or comma string)", "protocol: http | tls | quic | bittorrent (not validated)"],
         "v26.9.9": ["network: tcp | udp | unix (array or comma string)", "protocol: http | tls | quic | bittorrent (not validated)"],
+        "v26.9.30": ["network: tcp | udp | unix (array or comma string)", "protocol: http | tls | quic | bittorrent (not validated)"],
         "v26.10.10": ["network: tcp | udp | unix (array or comma string)", "protocol: http | tls | quic | bittorrent (not validated)"]
       },
       "detail": "Unchanged: an unknown network string becomes Network_Unknown and an unknown protocol string is kept, so neither fails the load but the condition never matches.",
       "evidence": [
         "v26.9.9:infra/conf/common.go:76",
         "v26.9.9:infra/conf/router.go:251",
+        "v26.9.30:infra/conf/common.go:76",
+        "v26.9.30:infra/conf/router.go:251",
         "v26.10.10:infra/conf/common.go:76",
         "v26.10.10:infra/conf/router.go:262"
       ]
@@ -583,14 +656,17 @@
     {
       "path": "routing.balancers[]",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.7.28": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.9.9": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.10.10": ["random (default)", "roundRobin", "leastPing", "leastLoad"] },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.7.28": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.9.9": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.9.30": ["random (default)", "roundRobin", "leastPing", "leastLoad"], "v26.10.10": ["random (default)", "roundRobin", "leastPing", "leastLoad"] },
       "detail": "Unchanged: an empty tag, empty selector list or unknown strategy.type (case-insensitive) fails the load; only leastLoad reads strategy.settings.",
       "evidence": [
         "v26.3.27:infra/conf/router.go:49",
         "v26.9.9:infra/conf/router.go:31",
         "v26.9.9:infra/conf/router.go:34",
         "v26.9.9:infra/conf/router.go:43",
+        "v26.9.30:infra/conf/router.go:31",
+        "v26.9.30:infra/conf/router.go:34",
+        "v26.9.30:infra/conf/router.go:43",
         "v26.10.10:infra/conf/router.go:32",
         "v26.10.10:infra/conf/router.go:35",
         "v26.10.10:infra/conf/router.go:44"
@@ -599,11 +675,12 @@
     {
       "path": "routing.balancers[].strategy.settings (leastLoad)",
       "kind": "field",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["costs[] {regexp, match, value}", "baselines[] (duration strings)", "expected", "maxRTT (duration string)", "tolerance (0..1)"],
         "v26.7.28": ["costs[] {regexp, match, value}", "baselines[] (duration strings)", "expected", "maxRTT (duration string)", "tolerance (0..1)"],
         "v26.9.9": ["costs[] {regexp, match, value}", "baselines[] (duration strings)", "expected", "maxRTT (duration string)", "tolerance (0..1)"],
+        "v26.9.30": ["costs[] {regexp, match, value}", "baselines[] (duration strings)", "expected", "maxRTT (duration string)", "tolerance (0..1)"],
         "v26.10.10": ["costs[] {regexp, match, value}", "baselines[] (duration strings)", "expected", "maxRTT (duration string)", "tolerance (0..1)"]
       },
       "detail": "Same keys in every tag; negative expected/maxRTT and out-of-range tolerance are clamped rather than rejected.",
@@ -611,6 +688,8 @@
         "v26.3.27:infra/conf/router_strategy.go:35",
         "v26.9.9:infra/conf/router_strategy.go:33",
         "v26.9.9:app/router/config.pb.go:444",
+        "v26.9.30:infra/conf/router_strategy.go:33",
+        "v26.9.30:app/router/config.pb.go:444",
         "v26.10.10:infra/conf/router_strategy.go:33",
         "v26.10.10:app/router/config.pb.go:444"
       ]
@@ -618,12 +697,14 @@
     {
       "path": "(duration values: observatory.probeInterval, burstObservatory.pingConfig.interval|timeout, leastLoad baselines|maxRTT)",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.7.28": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.9.9": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.10.10": ["Go duration string, e.g. \"10s\", \"1m\""] },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.7.28": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.9.9": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.9.30": ["Go duration string, e.g. \"10s\", \"1m\""], "v26.10.10": ["Go duration string, e.g. \"10s\", \"1m\""] },
       "detail": "Durations must be strings; a bare number fails JSON decoding in every tag.",
       "evidence": [
         "v26.9.9:infra/conf/cfgcommon/duration/duration.go:18",
         "v26.9.9:infra/conf/cfgcommon/duration/duration.go:33",
+        "v26.9.30:infra/conf/cfgcommon/duration/duration.go:18",
+        "v26.9.30:infra/conf/cfgcommon/duration/duration.go:33",
         "v26.10.10:infra/conf/cfgcommon/duration/duration.go:18",
         "v26.10.10:infra/conf/cfgcommon/duration/duration.go:33"
       ]
@@ -631,13 +712,15 @@
     {
       "path": "burstObservatory.pingConfig",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "burstObservatory without pingConfig fails the load in every tag (the struct rename healthCheckSettings -> HealthCheckSettings in v26.9.9 does not change the JSON).",
       "evidence": [
         "v26.3.27:infra/conf/observatory.go:31",
         "v26.9.9:infra/conf/observatory.go:31",
         "v26.9.9:infra/conf/router_strategy.go:47",
+        "v26.9.30:infra/conf/observatory.go:31",
+        "v26.9.30:infra/conf/router_strategy.go:47",
         "v26.10.10:infra/conf/observatory.go:31",
         "v26.10.10:infra/conf/router_strategy.go:47"
       ]
@@ -645,21 +728,22 @@
     {
       "path": "burstObservatory.pingConfig.interval",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["any positive duration used as-is (clamp compared nanoseconds)"], "v26.7.28": ["values below 10s are raised to 10s with a warning"], "v26.9.9": ["values below 10s are raised to 10s with a warning"], "v26.10.10": ["values below 10s are raised to 10s with a warning"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["any positive duration used as-is (clamp compared nanoseconds)"], "v26.7.28": ["values below 10s are raised to 10s with a warning"], "v26.9.9": ["values below 10s are raised to 10s with a warning"], "v26.9.30": ["values below 10s are raised to 10s with a warning"], "v26.10.10": ["values below 10s are raised to 10s with a warning"] },
       "detail": "Runtime behaviour change: a sub-10s interval that probed that often in v26.3.27 is silently raised to 10s from v26.7.28.",
       "evidence": [
         "v26.3.27:app/observatory/burst/healthping.go:66",
         "v26.7.28:app/observatory/burst/healthping.go:68",
         "v26.9.9:app/observatory/burst/healthping.go:68",
+        "v26.9.30:app/observatory/burst/healthping.go:68",
         "v26.10.10:app/observatory/burst/healthping.go:68"
       ]
     },
     {
       "path": "dns.servers[].domains",
       "kind": "value",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["array of strings only"], "v26.7.28": ["array of strings", "comma-separated string"], "v26.9.9": ["array of strings", "comma-separated string"], "v26.10.10": ["array of strings", "comma-separated string"] },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["array of strings only"], "v26.7.28": ["array of strings", "comma-separated string"], "v26.9.9": ["array of strings", "comma-separated string"], "v26.9.30": ["array of strings", "comma-separated string"], "v26.10.10": ["array of strings", "comma-separated string"] },
       "detail": "A single string for `domains` fails server parsing in v26.3.27 ([]string) but is split on commas from v26.7.28 (StringList); rule syntax is otherwise the shared domain-rule syntax with plain = substring.",
       "evidence": [
         "v26.3.27:infra/conf/dns.go:23",
@@ -667,30 +751,33 @@
         "v26.7.28:infra/conf/dns.go:24",
         "v26.7.28:infra/conf/dns.go:89",
         "v26.9.9:infra/conf/dns.go:24",
+        "v26.9.30:infra/conf/dns.go:24",
         "v26.10.10:infra/conf/dns.go:26"
       ]
     },
     {
       "path": "dns.servers[].domain",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.10.10": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.9.30": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "Not a DNS server key in any tag; the v26.7.28 removed-feature message \"domain\" -> \"domains(server) & resolvers(client)\" belongs to the finalmask xdns transport (streamSettings), not the dns section.",
       "evidence": [
         "v26.3.27:infra/conf/dns.go:18",
         "v26.7.28:infra/conf/dns.go:19",
         "v26.7.28:infra/conf/transport_finalmask.go:704",
+        "v26.9.30:infra/conf/dns.go:19-35",
         "v26.10.10:infra/conf/dns.go:20-37"
       ]
     },
     {
       "path": "dns.queryStrategy / dns.servers[].queryStrategy",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem (+ aliases useip4, use_ipv4, use-ip-v4, usesys, ...)"],
         "v26.7.28": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem (+ aliases useip4, use_ipv4, use-ip-v4, usesys, ...)"],
         "v26.9.9": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem (+ aliases useip4, use_ipv4, use-ip-v4, usesys, ...)"],
+        "v26.9.30": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem (+ aliases useip4, use_ipv4, use-ip-v4, usesys, ...)"],
         "v26.10.10": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem (+ aliases useip4, use_ipv4, use-ip-v4, usesys, ...)"]
       },
       "detail": "Case-insensitive and unchanged; an unknown value silently falls back to UseIP.",
@@ -698,17 +785,19 @@
         "v26.3.27:infra/conf/dns.go:515",
         "v26.7.28:infra/conf/dns.go:381",
         "v26.9.9:infra/conf/dns.go:381",
+        "v26.9.30:infra/conf/dns.go:381",
         "v26.10.10:infra/conf/dns.go:395"
       ]
     },
     {
       "path": "dns.hosts keys",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["plain = full match", "domain:", "full:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:file:code"],
         "v26.7.28": ["plain = full match", "domain:", "full:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"],
         "v26.9.9": ["plain = full match", "domain:", "full:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"],
+        "v26.9.30": ["plain = full match", "domain:", "full:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"],
         "v26.10.10": ["plain = full match", "domain:", "full:", "keyword:", "regexp:", "dotless:", "geosite:", "ext:", "ext-domain:", "ext-site:"]
       },
       "detail": "From v26.7.28 host keys go through the shared domain-rule parser, so ext-domain:/ext-site: keys work (v26.3.27 treats them as literal full domains) and the conf-level check for empty `domain:`/`regexp:`/`keyword:`/`full:` keys is gone; values are unchanged (IP, IP list, or a domain for CNAME-like proxying).",
@@ -717,17 +806,19 @@
         "v26.3.27:infra/conf/dns.go:372",
         "v26.3.27:infra/conf/dns.go:390",
         "v26.7.28:infra/conf/dns.go:258",
+        "v26.9.30:infra/conf/dns.go:254-266",
         "v26.10.10:infra/conf/dns.go:260-272"
       ]
     },
     {
       "path": "dns.servers[].address",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
       "values": {
         "v26.3.27": ["IP/host (UDP)", "localhost", "fakedns", "https://", "h2c://", "https+local://", "h2c+local://", "quic+local://", "tcp://", "tcp+local://"],
         "v26.7.28": ["IP/host (UDP)", "localhost", "fakedns", "https://", "h2c://", "https+local://", "h2c+local://", "quic+local://", "tcp://", "tcp+local://"],
         "v26.9.9": ["IP/host (UDP)", "localhost", "fakedns", "https://", "h2c://", "https+local://", "h2c+local://", "quic+local://", "tcp://", "tcp+local://"],
+        "v26.9.30": ["IP/host (UDP)", "localhost", "fakedns", "https://", "h2c://", "https+local://", "h2c+local://", "quic+local://", "tcp://", "tcp+local://"],
         "v26.10.10": ["IP/host (UDP)", "localhost", "fakedns", "https://", "h2c://", "https+local://", "h2c+local://", "quic+local://", "tcp://", "tcp+local://"]
       },
       "detail": "Server schemes are identical across the three tags; a server object without `address` and a non-IP clientIp (server or global) fail the load.",
@@ -739,6 +830,10 @@
         "v26.3.27:infra/conf/dns.go:100",
         "v26.9.9:infra/conf/dns.go:86",
         "v26.9.9:infra/conf/dns.go:283",
+        "v26.9.30:app/dns/nameserver.go:54",
+        "v26.9.30:app/dns/nameserver.go:70",
+        "v26.9.30:infra/conf/dns.go:86",
+        "v26.9.30:infra/conf/dns.go:283",
         "v26.10.10:app/dns/nameserver.go:55",
         "v26.10.10:app/dns/nameserver.go:71",
         "v26.10.10:infra/conf/dns.go:90",
@@ -748,26 +843,29 @@
     {
       "path": "(geoip:/geosite:/ext: references anywhere)",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "A geo code or file that is missing from the node's asset directory fails the load in every tag, so the editor cannot fully validate these without knowing the node's .dat files.",
       "evidence": [
         "v26.3.27:infra/conf/router.go:189",
         "v26.7.28:common/geodata/geodat_loader.go:16",
         "v26.9.9:common/geodata/geodat_loader.go:16",
+        "v26.9.30:common/geodata/geodat_loader.go:19",
         "v26.10.10:common/geodata/geodat_loader.go:19"
       ]
     },
     {
       "path": "log.maskAddress",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.7.28": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.9.9": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.10.10": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"] },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.7.28": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.9.9": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.9.30": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"], "v26.10.10": ["half", "quarter", "full", "/N+/M (N multiple of 8, 0..32)"] },
       "detail": "Unchanged: any other value fails log startup; `loglevel` accepts debug/info/warning/error/none and silently treats unknown values as warning.",
       "evidence": [
         "v26.3.27:app/log/log.go:166",
         "v26.9.9:app/log/log.go:197",
         "v26.9.9:infra/conf/log.go:50",
+        "v26.9.30:app/log/log.go:201",
+        "v26.9.30:infra/conf/log.go:50",
         "v26.10.10:app/log/log.go:201",
         "v26.10.10:infra/conf/log.go:50"
       ]
@@ -775,14 +873,16 @@
     {
       "path": "api.listen",
       "kind": "value",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["host:port only"], "v26.7.28": ["host:port", "/unix/path", "@abstract"], "v26.9.9": ["host:port", "/unix/path", "@abstract"], "v26.10.10": ["host:port", "/unix/path", "@abstract"] },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["host:port only"], "v26.7.28": ["host:port", "/unix/path", "@abstract"], "v26.9.9": ["host:port", "/unix/path", "@abstract"], "v26.9.30": ["host:port", "/unix/path", "@abstract"], "v26.10.10": ["host:port", "/unix/path", "@abstract"] },
       "detail": "A Unix-socket api.listen fails at startup in v26.3.27 (plain TCP listen) and is supported from v26.7.28; in every tag api.tag is required and unknown `services` names are silently ignored.",
       "evidence": [
         "v26.3.27:app/commander/commander.go:77",
         "v26.7.28:app/commander/commander.go:81",
         "v26.9.9:app/commander/commander.go:81",
         "v26.9.9:infra/conf/api.go:24",
+        "v26.9.30:app/commander/commander.go:81",
+        "v26.9.30:infra/conf/api.go:24",
         "v26.10.10:app/commander/commander.go:81",
         "v26.10.10:infra/conf/api.go:24"
       ]
@@ -790,25 +890,28 @@
     {
       "path": "metrics",
       "kind": "constraint",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.9.30": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "A metrics object with neither `tag` nor `listen` fails the load in every tag.",
       "evidence": [
         "v26.3.27:infra/conf/metrics.go:15",
         "v26.9.9:infra/conf/metrics.go:15",
+        "v26.9.30:infra/conf/metrics.go:15",
         "v26.10.10:infra/conf/metrics.go:15"
       ]
     },
     {
       "path": "fakedns",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.7.28": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.9.9": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.10.10": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.7.28": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.9.9": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.9.30": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"], "v26.10.10": ["{ipPool, poolSize}", "[{ipPool, poolSize}, ...]"] },
       "detail": "Unchanged: the declared key is `fakeDns` (matched case-insensitively), and if dns.servers contains \"fakedns\" without this section a default pool is synthesized from dns.queryStrategy.",
       "evidence": [
         "v26.3.27:infra/conf/fakedns.go:36",
         "v26.9.9:infra/conf/fakedns.go:36",
         "v26.9.9:infra/conf/fakedns.go:94",
+        "v26.9.30:infra/conf/fakedns.go:36",
+        "v26.9.30:infra/conf/fakedns.go:94",
         "v26.10.10:infra/conf/fakedns.go:36",
         "v26.10.10:infra/conf/fakedns.go:94"
       ]
@@ -816,14 +919,16 @@
     {
       "path": "(address and port values: env:NAME)",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": ["env:NAME"], "v26.7.28": ["env:NAME"], "v26.9.9": ["env:NAME"], "v26.10.10": ["env:NAME"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["env:NAME"], "v26.7.28": ["env:NAME"], "v26.9.9": ["env:NAME"], "v26.9.30": ["env:NAME"], "v26.10.10": ["env:NAME"] },
       "detail": "Any Address-typed field and any port string may be `env:NAME`, read from the process environment while the JSON is decoded (before the new top-level `env` section is applied).",
       "evidence": [
         "v26.3.27:infra/conf/common.go:58",
         "v26.3.27:infra/conf/common.go:131",
         "v26.9.9:infra/conf/common.go:59",
         "v26.9.9:infra/conf/common.go:135",
+        "v26.9.30:infra/conf/common.go:59",
+        "v26.9.30:infra/conf/common.go:135",
         "v26.10.10:infra/conf/common.go:59",
         "v26.10.10:infra/conf/common.go:135"
       ]
@@ -831,13 +936,14 @@
     {
       "path": "(common.go value types: PortList, PortRange, StringList, NetworkList, Int32Range)",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.9.30": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.9.30": null, "v26.10.10": null },
       "detail": "No accepted-JSON change: v26.7.28 only adds an explicit >65535 check to PortRange that PortFromString already enforced, and v26.9.9 only makes Address.Build nil-safe.",
       "evidence": [
         "v26.3.27:infra/conf/common.go:202",
         "v26.7.28:infra/conf/common.go:203",
         "v26.9.9:infra/conf/common.go:68",
+        "v26.9.30:infra/conf/common.go:68",
         "v26.10.10:infra/conf/common.go:68"
       ]
     }
@@ -847,198 +953,231 @@
       "v26.3.27": ["log", "api", "dns", "routing", "policy", "inbounds", "outbounds", "stats", "reverse", "fakeDns", "observatory", "burstObservatory", "metrics", "version"],
       "v26.7.28": ["env", "log", "api", "dns", "routing", "policy", "inbounds", "outbounds", "stats", "fakeDns", "observatory", "burstObservatory", "metrics", "version", "geodata"],
       "v26.9.9": ["env", "log", "api", "dns", "routing", "policy", "inbounds", "outbounds", "stats", "fakeDns", "observatory", "burstObservatory", "metrics", "version", "geodata"],
+      "v26.9.30": ["env", "log", "api", "dns", "routing", "policy", "inbounds", "outbounds", "stats", "fakeDns", "observatory", "burstObservatory", "metrics", "version", "geodata"],
       "v26.10.10": ["env", "log", "api", "dns", "routing", "policy", "inbounds", "outbounds", "stats", "fakeDns", "observatory", "burstObservatory", "metrics", "version", "geodata"]
     },
     "inbounds[]": {
       "v26.3.27": ["protocol", "port", "listen", "settings", "tag", "streamSettings", "sniffing"],
       "v26.7.28": ["protocol", "port", "listen", "settings", "tag", "streamSettings", "sniffing"],
       "v26.9.9": ["protocol", "port", "listen", "settings", "tag", "streamSettings", "sniffing"],
+      "v26.9.30": ["protocol", "port", "listen", "settings", "tag", "streamSettings", "sniffing"],
       "v26.10.10": ["protocol", "port", "listen", "settings", "tag", "streamSettings", "sniffing"]
     },
     "inbounds[].sniffing": {
       "v26.3.27": ["enabled", "destOverride", "domainsExcluded", "metadataOnly", "routeOnly"],
       "v26.7.28": ["enabled", "destOverride", "domainsExcluded", "ipsExcluded", "metadataOnly", "routeOnly"],
       "v26.9.9": ["enabled", "destOverride", "domainsExcluded", "ipsExcluded", "metadataOnly", "routeOnly"],
+      "v26.9.30": ["enabled", "destOverride", "domainsExcluded", "ipsExcluded", "metadataOnly", "routeOnly"],
       "v26.10.10": ["enabled", "destOverride", "domainsExcluded", "ipsExcluded", "metadataOnly", "routeOnly"]
     },
     "outbounds[]": {
       "v26.3.27": ["protocol", "sendThrough", "tag", "settings", "streamSettings", "proxySettings", "mux", "targetStrategy"],
       "v26.7.28": ["protocol", "sendThrough", "tag", "settings", "streamSettings", "proxySettings", "mux", "targetStrategy"],
       "v26.9.9": ["protocol", "sendThrough", "tag", "settings", "streamSettings", "mux", "targetStrategy"],
+      "v26.9.30": ["protocol", "sendThrough", "tag", "settings", "streamSettings", "mux", "targetStrategy"],
       "v26.10.10": ["protocol", "sendThrough", "tag", "settings", "streamSettings", "mux", "targetStrategy"]
     },
     "outbounds[].proxySettings": {
       "v26.3.27": ["tag", "transportLayer"],
       "v26.7.28": ["tag", "transportLayer"],
       "v26.9.9": [],
+      "v26.9.30": [],
       "v26.10.10": []
     },
     "outbounds[].mux": {
       "v26.3.27": ["enabled", "concurrency", "xudpConcurrency", "xudpProxyUDP443"],
       "v26.7.28": ["enabled", "concurrency", "xudpConcurrency", "xudpProxyUDP443"],
       "v26.9.9": ["enabled", "concurrency", "xudpConcurrency", "xudpProxyUDP443"],
+      "v26.9.30": ["enabled", "concurrency", "xudpConcurrency", "xudpProxyUDP443"],
       "v26.10.10": ["enabled", "concurrency", "xudpConcurrency", "xudpProxyUDP443"]
     },
     "routing": {
       "v26.3.27": ["rules", "domainStrategy", "balancers"],
       "v26.7.28": ["rules", "domainStrategy", "balancers"],
       "v26.9.9": ["rules", "domainStrategy", "balancers"],
+      "v26.9.30": ["rules", "domainStrategy", "balancers"],
       "v26.10.10": ["rules", "domainStrategy", "balancers", "script"]
     },
     "routing.rules[]": {
       "v26.3.27": ["ruleTag", "outboundTag", "balancerTag", "domain", "domains", "ip", "port", "network", "sourceIP", "source", "sourcePort", "user", "vlessRoute", "inboundTag", "protocol", "attrs", "localIP", "localPort", "process", "webhook"],
       "v26.7.28": ["ruleTag", "outboundTag", "balancerTag", "domain", "domains", "ip", "port", "network", "sourceIP", "source", "sourcePort", "user", "vlessRoute", "inboundTag", "protocol", "attrs", "localIP", "localPort", "process", "webhook"],
       "v26.9.9": ["ruleTag", "outboundTag", "balancerTag", "domain", "domains", "ip", "port", "network", "sourceIP", "source", "sourcePort", "user", "vlessRoute", "inboundTag", "protocol", "attrs", "localIP", "localPort", "process", "localOS", "webhook"],
+      "v26.9.30": ["ruleTag", "outboundTag", "balancerTag", "domain", "domains", "ip", "port", "network", "sourceIP", "source", "sourcePort", "user", "vlessRoute", "inboundTag", "protocol", "attrs", "localIP", "localPort", "process", "localOS", "webhook"],
       "v26.10.10": ["ruleTag", "outboundTag", "balancerTag", "domain", "domains", "ip", "port", "network", "sourceIP", "source", "sourcePort", "user", "vlessRoute", "inboundTag", "protocol", "attrs", "localIP", "localPort", "process", "localOS", "webhook"]
     },
     "routing.rules[].webhook": {
       "v26.3.27": ["url", "deduplication", "headers"],
       "v26.7.28": ["url", "deduplication", "headers"],
       "v26.9.9": ["url", "deduplication", "headers"],
+      "v26.9.30": ["url", "deduplication", "headers"],
       "v26.10.10": ["url", "deduplication", "headers"]
     },
     "routing.balancers[]": {
       "v26.3.27": ["tag", "selector", "strategy", "fallbackTag"],
       "v26.7.28": ["tag", "selector", "strategy", "fallbackTag"],
       "v26.9.9": ["tag", "selector", "strategy", "fallbackTag"],
+      "v26.9.30": ["tag", "selector", "strategy", "fallbackTag"],
       "v26.10.10": ["tag", "selector", "strategy", "fallbackTag"]
     },
     "routing.balancers[].strategy": {
       "v26.3.27": ["type", "settings"],
       "v26.7.28": ["type", "settings"],
       "v26.9.9": ["type", "settings"],
+      "v26.9.30": ["type", "settings"],
       "v26.10.10": ["type", "settings"]
     },
     "routing.balancers[].strategy.settings(leastLoad)": {
       "v26.3.27": ["costs", "baselines", "expected", "maxRTT", "tolerance"],
       "v26.7.28": ["costs", "baselines", "expected", "maxRTT", "tolerance"],
       "v26.9.9": ["costs", "baselines", "expected", "maxRTT", "tolerance"],
+      "v26.9.30": ["costs", "baselines", "expected", "maxRTT", "tolerance"],
       "v26.10.10": ["costs", "baselines", "expected", "maxRTT", "tolerance"]
     },
     "routing.balancers[].strategy.settings.costs[]": {
       "v26.3.27": ["regexp", "match", "value"],
       "v26.7.28": ["regexp", "match", "value"],
       "v26.9.9": ["regexp", "match", "value"],
+      "v26.9.30": ["regexp", "match", "value"],
       "v26.10.10": ["regexp", "match", "value"]
     },
     "dns": {
       "v26.3.27": ["servers", "hosts", "clientIp", "tag", "queryStrategy", "disableCache", "serveStale", "serveExpiredTTL", "disableFallback", "disableFallbackIfMatch", "enableParallelQuery", "useSystemHosts"],
       "v26.7.28": ["servers", "hosts", "clientIp", "tag", "queryStrategy", "disableCache", "serveStale", "serveExpiredTTL", "disableFallback", "disableFallbackIfMatch", "enableParallelQuery", "useSystemHosts"],
       "v26.9.9": ["servers", "hosts", "clientIp", "tag", "queryStrategy", "disableCache", "serveStale", "serveExpiredTTL", "disableFallback", "disableFallbackIfMatch", "enableParallelQuery", "useSystemHosts"],
+      "v26.9.30": ["servers", "hosts", "clientIp", "tag", "queryStrategy", "disableCache", "serveStale", "serveExpiredTTL", "disableFallback", "disableFallbackIfMatch", "enableParallelQuery", "useSystemHosts"],
       "v26.10.10": ["servers", "script", "hosts", "clientIp", "tag", "queryStrategy", "disableCache", "serveStale", "serveExpiredTTL", "disableFallback", "disableFallbackIfMatch", "enableParallelQuery", "useSystemHosts"]
     },
     "dns.servers[] (object form; a bare string is also accepted)": {
       "v26.3.27": ["address", "clientIp", "port", "skipFallback", "domains", "expectedIPs", "expectIPs", "queryStrategy", "tag", "timeoutMs", "disableCache", "serveStale", "serveExpiredTTL", "finalQuery", "unexpectedIPs"],
       "v26.7.28": ["address", "clientIp", "port", "skipFallback", "domains", "expectedIPs", "expectIPs", "queryStrategy", "tag", "timeoutMs", "disableCache", "serveStale", "serveExpiredTTL", "finalQuery", "unexpectedIPs"],
       "v26.9.9": ["address", "clientIp", "port", "skipFallback", "domains", "expectedIPs", "expectIPs", "queryStrategy", "tag", "timeoutMs", "disableCache", "serveStale", "serveExpiredTTL", "finalQuery", "unexpectedIPs"],
+      "v26.9.30": ["address", "clientIp", "port", "skipFallback", "domains", "expectedIPs", "expectIPs", "queryStrategy", "tag", "timeoutMs", "disableCache", "serveStale", "serveExpiredTTL", "finalQuery", "unexpectedIPs"],
       "v26.10.10": ["id", "address", "clientIp", "port", "skipFallback", "domains", "expectedIPs", "expectIPs", "queryStrategy", "tag", "timeoutMs", "disableCache", "serveStale", "serveExpiredTTL", "finalQuery", "unexpectedIPs"]
     },
     "fakeDns (object, or each array element)": {
       "v26.3.27": ["ipPool", "poolSize"],
       "v26.7.28": ["ipPool", "poolSize"],
       "v26.9.9": ["ipPool", "poolSize"],
+      "v26.9.30": ["ipPool", "poolSize"],
       "v26.10.10": ["ipPool", "poolSize"]
     },
     "observatory": {
       "v26.3.27": ["subjectSelector", "probeURL", "probeInterval", "enableConcurrency"],
       "v26.7.28": ["subjectSelector", "probeURL", "probeInterval", "enableConcurrency"],
       "v26.9.9": ["subjectSelector", "probeURL", "probeInterval", "enableConcurrency"],
+      "v26.9.30": ["subjectSelector", "probeURL", "probeInterval", "enableConcurrency"],
       "v26.10.10": ["subjectSelector", "probeURL", "probeInterval", "enableConcurrency"]
     },
     "burstObservatory": {
       "v26.3.27": ["subjectSelector", "pingConfig"],
       "v26.7.28": ["subjectSelector", "pingConfig"],
       "v26.9.9": ["subjectSelector", "pingConfig"],
+      "v26.9.30": ["subjectSelector", "pingConfig"],
       "v26.10.10": ["subjectSelector", "pingConfig"]
     },
     "burstObservatory.pingConfig": {
       "v26.3.27": ["destination", "connectivity", "interval", "sampling", "timeout", "httpMethod"],
       "v26.7.28": ["destination", "connectivity", "interval", "sampling", "timeout", "httpMethod"],
       "v26.9.9": ["destination", "connectivity", "interval", "sampling", "timeout", "httpMethod"],
+      "v26.9.30": ["destination", "connectivity", "interval", "sampling", "timeout", "httpMethod"],
       "v26.10.10": ["destination", "connectivity", "interval", "sampling", "timeout", "httpMethod"]
     },
     "log": {
       "v26.3.27": ["access", "error", "loglevel", "dnsLog", "maskAddress"],
       "v26.7.28": ["access", "error", "loglevel", "dnsLog", "maskAddress"],
       "v26.9.9": ["access", "error", "loglevel", "dnsLog", "maskAddress"],
+      "v26.9.30": ["access", "error", "loglevel", "dnsLog", "maskAddress"],
       "v26.10.10": ["access", "error", "loglevel", "dnsLog", "maskAddress"]
     },
     "api": {
       "v26.3.27": ["tag", "listen", "services"],
       "v26.7.28": ["tag", "listen", "services"],
       "v26.9.9": ["tag", "listen", "services"],
+      "v26.9.30": ["tag", "listen", "services"],
       "v26.10.10": ["tag", "listen", "services"]
     },
     "api.services[] values": {
       "v26.3.27": ["ReflectionService", "HandlerService", "LoggerService", "StatsService", "ObservatoryService", "RoutingService"],
       "v26.7.28": ["ReflectionService", "HandlerService", "LoggerService", "StatsService", "ObservatoryService", "RoutingService"],
       "v26.9.9": ["ReflectionService", "HandlerService", "LoggerService", "StatsService", "ObservatoryService", "RoutingService"],
+      "v26.9.30": ["ReflectionService", "HandlerService", "LoggerService", "StatsService", "ObservatoryService", "RoutingService"],
       "v26.10.10": ["ReflectionService", "HandlerService", "LoggerService", "StatsService", "ObservatoryService", "RoutingService"]
     },
     "metrics": {
       "v26.3.27": ["tag", "listen"],
       "v26.7.28": ["tag", "listen"],
       "v26.9.9": ["tag", "listen"],
+      "v26.9.30": ["tag", "listen"],
       "v26.10.10": ["tag", "listen"]
     },
     "policy": {
       "v26.3.27": ["levels", "system"],
       "v26.7.28": ["levels", "system"],
       "v26.9.9": ["levels", "system"],
+      "v26.9.30": ["levels", "system"],
       "v26.10.10": ["levels", "system"]
     },
     "policy.levels.<n>": {
       "v26.3.27": ["handshake", "connIdle", "uplinkOnly", "downlinkOnly", "statsUserUplink", "statsUserDownlink", "statsUserOnline", "bufferSize"],
       "v26.7.28": ["handshake", "connIdle", "uplinkOnly", "downlinkOnly", "statsUserUplink", "statsUserDownlink", "statsUserOnline", "bufferSize"],
       "v26.9.9": ["handshake", "connIdle", "uplinkOnly", "downlinkOnly", "statsUserUplink", "statsUserDownlink", "statsUserOnline", "bufferSize"],
+      "v26.9.30": ["handshake", "connIdle", "uplinkOnly", "downlinkOnly", "statsUserUplink", "statsUserDownlink", "statsUserOnline", "bufferSize"],
       "v26.10.10": ["handshake", "connIdle", "uplinkOnly", "downlinkOnly", "statsUserUplink", "statsUserDownlink", "statsUserOnline", "bufferSize"]
     },
     "policy.system": {
       "v26.3.27": ["statsInboundUplink", "statsInboundDownlink", "statsOutboundUplink", "statsOutboundDownlink"],
       "v26.7.28": ["statsInboundUplink", "statsInboundDownlink", "statsOutboundUplink", "statsOutboundDownlink"],
       "v26.9.9": ["statsInboundUplink", "statsInboundDownlink", "statsOutboundUplink", "statsOutboundDownlink"],
+      "v26.9.30": ["statsInboundUplink", "statsInboundDownlink", "statsOutboundUplink", "statsOutboundDownlink"],
       "v26.10.10": ["statsInboundUplink", "statsInboundDownlink", "statsOutboundUplink", "statsOutboundDownlink"]
     },
     "stats": {
       "v26.3.27": [],
       "v26.7.28": [],
       "v26.9.9": [],
+      "v26.9.30": [],
       "v26.10.10": []
     },
     "reverse": {
       "v26.3.27": ["bridges", "portals"],
       "v26.7.28": [],
       "v26.9.9": [],
+      "v26.9.30": [],
       "v26.10.10": []
     },
     "reverse.bridges[] / reverse.portals[]": {
       "v26.3.27": ["tag", "domain"],
       "v26.7.28": [],
       "v26.9.9": [],
+      "v26.9.30": [],
       "v26.10.10": []
     },
     "version": {
       "v26.3.27": ["min", "max"],
       "v26.7.28": ["min", "max"],
       "v26.9.9": ["min", "max"],
+      "v26.9.30": ["min", "max"],
       "v26.10.10": ["min", "max"]
     },
     "env": {
       "v26.3.27": [],
       "v26.7.28": ["<any variable name>: string"],
       "v26.9.9": ["<any variable name>: string"],
+      "v26.9.30": ["<any variable name>: string"],
       "v26.10.10": ["<any variable name>: string"]
     },
     "geodata": {
       "v26.3.27": [],
       "v26.7.28": ["cron", "outbound", "assets"],
       "v26.9.9": ["cron", "outbound", "assets"],
+      "v26.9.30": ["cron", "outbound", "assets"],
       "v26.10.10": ["cron", "outbound", "assets"]
     },
     "geodata.assets[]": {
       "v26.3.27": [],
       "v26.7.28": ["url", "file"],
       "v26.9.9": ["url", "file"],
+      "v26.9.30": ["url", "file"],
       "v26.10.10": ["url", "file"]
     }
   },
@@ -1047,12 +1186,14 @@
       "v26.3.27": ["transport (non-empty)"],
       "v26.7.28": ["transport (non-empty)", "reverse (any non-null)"],
       "v26.9.9": ["transport (non-empty)", "reverse (any non-null)"],
+      "v26.9.30": ["transport (non-empty)", "reverse (any non-null)"],
       "v26.10.10": ["transport (non-empty)", "reverse (any non-null)"]
     },
     "outbounds[]": {
       "v26.3.27": [],
       "v26.7.28": [],
       "v26.9.9": ["proxySettings (any non-null)"],
+      "v26.9.30": ["proxySettings (any non-null)"],
       "v26.10.10": ["proxySettings (any non-null)"]
     }
   }

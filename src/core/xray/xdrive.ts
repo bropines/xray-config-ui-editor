@@ -1,13 +1,18 @@
 /**
  * What an xdrive transport has to hold before a core will load and run it.
  *
- * xdrive (26.10) carries a connection as files: each side writes what it sends
+ * xdrive (v26.9.30 and later) carries a connection as files: each side writes what it sends
  * into a shared store and polls the store for what the other side wrote. The
  * store is a `service` — a local folder, a Google Drive folder, or any HTTP
  * file API described by a `template` (v26.10.10:transport/internet/xdrive/storage.go:35-48).
  * Its settings are `streamSettings.xdriveSettings`, `XDriveConfig`
  * (v26.10.10:infra/conf/transport_method.go:969-982), and a core checks them
- * at two moments:
+ * at two moments. v26.9.30 has the same package and the same struct
+ * (v26.9.30:infra/conf/transport_method.go:860-873, Build() at :876-889;
+ * transport/internet/xdrive, transport/internet/config.go and
+ * infra/conf/serial are identical in the two tags, so every line number below
+ * holds in both except those of transport_method.go, which sit 109 lines
+ * earlier in v26.9.30):
  *
  *   load   `XDriveConfig.Build()` (transport_method.go:985-998) — the config
  *          does not load. It is called whenever the key is there, whatever

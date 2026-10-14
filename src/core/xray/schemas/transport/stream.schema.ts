@@ -37,7 +37,7 @@ export const StreamSettingsSchema = z.object({
   wsSettings: WebSocketTransportSchema.optional(),
   httpupgradeSettings: HttpUpgradeTransportSchema.optional(),
   hysteriaSettings: HysteriaTransportSchema.optional(),
-  /** 26.10. Only a masque proxy may carry this, and only this. */
+  /** 26.9.30. Only a masque proxy may carry this, and only this. */
   masqueSettings: MasqueTransportSchema.optional(),
 
   // --- Security ---

@@ -7,10 +7,11 @@ import type { CoreVersionId } from '../../../core/xray/versions';
 import { t } from '../../../i18n';
 
 /**
- * 26.10 dropped `domainStrategy` from the WireGuard struct
- * (v26.10.10:infra/conf/wireguard.go:59-69): the key is ignored there, and its
- * value is no longer checked. So the chooser is offered where the key works,
- * and a config that already holds one sees it, with what the line does with it.
+ * v26.9.30 dropped `domainStrategy` from the WireGuard struct
+ * (v26.9.30:infra/conf/wireguard.go:59-69, the same at v26.10.10): the key is
+ * ignored there, and its value is no longer checked. So the chooser is offered
+ * where the key works, and a config that already holds one sees it, with what
+ * the line does with it.
  */
 
 const onLine = (version: CoreVersionId) => {
@@ -35,16 +36,22 @@ describe('the WireGuard domain strategy', () => {
         }
     });
 
-    it('is not offered on 26.10, which has no such setting', () => {
-        onLine('26.10');
-        const view = draw({});
-        expect(view.container.textContent).not.toContain(t("Domain Strategy"));
+    it('is not offered on v26.9.30 and 26.10, which have no such setting', () => {
+        for (const version of ['26.9.30', '26.10'] as const) {
+            onLine(version);
+            const view = draw({});
+            expect(view.container.textContent).not.toContain(t("Domain Strategy"));
+            cleanup();
+        }
     });
 
-    it('is shown on 26.10 when the config holds one, and says it does nothing there', () => {
-        onLine('26.10');
-        const view = draw({ domainStrategy: 'ForceIPv4' });
-        expect(view.container.textContent).toContain(t("Domain Strategy"));
-        expect(view.container.textContent).toContain('v26.10.10');
+    it('is shown there when the config holds one, and says it does nothing', () => {
+        for (const [version, tag] of [['26.9.30', 'v26.9.30'], ['26.10', 'v26.10.10']] as const) {
+            onLine(version);
+            const view = draw({ domainStrategy: 'ForceIPv4' });
+            expect(view.container.textContent).toContain(t("Domain Strategy"));
+            expect(view.container.textContent).toContain(tag);
+            cleanup();
+        }
     });
 });

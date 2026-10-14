@@ -11,16 +11,10 @@
  * (`echForceQuery`), and the value lists the transport choosers offer.
  */
 import type { CoreFeature, CoreValueSet, FeatureStatus } from './features';
-import type { CoreVersionId } from './index';
+import { byLine, onEveryLine } from './by-line';
 
-/** The 26.10 column follows 26.9 unless a row says otherwise — and a row says so wherever v26.10.10 differs. */
-const s = (
-    v263: FeatureStatus,
-    v267: FeatureStatus,
-    v269: FeatureStatus,
-    v2610: FeatureStatus = v269,
-): Record<CoreVersionId, FeatureStatus> =>
-    ({ '26.3': v263, '26.7': v267, '26.9': v269, '26.10': v2610 });
+/** 26.9.30 and 26.10 follow 26.9 unless a row says otherwise — see by-line.ts. */
+const s = byLine<FeatureStatus>;
 
 const SIDES = ['outbound', 'inbound'] as const;
 
@@ -133,7 +127,7 @@ const TLS_FINGERPRINTS_263 = [
 ];
 const TLS_FINGERPRINTS_267 = [...TLS_FINGERPRINTS_263, 'hellochrome_133', 'hellofirefox_148', 'hellosafari_26_3'];
 
-const same = (values: string[]): Record<CoreVersionId, string[]> => ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
+const same = (values: string[]) => onEveryLine(values);
 
 export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
     // ── security ────────────────────────────────────────────────────────
@@ -158,7 +152,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['hysteria'],
         path: 'streamSettings.network',
-        allowed: { '26.3': NETWORKS, '26.7': ['hysteria'], '26.9': ['hysteria'], '26.10': ['hysteria'] },
+        allowed: byLine(NETWORKS, ['hysteria'], ['hysteria']),
         outside: 'rejected',
         detail: 'From 26.7 a hysteria proxy refuses to start on any transport but hysteria.',
         evidence: ['v26.7.28:proxy/hysteria/client.go:37', 'v26.7.28:proxy/hysteria/server.go:36', 'v26.9.9:proxy/hysteria/client.go:37', 'v26.10.10:proxy/hysteria/client.go:37', 'v26.9.9:proxy/hysteria/server.go:36', 'v26.10.10:proxy/hysteria/server.go:36'],
@@ -204,7 +198,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['freedom'],
         path: 'streamSettings.sockopt.addressPortStrategy',
-        allowed: { '26.3': [...ADDRESS_PORT_STRATEGIES, EMPTY], '26.7': [...ADDRESS_PORT_STRATEGIES, EMPTY], '26.9': ['none', EMPTY], '26.10': ['none', EMPTY] },
+        allowed: byLine([...ADDRESS_PORT_STRATEGIES, EMPTY], [...ADDRESS_PORT_STRATEGIES, EMPTY], ['none', EMPTY]),
         outside: 'rejected',
         detail: '26.9 refuses a freedom outbound whose sockopt sets any addressPortStrategy but none.',
         evidence: ['v26.9.9:infra/conf/xray.go:344', 'v26.10.10:infra/conf/xray.go:358', 'v26.9.9:infra/conf/xray.go:345', 'v26.10.10:infra/conf/xray.go:359'],
@@ -215,7 +209,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         id: 'stream.tls.fingerprint',
         scope: 'outbound',
         path: 'streamSettings.tlsSettings.fingerprint',
-        allowed: { '26.3': [...TLS_FINGERPRINTS_263, EMPTY], '26.7': [...TLS_FINGERPRINTS_267, EMPTY], '26.9': [...TLS_FINGERPRINTS_267, EMPTY], '26.10': [...TLS_FINGERPRINTS_267, EMPTY] },
+        allowed: byLine([...TLS_FINGERPRINTS_263, EMPTY], [...TLS_FINGERPRINTS_267, EMPTY], [...TLS_FINGERPRINTS_267, EMPTY]),
         outside: 'rejected',
         detail: 'Lower-cased and looked up in the uTLS table; an unknown name fails the load. 26.7 added hellochrome_133, hellofirefox_148 and hellosafari_26_3.',
         evidence: ['v26.3.27:infra/conf/transport_internet.go:703', 'v26.7.28:infra/conf/transport_security.go:355', 'v26.7.28:transport/internet/tls/tls.go:225', 'v26.9.9:infra/conf/transport_security.go:355', 'v26.10.10:infra/conf/transport_security.go:356'],

@@ -168,12 +168,19 @@ describe('what only a client uses', () => {
     it('still has to pass Build(): domainStrategy is one of the Force family', () => {
         // A value set rather than a rule, so it arrives through the version table.
         // Only the lines whose struct still has the key: it is gone from
-        // v26.10.10 (infra/conf/wireguard.go:59-69), where it is dropped, not judged.
-        for (const line of LINES.filter(line => line !== '26.10')) {
+        // v26.9.30 and v26.10.10 (infra/conf/wireguard.go:59-69), where it is dropped, not judged.
+        for (const line of LINES.filter(line => line !== '26.9.30' && line !== '26.10')) {
             const bad = runFullDiagnostics({ inbounds: [server({ secretKey: SECRET, domainStrategy: 'AsIs' })] } as any, [], line);
             expect(bad.map(d => `${d.severity} ${d.field}`)).toEqual(['critical settings.domainStrategy']);
             const good = runFullDiagnostics({ inbounds: [server({ secretKey: SECRET, domainStrategy: 'forceipv4' })] } as any, [], line);
             expect(good).toEqual([]);
+        }
+    });
+
+    it('is dropped, not judged, on v26.9.30 and 26.10: the struct no longer has the key', () => {
+        for (const line of ['26.9.30', '26.10'] as const) {
+            const config = { inbounds: [server({ secretKey: SECRET, domainStrategy: 'AsIs' })] } as any;
+            expect(runFullDiagnostics(config, [], line).map(d => `${d.severity} ${d.field}`)).toEqual(['warning settings.domainStrategy']);
         }
     });
 
@@ -259,12 +266,14 @@ describe('an address for the next peer', () => {
 
 describe('what an inbound holding a client-only key is told', () => {
     it('names the lines where no WireGuard reads domainStrategy or remoteDNS at all', () => {
-        // v26.10.10:infra/conf/wireguard.go:59-69 dropped domainStrategy;
+        // v26.9.30:infra/conf/wireguard.go:59-69 dropped domainStrategy (v26.10.10 has the same struct);
         // remoteDNS arrived in 26.9 (v26.9.9:proxy/wireguard/client.go:113).
         expect(outboundReadsClientKey('domainStrategy', '26.9')).toBe(true);
+        expect(outboundReadsClientKey('domainStrategy', '26.9.30')).toBe(false);
         expect(outboundReadsClientKey('domainStrategy', '26.10')).toBe(false);
         expect(outboundReadsClientKey('remoteDNS', '26.7')).toBe(false);
         expect(outboundReadsClientKey('remoteDNS', '26.9')).toBe(true);
+        expect(outboundReadsClientKey('remoteDNS', '26.9.30')).toBe(true);
         expect(outboundReadsClientKey('reserved', '26.3')).toBe(true);
     });
 });

@@ -4,8 +4,9 @@
  *
  * 16 bytes for 2022-blake3-aes-128-gcm, 32 for the other two
  * (sing-shadowsocks@v0.2.7:shadowaead_2022/service.go:84-94 for the lines
- * that run up to 26.9; v26.10.10:proxy/shadowsocks_2022/cipher.go:19-21 for
- * 26.10). What each line does with a key of another length is in
+ * that run up to 26.9; v26.9.30:proxy/shadowsocks_2022/cipher.go:19-21 for
+ * v26.9.30 and 26.10, the same lines at v26.10.10). What each line does with
+ * a key of another length is in
  * shadowsocks-inbound.ts.
  */
 import { SS_2022 } from './versions/features.inbound';

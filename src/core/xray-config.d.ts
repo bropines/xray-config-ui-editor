@@ -483,7 +483,7 @@ export interface FragmentMask {
 // ── finalmask: what this file says by hand ────────────────────────────
 // The scraper reads one tag at a time, so where a finalmask shape differs
 // between the supported lines (26.3 = v26.3.27, 26.7 = v26.7.28, 26.9 = v26.9.9,
-// 26.10 = v26.10.10) the types below were written by hand as unions, one
+// 26.9.30 = v26.9.30, 26.10 = v26.10.10) the types below were written by hand as unions, one
 // member per shape, each citing the struct it describes. A `schema:generate`
 // run from a single tag collapses them again; re-apply these. Which line takes
 // which key is decided in src/core/xray/versions/finalmask-rules.ts and
@@ -505,10 +505,11 @@ export interface NoiseBytesItem {
 }
 
 /**
- * 26.10 only: a noise item built from an expression, such as
+ * v26.9.30 and later: a noise item built from an expression, such as
  * `<b 0xDEADBEEF><r 8><t>`. `packet` has to be a JSON string; `rand` beside it
  * is refused and `randRange` is not read
- * (v26.10.10:infra/conf/transport_finalmask.go:314-332, the grammar at :361-441).
+ * (v26.9.30:infra/conf/transport_finalmask.go:315-333, the grammar at :362-442;
+ * v26.10.10:infra/conf/transport_finalmask.go:314-332 and :361-441).
  * Any earlier line answers "unknown type" for it.
  */
 export interface NoiseExpItem {
@@ -600,6 +601,41 @@ export interface Xdns267 {
     resolvers?: string[];
 }
 
+/** One domain entry of v26.9.30's xdns (v26.9.30:infra/conf/transport_finalmask.go:794-800): one `name`, and its record `types` are required. */
+export interface XdnsDomain2693 {
+    name?: string;
+    /** 0 is 255. */
+    lenLimit?: number;
+    /** 0 is 63. */
+    labelLimit?: number;
+    /** Required: at least one of 1 (A), 5 (CNAME), 16 (TXT), 28 (AAAA). */
+    types?: number[];
+    edns0?: number;
+}
+
+/**
+ * One resolver entry of v26.9.30's xdns: a `type` (tcp or udp) that picks the
+ * struct `settings` is read into, `{addr}`
+ * (v26.9.30:infra/conf/transport_finalmask.go:802-826 and :861-871).
+ */
+export interface XdnsResolver2693 {
+    type?: 'tcp' | 'udp' | string;
+    settings?: { addr?: string } | null;
+}
+
+/**
+ * xdns settings on v26.9.30: both lists are lists of objects — a string in
+ * either fails the decode of the whole config — `domains` is read by both
+ * sides, and the client takes `extraPoll` (0-3). There is no `domain` field,
+ * so one is dropped unread
+ * (v26.9.30:infra/conf/transport_finalmask.go:828-832 and :872-874).
+ */
+export interface Xdns2693 {
+    domains?: XdnsDomain2693[];
+    resolvers?: XdnsResolver2693[];
+    extraPoll?: number;
+}
+
 /** One domain entry of 26.10's xdns (v26.10.10:infra/conf/transport_finalmask.go:793-799). */
 export interface XdnsDomain {
     names?: string[];
@@ -634,7 +670,7 @@ export interface Xdns2610 {
 }
 
 /** The xdns mask's settings, by line. */
-export type Xdns = Xdns263 | Xdns267 | Xdns2610;
+export type Xdns = Xdns263 | Xdns267 | Xdns2693 | Xdns2610;
 
 export interface XMC {
     hostname?: string;
@@ -675,9 +711,10 @@ export interface UdpHopMask269 {
 }
 
 /**
- * The udphop mask's settings on 26.10: the same without `sockopt`, which the
- * struct no longer has — the hops dial with the outbound's own socket
- * settings (v26.10.10:infra/conf/transport_finalmask.go:1053-1058).
+ * The udphop mask's settings on v26.9.30 and 26.10: the same without
+ * `sockopt`, which the struct no longer has — the hops dial with the
+ * outbound's own socket settings (v26.9.30:infra/conf/transport_finalmask.go:1063-1068,
+ * v26.10.10:infra/conf/transport_finalmask.go:1053-1058).
  */
 export interface UdpHopMask2610 {
     mode?: string;

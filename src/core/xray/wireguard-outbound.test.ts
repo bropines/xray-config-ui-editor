@@ -258,13 +258,17 @@ describe('remoteDNS', () => {
         expect(dns(['1.1.1.1', '2606:4700:4700::1111'], '26.9')).toEqual([]);
         expect(dns(['dns.example.com'], '26.9')).toEqual(['remoteDNS settings.remoteDNS']);
         expect(dns(['1.1.1.1', ''], '26.9')).toEqual(['remoteDNS settings.remoteDNS']);
-        expect(dns(['1.1.1.1', 'dns.example.com'], '26.10')).toEqual(['remoteDNS settings.remoteDNS']);
+        for (const line of ['26.9.30', '26.10'] as const) {
+            expect(dns(['1.1.1.1', 'dns.example.com'], line)).toEqual(['remoteDNS settings.remoteDNS']);
+            expect(dns(['1.1.1.1', '2606:4700:4700::1111'], line)).toEqual([]);
+        }
     });
 
-    it('may be the one entry "local" on 26.9 only', () => {
-        // v26.9.9:proxy/wireguard/client.go:117-120; gone by v26.9.30.
+    it('may be the one entry "local" on v26.9.9 only', () => {
+        // v26.9.9:proxy/wireguard/client.go:117-120; gone in v26.9.30, whose client.go is v26.10.10's.
         expect(dns(['local'], '26.9')).toEqual([]);
         expect(dns(['local', '1.1.1.1'], '26.9')).toEqual(['remoteDNS settings.remoteDNS']);
+        expect(dns(['local'], '26.9.30')).toEqual(['remoteDNS settings.remoteDNS']);
         expect(dns(['local'], '26.10')).toEqual(['remoteDNS settings.remoteDNS']);
     });
 });

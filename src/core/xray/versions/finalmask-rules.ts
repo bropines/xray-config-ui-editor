@@ -7,14 +7,22 @@
  * mask takes on the chosen line, including the ones nothing ever changed.
  * MASK_KEYS is that list, read off the structs in
  * `infra/conf/transport_internet.go` (v26.3.27) and
- * `infra/conf/transport_finalmask.go` (v26.7.28, v26.9.9, v26.10.10). Where a
- * FEATURES row exists for a key it still wins — `maskKeyStatus` asks it first
- * — and finalmask-rules.test.ts holds the two to each other.
+ * `infra/conf/transport_finalmask.go` (v26.7.28, v26.9.9, v26.9.30,
+ * v26.10.10). Where a FEATURES row exists for a key it still wins —
+ * `maskKeyStatus` asks it first — and finalmask-rules.test.ts holds the two to
+ * each other.
  *
  * A key can change its JSON type between lines, and then the table says so
  * with one entry per type and disjoint `lines`: xdns `domains` is a list of
- * strings on 26.7 and 26.9 and a list of objects on 26.10. Every lookup here
- * is by key *and* line for that reason.
+ * strings on 26.7 and 26.9, a list of `{name, ...}` objects on v26.9.30 and a
+ * list of `{names, ...}` objects on 26.10. Every lookup here is by key *and*
+ * line for that reason.
+ *
+ * v26.9.30 and v26.10.10 share every other mask, the chain rules and the
+ * quicParams: `git diff v26.9.30 v26.10.10` is empty for finalmask.go, xicmp,
+ * udphop, realm, sudoku, noise, xmc, the header masks and the rest of
+ * transport_finalmask.go. Only xdns differs, so only xdns has a line of its
+ * own below.
  *
  * The chain rules at the bottom are the part no key table can say: a mask
  * that only works at one end of the list, and which end that is, moved
@@ -71,18 +79,21 @@ export interface MaskKey {
     example?: string;
 }
 
-const ALL: CoreVersionId[] = ['26.3', '26.7', '26.9', '26.10'];
-const FROM_267: CoreVersionId[] = ['26.7', '26.9', '26.10'];
-const FROM_269: CoreVersionId[] = ['26.9', '26.10'];
+const ALL: CoreVersionId[] = ['26.3', '26.7', '26.9', '26.9.30', '26.10'];
+const FROM_267: CoreVersionId[] = ['26.7', '26.9', '26.9.30', '26.10'];
+const FROM_269: CoreVersionId[] = ['26.9', '26.9.30', '26.10'];
+/** v26.9.30 and later: the lines that have the noise `exp` item, MASQUE and the new chain rules. */
+const FROM_2693: CoreVersionId[] = ['26.9.30', '26.10'];
 const ONLY_263: CoreVersionId[] = ['26.3'];
 const ONLY_267_269: CoreVersionId[] = ['26.7', '26.9'];
 const ONLY_269: CoreVersionId[] = ['26.9'];
+const ONLY_2693: CoreVersionId[] = ['26.9.30'];
 const ONLY_2610: CoreVersionId[] = ['26.10'];
 const UNTIL_267: CoreVersionId[] = ['26.3', '26.7'];
 
 // Sudoku is one struct for both lists and the same on every line:
 // v26.3.27:transport_internet.go:1618, v26.9.9:transport_finalmask.go:654,
-// v26.10.10:transport_finalmask.go:749.
+// v26.9.30:transport_finalmask.go:750, v26.10.10:transport_finalmask.go:749.
 // The snake_case keys are fallbacks Build() reads when the camelCase one is empty.
 const SUDOKU: MaskKey[] = [
     { key: 'password', shape: 'string', lines: ALL },
@@ -103,7 +114,7 @@ const HEADER_TYPES = ['header-dtls', 'header-srtp', 'header-utp', 'header-wechat
 export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
     tcp: {
         // v26.3.27:transport_internet.go:1270, v26.9.9:transport_finalmask.go:103,
-        // v26.10.10:transport_finalmask.go:103 — three lists of item lists
+        // v26.9.30:transport_finalmask.go:104, v26.10.10:transport_finalmask.go:103 — three lists of item lists
         'header-custom': [
             { key: 'clients', shape: 'json', lines: ALL, expects: 'array' },
             { key: 'servers', shape: 'json', lines: ALL, expects: 'array' },
@@ -119,8 +130,8 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
             { key: 'maxSplit', shape: 'range', lines: ALL },
         ],
         sudoku: SUDOKU,
-        // v26.7.28:transport_finalmask.go:723, v26.10.10:transport_finalmask.go:868; hostname
-        // only reaches newClientConn (v26.9.9:transport/internet/finalmask/xmc/config.go:13).
+        // v26.7.28:transport_finalmask.go:723, v26.9.30:transport_finalmask.go:878, v26.10.10:transport_finalmask.go:868;
+        // hostname only reaches newClientConn (v26.9.9:transport/internet/finalmask/xmc/config.go:13).
         xmc: [
             { key: 'password', shape: 'string', lines: FROM_267 },
             { key: 'profiles', shape: 'json', lines: FROM_267, expects: 'array' },
@@ -162,18 +173,28 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
         // client sends through `resolvers` (xdns/client.go:58). Both are lists of
         // strings on 26.7 and 26.9 (v26.9.9:transport_finalmask.go:701-702).
         //
-        // v26.10.10:transport_finalmask.go:805 makes both lists of OBJECTS, and a
-        // string in either fails the decode of the whole config. `domains` is now
-        // read on both sides — the client builds its queries from it
-        // (xdns/client.go:57-75) — while `resolvers` and `extraPoll` are the
-        // client's alone (xdns/server.go reads neither).
+        // v26.9.30:transport_finalmask.go:828-832 makes both lists of OBJECTS, and a
+        // string in either fails the decode of the whole config: a domain is
+        // {name, lenLimit, labelLimit, types, edns0} (:794-800) and a resolver
+        // {type, settings} (:823-826), `type` picking the struct `settings` is
+        // read into (tcp or udp, each {addr}, :802-821). `domains` is now read on
+        // both sides — the client builds its queries from it
+        // (v26.9.30:xdns/client.go:67-78) — while `resolvers` and `extraPoll` are
+        // the client's alone (xdns/server.go reads neither).
+        //
+        // v26.10.10:transport_finalmask.go:805 keeps the two lists of objects and
+        // changes what is in them: a domain takes `names`, a list, in the place
+        // of `name`, and a resolver takes `addrs` in the place of `type` and
+        // `settings`.
         xdns: [
             { key: 'domain', shape: 'string', lines: ONLY_263 },
             { key: 'domains', shape: 'strings', lines: ONLY_267_269, side: 'inbound' },
             { key: 'resolvers', shape: 'strings', lines: ONLY_267_269, side: 'outbound' },
+            { key: 'domains', shape: 'objects', lines: ONLY_2693, example: '{"name": "t.example.com", "types": [16]}' },
+            { key: 'resolvers', shape: 'objects', lines: ONLY_2693, side: 'outbound', example: '{"type": "udp", "settings": {"addr": "1.1.1.1:53"}}' },
             { key: 'domains', shape: 'objects', lines: ONLY_2610, example: '{"names": ["t.example.com"]}' },
             { key: 'resolvers', shape: 'objects', lines: ONLY_2610, side: 'outbound', example: '{"addrs": ["1.1.1.1:53"]}' },
-            { key: 'extraPoll', shape: 'number', lines: ONLY_2610, side: 'outbound' },
+            { key: 'extraPoll', shape: 'number', lines: FROM_2693, side: 'outbound' },
         ],
         // v26.3.27:transport_internet.go:1676; v26.7.28:transport_finalmask.go:798. Only the
         // client opens a datagram ICMP socket (v26.9.9:finalmask/xicmp/client.go:56).
@@ -192,10 +213,10 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
             { key: 'ipMode', shape: 'choice', lines: FROM_269, options: ['dual', 'v4', 'v6'] },
             { key: 'portMapping', shape: 'json', lines: FROM_269, expects: 'object' },
         ],
-        // v26.9.9:transport_finalmask.go:911, v26.10.10:transport_finalmask.go:1053. The whole
-        // mask is client-only (finalmask/udphop/config.go:19, v26.10.10: config.go:16), so its
-        // keys carry no side of their own. 26.10 lost the mask's own sockopt: the hops dial
-        // with the outbound's (v26.10.10:transport/internet/memory_settings.go:76).
+        // v26.9.9:transport_finalmask.go:911, v26.9.30:transport_finalmask.go:1063, v26.10.10:transport_finalmask.go:1053.
+        // The whole mask is client-only (finalmask/udphop/config.go:19, v26.9.30 and v26.10.10: config.go:16), so its
+        // keys carry no side of their own. v26.9.30 lost the mask's own sockopt: the hops dial
+        // with the outbound's (v26.9.30:transport/internet/memory_settings.go:76).
         udphop: [
             { key: 'mode', shape: 'flags', lines: FROM_269, options: ['intervalLocal', 'intervalRemote', 'perConnRemote'] },
             { key: 'interval', shape: 'range', lines: FROM_269 },
@@ -209,7 +230,7 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
 /**
  * `finalmask.quicParams`, one struct per line: v26.3.27:transport_internet.go:630,
  * v26.7.28:transport_finalmask.go:930, v26.9.9:transport_finalmask.go:993,
- * v26.10.10:transport_finalmask.go:1132 (the same keys as 26.9).
+ * v26.9.30:transport_finalmask.go:1142, v26.10.10:transport_finalmask.go:1132 (the same keys as 26.9).
  * All numbers are plain integers — `maxIdleTimeout` and `keepAlivePeriod` in
  * seconds — and there is no handshake timeout at all.
  */
@@ -424,7 +445,8 @@ export const noiseItemTypeChoices = (version: CoreVersionId, held?: unknown): st
 };
 
 /**
- * A noise item written as an expression (v26.10.10:transport_finalmask.go:317):
+ * A noise item written as an expression (v26.9.30:transport_finalmask.go:318,
+ * v26.10.10:transport_finalmask.go:317):
  * the core builds its bytes from a string of tags, so there is no packet to
  * decode and no recipe that could hold it.
  */
@@ -432,7 +454,8 @@ export const isNoiseExpItem = (item: unknown): boolean =>
     isObject(item) && typeof item.type === 'string' && item.type.toLowerCase() === 'exp';
 
 /**
- * What `parseNoiseExp` (v26.10.10:transport_finalmask.go:363) would answer to
+ * What `parseNoiseExp` (v26.9.30:transport_finalmask.go:364,
+ * v26.10.10:transport_finalmask.go:363) would answer to
  * an expression like `<b 0xDEADBEEF><r 8><t>`, in its words, or null when it
  * builds. Only whitespace may sit between the tags, and there has to be at
  * least one. Tags are lower-case letters only, which is what the pattern at
@@ -461,7 +484,8 @@ export interface FinalmaskIssue {
  * still udp[0] (finalmask.go:32); v26.9.9 reverses the slice before numbering
  * (finalmask.go:22), which puts level 0 at udp[last].
  *
- * v26.10.10 has no levels any more: NewFinalMask reverses the lists
+ * v26.9.30 has no levels any more, and neither has v26.10.10 (finalmask.go is
+ * the same file in both): NewFinalMask reverses the lists
  * (finalmask.go:45-46) and a mask that supplies the connection itself
  * declares `HandleDial` (and `HandleListen` on a server) — DialUDP and
  * ListenPacket refuse it at any index but 0, "incorrect index: N" (:151,
@@ -475,19 +499,19 @@ export interface FinalmaskIssue {
  *   udphop  v26.9.9:finalmask/udphop/config.go:12
  */
 const OUTERMOST: Record<string, Partial<Record<CoreVersionId, 'first' | 'last'>>> = {
-    xicmp: { '26.3': 'first', '26.7': 'first', '26.9': 'last', '26.10': 'last' },
+    xicmp: { '26.3': 'first', '26.7': 'first', '26.9': 'last', '26.9.30': 'last', '26.10': 'last' },
     realm: { '26.7': 'first', '26.9': 'last' },
-    udphop: { '26.9': 'last', '26.10': 'last' },
+    udphop: { '26.9': 'last', '26.9.30': 'last', '26.10': 'last' },
 };
 
 /** What the core calls a mask in the wrong place, where it is not "requires being at the outermost level". */
-const WRONG_INDEX_ERROR: Partial<Record<CoreVersionId, string>> = { '26.10': 'incorrect index' };
+const WRONG_INDEX_ERROR: Partial<Record<CoreVersionId, string>> = { '26.9.30': 'incorrect index', '26.10': 'incorrect index' };
 
 /**
  * A UDP sudoku mask must be at level == count-1 ("must be the innermost mask
  * in chain"): udp[last] before 26.9, udp[0] after the reversal.
  * v26.3.27:finalmask/sudoku/config.go:46, v26.7.28:finalmask/sudoku/config.go:46,
- * v26.9.9:finalmask/sudoku/config.go:40. v26.10.10 dropped the check
+ * v26.9.9:finalmask/sudoku/config.go:40. v26.9.30 and v26.10.10 dropped the check
  * (sudoku/config.go:38-44).
  */
 const INNERMOST: Record<string, Partial<Record<CoreVersionId, 'first' | 'last'>>> = {
@@ -495,14 +519,15 @@ const INNERMOST: Record<string, Partial<Record<CoreVersionId, 'first' | 'last'>>
 };
 
 /**
- * Not a refusal but a place the mask belongs: an xdns client in v26.10.10
- * dials its own resolvers and never touches the connection it is handed
- * (xdns/config.go:9 calls NewClient(c, dialer)), so whatever sits nearer the
- * socket than it is wrapped around a connection nobody uses — on a client
- * only; a server still applies it (xdns/config.go:13). Its end is the socket's.
+ * Not a refusal but a place the mask belongs: an xdns client in v26.9.30 and
+ * v26.10.10 dials its own resolvers and never touches the connection it is
+ * handed (xdns/config.go:9 calls NewClient(c, dialer)), so whatever sits
+ * nearer the socket than it is wrapped around a connection nobody uses — on a
+ * client only; a server still applies it (xdns/config.go:13). Its end is the
+ * socket's.
  */
 const SOCKET_BOUND: Record<string, Partial<Record<CoreVersionId, 'last'>>> = {
-    xdns: { '26.10': 'last' },
+    xdns: { '26.9.30': 'last', '26.10': 'last' },
 };
 
 /**
@@ -510,8 +535,8 @@ const SOCKET_BOUND: Record<string, Partial<Record<CoreVersionId, 'last'>>> = {
  * whose output is what goes on the wire. 26.3 walks the list forward
  * (v26.3.27:finalmask/finalmask.go:31), 26.7 walks it backward
  * (v26.7.28:finalmask.go:32), 26.9 reverses it before walking
- * (v26.9.9:finalmask.go:22) and 26.10 reverses it in NewFinalMask
- * (v26.10.10:finalmask.go:45-46).
+ * (v26.9.9:finalmask.go:22) and v26.9.30 and 26.10 reverse it in NewFinalMask
+ * (v26.9.30:finalmask.go:45-46, v26.10.10:finalmask.go:45-46).
  */
 export const socketEnd = (version: CoreVersionId): 'first' | 'last' => (version === '26.3' ? 'first' : 'last');
 
@@ -527,12 +552,13 @@ export const pinnedEnd = (version: CoreVersionId, type: string): 'first' | 'last
 const UDPHOP_MODES = ['intervallocal', 'intervalremote', 'perconnremote'];
 
 /**
- * How a line treats udphop's interval. 26.9 has no default and checks both
+ * How a line treats udphop's interval. v26.9.9 has no default and checks both
  * ends when the mask is built for a dial (v26.9.9:finalmask/udphop/conn.go:62);
- * 26.10 turns 0 into 30-30 and refuses a start under 5 while the config loads
- * (v26.10.10:transport_finalmask.go:1088-1094).
+ * v26.9.30 and 26.10 turn 0 into 30-30 and refuse a start under 5 while the
+ * config loads (v26.9.30:transport_finalmask.go:1098-1104,
+ * v26.10.10:transport_finalmask.go:1088-1094).
  */
-const UDPHOP_INTERVAL: Partial<Record<CoreVersionId, 'dial' | 'load'>> = { '26.9': 'dial', '26.10': 'load' };
+const UDPHOP_INTERVAL: Partial<Record<CoreVersionId, 'dial' | 'load'>> = { '26.9': 'dial', '26.9.30': 'load', '26.10': 'load' };
 
 /** Whether a line fills in udphop's interval when it is left out (30), instead of failing each dial. */
 export const udphopDefaultsInterval = (version: CoreVersionId): boolean => UDPHOP_INTERVAL[version] === 'load';
@@ -540,12 +566,13 @@ export const udphopDefaultsInterval = (version: CoreVersionId): boolean => UDPHO
 /**
  * Whether the MASQUE transport reads quicParams on this line. Hysteria and
  * XHTTP always did (v26.9.9:hysteria/dialer.go:324, splithttp/dialer.go:159);
- * v26.10.10 adds MASQUE (transport/internet/masque/dialer.go:52, hub.go:92).
+ * v26.9.30 adds MASQUE (v26.9.30:transport/internet/masque/dialer.go:49,
+ * hub.go:92), and v26.10.10 keeps it (dialer.go:52, hub.go:92).
  */
-export const masqueReadsQuicParams = (version: CoreVersionId): boolean => ONLY_2610.includes(version);
+export const masqueReadsQuicParams = (version: CoreVersionId): boolean => FROM_2693.includes(version);
 
-/** A client with no xicmp ips targets the address it dials, which must be an IP (v26.10.10:finalmask/xicmp/config.go:15, client.go:72). */
-const XICMP_DIALS_ADDRESS: CoreVersionId[] = ['26.10'];
+/** A client with no xicmp ips targets the address it dials, which must be an IP (v26.9.30 and v26.10.10:finalmask/xicmp/config.go:15, client.go:72). */
+const XICMP_DIALS_ADDRESS: CoreVersionId[] = FROM_2693;
 
 /** The DNS record types an xdns domain may list: A, CNAME, TXT, AAAA (v26.10.10:finalmask/xdns/domain.go:97). */
 const XDNS_RECORD_TYPES = [1, 5, 16, 28];
@@ -606,9 +633,9 @@ export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, dire
         if (masks.length < 2) continue;
         // The wrapping order flipped in 26.7: v26.3.27:finalmask/finalmask.go:31/207
         // walk forward, v26.7.28:finalmask.go:32/216 walk backward,
-        // v26.9.9:finalmask.go:22/204 reverse first and v26.10.10:finalmask.go:45-46
-        // reverse in NewFinalMask — the same list is a different wire format on
-        // either side of 26.3 → 26.7.
+        // v26.9.9:finalmask.go:22/204 reverse first and v26.9.30 and v26.10.10
+        // (finalmask.go:45-46) reverse in NewFinalMask — the same list is a
+        // different wire format on either side of 26.3 → 26.7.
         const name = list.toUpperCase();
         out.push({
             path: `${FINALMASK_PATH}.${list}`,
@@ -703,7 +730,8 @@ const noiseIssues = (settings: Record<string, unknown>, at: string, version: Cor
         if (!isObject(item)) return;
         const here = `${at}.noise[${index}]`;
         // v26.3.27:transport_internet.go:1442, v26.7.28:transport_finalmask.go:310,
-        // v26.9.9:transport_finalmask.go:313, v26.10.10:transport_finalmask.go:314 — on every line.
+        // v26.9.9:transport_finalmask.go:313, v26.9.30:transport_finalmask.go:315,
+        // v26.10.10:transport_finalmask.go:314 — on every line.
         const rand = parseInt32Range(item.rand);
         if (item.packet !== undefined && rand && rand[1] > 0) {
             out.push({
@@ -713,7 +741,7 @@ const noiseIssues = (settings: Record<string, unknown>, at: string, version: Cor
             });
         }
         if (!isNoiseExpItem(item) || !noiseItemTypeAccepted(version, 'exp')) return;
-        // v26.10.10:transport_finalmask.go:317-325
+        // v26.9.30:transport_finalmask.go:318-326, v26.10.10:transport_finalmask.go:317-325
         if (typeof item.packet !== 'string') {
             out.push({
                 path: `${here}.packet`,
@@ -740,10 +768,11 @@ const wholeNumber = (value: unknown): value is number =>
     typeof value === 'number' && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647;
 
 /**
- * `xdns.NewDomain`'s arithmetic (v26.10.10:finalmask/xdns/domain.go:82-129):
- * whether a name leaves room for at least 17 bytes of payload per query under
- * these limits. Both of its failures are the same to a user — the limits and
- * the name do not fit — so it answers yes or no.
+ * `xdns.NewDomain`'s arithmetic (v26.10.10:finalmask/xdns/domain.go:82-129,
+ * the same file as v26.9.30:finalmask/xdns/domain.go:82-129): whether a name
+ * leaves room for at least 17 bytes of payload per query under these limits.
+ * Both of its failures are the same to a user — the limits and the name do not
+ * fit — so it answers yes or no.
  */
 const domainFits = (name: string, lenLimit: number, labelLimit: number): boolean => {
     const length = new TextEncoder().encode(`${name}.`).length;
@@ -773,9 +802,175 @@ const xdnsIssues = (
                 message: t("xdns needs a domain on Xray {tag}; without one the config does not load (\"empty domain\").", { tag }),
             }];
     }
-    return listShape === 'objects'
-        ? xdnsObjectIssues(settings, at, version, direction, tag)
-        : xdnsStringIssues(settings, at, direction, tag);
+    if (listShape !== 'objects') return xdnsStringIssues(settings, at, direction, tag);
+    return xdnsReadsOneName(version)
+        ? xdnsOneNameIssues(settings, at, direction, tag)
+        : xdnsObjectIssues(settings, at, version, direction, tag);
+};
+
+/** The lines whose xdns domain is one `name`; the next one reads a list of `names`. */
+const XDNS_ONE_NAME: CoreVersionId[] = ONLY_2693;
+
+/** Whether this line's xdns domains carry one `name` and its resolvers a `type` with `settings` — v26.9.30's shape. */
+export const xdnsReadsOneName = (version: CoreVersionId): boolean => XDNS_ONE_NAME.includes(version);
+
+/** A JSON number as the core's `uint16(int32)` conversion sees it: modulo 65536. */
+const asUint16 = (value: number): number => ((value % 65536) + 65536) % 65536;
+
+/**
+ * v26.9.30: lists of objects, a domain with one `name` and a resolver with a
+ * `type` and its `settings` (v26.9.30:infra/conf/transport_finalmask.go:794-832).
+ *
+ * What fails where: a value of the wrong type fails the decode of the config,
+ * and so does everything Build() checks (:834-876) — every domain through
+ * NewDomain, record types included (xdns/domain.go:82-129: "empty types" and
+ * "unknown types" are load errors here, because Build() hands NewDomain the
+ * domain's own types where 26.10 hands it a fixed list), the resolver type and
+ * the decode of its settings (loader.go:45-55), and extraPoll. An empty list of
+ * domains or resolvers is only found when the listener starts
+ * (xdns/server.go:46) or the dial happens (client.go:58-62).
+ */
+const xdnsOneNameIssues = (
+    settings: Record<string, unknown>,
+    at: string,
+    direction: MaskSide,
+    tag: string,
+): FinalmaskIssue[] => {
+    const out: FinalmaskIssue[] = [];
+    const runtime: FinalmaskIssue['severity'] = direction === 'inbound' ? 'critical' : 'warning';
+    const critical = (path: string, message: string) => out.push({ path, severity: 'critical', message });
+    const wrongType = (path: string, expected: string) =>
+        critical(path, t("{field} must be {expected} for Xray {tag}; as written the config does not load.", { field: path.slice(at.length + 1), expected, tag }));
+    const example = (key: string) => maskKeys('udp', 'xdns').find(entry => entry.key === key && entry.lines.includes('26.9.30'))?.example;
+    const range = (path: string, field: string, value: number, bounds: string) =>
+        critical(path, t("{field} is {value}, outside {range}, so Xray {tag} refuses the config at load.", { field, value, range: bounds, tag }));
+
+    let domainCount = 0;
+    const domains = settings.domains;
+    if (domains !== undefined && domains !== null) {
+        if (!Array.isArray(domains) || !domains.every(isObject)) {
+            critical(`${at}.domains`, t("xdns {key} on Xray {tag} must be a list of objects such as {example}. Plain strings, or anything else, make Xray fail to read the config at all.", { key: 'domains', tag, example: example('domains') }));
+        } else {
+            domains.forEach((domain, index) => {
+                const here = `${at}.domains[${index}]`;
+                const name = domain.name;
+                if (name !== undefined && name !== null && typeof name !== 'string') wrongType(`${here}.name`, t("text"));
+                for (const key of ['lenLimit', 'labelLimit', 'edns0']) {
+                    if (domain[key] !== undefined && domain[key] !== null && !wholeNumber(domain[key])) wrongType(`${here}.${key}`, t("a whole number"));
+                }
+                if (domain.types !== undefined && domain.types !== null && !(Array.isArray(domain.types) && domain.types.every(wholeNumber))) {
+                    wrongType(`${here}.types`, t("a list of whole numbers"));
+                }
+                if (out.some(issue => issue.path.startsWith(`${here}.`))) return;
+                domainCount++;
+
+                // Build() defaults both limits when they are 0 (:838-843), then NewDomain checks them.
+                const lenLimit = wholeNumber(domain.lenLimit) && domain.lenLimit !== 0 ? domain.lenLimit : 255;
+                const labelLimit = wholeNumber(domain.labelLimit) && domain.labelLimit !== 0 ? domain.labelLimit : 63;
+                // uint16(Edns0): a value past 65535 wraps before the 0 / 512-4096 test.
+                const edns0 = wholeNumber(domain.edns0) ? asUint16(domain.edns0) : 0;
+                if (lenLimit < 0 || lenLimit > 255) range(`${here}.lenLimit`, 'lenLimit', lenLimit, '0-255');
+                if (labelLimit < 0 || labelLimit > 63) range(`${here}.labelLimit`, 'labelLimit', labelLimit, '0-63');
+                if (edns0 !== 0 && (edns0 < 512 || edns0 > 4096)) range(`${here}.edns0`, 'edns0', edns0, '0 or 512-4096');
+
+                // NewDomain's own checks (xdns/domain.go:92-101): at least one type, each one A, CNAME, TXT or AAAA.
+                const kinds = (Array.isArray(domain.types) ? domain.types as number[] : []).map(asUint16);
+                if (kinds.length === 0) {
+                    critical(`${here}.types`, t("An xdns domain on Xray {tag} needs its record types: with none the config does not load (\"empty types\").", { tag }));
+                }
+                for (const kind of kinds.filter(value => !XDNS_RECORD_TYPES.includes(value))) {
+                    critical(`${here}.types`, t("Record type {kind} is not one xdns can use (1 A, 5 CNAME, 16 TXT, 28 AAAA), so Xray {tag} refuses the config at load.", { kind, tag }));
+                }
+
+                const written = typeof name === 'string' ? name : '';
+                if (written.includes('..')) {
+                    critical(`${here}.name`, t("\"{name}\" is not a domain Xray {tag} accepts (it contains \"..\"), so the config does not load.", { name: written, tag }));
+                } else if (lenLimit >= 0 && lenLimit <= 255 && labelLimit >= 0 && labelLimit <= 63 && !domainFits(written, lenLimit, labelLimit)) {
+                    critical(`${here}.name`, t("\"{name}\" does not fit xdns's limits (lenLimit {lenLimit}, labelLimit {labelLimit}): too little room is left for data, so Xray {tag} refuses the config at load.", { name: written, lenLimit, labelLimit, tag }));
+                }
+            });
+        }
+    }
+
+    const missing: string[] = [];
+    let resolverCount = 0;
+    const resolvers = settings.resolvers;
+    if (resolvers !== undefined && resolvers !== null) {
+        if (!Array.isArray(resolvers) || !resolvers.every(isObject)) {
+            critical(`${at}.resolvers`, t("xdns {key} on Xray {tag} must be a list of objects such as {example}. Plain strings, or anything else, make Xray fail to read the config at all.", { key: 'resolvers', tag, example: example('resolvers') }));
+        } else {
+            resolvers.forEach((resolver, index) => {
+                const here = `${at}.resolvers[${index}]`;
+                const kind = resolver.type;
+                if (kind !== undefined && kind !== null && typeof kind !== 'string') {
+                    wrongType(`${here}.type`, t("text"));
+                    return;
+                }
+                // LoadWithID lower-cases the id and looks it up (loader.go:45-48): tcp and udp, and nothing else.
+                const known = typeof kind === 'string' ? kind.toLowerCase() : '';
+                if (known !== 'tcp' && known !== 'udp') {
+                    critical(`${here}.type`, t("Resolver type \"{value}\" is not one Xray {tag} loads: only tcp and udp (\"unknown config id\").", { value: typeof kind === 'string' ? kind : '', tag }));
+                    return;
+                }
+                const inner = resolver.settings;
+                if (inner === undefined) {
+                    critical(`${here}.settings`, t("A resolver needs its settings object, such as {example}; without it Xray {tag} fails to read the config (\"unexpected end of JSON input\").", { example: '{"addr": "1.1.1.1:53"}', tag }));
+                    return;
+                }
+                // `null` unmarshals to nothing (an empty addr); anything but an object is a type error.
+                if (inner !== null && !isObject(inner)) {
+                    wrongType(`${here}.settings`, t("an object"));
+                    return;
+                }
+                const addr = isObject(inner) ? inner.addr : undefined;
+                if (addr !== undefined && addr !== null && typeof addr !== 'string') {
+                    wrongType(`${here}.settings.addr`, t("text"));
+                    return;
+                }
+                resolverCount++;
+                if (typeof addr !== 'string' || addr === '') missing.push(`${here}.settings.addr`);
+            });
+        }
+    }
+
+    // :872-874 — also read by the client only, but Build() checks it for both.
+    const poll = settings.extraPoll;
+    if (poll !== undefined && poll !== null) {
+        if (!wholeNumber(poll)) wrongType(`${at}.extraPoll`, t("a whole number"));
+        else if (poll < 0 || poll > 3) range(`${at}.extraPoll`, 'extraPoll', poll, '0-3');
+    }
+
+    if (out.some(issue => issue.severity === 'critical')) return out;
+
+    // Empty lists are not a load error: the listener (xdns/server.go:46) and the
+    // dial (client.go:58, :61) say so when they build the mask.
+    if (domainCount === 0) {
+        out.push({
+            path: `${at}.domains`,
+            severity: runtime,
+            message: direction === 'inbound'
+                ? t("An xdns server answers for its domains, and this one has none: the inbound fails to start (\"empty domains\").")
+                : t("An xdns client builds its queries from its domains, and this one has none: every connection fails (\"empty domains\")."),
+        });
+    }
+    if (direction === 'outbound') {
+        if (resolverCount === 0) {
+            out.push({
+                path: `${at}.resolvers`,
+                severity: 'warning',
+                message: t("An xdns client sends through its resolvers, and this one has none: every connection fails (\"empty resolvers\")."),
+            });
+        }
+        // The client dials each resolver when it is set up (xdns/resolver_udp.go:25-28): an empty address does not parse.
+        for (const path of missing) {
+            out.push({
+                path,
+                severity: 'warning',
+                message: t("An xdns client dials every resolver when it is set up, and a resolver with no addr fails that: every connection fails."),
+            });
+        }
+    }
+    return out;
 };
 
 /** 26.7 and 26.9: lists of strings. */
@@ -834,7 +1029,8 @@ const xdnsStringIssues = (settings: Record<string, unknown>, at: string, directi
 };
 
 /**
- * 26.10: lists of objects (v26.10.10:transport_finalmask.go:793-809).
+ * 26.10: lists of objects (v26.10.10:transport_finalmask.go:793-809), a domain
+ * with `names` and a resolver with `addrs`. v26.9.30's are in xdnsOneNameIssues.
  *
  * What fails where: a value of the wrong type fails the config at load, and so
  * do the checks in Build() (:811-866: every name through NewDomain, the
@@ -973,7 +1169,7 @@ const udphopIssues = (
     tag: string,
 ): FinalmaskIssue[] => {
     const out: FinalmaskIssue[] = [];
-    // v26.9.9:finalmask/udphop/config.go:19, v26.10.10:finalmask/udphop/config.go:16
+    // v26.9.9:finalmask/udphop/config.go:19, v26.9.30 and v26.10.10:finalmask/udphop/config.go:16
     if (direction === 'inbound') {
         out.push({
             path: at,
@@ -1013,7 +1209,7 @@ const udphopIssues = (
         });
     }
     if (interval && handling === 'load' && !(interval[0] === 0 && interval[1] === 0) && interval[0] < 5) {
-        // v26.10.10:transport_finalmask.go:1088-1094 — 0 is the default (30), a start under 5 is refused at load.
+        // v26.9.30:transport_finalmask.go:1098-1104, v26.10.10:transport_finalmask.go:1088-1094 — 0 is the default (30), a start under 5 is refused at load.
         out.push({
             path: `${at}.settings.interval`,
             severity: 'critical',

@@ -16,7 +16,7 @@ const Problem = ({ message }: { message?: string }) =>
     message ? <p className="text-[10px] text-rose-400 mt-1 leading-snug">{message}</p> : null;
 
 /**
- * MASQUE — CONNECT-IP over HTTP/3 (or HTTP/2, by the TLS ALPN), from 26.10.
+ * MASQUE — CONNECT-IP over HTTP/3 (or HTTP/2, by the TLS ALPN), from v26.9.30.
  *
  * Its three settings are flat, not wrapped in `servers[]` or `vnext[]`: the
  * core reads `address`, `port` and `remoteDNS` off the settings object itself

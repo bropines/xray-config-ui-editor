@@ -1,6 +1,6 @@
-import { expect, test, describe } from "bun:test";
+import { expect, test, describe, it } from "bun:test";
 import { parseXrayLink, parseWireguardConfig, parseWireguardConfigDetailed, parseRawSubscriptionText } from "./link-parser";
-import { generateXrayLink } from "./link-generator";
+import { generateXrayLink, linkProblem } from "./link-generator";
 
 describe("Link Parser & Generator", () => {
     
@@ -205,5 +205,21 @@ vless://7a216a91-cd18-4034-adf3-c3dec4a85a24@0.0.0.0:1?security=&type=tcp&header
             expect(configs[0].outbounds[1].tag).toBe("Список нужных приложений:");
             expect(configs[0].outbounds[2].tag).toBe("в боте @blackvpn_bot");
         });
+    });
+});
+
+describe('a Shadowsocks link without a method', () => {
+    it('is not made up: no link, and a reason the editor can show', () => {
+        // It used to say aes-256-gcm, which hands a client a cipher the server
+        // does not use.
+        const outbound = { tag: 'ss', protocol: 'shadowsocks', settings: { servers: [{ address: '1.2.3.4', port: 8388, password: 'p' }] } };
+        expect(generateXrayLink(outbound)).toBe('');
+        expect(linkProblem(outbound)).not.toBeNull();
+    });
+
+    it('uses the method the config holds, flat or in the first server', () => {
+        const servers = { tag: 'ss', protocol: 'shadowsocks', settings: { servers: [{ address: '1.2.3.4', port: 8388, method: 'chacha20-ietf-poly1305', password: 'p' }] } };
+        expect(atob(generateXrayLink(servers).slice(5).split('@')[0]!)).toBe('chacha20-ietf-poly1305:p');
+        expect(linkProblem(servers)).toBeNull();
     });
 });

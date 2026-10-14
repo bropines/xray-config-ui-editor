@@ -134,7 +134,7 @@ export const DiagnosticsPanel = ({ diagnostics, onClose }: Props) => {
                                     role="radio"
                                     aria-checked={version.id === coreVersion}
                                     onClick={() => setCoreVersion(version.id)}
-                                    className={`flex-1 h-9 rounded-lg border text-[11px] font-mono font-bold transition-colors ${
+                                    className={`flex-1 min-w-0 h-9 rounded-lg border text-[10px] sm:text-[11px] font-mono font-bold transition-colors ${
                                         version.id === coreVersion
                                             ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
                                             : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'

@@ -25,7 +25,7 @@
  * right for a round-trip through the editor and wrong for a .conf, where
  * `<b 0xzz>` is not a packet).
  *
- * 26.10's `exp` items are the one kind the recipe cannot hold — they are
+ * `exp` items (v26.9.30 and later) are the one kind the recipe cannot hold — they are
  * built from an expression, not bytes — and they are also the kind closest to
  * AWG: `<b>`, `<r n>`, `<rc n>`, `<rd n>` and `<t>` are the same tags with the
  * same meaning, and `<n>` is `<r 8>`. Such an item goes out as its own tag

@@ -37,11 +37,11 @@ export interface NetworkOption {
  * one, disabled and labelled for what they are, so an imported config still
  * shows what it holds instead of an empty chooser.
  *
- * `masque` is the other way round: from 26.10 the core allows the masque
+ * `masque` is the other way round: from v26.9.30 the core allows the masque
  * transport only on the masque proxy (inbound or outbound), and that proxy uses
- * no other, so it is offered there and nowhere else. Lines before 26.10 do not
- * register it at all. `xdrive`, 26.10's other new transport, has no such tie
- * and is offered wherever the line has it.
+ * no other, so it is offered there and nowhere else. Lines before v26.9.30 do
+ * not register it at all. `xdrive`, the other transport v26.9.30 brings, has
+ * no such tie and is offered wherever the line has it.
  */
 const REMOVED: Record<string, string> = {
     http: 'XHTTP (stream-one H2/H3)',
@@ -106,9 +106,10 @@ const BASE_NETWORKS = (): NetworkOption[] => [
 /**
  * The pairing between a masque proxy and the masque transport, from the network
  * side: a proxy of another kind on the transport is refused by the loader
- * (v26.10.10:infra/conf/xray.go:209-211 inbound, :351-353 outbound), and a
- * masque proxy on any other transport does not start — "not masque transport"
- * (v26.10.10:proxy/masque/client.go:58-60, server.go:126-128).
+ * (v26.9.30 and v26.10.10:infra/conf/xray.go:209-211 inbound, :351-353
+ * outbound), and a masque proxy on any other transport does not start — "not
+ * masque transport" (v26.9.30 and v26.10.10:proxy/masque/client.go:58-60,
+ * server.go:126-128).
  * `network` is lower-case. Only meaningful on a line that registers the
  * transport; the caller has already asked.
  */
@@ -122,7 +123,7 @@ const masqueNetworkProblem = (protocol: string | undefined, network: string, tag
     return undefined;
 };
 
-/** Both halves of MASQUE need TLS (v26.10.10:proxy/masque/client.go:61-63, server.go:129-131). */
+/** Both halves of MASQUE need TLS (v26.9.30 and v26.10.10:proxy/masque/client.go:61-63, server.go:129-131). */
 const masqueNeedsTls = (protocol: string | undefined, network: string): boolean =>
     protocol === 'masque' || network.toLowerCase() === 'masque';
 
@@ -133,7 +134,7 @@ export const networkOptions = (
 ): NetworkOption[] => {
     let options = BASE_NETWORKS();
 
-    // xdrive (26.10) carries any stream proxy, through files in a shared
+    // xdrive (v26.9.30 and later) carries any stream proxy, through files in a shared
     // store; the form for its settings is XDriveSettingsEditor. Offered only
     // where the line registers it — anywhere else a held one is the `current`
     // below, shown with what the line says about it.
@@ -212,8 +213,8 @@ const SETTINGS_SECTION: Record<string, string> = {
  * it as absent instead.
  */
 const SETTINGS_SINCE: Record<string, CoreVersionId> = {
-    masqueSettings: '26.10',
-    xdriveSettings: '26.10',
+    masqueSettings: '26.9.30',
+    xdriveSettings: '26.9.30',
 };
 
 /**
@@ -263,7 +264,7 @@ const hysteriaProxyNeedsItsTransport = (version: CoreVersionId): boolean =>
  *
  *   v26.3.27:transport/internet/hysteria/hub.go:317, dialer.go:442
  *   v26.7.28 :hub.go:200, dialer.go:324      v26.9.9  :hub.go:202, dialer.go:297
- *   v26.10.10:hub.go:202, dialer.go:317
+ *   v26.9.30 :hub.go:202, dialer.go:296      v26.10.10:hub.go:202, dialer.go:317
  *
  * That holds on every line, for any proxy riding that transport.
  *

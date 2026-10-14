@@ -10,16 +10,10 @@
  * live in finalmask-rules.ts; its test holds them to these rows.
  */
 import type { CoreFeature, CoreValueSet, FeatureStatus } from './features';
-import type { CoreVersionId } from './index';
+import { byLine } from './by-line';
 
-/** The 26.10 column follows 26.9 unless a row says otherwise — and a row says so wherever v26.10.10 differs. */
-const s = (
-    v263: FeatureStatus,
-    v267: FeatureStatus,
-    v269: FeatureStatus,
-    v2610: FeatureStatus = v269,
-): Record<CoreVersionId, FeatureStatus> =>
-    ({ '26.3': v263, '26.7': v267, '26.9': v269, '26.10': v2610 });
+/** 26.9.30 and 26.10 follow 26.9 unless a row says otherwise — see by-line.ts. */
+const s = byLine<FeatureStatus>;
 
 /** finalmask is the same struct on either side, so every row is written for both. */
 const bothSides = (row: Omit<CoreFeature, 'id' | 'scope'> & { id: string }): CoreFeature[] =>
@@ -56,8 +50,8 @@ export const FINALMASK_FEATURES: CoreFeature[] = [
         id: 'finalmask.udp.xdns.resolvers',
         path: `${FM}.udp[type=xdns].settings.resolvers`,
         status: s('absent', 'accepted', 'accepted'),
-        detail: 'The client-side resolver list arrived with the 26.7 xdns split; 26.3 read a single domain. 26.10 reads a list of {addrs} objects instead of strings.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1662', 'v26.7.28:infra/conf/transport_finalmask.go:699', 'v26.9.9:infra/conf/transport_finalmask.go:702', 'v26.10.10:infra/conf/transport_finalmask.go:807'],
+        detail: 'The client-side resolver list arrived with the 26.7 xdns split; 26.3 read a single domain. v26.9.30 reads a list of {type, settings} objects instead of strings, and 26.10 a list of {addrs} objects.',
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1662', 'v26.7.28:infra/conf/transport_finalmask.go:699', 'v26.9.9:infra/conf/transport_finalmask.go:702', 'v26.9.30:infra/conf/transport_finalmask.go:830', 'v26.10.10:infra/conf/transport_finalmask.go:807'],
     }),
     ...bothSides({
         id: 'finalmask.udp.xicmp.ips',
@@ -94,12 +88,11 @@ export const FINALMASK_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         path: `${FM}.quicParams.bbrProfile`,
         // Lower-cased before the switch; "" is the standard profile.
-        allowed: {
-            '26.3': null,
-            '26.7': ['', 'conservative', 'standard', 'aggressive'],
-            '26.9': ['', 'conservative', 'standard', 'aggressive'],
-            '26.10': ['', 'conservative', 'standard', 'aggressive'],
-        },
+        allowed: byLine<string[] | null>(
+            null,
+            ['', 'conservative', 'standard', 'aggressive'],
+            ['', 'conservative', 'standard', 'aggressive'],
+        ),
         outside: 'rejected',
         detail: 'Any other profile fails the config with "unknown bbr profile".',
         evidence: ['v26.7.28:infra/conf/transport_internet.go:219', 'v26.7.28:infra/conf/transport_internet.go:226', 'v26.9.9:infra/conf/transport_internet.go:219', 'v26.10.10:infra/conf/transport_internet.go:245'],
@@ -109,19 +102,21 @@ export const FINALMASK_VALUE_SETS: CoreValueSet[] = [
         // not list (v26.3.27:transport_internet.go:1204-1233, v26.7.28:transport_finalmask.go:33-63,
         // v26.9.9:transport_finalmask.go:35-65), and a noise item hands it its own type. v26.10.10
         // looks for "exp" first and builds the item from a string expression instead
-        // (transport_finalmask.go:317-332); header-custom items and transform args still go
-        // through PraseByteSlice alone, so exp is a noise-item value only. A missing type is "".
+        // (transport_finalmask.go:317-332), and so does v26.9.30, which is where it arrived
+        // (v26.9.30:transport_finalmask.go:318-332); header-custom items and transform args
+        // still go through PraseByteSlice alone, so exp is a noise-item value only. A missing type is "".
         id: 'finalmask.udp.noise.item.type',
         scope: 'outbound',
         path: `${FM}.udp[type=noise].settings.noise[].type`,
-        allowed: {
-            '26.3': NOISE_ITEM_TYPES,
-            '26.7': NOISE_ITEM_TYPES,
-            '26.9': NOISE_ITEM_TYPES,
-            '26.10': [...NOISE_ITEM_TYPES, 'exp'],
-        },
+        allowed: byLine(
+            NOISE_ITEM_TYPES,
+            NOISE_ITEM_TYPES,
+            NOISE_ITEM_TYPES,
+            [...NOISE_ITEM_TYPES, 'exp'],
+            [...NOISE_ITEM_TYPES, 'exp'],
+        ),
         outside: 'rejected',
-        detail: 'The type of a noise item picks how its packet is decoded; exp (26.10 only) takes a string expression such as <b 0xDEADBEEF><r 8><t>. Any other type fails the config with "unknown type".',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1232', 'v26.7.28:infra/conf/transport_finalmask.go:63', 'v26.9.9:infra/conf/transport_finalmask.go:65', 'v26.10.10:infra/conf/transport_finalmask.go:317', 'v26.10.10:infra/conf/transport_finalmask.go:340'],
+        detail: 'The type of a noise item picks how its packet is decoded; exp (v26.9.30 and later) takes a string expression such as <b 0xDEADBEEF><r 8><t>. Any other type fails the config with "unknown type".',
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1232', 'v26.7.28:infra/conf/transport_finalmask.go:63', 'v26.9.9:infra/conf/transport_finalmask.go:65', 'v26.9.30:infra/conf/transport_finalmask.go:318', 'v26.9.30:infra/conf/transport_finalmask.go:341', 'v26.10.10:infra/conf/transport_finalmask.go:317', 'v26.10.10:infra/conf/transport_finalmask.go:340'],
     },
 ];

@@ -115,7 +115,7 @@ const numberHelp = (key: XDriveNumberKey, fallback: number, cap?: number): strin
 };
 
 /**
- * `streamSettings.xdriveSettings` (26.10): which store carries the files, how
+ * `streamSettings.xdriveSettings` (v26.9.30 and later): which store carries the files, how
  * to reach it, and how often each side writes and polls it.
  *
  * Every key is typed the way `XDriveConfig` decodes it: two texts, a list of
