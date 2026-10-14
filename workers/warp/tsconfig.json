@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "WebWorker"],
+        "module": "Preserve",
+        "moduleResolution": "bundler",
+        "types": [],
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "skipLibCheck": true,
+        "noEmit": true
+    },
+    "include": ["src/index.ts"]
+}

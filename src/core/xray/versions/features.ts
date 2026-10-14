@@ -23,6 +23,8 @@ import { GENERATED_FEATURES } from './features.data';
 import { FINALMASK_FEATURES, FINALMASK_VALUE_SETS } from './features.finalmask';
 import { TRANSPORT_FEATURES, TRANSPORT_VALUE_SETS } from './features.transport';
 import { INBOUND_FEATURES, INBOUND_VALUE_SETS } from './features.inbound';
+import { MASQUE_FEATURES } from './features.masque';
+import { V2610_FEATURES, V2610_VALUE_SETS } from './features.v2610';
 
 export type FeatureStatus = 'accepted' | 'deprecated' | 'absent' | 'rejected';
 
@@ -51,6 +53,13 @@ export interface CoreFeature {
      * a top-level `transport: {}` both load fine.
      */
     nonEmpty?: boolean;
+    /**
+     * The id of the row for the object this key sits in. When that row is
+     * reported at the same place, this one is left out of the diagnostics: a
+     * config that holds a whole object a line does not know gets one finding,
+     * not one per key. Editors still ask this row for the key's own status.
+     */
+    coveredBy?: string;
     status: Record<CoreVersionId, FeatureStatus>;
     /** What to use instead, when the core names something. */
     replacement?: string;
@@ -59,8 +68,14 @@ export interface CoreFeature {
     evidence: string[];
 }
 
-const s = (v263: FeatureStatus, v267: FeatureStatus, v269: FeatureStatus): Record<CoreVersionId, FeatureStatus> =>
-    ({ '26.3': v263, '26.7': v267, '26.9': v269 });
+/** The 26.10 column follows 26.9 unless a row says otherwise — and a row says so wherever v26.10.10 differs. */
+const s = (
+    v263: FeatureStatus,
+    v267: FeatureStatus,
+    v269: FeatureStatus,
+    v2610: FeatureStatus = v269,
+): Record<CoreVersionId, FeatureStatus> =>
+    ({ '26.3': v263, '26.7': v267, '26.9': v269, '26.10': v2610 });
 
 /**
  * Rows written by hand: the ones the editors ask about by id, and the ones
@@ -76,7 +91,7 @@ const HAND_FEATURES: CoreFeature[] = [
         status: s('accepted', 'accepted', 'rejected'),
         replacement: 'streamSettings.sockopt.dialerProxy',
         detail: 'Proxy chaining through proxySettings became a removed feature; the core refuses the config.',
-        evidence: ['v26.9.9:infra/conf/xray.go:262'],
+        evidence: ['v26.9.9:infra/conf/xray.go:262', 'v26.10.10:infra/conf/xray.go:268'],
     },
 
     // ── protocols ───────────────────────────────────────────────────────
@@ -85,18 +100,18 @@ const HAND_FEATURES: CoreFeature[] = [
         scope: 'outbound',
         path: 'protocol',
         value: 'masque',
-        status: s('rejected', 'rejected', 'rejected'),
-        detail: 'MASQUE is not registered as an outbound protocol in any supported release; the loader fails on an unknown protocol.',
-        evidence: ['v26.9.9:infra/conf/xray.go:40'],
+        status: s('rejected', 'rejected', 'rejected', 'accepted'),
+        detail: 'MASQUE is registered as an outbound protocol from 26.10 (and in v26.9.30, a patch of the 26.9 line later than the v26.9.9 this app models); before that the loader fails on an unknown protocol.',
+        evidence: ['v26.9.9:infra/conf/xray.go:38', 'v26.10.10:infra/conf/xray.go:53'],
     },
     {
         id: 'inbound.protocol.masque',
         scope: 'inbound',
         path: 'protocol',
         value: 'masque',
-        status: s('rejected', 'rejected', 'rejected'),
-        detail: 'MASQUE is not registered as an inbound protocol in any supported release.',
-        evidence: ['v26.9.9:infra/conf/xray.go:24'],
+        status: s('rejected', 'rejected', 'rejected', 'accepted'),
+        detail: 'MASQUE is registered as an inbound protocol from 26.10 (and in v26.9.30, a patch of the 26.9 line later than the v26.9.9 this app models); before that the loader fails on an unknown protocol.',
+        evidence: ['v26.9.9:infra/conf/xray.go:23', 'v26.10.10:infra/conf/xray.go:36'],
     },
 
     // ── shadowsocks ─────────────────────────────────────────────────────
@@ -107,7 +122,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'settings.uot',
         status: s('accepted', 'absent', 'absent'),
         detail: 'UDP over TCP was dropped from the shadowsocks client config after 26.3.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go'],
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go', 'v26.10.10:infra/conf/shadowsocks.go:189-197'],
     },
     {
         id: 'outbound.shadowsocks.servers.uot',
@@ -116,7 +131,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'settings.servers[].uot',
         status: s('accepted', 'absent', 'absent'),
         detail: 'UDP over TCP was dropped from shadowsocks server entries after 26.3.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go'],
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go', 'v26.10.10:infra/conf/shadowsocks.go:180-187'],
     },
 
     // ── loopback ────────────────────────────────────────────────────────
@@ -127,7 +142,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'settings.sniffing',
         status: s('absent', 'accepted', 'accepted'),
         detail: 'Sniffing on loopback re-entry arrived in 26.7.',
-        evidence: ['v26.7.28:infra/conf/loopback.go:11'],
+        evidence: ['v26.7.28:infra/conf/loopback.go:11', 'v26.10.10:infra/conf/loopback.go:11'],
     },
 
     // ── freedom ─────────────────────────────────────────────────────────
@@ -138,7 +153,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'settings.finalRules',
         status: s('absent', 'accepted', 'accepted'),
         detail: 'Freedom finalRules arrived in 26.7.',
-        evidence: ['v26.7.28:infra/conf/freedom.go:29'],
+        evidence: ['v26.7.28:infra/conf/freedom.go:29', 'v26.10.10:infra/conf/freedom.go:29'],
     },
 
     // ── wireguard ───────────────────────────────────────────────────────
@@ -149,7 +164,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'settings.workers',
         status: s('accepted', 'absent', 'absent'),
         detail: 'WireGuard workers was dropped after 26.3.',
-        evidence: ['v26.3.27:infra/conf/wireguard.go', 'v26.7.28:infra/conf/wireguard.go'],
+        evidence: ['v26.3.27:infra/conf/wireguard.go', 'v26.7.28:infra/conf/wireguard.go', 'v26.10.10:infra/conf/wireguard.go:59-69'],
     },
     {
         id: 'outbound.wireguard.remoteDNS',
@@ -158,7 +173,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'settings.remoteDNS',
         status: s('absent', 'absent', 'accepted'),
         detail: 'WireGuard remoteDNS arrived in 26.9.',
-        evidence: ['v26.9.9:infra/conf/wireguard.go:68'],
+        evidence: ['v26.9.9:infra/conf/wireguard.go:69', 'v26.10.10:infra/conf/wireguard.go:68'],
     },
 
     // ── transports that load with a deprecation warning ─────────────────
@@ -171,7 +186,7 @@ const HAND_FEATURES: CoreFeature[] = [
             status: s('deprecated', 'deprecated', 'deprecated'),
             replacement: 'xhttp',
             detail: `The ${network} transport still loads, and every supported core logs that XHTTP should replace it.`,
-            evidence: ['v26.3.27:infra/conf/transport_internet.go', 'v26.9.9:infra/conf/transport_internet.go'],
+            evidence: ['v26.3.27:infra/conf/transport_internet.go', 'v26.9.9:infra/conf/transport_internet.go', 'v26.10.10:infra/conf/transport_internet.go:24-32'],
         } satisfies CoreFeature)),
     ),
 
@@ -185,7 +200,7 @@ const HAND_FEATURES: CoreFeature[] = [
         status: s('rejected', 'rejected', 'rejected'),
         replacement: 'VLESS with flow',
         detail: 'Flow for Trojan is a removed feature; any non-empty flow, flat or in servers[], fails the load.',
-        evidence: ['v26.3.27:infra/conf/trojan.go', 'v26.9.9:infra/conf/trojan.go'],
+        evidence: ['v26.3.27:infra/conf/trojan.go', 'v26.9.9:infra/conf/trojan.go', 'v26.10.10:infra/conf/trojan.go'],
     },
 
     // ── routing ─────────────────────────────────────────────────────────
@@ -196,7 +211,7 @@ const HAND_FEATURES: CoreFeature[] = [
         status: s('absent', 'absent', 'absent'),
         replacement: 'routing.domainStrategy (IPIfNonMatch / IPOnDemand) and dns.queryStrategy',
         detail: 'A rule has no domainStrategy of its own; resolution is decided by routing.domainStrategy.',
-        evidence: ['v26.3.27:infra/conf/router.go', 'v26.9.9:infra/conf/router.go'],
+        evidence: ['v26.3.27:infra/conf/router.go', 'v26.9.9:infra/conf/router.go', 'v26.10.10:infra/conf/router.go'],
     },
     {
         id: 'rule.localOS',
@@ -204,7 +219,7 @@ const HAND_FEATURES: CoreFeature[] = [
         path: 'localOS',
         status: s('absent', 'absent', 'accepted'),
         detail: 'Matching on the local operating system arrived in 26.9.',
-        evidence: ['v26.9.9:infra/conf/router.go'],
+        evidence: ['v26.9.9:infra/conf/router.go', 'v26.10.10:infra/conf/router.go'],
     },
 ];
 
@@ -221,7 +236,7 @@ const mergeFeatures = (hand: CoreFeature[], generated: CoreFeature[]): CoreFeatu
 ];
 
 export const FEATURES: CoreFeature[] = mergeFeatures(
-    [...HAND_FEATURES, ...FINALMASK_FEATURES, ...TRANSPORT_FEATURES, ...INBOUND_FEATURES],
+    [...HAND_FEATURES, ...FINALMASK_FEATURES, ...TRANSPORT_FEATURES, ...INBOUND_FEATURES, ...MASQUE_FEATURES, ...V2610_FEATURES],
     GENERATED_FEATURES,
 );
 
@@ -253,6 +268,13 @@ export interface CoreValueSet {
     outside: Extract<FeatureStatus, 'rejected' | 'absent'>;
     /** Values the core compares after lower-casing; most do. */
     caseSensitive?: boolean;
+    /**
+     * The list is what a chooser offers, not what the core accepts: whether a
+     * value is accepted depends on other keys, so a rule judges it and
+     * `valueUses` leaves the set out. Its `allowed` lists stay the offered
+     * values per line.
+     */
+    offeredOnly?: boolean;
     /** For a value that went away: what took its place. */
     replacedBy?: Record<string, string>;
     detail: string;
@@ -270,19 +292,31 @@ const FINALMASK_UDP_263 = [
 ];
 const FINALMASK_UDP_267 = ['header-custom', 'mkcp-legacy', 'noise', 'salamander', 'sudoku', 'xdns', 'xicmp', 'realm'];
 const FINALMASK_UDP_269 = both(FINALMASK_UDP_267, ['udphop']);
+// v26.10.10 registers the same types as v26.9.9 (transport_finalmask.go:72-77 for TCP, :79-89 for UDP);
+// its own lists, so a later release that changes one has somewhere to do it.
+const FINALMASK_TCP_2610 = [...FINALMASK_TCP_267];
+const FINALMASK_UDP_2610 = [...FINALMASK_UDP_269];
 
 /**
- * Transport names `TransportProtocol.Build()` knows — the same on all three
- * lines. Anything else is "unknown transport protocol" and the config does not
+ * Transport names `TransportProtocol.Build()` knows — the same on the first
+ * three lines (26.10 adds two, below). Anything else is "unknown transport
+ * protocol" and the config does not
  * load; `h2`/`h3`/`http`/`quic` are removed-feature errors, which amounts to
  * the same thing. `udp` is not a transport name either, though for a while
  * this editor wrote it into every WireGuard and Hysteria endpoint.
  */
 const NETWORKS = ['raw', 'tcp', 'xhttp', 'splithttp', 'kcp', 'mkcp', 'grpc', 'ws', 'websocket', 'httpupgrade', 'hysteria'];
 
+/**
+ * 26.10 registers two more: `masque` (CONNECT-IP over HTTP/3 or HTTP/2, only
+ * for the masque proxy) and `xdrive` (a cloud drive as the carrier)
+ * (v26.10.10:infra/conf/transport_internet.go:39-42).
+ */
+const NETWORKS_2610 = [...NETWORKS, 'masque', 'xdrive'];
+
 /** The same value list on every line. */
 const everywhere = (values: string[]): Record<CoreVersionId, string[]> =>
-    ({ '26.3': values, '26.7': values, '26.9': values });
+    ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
 
 /** Outbound protocol values, read from findings/protocols.json. */
 const SS_METHODS_CLASSIC = [
@@ -304,20 +338,20 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['blackhole', 'block'],
         path: 'settings.response.type',
-        allowed: { '26.3': ['none', 'http'], '26.7': ['none', 'http'], '26.9': ['none', 'http', 'custom'] },
+        allowed: { '26.3': ['none', 'http'], '26.7': ['none', 'http'], '26.9': ['none', 'http', 'custom'], '26.10': ['none', 'http', 'custom'] },
         outside: 'rejected',
         detail: 'The custom response exists only in 26.9; before that a response type is looked up by id and anything unlisted is "unknown config id".',
-        evidence: ['v26.7.28:infra/conf/blackhole.go', 'v26.9.9:infra/conf/blackhole.go'],
+        evidence: ['v26.7.28:infra/conf/blackhole.go', 'v26.9.9:infra/conf/blackhole.go', 'v26.10.10:infra/conf/blackhole.go'],
     },
     ...(['settings.method', 'settings.servers[].method'] as const).map((path, i): CoreValueSet => ({
         id: i === 0 ? 'outbound.shadowsocks.method' : 'outbound.shadowsocks.servers.method',
         scope: 'outbound',
         protocol: ['shadowsocks', 'shadowsocks-2022'],
         path,
-        allowed: { '26.3': SS_METHODS_263, '26.7': SS_METHODS_267, '26.9': SS_METHODS_267 },
+        allowed: { '26.3': SS_METHODS_263, '26.7': SS_METHODS_267, '26.9': SS_METHODS_267, '26.10': SS_METHODS_267 },
         outside: 'rejected',
         detail: 'The none and plain ciphers were removed in 26.7 and now fail with "unknown cipher method".',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go'],
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go', 'v26.10.10:infra/conf/shadowsocks.go:241-244'],
     })),
     ...(['settings.security', 'settings.vnext[].users[].security'] as const).map((path, i): CoreValueSet => ({
         id: i === 0 ? 'outbound.vmess.security' : 'outbound.vmess.users.security',
@@ -328,12 +362,13 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
             '26.3': ['auto', 'aes-128-gcm', 'chacha20-poly1305', 'none', 'zero'],
             '26.7': ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
             '26.9': ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
+            '26.10': ['auto', 'aes-128-gcm', 'chacha20-poly1305'],
         },
         // Not an error: an unlisted value quietly becomes auto.
         outside: 'absent',
         replacedBy: { none: 'auto', zero: 'auto' },
         detail: 'From 26.7 none and zero still load but quietly mean auto.',
-        evidence: ['v26.3.27:infra/conf/vmess.go', 'v26.7.28:infra/conf/vmess.go'],
+        evidence: ['v26.3.27:infra/conf/vmess.go', 'v26.7.28:infra/conf/vmess.go', 'v26.10.10:infra/conf/vmess.go'],
     })),
     ...(['settings.flow', 'settings.vnext[].users[].flow'] as const).map((path, i): CoreValueSet => ({
         id: i === 0 ? 'outbound.vless.flow' : 'outbound.vless.users.flow',
@@ -344,7 +379,7 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         outside: 'rejected',
         caseSensitive: true,
         detail: 'Flow is matched exactly; any other value fails the config.',
-        evidence: ['v26.3.27:infra/conf/vless.go', 'v26.9.9:infra/conf/vless.go'],
+        evidence: ['v26.3.27:infra/conf/vless.go', 'v26.9.9:infra/conf/vless.go', 'v26.10.10:infra/conf/vless.go'],
     })),
     {
         id: 'outbound.freedom.noises.type',
@@ -356,7 +391,7 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         // No lower-casing here: "Rand" fails the config.
         caseSensitive: true,
         detail: 'Noise types are matched exactly; anything else fails with "Invalid packet".',
-        evidence: ['v26.3.27:infra/conf/freedom.go', 'v26.9.9:infra/conf/freedom.go'],
+        evidence: ['v26.3.27:infra/conf/freedom.go', 'v26.9.9:infra/conf/freedom.go', 'v26.10.10:infra/conf/freedom.go'],
     },
     ...(['settings.targetStrategy', 'settings.domainStrategy'] as const).map((path, i): CoreValueSet => ({
         id: i === 0 ? 'outbound.freedom.targetStrategy' : 'outbound.freedom.domainStrategy',
@@ -366,27 +401,27 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         allowed: everywhere(['', ...DOMAIN_STRATEGIES]),
         outside: 'rejected',
         detail: 'Any other value fails the config with "unsupported domain strategy".',
-        evidence: ['v26.3.27:infra/conf/freedom.go', 'v26.9.9:infra/conf/freedom.go'],
+        evidence: ['v26.3.27:infra/conf/freedom.go', 'v26.9.9:infra/conf/freedom.go', 'v26.10.10:infra/conf/freedom.go'],
     })),
     {
         id: 'outbound.freedom.finalRules.action',
         scope: 'outbound',
         protocol: ['freedom', 'direct'],
         path: 'settings.finalRules[].action',
-        allowed: { '26.3': null, '26.7': ['allow', 'block'], '26.9': ['allow', 'block'] },
+        allowed: { '26.3': null, '26.7': ['allow', 'block'], '26.9': ['allow', 'block'], '26.10': ['allow', 'block'] },
         outside: 'rejected',
         detail: 'Required from 26.7; a missing or unlisted action fails with "unknown action".',
-        evidence: ['v26.7.28:infra/conf/freedom.go'],
+        evidence: ['v26.7.28:infra/conf/freedom.go', 'v26.10.10:infra/conf/freedom.go'],
     },
     {
         id: 'outbound.dns.rules.action',
         scope: 'outbound',
         protocol: ['dns'],
         path: 'settings.rules[].action',
-        allowed: { '26.3': null, '26.7': ['direct', 'drop', 'return', 'hijack'], '26.9': ['direct', 'drop', 'return', 'hijack'] },
+        allowed: { '26.3': null, '26.7': ['direct', 'drop', 'return', 'hijack'], '26.9': ['direct', 'drop', 'return', 'hijack'], '26.10': ['direct', 'drop', 'return', 'hijack'] },
         outside: 'rejected',
         detail: 'Required from 26.7; a missing or unlisted action fails with "unknown action".',
-        evidence: ['v26.7.28:infra/conf/dns_proxy.go'],
+        evidence: ['v26.7.28:infra/conf/dns_proxy.go', 'v26.10.10:infra/conf/dns_proxy.go'],
     },
     {
         id: 'outbound.loopback.sniffing.destOverride',
@@ -397,14 +432,15 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
             '26.3': null,
             '26.7': ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
             '26.9': ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
+            '26.10': ['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl'],
         },
         outside: 'rejected',
         detail: 'https and ssl mean tls; any other entry fails with "unknown protocol".',
-        evidence: ['v26.7.28:infra/conf/loopback.go'],
+        evidence: ['v26.7.28:infra/conf/loopback.go', 'v26.10.10:infra/conf/loopback.go'],
     },
     {
-        // RouterConfig.getDomainStrategy (infra/conf/router.go, all three
-        // tags) lower-cases and matches ipifnonmatch / ipondemand; anything
+        // RouterConfig.getDomainStrategy (infra/conf/router.go, every tag)
+        // lower-cases and matches ipifnonmatch / ipondemand; anything
         // else — UseIP, UseIPv4, a typo — falls to AsIs without a word.
         id: 'routing.domainStrategy',
         scope: 'config',
@@ -413,7 +449,7 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         outside: 'absent',
         replacedBy: { useip: 'IPIfNonMatch', useipv4: 'IPIfNonMatch + dns.queryStrategy UseIPv4', useipv6: 'IPIfNonMatch + dns.queryStrategy UseIPv6' },
         detail: 'Routing resolves domains for IP rules only with IPIfNonMatch or IPOnDemand; any other value quietly means AsIs.',
-        evidence: ['v26.3.27:infra/conf/router.go:83', 'v26.7.28:infra/conf/router.go:77', 'v26.9.9:infra/conf/router.go:77'],
+        evidence: ['v26.3.27:infra/conf/router.go:83', 'v26.7.28:infra/conf/router.go:77', 'v26.9.9:infra/conf/router.go:77', 'v26.10.10:infra/conf/router.go:79'],
     },
     {
         // Diagnostics only; the WireGuard chooser already offers exactly these.
@@ -421,10 +457,11 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['wireguard'],
         path: 'settings.domainStrategy',
-        allowed: everywhere(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']),
+        // 26.10 has no such field, so nothing checks the value (a FEATURES row says the rest).
+        allowed: { ...everywhere(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']), '26.10': null },
         outside: 'rejected',
-        detail: 'Only the ForceIP family is accepted; AsIs and UseIP fail the config.',
-        evidence: ['v26.3.27:infra/conf/wireguard.go', 'v26.9.9:infra/conf/wireguard.go'],
+        detail: 'Only the ForceIP family is accepted; AsIs and UseIP fail the config. 26.10 dropped the key.',
+        evidence: ['v26.3.27:infra/conf/wireguard.go', 'v26.9.9:infra/conf/wireguard.go', 'v26.10.10:infra/conf/wireguard.go:59-69'],
     },
 ];
 
@@ -433,33 +470,33 @@ const BASE_VALUE_SETS: CoreValueSet[] = [
         id: 'stream.network',
         scope: 'outbound',
         path: 'streamSettings.network',
-        allowed: { '26.3': NETWORKS, '26.7': NETWORKS, '26.9': NETWORKS },
+        allowed: { '26.3': NETWORKS, '26.7': NETWORKS, '26.9': NETWORKS, '26.10': NETWORKS_2610 },
         outside: 'rejected',
         replacedBy: { h2: 'xhttp', h3: 'xhttp', http: 'xhttp', quic: 'xhttp', udp: 'raw' },
         detail: 'An unknown transport name fails the load; h2, h3, http and quic are removed features pointing at XHTTP.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go', 'v26.7.28:infra/conf/transport_internet.go', 'v26.9.9:infra/conf/transport_internet.go'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go', 'v26.7.28:infra/conf/transport_internet.go', 'v26.9.9:infra/conf/transport_internet.go', 'v26.10.10:infra/conf/transport_internet.go:16-45'],
     },
     {
         id: 'finalmask.tcp.type',
         scope: 'outbound',
         path: 'streamSettings.finalmask.tcp[].type',
-        allowed: { '26.3': FINALMASK_TCP_263, '26.7': FINALMASK_TCP_267, '26.9': FINALMASK_TCP_267 },
+        allowed: { '26.3': FINALMASK_TCP_263, '26.7': FINALMASK_TCP_267, '26.9': FINALMASK_TCP_267, '26.10': FINALMASK_TCP_2610 },
         outside: 'rejected',
         detail: 'TCP mask types are looked up in their own table; a type missing from it — or one that belongs to the UDP list — fails with "unknown config id".',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1238', 'v26.7.28:infra/conf/transport_finalmask.go:70', 'v26.9.9:infra/conf/transport_finalmask.go:72'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1238', 'v26.7.28:infra/conf/transport_finalmask.go:70', 'v26.9.9:infra/conf/transport_finalmask.go:72', 'v26.10.10:infra/conf/transport_finalmask.go:72'],
     },
     {
         id: 'finalmask.udp.type',
         scope: 'outbound',
         path: 'streamSettings.finalmask.udp[].type',
-        allowed: { '26.3': FINALMASK_UDP_263, '26.7': FINALMASK_UDP_267, '26.9': FINALMASK_UDP_269 },
+        allowed: { '26.3': FINALMASK_UDP_263, '26.7': FINALMASK_UDP_267, '26.9': FINALMASK_UDP_269, '26.10': FINALMASK_UDP_2610 },
         outside: 'rejected',
         replacedBy: Object.fromEntries(
             ['header-dns', 'header-dtls', 'header-srtp', 'header-utp', 'header-wechat', 'header-wireguard', 'mkcp-original', 'mkcp-aes128gcm']
                 .map(type => [type, 'mkcp-legacy']),
         ),
         detail: 'The six header-* masks and both mkcp-* masks were folded into mkcp-legacy in 26.7; an unknown UDP mask type fails the load.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1244', 'v26.7.28:infra/conf/transport_finalmask.go:77', 'v26.9.9:infra/conf/transport_finalmask.go:79'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1244', 'v26.7.28:infra/conf/transport_finalmask.go:77', 'v26.9.9:infra/conf/transport_finalmask.go:79', 'v26.10.10:infra/conf/transport_finalmask.go:79'],
     },
 ];
 
@@ -469,7 +506,7 @@ const BASE_VALUE_SETS: CoreValueSet[] = [
  * only where the checker looks differs. The mirror of `x` is `inbound.x`.
  */
 export const VALUE_SETS: CoreValueSet[] = (() => {
-    const sets = [...BASE_VALUE_SETS, ...OUTBOUND_VALUE_SETS, ...FINALMASK_VALUE_SETS, ...TRANSPORT_VALUE_SETS, ...INBOUND_VALUE_SETS];
+    const sets = [...BASE_VALUE_SETS, ...OUTBOUND_VALUE_SETS, ...FINALMASK_VALUE_SETS, ...TRANSPORT_VALUE_SETS, ...INBOUND_VALUE_SETS, ...V2610_VALUE_SETS];
     const mirrored = sets
         .filter(set => set.scope === 'outbound' && set.path.startsWith('streamSettings.'))
         .map(set => ({ ...set, id: `inbound.${set.id}`, scope: 'inbound' as const }));

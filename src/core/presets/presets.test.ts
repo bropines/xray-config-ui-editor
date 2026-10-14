@@ -154,6 +154,8 @@ describe('noise presets', () => {
         expect(typesOf(withNoisePreset({ udp: [salamander] }, 'warp-a', '26.3'))).toEqual(['noise', 'salamander']);
         expect(typesOf(withNoisePreset({ udp: [salamander] }, 'warp-a', '26.7'))).toEqual(['salamander', 'noise']);
         expect(typesOf(withNoisePreset({ udp: [salamander] }, 'warp-a', '26.9'))).toEqual(['salamander', 'noise']);
+        // 26.10 reverses the lists up front: the same end.
+        expect(typesOf(withNoisePreset({ udp: [salamander] }, 'warp-a', '26.10'))).toEqual(['salamander', 'noise']);
     });
 
     it('leave a mask that has to hold that end where it is', () => {
@@ -161,5 +163,17 @@ describe('noise presets', () => {
         // xicmp is pinned to udp[last] on 26.9 and udp[0] on 26.3.
         expect(typesOf(withNoisePreset({ udp: [salamander, xicmp] }, 'warp-a', '26.9'))).toEqual(['salamander', 'noise', 'xicmp']);
         expect(typesOf(withNoisePreset({ udp: [xicmp, salamander] }, 'warp-a', '26.3'))).toEqual(['xicmp', 'noise', 'salamander']);
+    });
+
+    it('know which masks hold the socket end on 26.10', () => {
+        const hold = (type: string) => ({ type, settings: {} });
+        // xicmp and udphop still have to be last, and an xdns client skips whatever sits after it.
+        expect(typesOf(withNoisePreset({ udp: [salamander, hold('xicmp')] }, 'warp-a', '26.10'))).toEqual(['salamander', 'noise', 'xicmp']);
+        expect(typesOf(withNoisePreset({ udp: [hold('udphop')] }, 'warp-a', '26.10'))).toEqual(['noise', 'udphop']);
+        expect(typesOf(withNoisePreset({ udp: [hold('xdns')] }, 'warp-a', '26.10'))).toEqual(['noise', 'xdns']);
+        // realm and a UDP sudoku may sit anywhere now, so the new layer goes past them; on 26.9 they held the end.
+        expect(typesOf(withNoisePreset({ udp: [hold('realm')] }, 'warp-a', '26.10'))).toEqual(['realm', 'noise']);
+        expect(typesOf(withNoisePreset({ udp: [hold('realm')] }, 'warp-a', '26.9'))).toEqual(['noise', 'realm']);
+        expect(typesOf(withNoisePreset({ udp: [hold('xdns')] }, 'warp-a', '26.9'))).toEqual(['xdns', 'noise']);
     });
 });

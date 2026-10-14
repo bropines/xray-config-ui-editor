@@ -170,3 +170,40 @@ describe('hysteria', () => {
         expect(ruleDiagnostics(config, '26.7').some(d => d.field === 'settings.version')).toBe(true);
     });
 });
+
+describe('hysteria and TLS', () => {
+    const LINES = ['26.3', '26.7', '26.9', '26.10'] as const;
+    const securityFindings = (config: unknown, version: (typeof LINES)[number]) =>
+        ruleDiagnostics(config, version).filter(d => d.field === 'streamSettings.security').map(d => d.severity);
+    const server = (protocol: string, streamSettings: unknown) => ({ inbounds: [{ tag: 'in', protocol, port: 443, streamSettings }] });
+
+    it('refuses the hysteria transport without TLS on every line, whatever proxy rides it', () => {
+        // "tls config is nil": v26.3.27 hub.go:317, v26.7.28 :200, v26.9.9 :202, v26.10.10 :202.
+        for (const version of LINES) {
+            expect(securityFindings(server('hysteria', { network: 'hysteria', security: 'none' }), version)).toEqual(['critical']);
+            expect(securityFindings(server('vless', { network: 'hysteria', security: 'none' }), version)).toEqual(['critical']);
+            expect(securityFindings(server('vless', { network: 'hysteria' }), version)).toEqual(['critical']);
+            expect(securityFindings(server('hysteria', { network: 'hysteria', security: 'tls' }), version)).toEqual([]);
+        }
+    });
+
+    it('leaves a hysteria proxy on another transport to that transport on 26.3', () => {
+        // v26.3.27:proxy/hysteria/server.go:30-51 does not look at the transport.
+        for (const security of ['none', 'tls', '']) {
+            expect(securityFindings(server('hysteria', { network: 'tcp', security }), '26.3')).toEqual([]);
+        }
+        expect(securityFindings(server('hysteria', { network: 'ws', security: 'none' }), '26.3')).toEqual([]);
+    });
+
+    it('holds a hysteria proxy to TLS from 26.7, where it only starts on the hysteria transport', () => {
+        // v26.7.28:proxy/hysteria/server.go:36 — the same lines at v26.9.9 and v26.10.10.
+        for (const version of ['26.7', '26.9', '26.10'] as const) {
+            expect(securityFindings(server('hysteria', { network: 'tcp', security: 'none' }), version)).toEqual(['critical']);
+        }
+    });
+
+    it('says nothing of an outbound: its dialer fails on the first dial, and the config loads', () => {
+        const client = { outbounds: [{ tag: 'o', protocol: 'vless', streamSettings: { network: 'hysteria', security: 'none' } }] };
+        for (const version of LINES) expect(securityFindings(client, version)).toEqual([]);
+    });
+});

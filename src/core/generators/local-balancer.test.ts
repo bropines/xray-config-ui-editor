@@ -333,6 +333,47 @@ describe('parseLocalBalancer — reading an existing balancer back into options'
         expect(notes.join(' ')).toContain('DNS');
     });
 
+    it('reads a mixed inbound as the SOCKS listener it is, not as something dropped', () => {
+        // `mixed` and `socks` are one struct in the loader on every line
+        // (v26.7.28:infra/conf/xray.go:27-28), so the listener is the same
+        // whichever name it carries — and the builder's `socks` rebuilds it.
+        const { config } = buildLocalBalancerConfig([node('a'), node('b')], {
+            socksPort: 1080, httpPort: 8080, listen: '0.0.0.0', sniffing: true,
+        });
+        for (const name of ['mixed', 'Mixed', 'SOCKS']) {
+            const renamed = {
+                ...config,
+                inbounds: config.inbounds.map((i: any) => (i.protocol === 'socks' ? { ...i, protocol: name } : i)),
+            };
+            const parsed = parseLocalBalancer(renamed);
+            expect(parsed.options.socksPort).toBe(1080);
+            expect(parsed.options.httpPort).toBe(8080);
+            expect(parsed.options.listen).toBe('0.0.0.0');
+            expect(parsed.options.sniffing).toBe(true);
+            expect(parsed.notes.join(' ')).not.toContain('SOCKS/HTTP');
+            expect(buildLocalBalancerConfig([node('a'), node('b')], parsed.options).config).toEqual(config);
+        }
+    });
+
+    it('still reports an inbound that is neither, beside a mixed one', () => {
+        const odd = {
+            inbounds: [
+                { protocol: 'mixed', port: 2080 },
+                { protocol: 'dokodemo-door', port: 12345 },
+            ],
+            outbounds: [{ tag: 'direct', protocol: 'freedom' }],
+            routing: { rules: [] },
+        };
+        const { options, notes } = parseLocalBalancer(odd);
+        expect(options.socksPort).toBe(2080);
+        expect(notes.join(' ')).toContain('SOCKS/HTTP');
+    });
+
+    it('tolerates an inbound that is not an object', () => {
+        const { options } = parseLocalBalancer({ inbounds: [null, { protocol: 'socks', port: 1081 }], routing: { rules: [] } });
+        expect(options.socksPort).toBe(1081);
+    });
+
     it('refuses input that is not an object', () => {
         expect(() => parseLocalBalancer('nope' as any)).toThrow('Not a JSON object');
     });

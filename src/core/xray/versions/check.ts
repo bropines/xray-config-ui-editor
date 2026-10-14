@@ -169,6 +169,7 @@ export const valueUses = (config: unknown): ValueUse[] => {
     if (!config || typeof config !== 'object') return [];
     const uses: ValueUse[] = [];
     for (const set of VALUE_SETS) {
+        if (set.offeredOnly) continue;
         for (const site of sitesFor(config, set.scope)) {
             if (site.item === null || typeof site.item !== 'object') continue;
             if (set.protocol) {
@@ -213,9 +214,20 @@ export const versionDiagnostics = (config: unknown, version: CoreVersionId): Dia
         });
     }
 
-    for (const use of featureUses(config)) {
+    const uses = featureUses(config);
+    // A key inside an object the line does not know is covered by the finding
+    // for the object (see CoreFeature.coveredBy), as long as that one is reported.
+    const reported = (id: string, use: FeatureUse): boolean =>
+        uses.some(other =>
+            other.feature.id === id
+            && other.section === use.section
+            && other.index === use.index
+            && other.feature.status[version] !== 'accepted');
+
+    for (const use of uses) {
         const status = use.feature.status[version];
         if (status === 'accepted') continue;
+        if (use.feature.coveredBy && reported(use.feature.coveredBy, use)) continue;
         out.push({
             section: use.section,
             itemIndex: use.index,

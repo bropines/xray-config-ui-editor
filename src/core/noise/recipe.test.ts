@@ -114,6 +114,10 @@ describe('packetBytes', () => {
         expect(packetBytes({ packet: [999] })).toBeNull();
         expect(packetBytes({ type: 'nope', packet: 'hi' })).toBeNull();
     });
+
+    it('has no bytes for an item written as an expression, which only the core can build', () => {
+        expect(packetBytes({ type: 'exp', packet: '<b 0xDEADBEEF><r 8><t>' })).toBeNull();
+    });
 });
 
 describe('drawing a packet', () => {

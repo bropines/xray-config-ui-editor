@@ -12,6 +12,8 @@ import {
     serverShape,
     withCredentials,
 } from '../../../core/xray/outbound-credentials';
+import { OutboundHttpHeaders } from './OutboundHttpHeaders';
+import { isHttpOutbound } from '../../../core/xray/http-outbound-headers';
 import { t } from '../../../i18n';
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
@@ -245,6 +247,10 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                         />
                     </div>
                 )}
+
+                {/* Only an HTTP outbound reads `headers`; one key beside the
+                    server, whichever shape the server is in. */}
+                {isHttpOutbound(outbound) && <OutboundHttpHeaders outbound={outbound} onChange={onChange} />}
             </div>
         </Card>
     );

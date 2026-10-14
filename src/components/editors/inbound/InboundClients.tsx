@@ -5,6 +5,8 @@ import { Icon } from '../../ui/Icon';
 import { Help } from '../../ui/Help';
 import { Switch } from '../../ui/Switch';
 import { generateUUID, generateShortId } from '../../../core/generators';
+import { generateShadowsocks2022Key } from '../../../core/generators/crypto';
+import { isShadowsocks2022Method } from '../../../core/xray/shadowsocks-keys';
 import { SHADOWSOCKS_METHOD_ALIASES } from '../../../core/xray/versions/features.inbound';
 import { useField, useArrayField } from '../../../hooks/useField';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
@@ -82,22 +84,25 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
                     <div>
                         <label className="label-xs flex items-center justify-between">
                             <span>{t("Password / Pre-shared Key")}</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-slate-500 font-bold uppercase">{t("Length:")}</span>
-                                <input
-                                    type="number"
-                                    className="w-10 bg-transparent border-none text-[10px] text-indigo-400 font-bold p-0 focus:ring-0"
-                                    value={ssPassLen}
-                                    onChange={e => setSsPassLen(parseInt(e.target.value) || 0)}
-                                />
-                            </div>
+                            {/* A 2022 key is as long as its cipher says; only a classic password has a length to pick. */}
+                            {!isShadowsocks2022Method(current) && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] text-slate-500 font-bold uppercase">{t("Length:")}</span>
+                                    <input
+                                        type="number"
+                                        className="w-10 bg-transparent border-none text-[10px] text-indigo-400 font-bold p-0 focus:ring-0"
+                                        value={ssPassLen}
+                                        onChange={e => setSsPassLen(parseInt(e.target.value) || 0)}
+                                    />
+                                </div>
+                            )}
                         </label>
                         <div className="flex gap-2">
                             <input className={`input-base font-mono ${errors.password ? 'border-rose-500 bg-rose-500/10' : ''}`}
                                 value={password.value || ""}
                                 onChange={e => password.onChange(e.target.value)}
                             />
-                            <button onClick={() => password.onChange(generateShortId(ssPassLen))}
+                            <button onClick={() => password.onChange(isShadowsocks2022Method(current) ? generateShadowsocks2022Key(current) : generateShortId(ssPassLen))}
                                 className="bg-slate-800 p-2 rounded text-slate-400 hover:text-white transition-colors">
                                 <Icon name="DiceFive" />
                             </button>

@@ -1,0 +1,24 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    // Deployed as the same name the editor has always called, so the URL
+    // (xcui.<account>.workers.dev) stays put.
+    "name": "xcui",
+    "main": "src/index.ts",
+    "compatibility_date": "2026-10-14",
+    "workers_dev": true,
+    "preview_urls": false,
+    "observability": {
+        "enabled": true,
+        "logs": { "enabled": true, "head_sampling_rate": 1 },
+        "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+    },
+    // A registration per caller address every six seconds on average, per
+    // Cloudflare location. Cloudflare's own limit on the API sits behind it.
+    "ratelimits": [
+        {
+            "name": "REGISTER_LIMITER",
+            "namespace_id": "4471",
+            "simple": { "limit": 10, "period": 60 }
+        }
+    ]
+}

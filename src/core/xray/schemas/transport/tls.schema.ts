@@ -49,4 +49,11 @@ export const TlsSchema = z.object({
   /** 26.3 only (v26.3.27:infra/conf/transport_internet.go:756); later lines drop it. */
   echForceQuery: z.enum(['none', 'half', 'full']).optional(),
   echSockopt: z.record(z.string(), z.unknown()).optional(),
+  /**
+   * 26.10 only (v26.10.10:infra/conf/transport_security.go:319). Without it the
+   * trust store is the CA bundle compiled into Xray; with it, the operating
+   * system's own (transport/internet/tls/config.go:583-616, config_other.go:17-21). Dropped silently
+   * by every earlier line, which always used the system store.
+   */
+  useSystemCA: z.boolean().optional(),
 }).passthrough();

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm, ExtendedSection } from '../../ui';
+import { Icon, Help, SmartTagInput, TagSelector, JsonField, Select, SchemaForm, ExtendedSection, WrongTypeNotice } from '../../ui';
 import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
+import { hasWebhook, webhookProblems } from '../../../core/xray/routing-webhook';
+import { isPlainObject } from '../../../core/xray/string-map';
 import { parseJsonc } from '../../../utils/jsonc';
 import { useConfigStore } from '../../../store/configStore';
 import { useRuleEditor } from '../../../hooks/useRuleEditor';
@@ -145,6 +147,12 @@ export const RuleEditor = ({
             </div>
         );
     }
+
+    // `webhook` is an object on every line; whatever else it holds is shown
+    // with a way out. Its own type problem is the notice's to say, not the
+    // list's.
+    const webhookWrongType = hasWebhook(rule) && !isPlainObject(rule.webhook);
+    const webhookNotes = webhookProblems(rule).filter(problem => problem.kind !== 'webhook.type');
 
     return (
         <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scroll p-6 space-y-6 bg-slate-950/30 h-full relative">
@@ -447,9 +455,16 @@ export const RuleEditor = ({
                                     Webhook Notification <Help>{t("Send HTTP POST notification on match.")}</Help>
                                 </label>
                                 <div className="flex flex-col gap-4 flex-1">
+                                    {/* The core decodes `webhook` into a struct, so a bare
+                                        URL string fails the config (see
+                                        core/xray/routing-webhook.ts). It is shown, not
+                                        hidden behind an empty form. */}
+                                    {webhookWrongType && (
+                                        <WrongTypeNotice field="webhook" held={rule.webhook} onRemove={() => update('webhook', undefined)} />
+                                    )}
                                     <SchemaForm
                                         schema={WebhookObjectSchema}
-                                        value={typeof rule.webhook === 'object' ? rule.webhook : {}}
+                                        value={isPlainObject(rule.webhook) ? rule.webhook : {}}
                                         onChange={val => update('webhook', val)}
                                         errors={errorRecord}
                                         fieldConfigs={{
@@ -478,6 +493,19 @@ export const RuleEditor = ({
                                             }
                                         }}
                                     />
+                                    {webhookNotes.length > 0 && (
+                                        <ul className="space-y-1" data-webhook-problems>
+                                            {webhookNotes.map((problem, index) => (
+                                                <li
+                                                    key={`${problem.kind}-${index}`}
+                                                    data-problem={problem.kind}
+                                                    className={`text-[10px] leading-relaxed break-words ${problem.severity === 'critical' ? 'text-rose-300' : 'text-amber-200/80'}`}
+                                                >
+                                                    {problem.message}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </div>
                             </div>
                         </div>

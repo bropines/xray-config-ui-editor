@@ -18,7 +18,7 @@ import tseslint from 'typescript-eslint';
 // Tighten this incrementally later (per-directory overrides, then
 // eventually strict/type-checked) rather than all at once.
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'src/core/xray-config.d.ts'] },
+  { ignores: ['dist/**', 'node_modules/**', '**/.wrangler/**', 'src/core/xray-config.d.ts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

@@ -243,6 +243,9 @@ interface ConfigState {
     // UI & Generator Settings
     warpWorkerUrl: string;
     setWarpWorkerUrl: (url: string) => void;
+    /** Access key for the relay at warpWorkerUrl; unused while that is empty (the built-in relay has its own). */
+    warpWorkerKey: string;
+    setWarpWorkerKey: (key: string) => void;
     /**
      * Real paths on the REALITY target, pasted by the user. The spiderX dice
      * draws from these when there are any, because a path the target actually
@@ -371,7 +374,7 @@ function resolveMutableConfig(
  */
 type PersistedConfig =
     Pick<ConfigState,
-        'config' | 'rawConfigText' | 'coreVersion' | 'warpWorkerUrl' | 'spiderPaths'
+        'config' | 'rawConfigText' | 'coreVersion' | 'warpWorkerUrl' | 'warpWorkerKey' | 'spiderPaths'
         | 'profiles' | 'activeProfileId' | 'baselineConfigJson' | 'histories'
         | 'historyLimit' | 'autoSave'>
     & {
@@ -389,6 +392,8 @@ export const useConfigStore = create(
             
             warpWorkerUrl: '',
             setWarpWorkerUrl: (url: string) => set({ warpWorkerUrl: url }),
+            warpWorkerKey: '',
+            setWarpWorkerKey: (key: string) => set({ warpWorkerKey: key }),
             spiderPaths: [],
             setSpiderPaths: (paths: string[]) => set({ spiderPaths: paths }),
 
@@ -1759,6 +1764,7 @@ export const useConfigStore = create(
                 rawConfigText: state.rawConfigText,
                 coreVersion: state.coreVersion,
                 warpWorkerUrl: state.warpWorkerUrl,
+                warpWorkerKey: state.warpWorkerKey,
                 // A list gathered from a real site is work; it should not be
                 // lost on reload the way a generated path can be.
                 spiderPaths: state.spiderPaths,

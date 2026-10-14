@@ -14,6 +14,7 @@ import {
     securityOptions,
     securityProblem,
 } from './transport-networks';
+import type { CoreVersionId } from './versions';
 
 /**
  * Two of the transports this chooser used to offer are removed features: the
@@ -22,7 +23,7 @@ import {
  * sitting in the list beside the working ones.
  */
 
-const values = (protocol?: string, current?: string, version?: '26.3' | '26.7' | '26.9') =>
+const values = (protocol?: string, current?: string, version?: CoreVersionId) =>
     networkOptions(protocol, current, version).map(option => option.value);
 
 describe('what the chooser offers', () => {
@@ -38,11 +39,46 @@ describe('what the chooser offers', () => {
         }
     });
 
-    it('offers masque to the masque outbound and to nobody else', () => {
-        // "the masque transport can only be used by the masque outbound"
-        expect(values('masque')).toContain('masque');
-        expect(values('vless')).not.toContain('masque');
-        expect(values(undefined)).not.toContain('masque');
+    it('offers a masque proxy the masque transport and nothing else, and nobody else masque', () => {
+        // "the masque transport can only be used by the masque inbound / outbound"
+        // (v26.10.10:infra/conf/xray.go:209-211, :351-353), and the proxy refuses
+        // any other transport: "not masque transport" (proxy/masque/client.go:58-60).
+        expect(values('masque', undefined, '26.10')).toEqual(['masque']);
+        expect(values('vless', undefined, '26.10')).not.toContain('masque');
+        expect(values(undefined, undefined, '26.10')).not.toContain('masque');
+    });
+
+    it('offers masque on no line that does not register it', () => {
+        // The transport name is "unknown transport protocol" before 26.10.
+        for (const version of ['26.3', '26.7', '26.9'] as const) {
+            expect(values('masque', undefined, version)).not.toContain('masque');
+            expect(values('vless', undefined, version)).not.toContain('masque');
+        }
+    });
+
+    it('says why a masque config does not fit the proxy or the line, and shows it', () => {
+        // A masque proxy on ws; ws proxy on masque; masque on a line without it.
+        expect(networkProblem('masque', 'ws', '26.10')).toContain('masque transport');
+        expect(networkProblem('vless', 'masque', '26.10')).toContain('masque proxy');
+        expect(networkProblem('masque', 'masque', '26.10')).toBeUndefined();
+        expect(networkProblem('masque', 'masque', '26.9')).toContain('v26.9.9');
+        const held = networkOptions('vless', 'masque', '26.10').find(option => option.value === 'masque')!;
+        expect(held.disabled).toBe(true);
+        // xdrive is registered on 26.10, never offered, and shown when held.
+        expect(values('vless', undefined, '26.10')).not.toContain('xdrive');
+        expect(networkProblem('vless', 'xdrive', '26.10')).toBeUndefined();
+        expect(networkProblem('vless', 'xdrive', '26.9')).toContain('v26.9.9');
+    });
+
+    it('lets a masque proxy run on TLS only', () => {
+        // proxy/masque/client.go:61-63, server.go:129-131: "MASQUE requires security tls".
+        expect(securityOptions('masque', 'masque', undefined, '26.10').map(option => option.value)).toEqual(['tls']);
+        expect(securityProblem('masque', 'masque', 'none', '26.10')).toContain('TLS');
+        expect(securityProblem('masque', 'masque', 'reality', '26.10')).toContain('TLS');
+        expect(securityProblem('masque', 'masque', 'tls', '26.10')).toBeUndefined();
+        // Nothing to say on a line that has no masque, and nothing for other proxies.
+        expect(securityProblem('masque', 'masque', 'none', '26.9')).toBeUndefined();
+        expect(securityOptions('vless', 'tcp', undefined, '26.10').map(option => option.value)).toContain('none');
     });
 
     it('offers a hysteria proxy only the hysteria transport from 26.7', () => {
@@ -150,6 +186,51 @@ describe('security choices', () => {
         expect(offered('hysteria', 'hysteria')).toEqual(['tls']);
         expect(securityProblem('hysteria', 'hysteria', 'none')).toBeDefined();
         expect(securityProblem('hysteria', 'hysteria', 'tls')).toBeUndefined();
+    });
+
+    describe('hysteria, per line', () => {
+        const LINES = ['26.3', '26.7', '26.9', '26.10'] as const;
+        const on = (version: (typeof LINES)[number], protocol: string, network: string) =>
+            securityOptions(protocol, network, undefined, version).filter(option => !option.disabled).map(option => option.value);
+
+        it('wants TLS of the hysteria transport on every line, for any proxy', () => {
+            // v26.3.27:transport/internet/hysteria/hub.go:317; v26.7.28 :200; v26.9.9 :202; v26.10.10 :202.
+            for (const version of LINES) {
+                expect(on(version, 'vless', 'hysteria')).toEqual(['tls']);
+                expect(on(version, 'hysteria', 'hysteria')).toEqual(['tls']);
+                expect(securityProblem('vless', 'hysteria', 'none', version)).toContain('TLS');
+                expect(securityProblem('hysteria', 'hysteria', 'reality', version)).toContain('TLS');
+                expect(securityProblem('hysteria', 'hysteria', 'tls', version)).toBeUndefined();
+            }
+        });
+
+        it('lets a 26.3 hysteria proxy off the hysteria transport take what that transport takes', () => {
+            // v26.3.27:proxy/hysteria/client.go:32-47 and server.go:30-51 never look at the transport.
+            expect(on('26.3', 'hysteria', 'tcp')).toEqual(['none', 'tls']);
+            expect(on('26.3', 'hysteria', 'ws')).toEqual(['none', 'tls']);
+            for (const security of ['none', 'tls', 'reality']) {
+                expect(securityProblem('hysteria', 'tcp', security, '26.3')).toBeUndefined();
+            }
+            // What the transport refuses is still refused: REALITY is RAW, XHTTP and gRPC only.
+            expect(securityProblem('hysteria', 'ws', 'reality', '26.3')).toContain('RAW, XHTTP or gRPC');
+        });
+
+        it('ties a hysteria proxy to TLS from 26.7, where it starts only on the hysteria transport', () => {
+            // v26.7.28:proxy/hysteria/client.go:37, server.go:36; the same lines at v26.9.9 and v26.10.10.
+            for (const version of ['26.7', '26.9', '26.10'] as const) {
+                expect(on(version, 'hysteria', 'tcp')).toEqual(['tls']);
+                expect(securityProblem('hysteria', 'tcp', 'none', version)).toContain('TLS');
+                expect(networkProblem('hysteria', 'tcp', version)).toContain('hysteria');
+            }
+            expect(networkProblem('hysteria', 'tcp', '26.3')).toBeUndefined();
+        });
+
+        it('does not tie any other proxy to TLS because of the line', () => {
+            for (const version of LINES) {
+                expect(securityProblem('vless', 'tcp', 'none', version)).toBeUndefined();
+                expect(on(version, 'vless', 'tcp')).toContain('none');
+            }
+        });
     });
 
     it('points legacy xtls at its replacement', () => {

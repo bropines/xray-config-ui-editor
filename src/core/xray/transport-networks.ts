@@ -37,9 +37,10 @@ export interface NetworkOption {
  * one, disabled and labelled for what they are, so an imported config still
  * shows what it holds instead of an empty chooser.
  *
- * `masque` is the other way round: the core allows the masque transport only
- * on the masque outbound, and that outbound uses no other, so it is offered
- * there and nowhere else.
+ * `masque` is the other way round: from 26.10 the core allows the masque
+ * transport only on the masque proxy (inbound or outbound), and that proxy uses
+ * no other, so it is offered there and nowhere else. Lines before 26.10 do not
+ * register it at all.
  */
 const REMOVED: Record<string, string> = {
     http: 'XHTTP (stream-one H2/H3)',
@@ -101,6 +102,29 @@ const BASE_NETWORKS = (): NetworkOption[] => [
     { value: 'hysteria', label: t("Hysteria"), description: t("QUIC-based, with its own congestion control") },
 ];
 
+/**
+ * The pairing between a masque proxy and the masque transport, from the network
+ * side: a proxy of another kind on the transport is refused by the loader
+ * (v26.10.10:infra/conf/xray.go:209-211 inbound, :351-353 outbound), and a
+ * masque proxy on any other transport does not start — "not masque transport"
+ * (v26.10.10:proxy/masque/client.go:58-60, server.go:126-128).
+ * `network` is lower-case. Only meaningful on a line that registers the
+ * transport; the caller has already asked.
+ */
+const masqueNetworkProblem = (protocol: string | undefined, network: string, tag: string): string | undefined => {
+    if (protocol === 'masque' && network !== 'masque') {
+        return t("A masque proxy runs only on the masque transport — Xray {tag} refuses to start it on anything else.", { tag });
+    }
+    if (protocol !== 'masque' && network === 'masque') {
+        return t("The masque transport can only be used by a masque proxy — Xray {tag} refuses the config otherwise.", { tag });
+    }
+    return undefined;
+};
+
+/** Both halves of MASQUE need TLS (v26.10.10:proxy/masque/client.go:61-63, server.go:129-131). */
+const masqueNeedsTls = (protocol: string | undefined, network: string): boolean =>
+    protocol === 'masque' || network.toLowerCase() === 'masque';
+
 export const networkOptions = (
     protocol: string | undefined,
     current: string | undefined,
@@ -116,8 +140,12 @@ export const networkOptions = (
         options = options.filter(option => allowed.includes(option.value));
     }
 
-    if (protocol === 'masque') {
-        options.push({ value: 'masque', label: 'MASQUE', description: t("CONNECT-IP over HTTP/3 — only the masque outbound may use it") });
+    // A masque proxy runs on the masque transport and on nothing else, and the
+    // transport belongs to it alone (see `masqueNetworkProblem`). Offered only
+    // where the line registers the transport; elsewhere the protocol itself is
+    // refused and the list stays as it was.
+    if (protocol === 'masque' && allowedValues(version, 'stream.network').includes('masque')) {
+        options = [{ value: 'masque', label: 'MASQUE', description: t("CONNECT-IP over HTTP/3 or HTTP/2 — only a masque proxy may use it") }];
     }
 
     if (current && !options.some(option => option.value === current)) {
@@ -141,12 +169,13 @@ export const networkProblem = (
 ): string | undefined => {
     const replacement = removedNetworkReplacement(network);
     if (replacement) return t("Removed from Xray — use {replacement}", { replacement });
-    if (protocol === 'masque' && network === 'masque') return undefined;
     const lower = network.toLowerCase();
     const { tag } = coreVersion(version);
     if (!allowedValues(version, 'stream.network').includes(lower)) {
         return statusMessage('rejected', `network = "${network}"`, tag);
     }
+    const masque = masqueNetworkProblem(protocol, lower, tag);
+    if (masque) return masque;
     if (protocol === 'hysteria' && !allowedValues(version, 'hysteria.stream.network').includes(lower)) {
         return t("A hysteria proxy runs only on the hysteria transport — Xray {tag} refuses to start it on anything else.", { tag });
     }
@@ -195,13 +224,53 @@ export const REALITY_NETWORKS = ['raw', 'tcp', 'xhttp', 'splithttp', 'grpc'];
 const REALITY_PROTOCOLS = ['vless', 'vmess', 'trojan', 'shadowsocks'];
 
 /**
- * The hysteria transport listens and dials only with TLS — "tls config is
- * nil" otherwise (v26.7.28:transport/internet/hysteria/hub.go:200,
- * dialer.go:324). A hysteria proxy needs that transport from 26.7, so both
- * get the same one-item chooser.
+ * Whether the line ties a hysteria *proxy* to the hysteria transport, read
+ * from the `hysteria.stream.network` value set so the two cannot disagree.
  */
-const needsTls = (protocol: string | undefined, network: string): boolean =>
-    network === 'hysteria' || protocol === 'hysteria';
+const hysteriaProxyNeedsItsTransport = (version: CoreVersionId): boolean =>
+    allowedValues(version, 'hysteria.stream.network').every(network => network === 'hysteria');
+
+/**
+ * Where hysteria demands TLS, which is two different things.
+ *
+ * The hysteria *transport* listens and dials only with TLS — "tls config is
+ * nil" otherwise. A security of none builds no TLS settings at all
+ * (`case "", "none":` — v26.3.27:infra/conf/transport_internet.go:1763,
+ * v26.7.28 and v26.9.9 :86, v26.10.10 :92), and the listener and the dialer
+ * both stop on that:
+ *
+ *   v26.3.27:transport/internet/hysteria/hub.go:317, dialer.go:442
+ *   v26.7.28 :hub.go:200, dialer.go:324      v26.9.9  :hub.go:202, dialer.go:297
+ *   v26.10.10:hub.go:202, dialer.go:317
+ *
+ * That holds on every line, for any proxy riding that transport.
+ *
+ * The hysteria *proxy* is not the transport. From 26.7 it refuses to be
+ * created on any other transport — "not hysteria transport"
+ * (v26.7.28:proxy/hysteria/client.go:37 and server.go:36, the same lines at
+ * v26.9.9 and v26.10.10) — so there it inherits the transport's TLS. 26.3
+ * never looks (v26.3.27:proxy/hysteria/client.go:32-47, server.go:30-51): a
+ * hysteria proxy runs over RAW, WebSocket or anything else the core builds,
+ * with whatever security that transport takes, and needs no TLS of its own.
+ */
+const needsTls = (protocol: string | undefined, network: string, version: CoreVersionId): boolean =>
+    (typeof network === 'string' && network.toLowerCase() === 'hysteria')
+    || (protocol === 'hysteria' && hysteriaProxyNeedsItsTransport(version));
+
+/**
+ * Why this security cannot carry hysteria on this line, or nothing. The
+ * diagnostics ask the same question for an inbound (versions/rules.ts), so a
+ * field and the panel save say it in the same words.
+ */
+export const hysteriaTlsProblem = (
+    protocol: string | undefined,
+    network: string,
+    security: string,
+    version: CoreVersionId = DEFAULT_CORE_VERSION,
+): string | undefined =>
+    needsTls(protocol, network, version) && security.toLowerCase() !== 'tls'
+        ? t("The hysteria transport runs only with TLS: without it an inbound does not start and an outbound cannot connect.")
+        : undefined;
 
 export const securityOptions = (
     protocol: string | undefined,
@@ -209,7 +278,7 @@ export const securityOptions = (
     current: string | undefined,
     version: CoreVersionId = DEFAULT_CORE_VERSION,
 ): NetworkOption[] => {
-    const tlsOnly = needsTls(protocol, network);
+    const tlsOnly = needsTls(protocol, network, version) || (masqueNeedsTls(protocol, network) && allowedValues(version, 'stream.network').includes('masque'));
     const options: NetworkOption[] = [];
     if (!tlsOnly) options.push({ value: 'none', label: t("NONE"), description: t("Plaintext (unsafe)") });
     options.push({ value: 'tls', label: 'TLS', description: t("Standard SSL/TLS encryption") });
@@ -238,8 +307,10 @@ export const securityProblem = (
     if (!allowedValues(version, 'stream.security').includes(lower)) {
         return statusMessage('rejected', `security = "${security}"`, tag);
     }
-    if (needsTls(protocol, network) && lower !== 'tls') {
-        return t("The hysteria transport runs only with TLS: without it an inbound does not start and an outbound cannot connect.");
+    const tlsProblem = hysteriaTlsProblem(protocol, network, security, version);
+    if (tlsProblem) return tlsProblem;
+    if (lower !== 'tls' && masqueNeedsTls(protocol, network) && allowedValues(version, 'stream.network').includes('masque')) {
+        return t("MASQUE runs only with TLS — Xray {tag} refuses to start it without.", { tag });
     }
     if (lower === 'reality' && !REALITY_NETWORKS.includes(network.toLowerCase())) {
         return t("REALITY runs only over RAW, XHTTP or gRPC — Xray {tag} refuses it over {network}.", { tag, network });

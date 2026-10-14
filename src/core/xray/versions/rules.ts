@@ -12,8 +12,10 @@ import { isSnippetRef } from '../../snippets';
 import { t } from '../../../i18n';
 import { compareCoreVersions, coreVersion, type CoreVersionId } from './index';
 import { finalmaskIssues } from './finalmask-rules';
-import { effectiveNetwork, hysteriaUdpIdleProblem, kcpProblems, REALITY_NETWORKS } from '../transport-networks';
+import { effectiveNetwork, hysteriaTlsProblem, hysteriaUdpIdleProblem, kcpProblems, REALITY_NETWORKS } from '../transport-networks';
 import { checkPinnedCertSha256, echSockoptProblem, fallbackLimitProblems } from '../security-fields';
+import { shadowsocksInboundProblems } from '../shadowsocks-inbound';
+import { masqueProblems } from '../masque';
 
 // ── What the core calls a private address ─────────────────────────────
 // common/geodata/consts.go (v26.7.28, same in v26.9.9): privateIPMatcher and
@@ -236,6 +238,44 @@ const hysteriaShape = (config: any, version: CoreVersionId): Diagnostic[] => {
 };
 
 /**
+ * A Shadowsocks inbound's cipher and 2022 keys: what `method` means depends on
+ * whether users are listed and on the line, so it is judged as a whole in
+ * core/xray/shadowsocks-inbound, which cites the source for each case. The
+ * inbound editor shows the same findings.
+ */
+const shadowsocksInbounds = (config: any, version: CoreVersionId): Diagnostic[] =>
+    list(config.inbounds).flatMap((inbound, index) =>
+        shadowsocksInboundProblems(inbound, version).map((problem): Diagnostic => ({
+            section: 'inbounds',
+            itemIndex: index,
+            field: problem.field,
+            severity: 'critical',
+            message: problem.message,
+            suggestion: problem.suggestion,
+        })));
+
+/**
+ * MASQUE (26.10): the proxy, its transport and the pairing between them, from
+ * core/xray/masque — which cites the source for each rule, answers nothing for
+ * a line that does not register the protocol, and is what the editors show
+ * beside the fields. Every one of them keeps the config from loading or the
+ * handler from starting.
+ */
+const masqueRules = (config: any, version: CoreVersionId): Diagnostic[] =>
+    (['inbounds', 'outbounds'] as const).flatMap(section =>
+        list(config[section]).flatMap((item, index) =>
+            !item || isSnippetRef(item)
+                ? []
+                : masqueProblems(item, section === 'inbounds' ? 'inbound' : 'outbound', version).map((problem): Diagnostic => ({
+                    section,
+                    itemIndex: index,
+                    field: problem.field,
+                    severity: 'critical',
+                    message: problem.message,
+                    suggestion: problem.suggestion,
+                }))));
+
+/**
  * Finalmask chains: mask positions, chain order and required settings, per
  * side — see finalmask-rules.ts, which owns the evidence. Its paths start at
  * `streamSettings.finalmask`, relative to the inbound or outbound.
@@ -259,6 +299,12 @@ const finalmaskChains = (config: any, version: CoreVersionId): Diagnostic[] => {
  * Stream settings that fail on how fields combine rather than on one key:
  *   - REALITY over anything but RAW, XHTTP or gRPC — "REALITY only supports
  *     RAW, XHTTP and gRPC for now", every line (StreamConfig.Build()).
+ *   - An inbound on the hysteria transport without TLS — the listener answers
+ *     "tls config is nil" and does not start, every line and whatever proxy
+ *     rides it; a hysteria *proxy* inherits that only where the line ties it
+ *     to the transport (26.7+). The words and the lines it cites are in
+ *     transport-networks.ts. Inbound only: the dialer says the same, but on
+ *     the first dial, and the config does load.
  *   - `hysteriaSettings` whose version is not 2 — "version != 2", every line
  *     (v26.7.28:infra/conf/transport_method.go:776) — and a UDP idle timeout
  *     outside 0 / 2–600 (:784).
@@ -282,6 +328,11 @@ const streamRules = (config: any, version: CoreVersionId): Diagnostic[] => {
             if (security === 'reality' && !REALITY_NETWORKS.includes(network)) {
                 push('streamSettings.security', 'critical',
                     t("REALITY runs only over RAW, XHTTP or gRPC — Xray {tag} refuses it over {network}.", { tag, network }));
+            }
+
+            if (section === 'inbounds') {
+                const noTls = hysteriaTlsProblem(item.protocol, network, security, version);
+                if (noTls) push('streamSettings.security', 'critical', noTls);
             }
 
             const hysteria = stream.hysteriaSettings;
@@ -370,6 +421,8 @@ export const ruleDiagnostics = (config: unknown, version: CoreVersionId): Diagno
         ...untypedBlackholeResponse(config, version),
         ...duplicateRoutingTags(config, version),
         ...hysteriaShape(config, version),
+        ...shadowsocksInbounds(config, version),
+        ...masqueRules(config, version),
         ...finalmaskChains(config, version),
         ...streamRules(config, version),
         ...securityFieldRules(config, version),

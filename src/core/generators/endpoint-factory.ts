@@ -4,7 +4,8 @@
 
 import type { Inbound, Outbound } from '../types';
 import { DEFAULT_DNS_UPSTREAM } from '../presets/dns';
-import { generateUUID, generateShortId } from './crypto';
+import { generateUUID, generateShortId, generateShadowsocks2022Key } from './crypto';
+import { isShadowsocks2022Method } from '../xray/shadowsocks-keys';
 
 /**
  * An inbound and an outbound are the same object seen from two ends: the same
@@ -71,6 +72,16 @@ interface ProtocolSpec {
 
 const ssMethod = (protocol: string, method?: string) =>
     method || (protocol === 'shadowsocks-2022' ? '2022-blake3-aes-128-gcm' : 'aes-256-gcm');
+
+/**
+ * What a new account's password is. A 2022 method takes a key of the exact
+ * size its cipher wants, in base64, and refuses a hex id of any length (see
+ * core/xray/shadowsocks-inbound); every other protocol takes any text.
+ */
+const generatedPassword = (protocol: string, method?: string): string =>
+    (protocol === 'shadowsocks' || protocol === 'shadowsocks-2022') && isShadowsocks2022Method(ssMethod(protocol, method))
+        ? generateShadowsocks2022Key(ssMethod(protocol, method))
+        : generateShortId(16);
 
 /**
  * The protocol table.
@@ -156,10 +167,20 @@ const PROTOCOLS: Record<string, ProtocolSpec> = {
         }),
     },
 
+    // A socks or http outbound's `servers[]` entry is {address, port, users}
+    // and nothing else (SocksRemoteConfig: v26.3.27:infra/conf/socks.go:66-70,
+    // v26.7.28:infra/conf/socks.go:71-75, v26.9.9:infra/conf/socks.go:71-75,
+    // v26.10.10:infra/conf/socks.go:70-74; HTTPRemoteConfig: v26.3.27:infra/conf/http.go:47-51,
+    // v26.7.28:infra/conf/http.go:52-56, v26.9.9:infra/conf/http.go:52-56,
+    // v26.10.10:infra/conf/http.go:52-56), so a `level` written there is a key the
+    // decoder drops. The one `level` these configs read sits beside a flat
+    // `address` and is copied onto the login, if there is one
+    // (v26.7.28:infra/conf/socks.go:111-115, http.go:93-97); in the list form
+    // it is the login's own, `users[0].level`, read as a protocol.User.
     socks: {
         inbound: () => ({ settings: { auth: 'noauth', udp: true } }),
         outbound: ctx => ({
-            settings: { servers: [{ address: ctx.address, port: ctx.port, level: 0 }] },
+            settings: { servers: [{ address: ctx.address, port: ctx.port }] },
         }),
     },
 
@@ -167,7 +188,7 @@ const PROTOCOLS: Record<string, ProtocolSpec> = {
         // An http inbound is a local proxy listener, same shape as socks.
         inbound: () => ({ settings: { allowTransparent: false } }),
         outbound: ctx => ({
-            settings: { servers: [{ address: ctx.address, port: ctx.port, level: 0 }] },
+            settings: { servers: [{ address: ctx.address, port: ctx.port }] },
         }),
     },
 
@@ -203,6 +224,29 @@ const PROTOCOLS: Record<string, ProtocolSpec> = {
                 security: 'tls',
                 hysteriaSettings: { version: 2, auth: ctx.password },
             },
+        }),
+    },
+
+    // From 26.10 only (v26.10.10:infra/conf/xray.go:36 and :53); the protocol
+    // chooser offers it on no earlier line. Both ends need the masque transport
+    // with TLS, and nothing else will do (v26.10.10:proxy/masque/client.go:58-63,
+    // server.go:126-131). The server needs an address pool whose first address is
+    // its own (proxy/masque/pool.go:20-45) and the users are written under
+    // `clients`, the key that wins when both spellings are there
+    // (infra/conf/masque.go:55-57). The certificate is the one thing left for
+    // the user, as for hysteria; the client is flat {address, port}
+    // (infra/conf/masque.go:14-18).
+    masque: {
+        inbound: ctx => ({
+            settings: {
+                clients: [{ email: 'user@masque', pass: ctx.password }],
+                address: ['10.250.0.1/24'],
+            },
+            stream: { network: 'masque', security: 'tls', tlsSettings: { certificates: [] } },
+        }),
+        outbound: ctx => ({
+            settings: { address: ctx.address, port: ctx.port },
+            stream: { network: 'masque', security: 'tls' },
         }),
     },
 
@@ -337,7 +381,7 @@ export const createEndpoint = <D extends EndpointDirection>(
         port: options.port ?? (direction === 'inbound' ? 10808 : 443),
         address: options.address || 'example.com',
         uuid: options.uuid || generateUUID(),
-        password: options.password || generateShortId(16),
+        password: options.password || generatedPassword(protocol, options.method),
         method: options.method || '',
     };
 
@@ -435,6 +479,7 @@ export const INBOUND_SPELLINGS: Readonly<Record<string, SpellingPair[]>> = {
     shadowsocks: USERS_AS_CLIENTS,
     'shadowsocks-2022': USERS_AS_CLIENTS,
     hysteria: USERS_AS_CLIENTS,
+    masque: USERS_AS_CLIENTS,
     http: USERS_AS_ACCOUNTS,
     socks: USERS_AS_ACCOUNTS,
     mixed: USERS_AS_ACCOUNTS,

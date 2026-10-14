@@ -13,8 +13,14 @@
 import type { CoreFeature, CoreValueSet, FeatureStatus } from './features';
 import type { CoreVersionId } from './index';
 
-const s = (v263: FeatureStatus, v267: FeatureStatus, v269: FeatureStatus): Record<CoreVersionId, FeatureStatus> =>
-    ({ '26.3': v263, '26.7': v267, '26.9': v269 });
+/** The 26.10 column follows 26.9 unless a row says otherwise — and a row says so wherever v26.10.10 differs. */
+const s = (
+    v263: FeatureStatus,
+    v267: FeatureStatus,
+    v269: FeatureStatus,
+    v2610: FeatureStatus = v269,
+): Record<CoreVersionId, FeatureStatus> =>
+    ({ '26.3': v263, '26.7': v267, '26.9': v269, '26.10': v2610 });
 
 const SIDES = ['outbound', 'inbound'] as const;
 
@@ -33,19 +39,19 @@ const HOST_IN_HEADERS: { settings: string; spellings: string[]; status: FeatureS
         settings: 'wsSettings',
         spellings: ['Host'],
         status: 'deprecated',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:166', 'v26.7.28:infra/conf/transport_method.go:637', 'v26.9.9:infra/conf/transport_method.go:632'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:166', 'v26.7.28:infra/conf/transport_method.go:637', 'v26.9.9:infra/conf/transport_method.go:632', 'v26.10.10:infra/conf/transport_method.go:642'],
     },
     {
         settings: 'httpupgradeSettings',
         spellings: ['host', 'Host'],
         status: 'rejected',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:207', 'v26.7.28:infra/conf/transport_method.go:678', 'v26.9.9:infra/conf/transport_method.go:673'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:207', 'v26.7.28:infra/conf/transport_method.go:678', 'v26.9.9:infra/conf/transport_method.go:673', 'v26.10.10:infra/conf/transport_method.go:683'],
     },
     {
         settings: 'xhttpSettings',
         spellings: ['host', 'Host'],
         status: 'rejected',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:291', 'v26.7.28:infra/conf/transport_method.go:330', 'v26.9.9:infra/conf/transport_method.go:329'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:291', 'v26.7.28:infra/conf/transport_method.go:330', 'v26.9.9:infra/conf/transport_method.go:329', 'v26.10.10:infra/conf/transport_method.go:339'],
     },
 ];
 
@@ -78,6 +84,7 @@ export const TRANSPORT_FEATURES: CoreFeature[] = [
             'v26.3.27:infra/conf/transport_internet.go:665',
             'v26.3.27:infra/conf/transport_internet.go:756',
             'v26.7.28:infra/conf/transport_security.go:300',
+            'v26.10.10:infra/conf/transport_security.go:300',
         ],
     } satisfies CoreFeature)),
 ];
@@ -126,7 +133,7 @@ const TLS_FINGERPRINTS_263 = [
 ];
 const TLS_FINGERPRINTS_267 = [...TLS_FINGERPRINTS_263, 'hellochrome_133', 'hellofirefox_148', 'hellosafari_26_3'];
 
-const same = (values: string[]): Record<CoreVersionId, string[]> => ({ '26.3': values, '26.7': values, '26.9': values });
+const same = (values: string[]): Record<CoreVersionId, string[]> => ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
 
 export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
     // ── security ────────────────────────────────────────────────────────
@@ -138,7 +145,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         outside: 'rejected',
         replacedBy: { xtls: 'tls or reality with flow xtls-rprx-vision' },
         detail: 'Lower-cased and matched against none, tls and reality; legacy xtls is a removed feature and any other name is "Unknown security".',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1764', 'v26.7.28:infra/conf/transport_internet.go:86', 'v26.7.28:infra/conf/transport_internet.go:114', 'v26.9.9:infra/conf/transport_internet.go:116'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1764', 'v26.7.28:infra/conf/transport_internet.go:86', 'v26.7.28:infra/conf/transport_internet.go:114', 'v26.9.9:infra/conf/transport_internet.go:116', 'v26.10.10:infra/conf/transport_internet.go:122'],
     },
 
     // ── hysteria ────────────────────────────────────────────────────────
@@ -151,26 +158,17 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['hysteria'],
         path: 'streamSettings.network',
-        allowed: { '26.3': NETWORKS, '26.7': ['hysteria'], '26.9': ['hysteria'] },
+        allowed: { '26.3': NETWORKS, '26.7': ['hysteria'], '26.9': ['hysteria'], '26.10': ['hysteria'] },
         outside: 'rejected',
         detail: 'From 26.7 a hysteria proxy refuses to start on any transport but hysteria.',
-        evidence: ['v26.7.28:proxy/hysteria/client.go:37', 'v26.7.28:proxy/hysteria/server.go:36', 'v26.9.9:proxy/hysteria/client.go:37', 'v26.9.9:proxy/hysteria/server.go:36'],
+        evidence: ['v26.7.28:proxy/hysteria/client.go:37', 'v26.7.28:proxy/hysteria/server.go:36', 'v26.9.9:proxy/hysteria/client.go:37', 'v26.10.10:proxy/hysteria/client.go:37', 'v26.9.9:proxy/hysteria/server.go:36', 'v26.10.10:proxy/hysteria/server.go:36'],
     },
-    {
-        // Inbound only on purpose. The listener refuses to start without TLS
-        // ("tls config is nil"), which is a config that does not run. The
-        // dialer says the same, but only on the first dial — the config does
-        // load — so an outbound is steered by the chooser instead of being
-        // reported as unloadable.
-        id: 'hysteria.stream.security',
-        scope: 'inbound',
-        protocol: ['hysteria'],
-        path: 'streamSettings.security',
-        allowed: same(['tls']),
-        outside: 'rejected',
-        detail: 'The hysteria transport only listens with security tls; anything else stops the inbound at start-up.',
-        evidence: ['v26.3.27:transport/internet/hysteria/hub.go:317', 'v26.7.28:transport/internet/hysteria/hub.go:200', 'v26.9.9:transport/internet/hysteria/hub.go:202'],
-    },
+    // The hysteria transport's TLS requirement is not a value set: it is
+    // keyed on the transport in use (any proxy riding it), and on 26.3 a
+    // hysteria *proxy* is not tied to that transport at all — a set on
+    // `protocol: hysteria` refused `security: none` over RAW there, which
+    // v26.3.27 runs. It is `streamRules` in rules.ts, with the citations in
+    // transport-networks.ts (`hysteriaTlsProblem`).
     {
         // Server side only: the dialer never reads masquerade.
         id: 'hysteria.masquerade.type',
@@ -179,7 +177,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         allowed: same(['404', 'file', 'proxy', 'string', EMPTY]),
         outside: 'rejected',
         detail: 'Build() takes any string, but the listener answers "unknown masq type" and does not start.',
-        evidence: ['v26.3.27:transport/internet/hysteria/hub.go:371', 'v26.7.28:transport/internet/hysteria/hub.go:253', 'v26.9.9:transport/internet/hysteria/hub.go:277'],
+        evidence: ['v26.3.27:transport/internet/hysteria/hub.go:371', 'v26.7.28:transport/internet/hysteria/hub.go:253', 'v26.9.9:transport/internet/hysteria/hub.go:277', 'v26.10.10:transport/internet/hysteria/hub.go:277'],
     },
 
     // ── sockopt ─────────────────────────────────────────────────────────
@@ -190,7 +188,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         allowed: same([...DOMAIN_STRATEGIES, EMPTY]),
         outside: 'rejected',
         detail: 'Lower-cased and matched against the eleven strategies; anything else is "unsupported domain strategy".',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1134', 'v26.7.28:infra/conf/transport_sockopt.go:120', 'v26.9.9:infra/conf/transport_sockopt.go:120'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1134', 'v26.7.28:infra/conf/transport_sockopt.go:120', 'v26.9.9:infra/conf/transport_sockopt.go:120', 'v26.10.10:infra/conf/transport_sockopt.go:120'],
     },
     {
         id: 'stream.sockopt.addressPortStrategy',
@@ -199,17 +197,17 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         allowed: same([...ADDRESS_PORT_STRATEGIES, EMPTY]),
         outside: 'rejected',
         detail: 'SRV/TXT lookups of the destination; lower-cased, and anything else is "unsupported address and port strategy".',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:1168', 'v26.7.28:infra/conf/transport_sockopt.go:154', 'v26.9.9:infra/conf/transport_sockopt.go:154'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:1168', 'v26.7.28:infra/conf/transport_sockopt.go:154', 'v26.9.9:infra/conf/transport_sockopt.go:154', 'v26.10.10:infra/conf/transport_sockopt.go:154'],
     },
     {
         id: 'freedom.stream.sockopt.addressPortStrategy',
         scope: 'outbound',
         protocol: ['freedom'],
         path: 'streamSettings.sockopt.addressPortStrategy',
-        allowed: { '26.3': [...ADDRESS_PORT_STRATEGIES, EMPTY], '26.7': [...ADDRESS_PORT_STRATEGIES, EMPTY], '26.9': ['none', EMPTY] },
+        allowed: { '26.3': [...ADDRESS_PORT_STRATEGIES, EMPTY], '26.7': [...ADDRESS_PORT_STRATEGIES, EMPTY], '26.9': ['none', EMPTY], '26.10': ['none', EMPTY] },
         outside: 'rejected',
         detail: '26.9 refuses a freedom outbound whose sockopt sets any addressPortStrategy but none.',
-        evidence: ['v26.9.9:infra/conf/xray.go:344', 'v26.9.9:infra/conf/xray.go:345'],
+        evidence: ['v26.9.9:infra/conf/xray.go:344', 'v26.10.10:infra/conf/xray.go:358', 'v26.9.9:infra/conf/xray.go:345', 'v26.10.10:infra/conf/xray.go:359'],
     },
 
     // ── TLS ─────────────────────────────────────────────────────────────
@@ -217,10 +215,10 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         id: 'stream.tls.fingerprint',
         scope: 'outbound',
         path: 'streamSettings.tlsSettings.fingerprint',
-        allowed: { '26.3': [...TLS_FINGERPRINTS_263, EMPTY], '26.7': [...TLS_FINGERPRINTS_267, EMPTY], '26.9': [...TLS_FINGERPRINTS_267, EMPTY] },
+        allowed: { '26.3': [...TLS_FINGERPRINTS_263, EMPTY], '26.7': [...TLS_FINGERPRINTS_267, EMPTY], '26.9': [...TLS_FINGERPRINTS_267, EMPTY], '26.10': [...TLS_FINGERPRINTS_267, EMPTY] },
         outside: 'rejected',
         detail: 'Lower-cased and looked up in the uTLS table; an unknown name fails the load. 26.7 added hellochrome_133, hellofirefox_148 and hellosafari_26_3.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:703', 'v26.7.28:infra/conf/transport_security.go:355', 'v26.7.28:transport/internet/tls/tls.go:225', 'v26.9.9:infra/conf/transport_security.go:355'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:703', 'v26.7.28:infra/conf/transport_security.go:355', 'v26.7.28:transport/internet/tls/tls.go:225', 'v26.9.9:infra/conf/transport_security.go:355', 'v26.10.10:infra/conf/transport_security.go:356'],
     },
 
     // ── transport settings ──────────────────────────────────────────────
@@ -233,7 +231,7 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         // Compared as written — the switch does not lower-case it.
         caseSensitive: true,
         detail: 'Empty means auto; any other mode fails the load.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:283', 'v26.7.28:infra/conf/transport_method.go:322', 'v26.9.9:infra/conf/transport_method.go:321'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:283', 'v26.7.28:infra/conf/transport_method.go:322', 'v26.9.9:infra/conf/transport_method.go:321', 'v26.10.10:infra/conf/transport_method.go:331'],
     } satisfies CoreValueSet)),
     ...(['tcpSettings', 'rawSettings'] as const).map(settings => ({
         id: `stream.${settings}.header.type`,
@@ -242,6 +240,6 @@ export const TRANSPORT_VALUE_SETS: CoreValueSet[] = [
         allowed: same(['none', 'http']),
         outside: 'rejected' as const,
         detail: 'A RAW header object is loaded by its type; an unknown type fails the load.',
-        evidence: ['v26.3.27:infra/conf/transport_internet.go:50', 'v26.7.28:infra/conf/transport_method.go:228', 'v26.9.9:infra/conf/transport_method.go:227'],
+        evidence: ['v26.3.27:infra/conf/transport_internet.go:50', 'v26.7.28:infra/conf/transport_method.go:228', 'v26.9.9:infra/conf/transport_method.go:227', 'v26.10.10:infra/conf/transport_method.go:237'],
     } satisfies CoreValueSet)),
 ];

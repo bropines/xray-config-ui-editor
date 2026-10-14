@@ -1,4 +1,5 @@
 import nacl from 'tweetnacl';
+import { ss2022KeyBytes } from '../xray/shadowsocks-keys';
 
 /**
  * Generates a v4 UUID using native crypto when available.
@@ -158,6 +159,15 @@ export const generateWireguardKeyPair = (): { secretKey: string; publicKey: stri
  */
 export const generateWireguardPresharedKey = (): string =>
     b64Encode(crypto.getRandomValues(new Uint8Array(32)));
+
+/**
+ * A key for a Shadowsocks 2022 method: as many random bytes as the method
+ * takes (16 for aes-128, 32 for the others), in padded base64 — what
+ * `openssl rand -base64 N` prints. A hex id is not one: it decodes to the
+ * wrong number of bytes, and the core refuses the inbound.
+ */
+export const generateShadowsocks2022Key = (method: string): string =>
+    b64Encode(crypto.getRandomValues(new Uint8Array(ss2022KeyBytes(method))));
 
 /** Longest shortId REALITY accepts: 8 bytes, so 16 hex characters. */
 export const MAX_SHORT_ID_LENGTH = 16;

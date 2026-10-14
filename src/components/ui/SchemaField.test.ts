@@ -140,8 +140,9 @@ describe('object-typed keys in the schemas the forms use', () => {
             'OutboundSchema.proxySettings': 'object',
             'OutboundSchema.mux': 'object',
             'BalancerSchema.strategy': 'object',
-            // JSON box that takes anything: a string is a valid webhook.
-            'RoutingRuleSchema.webhook': 'unknown',
+            // Its own form in RuleEditor. Never a bare string: the core decodes it
+            // into a struct (v26.7.28:infra/conf/router.go:151-157).
+            'RoutingRuleSchema.webhook': 'object',
             // Their own editors in TransportSettings; the JSON box without them.
             'RealitySchema.limitFallbackUpload': 'object',
             'RealitySchema.limitFallbackDownload': 'object',
@@ -159,7 +160,7 @@ describe('object-typed keys in the schemas the forms use', () => {
         }
         expect([...kinds].sort()).toEqual([
             'array<enum>', 'array<object>', 'array<string>', 'array<unknown>',
-            'boolean', 'enum', 'number', 'object', 'record', 'string', 'unknown',
+            'boolean', 'enum', 'number', 'object', 'record', 'string',
         ]);
     });
 });

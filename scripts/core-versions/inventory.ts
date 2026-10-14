@@ -13,7 +13,7 @@ const [repo, out] = process.argv.slice(2);
 if (!repo || !out) throw new Error('usage: struct-inventory.ts <repoDir> <outDir>');
 mkdirSync(out, { recursive: true });
 
-const TAGS = ['v26.3.27', 'v26.7.28', 'v26.9.9'];
+const TAGS = ['v26.3.27', 'v26.7.28', 'v26.9.9', 'v26.9.30', 'v26.10.10'];
 
 const git = (args: string) => execSync(`git ${args}`, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 

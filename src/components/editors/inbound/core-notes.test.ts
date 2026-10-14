@@ -77,7 +77,16 @@ describe('inboundNotes', () => {
         expect(kinds(notes)).toEqual(['absent:sniffing.ipsExcluded:remove']);
         // On 26.7 "none" stops the load, which outranks a key that does nothing.
         expect(kinds(inboundNotes({ protocol: 'shadowsocks', port: 1, settings: { method: 'none', password: 'x' }, allocate: {} }, '26.7')))
-            .toEqual(['value:settings.method=none', 'absent:allocate:remove']);
+            .toEqual(['problem:method.unknown', 'absent:allocate:remove']);
+    });
+
+    it('judges a Shadowsocks cipher by what the core reads, not by the key alone', () => {
+        // Users listed: the top-level method is not read, so an empty one is fine...
+        const multi = { protocol: 'shadowsocks', port: 1, settings: { method: '', clients: [{ password: 'x', method: 'aes-256-gcm' }] } };
+        for (const line of CORE_VERSIONS) expect(inboundNotes(multi, line.id)).toEqual([]);
+        // ...and a user's own method is what it must be right about.
+        const bad = { protocol: 'shadowsocks', port: 1, settings: { clients: [{ password: 'x', method: 'none' }] } };
+        expect(kinds(inboundNotes(bad, '26.3'))).toEqual(['problem:user.method']);
     });
 
     it('leaves transport keys to the transport editor', () => {

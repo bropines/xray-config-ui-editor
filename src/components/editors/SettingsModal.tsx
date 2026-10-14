@@ -4,7 +4,6 @@ import { Button } from '../ui/Button';
 import { EditorLayout } from '../ui/EditorLayout';
 import { Card } from '../ui/Card';
 import { Select } from '../ui/Select';
-import { FormField } from '../ui/FormField';
 
 import { LogEditor } from './settings/LogEditor';
 import { ApiStatsEditor } from './settings/ApiStatsEditor';
@@ -12,6 +11,7 @@ import { PolicyEditor } from './settings/PolicyEditor';
 import { ObservatoryEditor } from './settings/ObservatoryEditor';
 import { BurstObservatoryEditor } from './settings/BurstObservatoryEditor';
 import { SpiderPathsEditor } from './settings/SpiderPathsEditor';
+import { WarpRelaySettings } from './settings/WarpRelaySettings';
 
 import { useSettingsEditor } from '../../hooks/useSettingsEditor';
 import { useConfigStore } from '../../store/configStore';
@@ -22,11 +22,12 @@ import { t } from '../../i18n';
 const VERSION_ROLE_LABELS = (): Record<CoreVersion['role'], string> => ({
     minimum: t("Oldest supported release"),
     remnawave: t("What Remnawave nodes run"),
+    previous: t("Previous release"),
     latest: t("Newest release"),
 });
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
-    const { warpWorkerUrl, setWarpWorkerUrl, rawConfigText } = useConfigStore(useShallow(state => ({ warpWorkerUrl: state.warpWorkerUrl, setWarpWorkerUrl: state.setWarpWorkerUrl, rawConfigText: state.rawConfigText })));
+    const { rawConfigText } = useConfigStore(useShallow(state => ({ rawConfigText: state.rawConfigText })));
     const {
         coreVersion,
         setCoreVersion,
@@ -110,14 +111,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                                         description: VERSION_ROLE_LABELS()[version.role],
                                     }))}
                                 />
-                                <FormField label={t("WARP Worker URL")} help={t("Optional: Your private Cloudflare Worker URL for CORS-safe registration.")}>
-                                    <input 
-                                        className="input-base"
-                                        placeholder="https://your-worker.workers.dev"
-                                        value={warpWorkerUrl}
-                                        onChange={e => setWarpWorkerUrl(e.target.value)}
-                                    />
-                                </FormField>
+                                <WarpRelaySettings />
                             </div>
                         </Card>
 

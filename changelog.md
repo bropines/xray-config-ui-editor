@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.29.0] - 2026-10-14
+
+### Added
+- **WARP over MASQUE.** The WARP generator has a WireGuard / MASQUE switch at its foot. MASQUE registers a WARP device, enrols an ECDSA P-256 key on it and writes a `masque` outbound that reaches Cloudflare over HTTP/3 — QUIC on UDP 443, like the official app's MASQUE mode — or over HTTP/2 on TCP with ALPN `h2` where UDP is blocked. It needs Xray 26.10, which speaks Cloudflare's dialect of MASQUE itself; on an older line the switch is off and says so. A masque outbound also has **Register with WARP** in its card, to fill in or replace the device. Checked end to end against a released Xray 26.10.10 on both carriers: Cloudflare's trace answers `warp=on`.
+- **Xray 26.10 is a supported line** (v26.10.10, the newest; 26.9 stays on v26.9.9 because 26.9.30 changed what a config can say). With it come MASQUE — inbound, outbound, the masque transport and its `warp` block, each refusal the loader makes reported as critical — and the rest of what 26.10 changed: the `xdrive` transport (kept, edited in JSON), new TUN keys, `tlsSettings.useSystemCA` (26.10 checks servers against a CA bundle built into Xray unless this is on), dns and routing scripts, the reshaped xdns mask, udphop without `sockopt`, the noise `exp` item, and WireGuard dropping `domainStrategy`.
+- **Your own WARP relay, with a key.** Settings → General has the relay's URL, its access key, and **Check the relay**. The relay's source is `workers/warp` in the repository, with instructions for deploying a copy.
+- **HTTP outbound headers** have an editor: the extra headers sent with the CONNECT request, which may use `{{.Source}}` and `{{.Target}}`.
+- **A masque inbound card**: users, address pool, MTU.
+
+### Changed
+- **The WARP relay no longer answers just anyone, and never sees a private key.** It used to hand a whole account, private key included, to any GET. The editor now makes the key pair itself and sends only the public half; the relay forwards three narrow calls, checks every field, and answers only callers with the access key, from the editor's own site or localhost, a few registrations a minute per address. The built-in key ships with the editor — it keeps the relay from being an open endpoint, it is not a secret — and a copy of your own takes its own key. Editors older than this release can no longer register through the built-in relay.
+- **WARP WireGuard profiles get their real `reserved` bytes.** The old relay never passed `client_id` on, so every profile had `0, 0, 0`; they now carry the three bytes Cloudflare assigned the device.
+- The relay presents itself as the current Android client, the way Throne and usque do. If Cloudflare is limiting registrations (it does, for about a minute at a time), the editor says so instead of reporting a broken worker, and the WireGuard generator still adds the profile without keys for its Generate WARP button.
+
+### Fixed
+- **A TUN inbound's `autoOutboundsInterface` can be switched off.** Emptying the field deleted the key, which Xray reads as "auto" whenever routes are listed; Off now writes the `""` the core reads as off.
+- **Hysteria on 26.3 was forced to TLS on any transport.** 26.3's hysteria proxy runs over other transports with whatever security they take; only the hysteria transport needs TLS. From 26.7 the proxy refuses other transports, as before.
+- **The Shadowsocks inbound check matches the core.** `method` is not read at all when users are listed, 2022 names are compared per line (exactly before 26.10), and 2022 keys are checked for encoding and size. New 2022 accounts get a real key instead of a hex id no core accepts.
+- **WireGuard outbound problems are reported and stop a save to the panel:** an empty or wrong-length key, a peer without a key or endpoint, a bad address — with a pointer to Generate WARP on Cloudflare's endpoint. The address suggestion is a host address 26.3 accepts, and comma lists (Remote DNS, address, allowedIPs, reserved) keep a typed comma instead of swallowing it.
+- **A routing rule's `webhook` is an object.** A bare URL string, which the core cannot decode, is shown and reported instead of opening as an empty form.
+- **`mixed` inbounds read back as SOCKS** in the local balancer.
+- New socks and http outbounds no longer carry a `level` the core drops.
+
 ## [1.28.0] - 2026-10-14
 
 ### Added

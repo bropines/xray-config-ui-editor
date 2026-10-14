@@ -30,14 +30,22 @@
  */
 
 import validator from 'validator';
-import { parseWireguardKey } from '../generators/crypto';
 import { t } from '../../i18n';
 import { compareCoreVersions, coreVersion, type CoreVersionId } from './versions';
+// What both directions judge the same way — keys, interface addresses,
+// allowedIPs, `reserved` — is in wireguard-config.ts; the wording stays here.
+import {
+    KEY_SHAPE,
+    addressIssues,
+    allowedIpIssues,
+    isBlank,
+    isObject,
+    keyShape,
+    reservedIssue,
+    type Json,
+} from './wireguard-config';
 
 const { isIP } = validator;
-
-/** The length of every WireGuard key: Curve25519 points, and a pre-shared key to match. */
-const KEY_BYTES = 32;
 
 /**
  * What Build() gives the interface when `address` is left out — the same pair
@@ -82,32 +90,9 @@ export interface WireguardInboundProblem {
     suggestion?: string;
 }
 
-type Json = Record<string, unknown>;
-
-const isObject = (value: unknown): value is Json =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
-
 export const isWireguardInbound = (inbound: unknown): boolean =>
     // The loader lower-cases the protocol before looking it up (v26.7.28:infra/conf/loader.go:46).
     isObject(inbound) && typeof inbound.protocol === 'string' && inbound.protocol.toLowerCase() === 'wireguard';
-
-const addressFamily = (value: string): 4 | 6 | null => (isIP(value, 4) ? 4 : isIP(value, 6) ? 6 : null);
-
-/**
- * `netip.ParsePrefix`: an address, a slash, and a length that fits the
- * family. A bare address is not a prefix, a zone is not allowed, and the
- * length takes no sign and no leading zero.
- */
-const prefixOf = (value: string): { family: 4 | 6; bits: number } | null => {
-    const slash = value.lastIndexOf('/');
-    if (slash < 0 || value.includes('%')) return null;
-    const family = addressFamily(value.slice(0, slash));
-    const bits = value.slice(slash + 1);
-    if (!family || !/^(0|[1-9]\d{0,2})$/.test(bits)) return null;
-    return Number(bits) <= (family === 4 ? 32 : 128) ? { family, bits: Number(bits) } : null;
-};
-
-const KEY_SHAPE = (): string => t("A key is 32 bytes — 44 characters of base64, or 64 of hex.");
 
 /** A key that is there but is not one: undecodable, or the wrong size. */
 const keyProblem = (
@@ -116,33 +101,20 @@ const keyProblem = (
     field: string,
     peer?: number,
 ): WireguardInboundProblem | null => {
-    const bytes = parseWireguardKey(value);
-    if (!bytes) {
+    const shape = keyShape(value);
+    if (shape.ok) return null;
+    if (shape.reason === 'invalid') {
         return {
             kind: `${name}.invalid`, field, peer,
             message: t("{what} is not a WireGuard key: Xray cannot decode it, and the config will not load.", { what: field }),
             suggestion: KEY_SHAPE(),
         };
     }
-    if (bytes.length !== KEY_BYTES) {
-        return {
-            kind: `${name}.length`, field, peer,
-            message: t("{what} decodes to {bytes} bytes and a WireGuard key is 32, so the inbound will not start.", { what: field, bytes: bytes.length }),
-            suggestion: KEY_SHAPE(),
-        };
-    }
-    return null;
-};
-
-const isBlank = (value: unknown): boolean => value === undefined || value === null || value === '';
-
-/** How many bytes a base64 string holds; undefined when it is not base64 at all. */
-const base64Length = (text: string): number | undefined => {
-    try {
-        return atob(text).length;
-    } catch {
-        return undefined;
-    }
+    return {
+        kind: `${name}.length`, field, peer,
+        message: t("{what} decodes to {bytes} bytes and a WireGuard key is 32, so the inbound will not start.", { what: field, bytes: shape.bytes }),
+        suggestion: KEY_SHAPE(),
+    };
 };
 
 /**
@@ -222,36 +194,31 @@ export const wireguardInboundProblems = (inbound: unknown, version?: CoreVersion
     }
 
     if (Array.isArray(settings.address)) {
-        const hostOnly = version !== undefined && compareCoreVersions(version, '26.7') < 0;
-        for (const entry of settings.address) {
-            const value = String(entry);
-            const prefix = typeof entry === 'string' ? prefixOf(entry) : null;
-            if (typeof entry !== 'string' || (!prefix && !addressFamily(entry))) {
-                problems.push({
-                    kind: 'address',
-                    field: 'settings.address',
-                    message: t("{what} lists \"{value}\", which is not an IP address — the inbound will not start.", { what: 'settings.address', value }),
-                });
-            } else if (hostOnly && prefix && prefix.bits !== (prefix.family === 4 ? 32 : 128)) {
-                problems.push({
-                    kind: 'address',
-                    field: 'settings.address',
-                    message: t("{what} lists \"{value}\": Xray {tag} takes an interface address only as a single host — /32 for IPv4, /128 for IPv6 — and refuses any other prefix.", { what: 'settings.address', value, tag }),
-                });
-            }
+        for (const issue of addressIssues(settings.address, version)) {
+            problems.push({
+                kind: 'address',
+                field: 'settings.address',
+                message: issue.why === 'not-ip'
+                    ? t("{what} lists \"{value}\", which is not an IP address — the inbound will not start.", { what: 'settings.address', value: issue.value })
+                    : t("{what} lists \"{value}\": Xray {tag} takes an interface address only as a single host — /32 for IPv4, /128 for IPv6 — and refuses any other prefix.", { what: 'settings.address', value: issue.value, tag }),
+            });
         }
     }
 
     // `[]byte` takes a JSON array of numbers or a base64 string.
-    const reserved = settings.reserved;
-    const reservedLength = Array.isArray(reserved) ? reserved.length
-        : typeof reserved === 'string' ? base64Length(reserved)
-            : undefined;
-    if (reservedLength !== undefined && reservedLength !== 0 && reservedLength !== 3) {
+    const reserved = reservedIssue(settings.reserved);
+    if (reserved === 'length') {
         problems.push({
             kind: 'reserved',
             field: 'settings.reserved',
             message: t("{what} must be empty or exactly 3 bytes; Xray refuses any other length and the config will not load.", { what: 'settings.reserved' }),
+            suggestion: t("An inbound does not use it — only a WireGuard outbound does — so it can simply be removed."),
+        });
+    } else if (reserved === 'range') {
+        problems.push({
+            kind: 'reserved',
+            field: 'settings.reserved',
+            message: t("{what} holds a value that is not a byte (a whole number from 0 to 255); Xray cannot decode it and the config will not load.", { what: 'settings.reserved' }),
             suggestion: t("An inbound does not use it — only a WireGuard outbound does — so it can simply be removed."),
         });
     }
@@ -285,18 +252,13 @@ export const wireguardInboundProblems = (inbound: unknown, version?: CoreVersion
         }
 
         if (Array.isArray(peer.allowedIPs)) {
-            for (const entry of peer.allowedIPs) {
-                if (typeof entry === 'string' && prefixOf(entry)) continue;
-                const value = String(entry);
-                const family = typeof entry === 'string' ? addressFamily(entry) : null;
+            for (const issue of allowedIpIssues(peer.allowedIPs)) {
                 problems.push({
                     kind: 'allowedIPs',
                     field: `${at}.allowedIPs`,
                     peer: index,
-                    message: t("{what} lists \"{value}\", which is not a network written as address/prefix — the inbound will not start.", { what: `${at}.allowedIPs`, value }),
-                    suggestion: family
-                        ? t("Write a single address as {example}.", { example: `${value}/${family === 4 ? 32 : 128}` })
-                        : undefined,
+                    message: t("{what} lists \"{value}\", which is not a network written as address/prefix — the inbound will not start.", { what: `${at}.allowedIPs`, value: issue.value }),
+                    suggestion: issue.example ? t("Write a single address as {example}.", { example: issue.example }) : undefined,
                 });
             }
         }

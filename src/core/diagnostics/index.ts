@@ -10,6 +10,9 @@ import { versionDiagnostics } from '../xray/versions/check';
 import { chainProblems } from '../xray/outbound-chain';
 import { fragmentProblems, noiseProblem } from '../xray/freedom-fragment';
 import { wireguardInboundProblems } from '../xray/wireguard-inbound';
+import { wireguardOutboundProblems } from '../xray/wireguard-outbound';
+import { httpHeadersProblems } from '../xray/http-outbound-headers';
+import { webhookProblems } from '../xray/routing-webhook';
 import { t } from '../../i18n';
 import type { CoreVersionId } from '../xray/versions';
 
@@ -72,6 +75,25 @@ export const runFullDiagnostics = (
 
     const checkOutbound = (o: any, i: number) => {
         if (isSnippetRef(o)) return;
+
+        // A WireGuard outbound the core will not run, or that carries nothing
+        // once it does: the factory's empty key and empty peer first of all,
+        // and a WARP profile that has not been registered yet. The list, and
+        // the source line for each entry, is in core/xray/wireguard-outbound.ts.
+        for (const problem of wireguardOutboundProblems(o, version)) {
+            diagnostics.push({
+                section: 'outbounds', itemIndex: i, field: problem.field,
+                severity: 'critical', message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
+        // HTTP headers the core cannot decode into its map of strings.
+        for (const problem of httpHeadersProblems(o)) {
+            diagnostics.push({
+                section: 'outbounds', itemIndex: i, field: problem.field,
+                severity: 'critical', message: problem.message, suggestion: problem.suggestion,
+            });
+        }
 
         // A fragment the core will not build: the config does not load.
         if (o.protocol === 'freedom') {
@@ -255,6 +277,16 @@ export const runFullDiagnostics = (
             diagnostics.push({
                 section: 'routing', itemIndex: i, field: 'balancerTag',
                 severity: 'critical', message: `Rule targets unknown balancer: "${rule.balancerTag}"`,
+            });
+        }
+
+        // A webhook the core cannot decode (a bare URL string, a header that
+        // is not a string, ...) fails the rule and with it the config; one
+        // with no url is dropped without a word. See core/xray/routing-webhook.ts.
+        for (const problem of webhookProblems(rule)) {
+            diagnostics.push({
+                section: 'routing', itemIndex: i, field: problem.field,
+                severity: problem.severity, message: problem.message, suggestion: problem.suggestion,
             });
         }
 

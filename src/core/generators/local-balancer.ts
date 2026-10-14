@@ -592,14 +592,25 @@ export const parseLocalBalancer = (input: any): ParsedLocalBalancer => {
 
     // --- local listeners ---
     const inbounds: any[] = Array.isArray(input.inbounds) ? input.inbounds : [];
-    const socks = inbounds.find(i => i.protocol === 'socks');
-    const http = inbounds.find(i => i.protocol === 'http');
+    // `mixed` is the SOCKS inbound under another name: the loader builds both
+    // from one SocksServerConfig on every line (v26.3.27:infra/conf/xray.go:30-31,
+    // v26.7.28:infra/conf/xray.go:27-28, v26.9.9:infra/conf/xray.go:28-29), and
+    // that server already hands what does not open as SOCKS to an HTTP proxy on
+    // the same port (v26.7.28:proxy/socks/server.go:87-89). So there is nothing
+    // in a `mixed` inbound that a `socks` one this builder writes would lose.
+    // The loader lower-cases the name before looking it up
+    // (v26.7.28:infra/conf/loader.go:46), so the comparison does too.
+    const protocolOf = (inbound: any): string =>
+        typeof inbound?.protocol === 'string' ? inbound.protocol.toLowerCase() : '';
+    const isSocks = (inbound: any) => protocolOf(inbound) === 'socks' || protocolOf(inbound) === 'mixed';
+    const socks = inbounds.find(isSocks);
+    const http = inbounds.find(i => protocolOf(i) === 'http');
     options.socksPort = socks ? socks.port : null;
     options.httpPort = http ? http.port : null;
     const listen = socks?.listen || http?.listen;
     if (listen) options.listen = listen;
     options.sniffing = !!(socks?.sniffing?.enabled || http?.sniffing?.enabled);
-    if (inbounds.some(i => i.protocol !== 'socks' && i.protocol !== 'http')) {
+    if (inbounds.some(i => !isSocks(i) && protocolOf(i) !== 'http')) {
         notes.push('Inbounds other than SOCKS/HTTP were dropped — the builder only writes those two');
     }
 

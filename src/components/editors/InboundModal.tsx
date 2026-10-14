@@ -8,6 +8,7 @@ import { InboundSniffing } from './inbound/InboundSniffing';
 import { InboundTun } from './inbound/InboundTun';
 import { InboundTunnel } from './inbound/InboundTunnel';
 import { InboundWireguard } from './inbound/InboundWireguard';
+import { InboundMasque } from './inbound/InboundMasque';
 import { InboundCoreNotes } from './inbound/InboundCoreNotes';
 import { TransportSettings } from './shared/TransportSettings';
 import { t } from '../../i18n';
@@ -68,6 +69,10 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                         // address and peers, none of which is a "client" in
                         // the sense InboundClients draws.
                         <InboundWireguard inbound={local} onChange={updateField} />
+                    ) : local.protocol === 'masque' ? (
+                        // Users, an address pool and an MTU: not the client list
+                        // InboundClients draws, and nothing else to offer.
+                        <InboundMasque inbound={local} onChange={updateField} />
                     ) : (
                         <InboundClients
                             inbound={local}

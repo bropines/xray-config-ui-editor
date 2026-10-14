@@ -61,10 +61,11 @@ const SHAPES: Record<string, OutboundShape> = {
     socks: { server: true, transport: true, mux: true, strategy: true },
     http: { server: true, transport: true, mux: true, strategy: true },
     hysteria: { server: true, transport: true, mux: true, strategy: true },
-    // Not a protocol on any supported tag — none of v26.3.27, v26.7.28 or
-    // v26.9.9 registers it, and the version table refuses it outright. The
-    // development branch that has it answers `masque outbound does not support
-    // "mux"` from Build(), which is why this column says false.
+    // Registered from 26.10 only: v26.3.27, v26.7.28 and v26.9.9 do not know it,
+    // and the version table refuses it there. v26.10.10 answers `masque outbound
+    // does not support "mux"` from Build() (infra/conf/xray.go:347-350), which
+    // is why this column says false. It dials, so the transport stack applies —
+    // and it is the one transport it may use (core/xray/masque.ts).
     masque: { server: true, transport: true, mux: false, strategy: true },
     // Its own device and peers rather than a server card, and its own
     // encrypted transport underneath.

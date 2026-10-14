@@ -186,6 +186,13 @@ export const useTransportFields = (streamSettings: any, onChange: (next: any) =>
     const xhttpKey = streamSettings?.xhttpSettings || !streamSettings?.splithttpSettings ? 'xhttpSettings' : 'splithttpSettings';
     const xhttpSettings = useField<any>(streamSettings, update, [xhttpKey]);
 
+    // masqueSettings is one object the editor rebuilds whole, so an emptied one
+    // goes (an undefined key would linger in the in-memory config).
+    const masqueSettings = {
+        ...useField<any>(streamSettings, update, ['masqueSettings']),
+        onChange: (next: unknown) => (next === undefined ? removeKeys([], ['masqueSettings']) : update(['masqueSettings'], next)),
+    };
+
     const realitySettings = useField<any>(streamSettings, update, ['realitySettings']);
     const tlsSettings = useField<any>(streamSettings, update, ['tlsSettings']);
     // certificates is always written as a single-element array (server cert +
@@ -245,6 +252,7 @@ export const useTransportFields = (streamSettings: any, onChange: (next: any) =>
         setHysteriaVersion,
         removeHysteriaKeys,
         xhttpSettings,
+        masqueSettings,
         realitySettings,
         tlsSettings,
         tlsCertificates,

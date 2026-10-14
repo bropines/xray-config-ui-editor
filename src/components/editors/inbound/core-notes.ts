@@ -21,15 +21,25 @@ import { CORE_VERSIONS, type CoreVersionId } from '../../../core/xray/versions';
 import type { CoreFeature, CoreValueSet, FeatureStatus } from '../../../core/xray/versions/features';
 import { acceptsValue, featureUses, valueUses } from '../../../core/xray/versions/check';
 import { spellingConflicts, spellingForPath, type SpellingPair } from '../../../core/generators/endpoint-factory';
-import { wireguardInboundProblems, type WireguardInboundProblem } from '../../../core/xray/wireguard-inbound';
+import { wireguardInboundProblems } from '../../../core/xray/wireguard-inbound';
+import { shadowsocksInboundProblems } from '../../../core/xray/shadowsocks-inbound';
+
+/** What a core refuses an inbound for lacking or getting wrong — the shape both problem modules share. */
+export interface InboundProblem {
+    kind: string;
+    field: string;
+    message: string;
+    suggestion?: string;
+}
 
 export type InboundNote =
     /**
      * Something the core refuses that is not one key or one value — a
-     * WireGuard inbound with no secret key, a peer with no public key. The
-     * words come from where the diagnostics get theirs, so the two agree.
+     * WireGuard inbound with no secret key, a peer with no public key, a
+     * Shadowsocks cipher the line does not know. The words come from where
+     * the diagnostics get theirs, so the two agree.
      */
-    | { kind: 'problem'; problem: WireguardInboundProblem }
+    | { kind: 'problem'; problem: InboundProblem }
     /** Both spellings set: the alias is ignored on every line. */
     | { kind: 'conflict'; pair: SpellingPair; keyEmpty: boolean }
     | {
@@ -68,6 +78,9 @@ export const inboundNotes = (inbound: Inbound, version: CoreVersionId): InboundN
     // First in the list as well as in rank: nothing below matters while the
     // inbound cannot be built at all.
     for (const problem of wireguardInboundProblems(inbound, version)) {
+        notes.push({ kind: 'problem', problem });
+    }
+    for (const problem of shadowsocksInboundProblems(inbound, version)) {
         notes.push({ kind: 'problem', problem });
     }
 

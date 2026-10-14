@@ -314,3 +314,40 @@ describe('a key that holds an object', () => {
         expect(writes[0]).toEqual({ tag: 'a' });
     });
 });
+
+describe('an empty string', () => {
+    const emptied = (keep: string[] | undefined) => {
+        const writes: any[] = [];
+        const { container } = render(
+            <SchemaForm
+                schema={schema}
+                value={{ tag: 'a', note: 'b' }}
+                onChange={next => writes.push(next)}
+                emptyKeeps={keep}
+                fieldEditors={{ note: field => <button data-empty onClick={() => field.onChange('')}>x</button> }}
+            />,
+        );
+        fireEvent.click(container.querySelector('[data-empty]')!);
+        return writes[0];
+    };
+
+    it('removes the key, as an emptied box always did', () => {
+        expect(emptied(undefined)).toEqual({ tag: 'a' });
+        expect(emptied(['tag'])).toEqual({ tag: 'a' });
+    });
+
+    it('is kept for a key the core reads it on, and only for that key', () => {
+        expect(emptied(['note'])).toEqual({ tag: 'a', note: '' });
+    });
+
+    it('is still removed from a plain text box, even for such a key', () => {
+        const writes: any[] = [];
+        const { container } = render(
+            <SchemaForm schema={schema} value={{ tag: 'a' }} onChange={next => writes.push(next)} emptyKeeps={['tag']} />,
+        );
+        const box = Array.from(container.querySelectorAll('input')).find(input => (input as HTMLInputElement).value === 'a')!;
+        fireEvent.change(box, { target: { value: '' } });
+        // The text box says "nothing" itself (undefined); only an editor written for the key says "".
+        expect(writes[0]).toEqual({});
+    });
+});

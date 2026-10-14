@@ -15,7 +15,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -56,16 +57,33 @@
           "websocket",
           "httpupgrade",
           "hysteria"
+        ],
+        "v26.10.10": [
+          "raw",
+          "tcp",
+          "xhttp",
+          "splithttp",
+          "kcp",
+          "mkcp",
+          "grpc",
+          "ws",
+          "websocket",
+          "httpupgrade",
+          "hysteria",
+          "masque",
+          "xdrive"
         ]
       },
-      "detail": "Case-insensitive; omitted means raw (tcp); raw=tcp, xhttp=splithttp, kcp=mkcp, ws=websocket are aliases; any unknown name fails the load with 'unknown transport protocol'.",
+      "detail": "Case-insensitive; omitted means raw (tcp); raw=tcp, xhttp=splithttp, kcp=mkcp, ws=websocket are aliases; any unknown name fails the load with 'unknown transport protocol'. v26.10.10 adds masque (only the masque proxy may use it) and xdrive.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:999",
         "v26.3.27:infra/conf/transport_internet.go:1022",
         "v26.7.28:infra/conf/transport_internet.go:17",
         "v26.7.28:infra/conf/transport_internet.go:40",
         "v26.9.9:infra/conf/transport_internet.go:17",
-        "v26.9.9:infra/conf/transport_internet.go:40"
+        "v26.9.9:infra/conf/transport_internet.go:40",
+        "v26.10.10:infra/conf/transport_internet.go:17",
+        "v26.10.10:infra/conf/transport_internet.go:39-44"
       ]
     },
     {
@@ -74,13 +92,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "HTTP/2-3 transport is a removed feature in all three tags (PrintRemovedFeatureError pointing to XHTTP stream-one H2/H3), so the config does not load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1016",
         "v26.7.28:infra/conf/transport_internet.go:34",
-        "v26.9.9:infra/conf/transport_internet.go:34"
+        "v26.9.9:infra/conf/transport_internet.go:34",
+        "v26.10.10:infra/conf/transport_internet.go:34"
       ]
     },
     {
@@ -89,13 +109,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "QUIC transport is a removed feature in all three tags (points to XHTTP stream-one H3); the config does not load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1018",
         "v26.7.28:infra/conf/transport_internet.go:36",
-        "v26.9.9:infra/conf/transport_internet.go:36"
+        "v26.9.9:infra/conf/transport_internet.go:36",
+        "v26.10.10:infra/conf/transport_internet.go:36"
       ]
     },
     {
@@ -104,7 +126,8 @@
       "status": {
         "v26.3.27": "deprecated",
         "v26.7.28": "deprecated",
-        "v26.9.9": "deprecated"
+        "v26.9.9": "deprecated",
+        "v26.10.10": "deprecated"
       },
       "values": {
         "v26.3.27": [
@@ -120,6 +143,12 @@
           "httpupgrade"
         ],
         "v26.9.9": [
+          "grpc",
+          "ws",
+          "websocket",
+          "httpupgrade"
+        ],
+        "v26.10.10": [
           "grpc",
           "ws",
           "websocket",
@@ -136,7 +165,10 @@
         "v26.7.28:infra/conf/transport_internet.go:31",
         "v26.9.9:infra/conf/transport_internet.go:25",
         "v26.9.9:infra/conf/transport_internet.go:28",
-        "v26.9.9:infra/conf/transport_internet.go:31"
+        "v26.9.9:infra/conf/transport_internet.go:31",
+        "v26.10.10:infra/conf/transport_internet.go:25",
+        "v26.10.10:infra/conf/transport_internet.go:28",
+        "v26.10.10:infra/conf/transport_internet.go:31"
       ]
     },
     {
@@ -145,14 +177,17 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "New alias of network in v26.7.28 with the same values; when both keys are present method wins; v26.3.27 silently ignores it, so a config that uses only method falls back to raw there.",
       "evidence": [
         "v26.7.28:infra/conf/transport_internet.go:47",
         "v26.7.28:infra/conf/transport_internet.go:75",
         "v26.9.9:infra/conf/transport_internet.go:47",
-        "v26.9.9:infra/conf/transport_internet.go:75"
+        "v26.9.9:infra/conf/transport_internet.go:75",
+        "v26.10.10:infra/conf/transport_internet.go:51",
+        "v26.10.10:infra/conf/transport_internet.go:81"
       ]
     },
     {
@@ -161,7 +196,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -175,6 +211,11 @@
           "reality"
         ],
         "v26.9.9": [
+          "none",
+          "tls",
+          "reality"
+        ],
+        "v26.10.10": [
           "none",
           "tls",
           "reality"
@@ -187,7 +228,9 @@
         "v26.7.28:infra/conf/transport_internet.go:86",
         "v26.7.28:infra/conf/transport_internet.go:116",
         "v26.9.9:infra/conf/transport_internet.go:86",
-        "v26.9.9:infra/conf/transport_internet.go:116"
+        "v26.9.9:infra/conf/transport_internet.go:116",
+        "v26.10.10:infra/conf/transport_internet.go:92",
+        "v26.10.10:infra/conf/transport_internet.go:122"
       ]
     },
     {
@@ -196,13 +239,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Legacy XTLS is rejected in all three tags (migrate to flow xtls-rprx-vision with tls or reality).",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1792",
         "v26.7.28:infra/conf/transport_internet.go:114",
-        "v26.9.9:infra/conf/transport_internet.go:114"
+        "v26.9.9:infra/conf/transport_internet.go:114",
+        "v26.10.10:infra/conf/transport_internet.go:120"
       ]
     },
     {
@@ -211,13 +256,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "REALITY is only accepted with network raw/tcp, xhttp/splithttp or grpc; ws, httpupgrade, kcp and hysteria fail the load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1778",
         "v26.7.28:infra/conf/transport_internet.go:100",
-        "v26.9.9:infra/conf/transport_internet.go:100"
+        "v26.9.9:infra/conf/transport_internet.go:100",
+        "v26.10.10:infra/conf/transport_internet.go:106"
       ]
     },
     {
@@ -226,13 +273,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "security reality without a realitySettings object fails the load; security tls without tlsSettings is fine (an empty TLS config is used).",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1782",
         "v26.7.28:infra/conf/transport_internet.go:104",
-        "v26.9.9:infra/conf/transport_internet.go:104"
+        "v26.9.9:infra/conf/transport_internet.go:104",
+        "v26.10.10:infra/conf/transport_internet.go:110"
       ]
     },
     {
@@ -241,13 +290,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Every transport settings object present is built even when network selects a different transport, so an invalid leftover object (e.g. kcpSettings with seed next to network ws) still fails the load; editors should drop settings of unselected transports.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1823",
         "v26.7.28:infra/conf/transport_internet.go:145",
-        "v26.9.9:infra/conf/transport_internet.go:145"
+        "v26.9.9:infra/conf/transport_internet.go:145",
+        "v26.10.10:infra/conf/transport_internet.go:151"
       ]
     },
     {
@@ -256,13 +307,15 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "rawSettings and tcpSettings are the same object; if both are present rawSettings wins and tcpSettings is discarded.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1798",
         "v26.7.28:infra/conf/transport_internet.go:120",
-        "v26.9.9:infra/conf/transport_internet.go:120"
+        "v26.9.9:infra/conf/transport_internet.go:120",
+        "v26.10.10:infra/conf/transport_internet.go:126"
       ]
     },
     {
@@ -271,13 +324,15 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "xhttpSettings and splithttpSettings are the same object; if both are present xhttpSettings wins.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1811",
         "v26.7.28:infra/conf/transport_internet.go:133",
-        "v26.9.9:infra/conf/transport_internet.go:133"
+        "v26.9.9:infra/conf/transport_internet.go:133",
+        "v26.10.10:infra/conf/transport_internet.go:139"
       ]
     },
     {
@@ -286,7 +341,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -298,6 +354,10 @@
           "http"
         ],
         "v26.9.9": [
+          "none",
+          "http"
+        ],
+        "v26.10.10": [
           "none",
           "http"
         ]
@@ -310,7 +370,10 @@
         "v26.7.28:infra/conf/transport_method.go:229",
         "v26.9.9:infra/conf/transport_method.go:227",
         "v26.9.9:infra/conf/transport_method.go:228",
-        "v26.9.9:infra/conf/loader.go:64"
+        "v26.9.9:infra/conf/loader.go:64",
+        "v26.10.10:infra/conf/transport_method.go:237",
+        "v26.10.10:infra/conf/transport_method.go:238",
+        "v26.10.10:infra/conf/loader.go:64"
       ]
     },
     {
@@ -319,7 +382,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "renamedFrom": "sessionPlacement",
       "detail": "v26.7.28 renamed sessionPlacement to sessionIDPlacement (values path|cookie|header|query, default path) with no migration: the old key is silently ignored from v26.7.28 and the new key is silently ignored by v26.3.27, so the wrong spelling silently falls back to path.",
@@ -329,7 +393,9 @@
         "v26.7.28:infra/conf/transport_method.go:269",
         "v26.7.28:infra/conf/transport_method.go:386",
         "v26.9.9:infra/conf/transport_method.go:268",
-        "v26.9.9:infra/conf/transport_method.go:385"
+        "v26.9.9:infra/conf/transport_method.go:385",
+        "v26.10.10:infra/conf/transport_method.go:278",
+        "v26.10.10:infra/conf/transport_method.go:395"
       ]
     },
     {
@@ -338,12 +404,14 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Old spelling, only read by v26.3.27 (path|cookie|header|query; any other value fails the load there); ignored without warning afterwards.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:232",
-        "v26.3.27:infra/conf/transport_internet.go:349"
+        "v26.3.27:infra/conf/transport_internet.go:349",
+        "v26.10.10:infra/conf/transport_method.go:266-297"
       ]
     },
     {
@@ -352,7 +420,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "renamedFrom": "sessionKey",
       "detail": "v26.7.28 renamed sessionKey to sessionIDKey (default x_session for cookie/query, X-Session for header); the old key is silently ignored afterwards.",
@@ -361,7 +430,9 @@
         "v26.7.28:infra/conf/transport_method.go:270",
         "v26.7.28:infra/conf/transport_method.go:399",
         "v26.9.9:infra/conf/transport_method.go:269",
-        "v26.9.9:infra/conf/transport_method.go:398"
+        "v26.9.9:infra/conf/transport_method.go:398",
+        "v26.10.10:infra/conf/transport_method.go:279",
+        "v26.10.10:infra/conf/transport_method.go:408"
       ]
     },
     {
@@ -370,12 +441,14 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Old spelling, only read by v26.3.27; silently ignored from v26.7.28.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:233",
-        "v26.3.27:infra/conf/transport_internet.go:360"
+        "v26.3.27:infra/conf/transport_internet.go:360",
+        "v26.10.10:infra/conf/transport_method.go:266-297"
       ]
     },
     {
@@ -384,7 +457,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "New in v26.7.28: a predefined table name (ALPHABET, Alphabet, BASE36, Base62, HEX, alphabet, base36, hex, number) or a custom ASCII-only character set; when set, sessionIDLength.from must be > 0 and table-size^length must give at least 2^31 combinations, otherwise the load fails.",
       "evidence": [
@@ -396,7 +470,10 @@
         "v26.7.28:transport/internet/splithttp/config.go:494",
         "v26.9.9:infra/conf/transport_method.go:270",
         "v26.9.9:infra/conf/transport_method.go:407",
-        "v26.9.9:transport/internet/splithttp/config.go:499"
+        "v26.9.9:transport/internet/splithttp/config.go:499",
+        "v26.10.10:infra/conf/transport_method.go:280",
+        "v26.10.10:infra/conf/transport_method.go:417",
+        "v26.10.10:transport/internet/splithttp/config.go:499"
       ]
     },
     {
@@ -405,14 +482,17 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "New in v26.7.28 (integer or 'from-to' string); only used together with sessionIDTable, otherwise a UUID session ID is generated and the length is ignored.",
       "evidence": [
         "v26.7.28:infra/conf/transport_method.go:272",
         "v26.7.28:transport/internet/splithttp/config.go:512",
         "v26.9.9:infra/conf/transport_method.go:271",
-        "v26.9.9:transport/internet/splithttp/config.go:517"
+        "v26.9.9:transport/internet/splithttp/config.go:517",
+        "v26.10.10:infra/conf/transport_method.go:281",
+        "v26.10.10:transport/internet/splithttp/config.go:517"
       ]
     },
     {
@@ -421,7 +501,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -437,6 +518,12 @@
           "stream-one"
         ],
         "v26.9.9": [
+          "auto",
+          "packet-up",
+          "stream-up",
+          "stream-one"
+        ],
+        "v26.10.10": [
           "auto",
           "packet-up",
           "stream-up",
@@ -447,7 +534,8 @@
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:283",
         "v26.7.28:infra/conf/transport_method.go:322",
-        "v26.9.9:infra/conf/transport_method.go:321"
+        "v26.9.9:infra/conf/transport_method.go:321",
+        "v26.10.10:infra/conf/transport_method.go:331"
       ]
     },
     {
@@ -456,7 +544,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -472,6 +561,12 @@
           "query"
         ],
         "v26.9.9": [
+          "queryInHeader",
+          "cookie",
+          "header",
+          "query"
+        ],
+        "v26.10.10": [
           "queryInHeader",
           "cookie",
           "header",
@@ -482,7 +577,8 @@
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:310",
         "v26.7.28:infra/conf/transport_method.go:349",
-        "v26.9.9:infra/conf/transport_method.go:348"
+        "v26.9.9:infra/conf/transport_method.go:348",
+        "v26.10.10:infra/conf/transport_method.go:358"
       ]
     },
     {
@@ -491,7 +587,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -503,6 +600,10 @@
           "tokenish"
         ],
         "v26.9.9": [
+          "repeat-x",
+          "tokenish"
+        ],
+        "v26.10.10": [
           "repeat-x",
           "tokenish"
         ]
@@ -511,7 +612,8 @@
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:318",
         "v26.7.28:infra/conf/transport_method.go:357",
-        "v26.9.9:infra/conf/transport_method.go:356"
+        "v26.9.9:infra/conf/transport_method.go:356",
+        "v26.10.10:infra/conf/transport_method.go:366"
       ]
     },
     {
@@ -520,7 +622,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -536,6 +639,12 @@
           "header"
         ],
         "v26.9.9": [
+          "auto",
+          "body",
+          "cookie",
+          "header"
+        ],
+        "v26.10.10": [
           "auto",
           "body",
           "cookie",
@@ -549,7 +658,9 @@
         "v26.7.28:infra/conf/transport_method.go:366",
         "v26.7.28:infra/conf/transport_method.go:368",
         "v26.9.9:infra/conf/transport_method.go:365",
-        "v26.9.9:infra/conf/transport_method.go:367"
+        "v26.9.9:infra/conf/transport_method.go:367",
+        "v26.10.10:infra/conf/transport_method.go:375",
+        "v26.10.10:infra/conf/transport_method.go:377"
       ]
     },
     {
@@ -558,7 +669,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -574,6 +686,12 @@
           "query"
         ],
         "v26.9.9": [
+          "path",
+          "cookie",
+          "header",
+          "query"
+        ],
+        "v26.10.10": [
           "path",
           "cookie",
           "header",
@@ -584,7 +702,8 @@
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:355",
         "v26.7.28:infra/conf/transport_method.go:394",
-        "v26.9.9:infra/conf/transport_method.go:393"
+        "v26.9.9:infra/conf/transport_method.go:393",
+        "v26.10.10:infra/conf/transport_method.go:403"
       ]
     },
     {
@@ -593,13 +712,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Upper-cased, default POST; GET is only allowed in mode packet-up.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:341",
         "v26.7.28:infra/conf/transport_method.go:380",
-        "v26.9.9:infra/conf/transport_method.go:379"
+        "v26.9.9:infra/conf/transport_method.go:379",
+        "v26.10.10:infra/conf/transport_method.go:389"
       ]
     },
     {
@@ -608,13 +729,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "A Host entry in headers (any case) fails the load; use the host field.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:291",
         "v26.7.28:infra/conf/transport_method.go:330",
-        "v26.9.9:infra/conf/transport_method.go:329"
+        "v26.9.9:infra/conf/transport_method.go:329",
+        "v26.10.10:infra/conf/transport_method.go:339"
       ]
     },
     {
@@ -623,13 +746,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "If set, both ends of the range must be > 0 (padding cannot be disabled).",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:296",
         "v26.7.28:infra/conf/transport_method.go:335",
-        "v26.9.9:infra/conf/transport_method.go:334"
+        "v26.9.9:infra/conf/transport_method.go:334",
+        "v26.10.10:infra/conf/transport_method.go:344"
       ]
     },
     {
@@ -638,13 +763,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "maxConnections and maxConcurrency are mutually exclusive (both with a non-zero upper bound fails the load).",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:392",
         "v26.7.28:infra/conf/transport_method.go:450",
-        "v26.9.9:infra/conf/transport_method.go:449"
+        "v26.9.9:infra/conf/transport_method.go:449",
+        "v26.10.10:infra/conf/transport_method.go:459"
       ]
     },
     {
@@ -653,13 +780,15 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "Default changed when xmux is omitted or all-zero: v26.3.27 uses maxConcurrency 1, v26.7.28+ use maxConnections 3 (hMaxRequestTimes 600-900 and hMaxReusableSecs 1800-3000 unchanged); write it explicitly to get the same behaviour on every core.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:395",
         "v26.7.28:infra/conf/transport_method.go:453",
-        "v26.9.9:infra/conf/transport_method.go:452"
+        "v26.9.9:infra/conf/transport_method.go:452",
+        "v26.10.10:infra/conf/transport_method.go:462"
       ]
     },
     {
@@ -668,13 +797,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "downloadSettings (a nested streamSettings object) is not allowed in mode stream-one.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:441",
         "v26.7.28:infra/conf/transport_method.go:501",
-        "v26.9.9:infra/conf/transport_method.go:500"
+        "v26.9.9:infra/conf/transport_method.go:500",
+        "v26.10.10:infra/conf/transport_method.go:510"
       ]
     },
     {
@@ -683,7 +814,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "When extra is present the whole xhttp config is re-read from it and only host, path and mode are kept from the outer object, so every other outer key (including downloadSettings) is silently discarded.",
       "evidence": [
@@ -692,7 +824,9 @@
         "v26.7.28:infra/conf/transport_method.go:308",
         "v26.7.28:infra/conf/transport_method.go:315",
         "v26.9.9:infra/conf/transport_method.go:307",
-        "v26.9.9:infra/conf/transport_method.go:314"
+        "v26.9.9:infra/conf/transport_method.go:314",
+        "v26.10.10:infra/conf/transport_method.go:317",
+        "v26.10.10:infra/conf/transport_method.go:324"
       ]
     },
     {
@@ -701,13 +835,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Int32Range fields (xPaddingBytes, uplinkChunkSize, scMaxEachPostBytes, scMinPostsIntervalMs, scStreamUpServerSecs, sessionIDLength and the xmux ranges) accept only an integer or a 'from-to' string; an object fails to unmarshal.",
       "evidence": [
         "v26.3.27:infra/conf/common.go:312",
         "v26.7.28:infra/conf/common.go:313",
-        "v26.9.9:infra/conf/common.go:316"
+        "v26.9.9:infra/conf/common.go:316",
+        "v26.10.10:infra/conf/common.go:316"
       ]
     },
     {
@@ -716,7 +852,8 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "v26.3.27 and v26.7.28 fail the load on any header value with a removed-feature error pointing to finalmask udp masks (header-*, mkcp-original, mkcp-aes128gcm; v26.7.28+ also offer mkcp-legacy {header,value}); v26.9.9 still declares the key but dropped the check and never reads it, so it is silently ignored and the obfuscation is simply lost.",
       "evidence": [
@@ -727,7 +864,10 @@
         "v26.7.28:infra/conf/transport_finalmask.go:79",
         "v26.9.9:infra/conf/transport_method.go:530",
         "v26.9.9:infra/conf/transport_method.go:535",
-        "v26.9.9:infra/conf/transport_finalmask.go:81"
+        "v26.9.9:infra/conf/transport_finalmask.go:81",
+        "v26.10.10:infra/conf/transport_method.go:540",
+        "v26.10.10:infra/conf/transport_method.go:545",
+        "v26.10.10:infra/conf/transport_finalmask.go:81"
       ]
     },
     {
@@ -736,7 +876,8 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Same as header: a removed-feature error in v26.3.27 and v26.7.28 (migrate to finalmask udp mkcp-aes128gcm or mkcp-legacy), silently ignored in v26.9.9, which means a v26.9.9 node with seed talks plain mKCP and will not interoperate with a seeded peer.",
       "evidence": [
@@ -745,7 +886,9 @@
         "v26.7.28:infra/conf/transport_method.go:532",
         "v26.7.28:infra/conf/transport_method.go:537",
         "v26.9.9:infra/conf/transport_method.go:531",
-        "v26.9.9:infra/conf/transport_method.go:535"
+        "v26.9.9:infra/conf/transport_method.go:535",
+        "v26.10.10:infra/conf/transport_method.go:541",
+        "v26.10.10:infra/conf/transport_method.go:545"
       ]
     },
     {
@@ -754,13 +897,15 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Boolean congestion control flag, removed from the struct and proto in v26.7.28 (silently ignored afterwards).",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:60",
         "v26.3.27:infra/conf/transport_internet.go:92",
-        "v26.7.28:infra/conf/transport_method.go:523"
+        "v26.7.28:infra/conf/transport_method.go:523",
+        "v26.10.10:infra/conf/transport_method.go:532-542"
       ]
     },
     {
@@ -769,14 +914,16 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Decoded by v26.3.27 but never used by its kcp core (GetReadBufferSize is commented out); gone from v26.7.28.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:61",
         "v26.3.27:infra/conf/transport_internet.go:94",
         "v26.3.27:transport/internet/kcp/config.go:49",
-        "v26.7.28:infra/conf/transport_method.go:523"
+        "v26.7.28:infra/conf/transport_method.go:523",
+        "v26.10.10:infra/conf/transport_method.go:532-542"
       ]
     },
     {
@@ -785,7 +932,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "renamedFrom": "writeBufferSize",
       "detail": "v26.7.28 replaced writeBufferSize (megabytes, 0 meaning 512 KB, default 2 MB) with maxSendingWindow in bytes (default 2097152); it must be at least mtu or the load fails, and the old key is silently ignored.",
@@ -796,7 +944,9 @@
         "v26.7.28:infra/conf/transport_method.go:571",
         "v26.7.28:transport/internet/kcp/config.go:36",
         "v26.9.9:infra/conf/transport_method.go:528",
-        "v26.9.9:infra/conf/transport_method.go:567"
+        "v26.9.9:infra/conf/transport_method.go:567",
+        "v26.10.10:infra/conf/transport_method.go:538",
+        "v26.10.10:infra/conf/transport_method.go:577"
       ]
     },
     {
@@ -805,12 +955,14 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Only read by v26.3.27 (megabytes); silently ignored from v26.7.28, where maxSendingWindow (bytes) replaces it.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:62",
-        "v26.3.27:infra/conf/transport_internet.go:102"
+        "v26.3.27:infra/conf/transport_internet.go:102",
+        "v26.10.10:infra/conf/transport_method.go:532-542"
       ]
     },
     {
@@ -819,14 +971,17 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "New in v26.7.28, default 1; values below 1 fail the load.",
       "evidence": [
         "v26.7.28:infra/conf/transport_method.go:528",
         "v26.7.28:infra/conf/transport_method.go:569",
         "v26.9.9:infra/conf/transport_method.go:527",
-        "v26.9.9:infra/conf/transport_method.go:564"
+        "v26.9.9:infra/conf/transport_method.go:564",
+        "v26.10.10:infra/conf/transport_method.go:537",
+        "v26.10.10:infra/conf/transport_method.go:574"
       ]
     },
     {
@@ -835,13 +990,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Allowed range tightened from 10-5000 ms (v26.3.27) to 10-1000 ms (v26.7.28+); default 50; out-of-range fails the load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:80",
         "v26.7.28:infra/conf/transport_method.go:565",
-        "v26.9.9:infra/conf/transport_method.go:560"
+        "v26.9.9:infra/conf/transport_method.go:560",
+        "v26.10.10:infra/conf/transport_method.go:570"
       ]
     },
     {
@@ -850,14 +1007,16 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "v26.3.27 has no MTU check (commented out); v26.7.28+ fail the load when mtu < 21; default 1350.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:73",
         "v26.7.28:infra/conf/transport_method.go:562",
         "v26.9.9:infra/conf/transport_method.go:557",
-        "v26.7.28:transport/internet/kcp/config.go:31"
+        "v26.7.28:transport/internet/kcp/config.go:31",
+        "v26.10.10:infra/conf/transport_method.go:567"
       ]
     },
     {
@@ -866,13 +1025,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Whenever hysteriaSettings is present, version must be exactly 2 or the load fails.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:537",
         "v26.7.28:infra/conf/transport_method.go:776",
-        "v26.9.9:infra/conf/transport_method.go:761"
+        "v26.9.9:infra/conf/transport_method.go:761",
+        "v26.10.10:infra/conf/transport_method.go:771"
       ]
     },
     {
@@ -881,13 +1042,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "0 (default 60) or 2-600 seconds; anything else fails the load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:545",
         "v26.7.28:infra/conf/transport_method.go:784",
-        "v26.9.9:infra/conf/transport_method.go:765"
+        "v26.9.9:infra/conf/transport_method.go:765",
+        "v26.10.10:infra/conf/transport_method.go:775"
       ]
     },
     {
@@ -896,7 +1059,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Already inert in v26.3.27/v26.7.28 (decoded, a warning says it moved to finalmask.quicParams, value never used); removed from the struct in v26.9.9 and silently ignored; use finalmask.quicParams.congestion (reno|bbr|brutal|force-brutal).",
       "evidence": [
@@ -905,7 +1069,9 @@
         "v26.7.28:infra/conf/transport_method.go:765",
         "v26.7.28:infra/conf/transport_method.go:780",
         "v26.9.9:infra/conf/transport_method.go:752",
-        "v26.9.9:infra/conf/transport_finalmask.go:994"
+        "v26.9.9:infra/conf/transport_finalmask.go:994",
+        "v26.10.10:infra/conf/transport_method.go:762",
+        "v26.10.10:infra/conf/transport_finalmask.go:1133"
       ]
     },
     {
@@ -914,7 +1080,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Warned-and-ignored in v26.3.27/v26.7.28, silently ignored in v26.9.9; the replacement is finalmask.quicParams.brutalUp (bandwidth string, >= 65536 B/s when set).",
       "evidence": [
@@ -923,7 +1090,9 @@
         "v26.7.28:infra/conf/transport_method.go:766",
         "v26.7.28:infra/conf/transport_method.go:780",
         "v26.9.9:infra/conf/transport_method.go:752",
-        "v26.9.9:infra/conf/transport_finalmask.go:997"
+        "v26.9.9:infra/conf/transport_finalmask.go:997",
+        "v26.10.10:infra/conf/transport_method.go:762",
+        "v26.10.10:infra/conf/transport_finalmask.go:1136"
       ]
     },
     {
@@ -932,7 +1101,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Warned-and-ignored in v26.3.27/v26.7.28, silently ignored in v26.9.9; the replacement is finalmask.quicParams.brutalDown.",
       "evidence": [
@@ -941,7 +1111,9 @@
         "v26.7.28:infra/conf/transport_method.go:767",
         "v26.7.28:infra/conf/transport_method.go:780",
         "v26.9.9:infra/conf/transport_method.go:752",
-        "v26.9.9:infra/conf/transport_finalmask.go:998"
+        "v26.9.9:infra/conf/transport_finalmask.go:998",
+        "v26.10.10:infra/conf/transport_method.go:762",
+        "v26.10.10:infra/conf/transport_finalmask.go:1137"
       ]
     },
     {
@@ -950,7 +1122,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "Warned-and-ignored in v26.3.27/v26.7.28 (whose replacement is finalmask.quicParams.udpHop {ports, interval}); v26.9.9 removes both the transport key and quicParams.udpHop and moves port hopping to a finalmask udp mask of type udphop.",
       "evidence": [
@@ -960,7 +1133,10 @@
         "v26.7.28:infra/conf/transport_finalmask.go:936",
         "v26.9.9:infra/conf/transport_method.go:752",
         "v26.9.9:infra/conf/transport_finalmask.go:88",
-        "v26.9.9:infra/conf/transport_finalmask.go:911"
+        "v26.9.9:infra/conf/transport_finalmask.go:911",
+        "v26.10.10:infra/conf/transport_method.go:762",
+        "v26.10.10:infra/conf/transport_finalmask.go:88",
+        "v26.10.10:infra/conf/transport_finalmask.go:1053"
       ]
     },
     {
@@ -969,12 +1145,15 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "New in v26.9.9: with masquerade type proxy, adds X-Forwarded-* headers to the proxied request.",
       "evidence": [
         "v26.9.9:infra/conf/transport_method.go:744",
-        "v26.9.9:infra/conf/transport_method.go:775"
+        "v26.9.9:infra/conf/transport_method.go:775",
+        "v26.10.10:infra/conf/transport_method.go:754",
+        "v26.10.10:infra/conf/transport_method.go:785"
       ]
     },
     {
@@ -983,7 +1162,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -999,6 +1179,12 @@
           "string"
         ],
         "v26.9.9": [
+          "404",
+          "file",
+          "proxy",
+          "string"
+        ],
+        "v26.10.10": [
           "404",
           "file",
           "proxy",
@@ -1011,7 +1197,9 @@
         "v26.3.27:transport/internet/hysteria/hub.go:371",
         "v26.7.28:transport/internet/hysteria/hub.go:212",
         "v26.9.9:transport/internet/hysteria/hub.go:214",
-        "v26.9.9:transport/internet/hysteria/hub.go:277"
+        "v26.9.9:transport/internet/hysteria/hub.go:277",
+        "v26.10.10:transport/internet/hysteria/hub.go:214",
+        "v26.10.10:transport/internet/hysteria/hub.go:277"
       ]
     },
     {
@@ -1020,14 +1208,17 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28 a hysteria inbound or outbound refuses to start unless its streamSettings network is hysteria ('not hysteria transport'); v26.3.27 does not check.",
       "evidence": [
         "v26.7.28:proxy/hysteria/client.go:37",
         "v26.7.28:proxy/hysteria/server.go:36",
         "v26.9.9:proxy/hysteria/client.go:37",
-        "v26.9.9:proxy/hysteria/server.go:36"
+        "v26.9.9:proxy/hysteria/server.go:36",
+        "v26.10.10:proxy/hysteria/client.go:37",
+        "v26.10.10:proxy/hysteria/server.go:36"
       ]
     },
     {
@@ -1036,13 +1227,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "The hysteria transport only listens/dials with security tls ('tls config is nil' otherwise); not caught by Build(), so an inbound fails at startup and an outbound at first dial.",
       "evidence": [
         "v26.3.27:transport/internet/hysteria/hub.go:317",
         "v26.7.28:transport/internet/hysteria/hub.go:200",
-        "v26.9.9:transport/internet/hysteria/hub.go:202"
+        "v26.9.9:transport/internet/hysteria/hub.go:202",
+        "v26.10.10:transport/internet/hysteria/hub.go:202"
       ]
     },
     {
@@ -1051,7 +1244,8 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "true fails the load with a removed-feature error pointing to pinnedPeerCertSha256/verifyPeerCertByName; in v26.3.27 this is clock-gated (before 2026-06-01 UTC it only warned and still skipped verification, after that date it is rejected); false is harmless in every tag.",
       "evidence": [
@@ -1059,7 +1253,8 @@
         "v26.3.27:infra/conf/transport_internet.go:711",
         "v26.3.27:infra/conf/transport_internet.go:713",
         "v26.7.28:infra/conf/transport_security.go:362",
-        "v26.9.9:infra/conf/transport_security.go:362"
+        "v26.9.9:infra/conf/transport_security.go:362",
+        "v26.10.10:infra/conf/transport_security.go:363"
       ]
     },
     {
@@ -1068,7 +1263,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "renamedFrom": "verifyPeerCertInNames",
       "detail": "Comma-separated names the peer certificate must match; it replaced verifyPeerCertInNames (a string array), which v26.3.27 rejects and later tags silently ignore.",
@@ -1078,7 +1274,9 @@
         "v26.7.28:infra/conf/transport_security.go:315",
         "v26.7.28:infra/conf/transport_security.go:381",
         "v26.9.9:infra/conf/transport_security.go:315",
-        "v26.9.9:infra/conf/transport_security.go:381"
+        "v26.9.9:infra/conf/transport_security.go:381",
+        "v26.10.10:infra/conf/transport_security.go:315",
+        "v26.10.10:infra/conf/transport_security.go:382"
       ]
     },
     {
@@ -1087,12 +1285,14 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "detail": "v26.3.27 fails the load on any non-null value; v26.7.28 dropped the key, so it is silently ignored and no name check is applied.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:662",
-        "v26.3.27:infra/conf/transport_internet.go:736"
+        "v26.3.27:infra/conf/transport_internet.go:736",
+        "v26.10.10:infra/conf/transport_security.go:300-320"
       ]
     },
     {
@@ -1101,7 +1301,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "absent",
-        "v26.9.9": "absent"
+        "v26.9.9": "absent",
+        "v26.10.10": "absent"
       },
       "values": {
         "v26.3.27": [
@@ -1110,13 +1311,15 @@
           "full"
         ],
         "v26.7.28": null,
-        "v26.9.9": null
+        "v26.9.9": null,
+        "v26.10.10": null
       },
       "detail": "Only v26.3.27 reads it (other values fail the load there); removed from struct and proto in v26.7.28 and silently ignored.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:665",
         "v26.3.27:infra/conf/transport_internet.go:756",
-        "v26.3.27:infra/conf/transport_internet.go:759"
+        "v26.3.27:infra/conf/transport_internet.go:759",
+        "v26.10.10:infra/conf/transport_security.go:300-320"
       ]
     },
     {
@@ -1125,7 +1328,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -1256,6 +1460,71 @@
           "unsafe"
         ],
         "v26.9.9": [
+          "360",
+          "android",
+          "chrome",
+          "edge",
+          "firefox",
+          "hello360_11_0",
+          "hello360_7_5",
+          "hello360_auto",
+          "helloandroid_11_okhttp",
+          "hellochrome_100",
+          "hellochrome_100_psk",
+          "hellochrome_102",
+          "hellochrome_106_shuffle",
+          "hellochrome_112_psk_shuf",
+          "hellochrome_114_padding_psk_shuf",
+          "hellochrome_115_pq",
+          "hellochrome_115_pq_psk",
+          "hellochrome_120",
+          "hellochrome_120_pq",
+          "hellochrome_131",
+          "hellochrome_133",
+          "hellochrome_58",
+          "hellochrome_62",
+          "hellochrome_70",
+          "hellochrome_72",
+          "hellochrome_83",
+          "hellochrome_87",
+          "hellochrome_96",
+          "hellochrome_auto",
+          "helloedge_106",
+          "helloedge_85",
+          "helloedge_auto",
+          "hellofirefox_102",
+          "hellofirefox_105",
+          "hellofirefox_120",
+          "hellofirefox_148",
+          "hellofirefox_55",
+          "hellofirefox_56",
+          "hellofirefox_63",
+          "hellofirefox_65",
+          "hellofirefox_99",
+          "hellofirefox_auto",
+          "hellogolang",
+          "helloios_11_1",
+          "helloios_12_1",
+          "helloios_13",
+          "helloios_14",
+          "helloios_auto",
+          "helloqq_11_1",
+          "helloqq_auto",
+          "hellorandomized",
+          "hellorandomizedalpn",
+          "hellorandomizednoalpn",
+          "hellosafari_16_0",
+          "hellosafari_26_3",
+          "hellosafari_auto",
+          "ios",
+          "qq",
+          "random",
+          "randomized",
+          "randomizednoalpn",
+          "safari",
+          "unsafe"
+        ],
+        "v26.10.10": [
           "360",
           "android",
           "chrome",
@@ -1330,7 +1599,9 @@
         "v26.7.28:transport/internet/tls/tls.go:225",
         "v26.7.28:transport/internet/tls/tls.go:229",
         "v26.9.9:infra/conf/transport_security.go:355",
-        "v26.9.9:transport/internet/tls/tls.go:187"
+        "v26.9.9:transport/internet/tls/tls.go:187",
+        "v26.10.10:infra/conf/transport_security.go:356",
+        "v26.10.10:transport/internet/tls/tls.go:221"
       ]
     },
     {
@@ -1339,7 +1610,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -1466,6 +1738,69 @@
           "safari"
         ],
         "v26.9.9": [
+          "360",
+          "android",
+          "chrome",
+          "edge",
+          "firefox",
+          "hello360_11_0",
+          "hello360_7_5",
+          "hello360_auto",
+          "helloandroid_11_okhttp",
+          "hellochrome_100",
+          "hellochrome_100_psk",
+          "hellochrome_102",
+          "hellochrome_106_shuffle",
+          "hellochrome_112_psk_shuf",
+          "hellochrome_114_padding_psk_shuf",
+          "hellochrome_115_pq",
+          "hellochrome_115_pq_psk",
+          "hellochrome_120",
+          "hellochrome_120_pq",
+          "hellochrome_131",
+          "hellochrome_133",
+          "hellochrome_58",
+          "hellochrome_62",
+          "hellochrome_70",
+          "hellochrome_72",
+          "hellochrome_83",
+          "hellochrome_87",
+          "hellochrome_96",
+          "hellochrome_auto",
+          "helloedge_106",
+          "helloedge_85",
+          "helloedge_auto",
+          "hellofirefox_102",
+          "hellofirefox_105",
+          "hellofirefox_120",
+          "hellofirefox_148",
+          "hellofirefox_55",
+          "hellofirefox_56",
+          "hellofirefox_63",
+          "hellofirefox_65",
+          "hellofirefox_99",
+          "hellofirefox_auto",
+          "helloios_11_1",
+          "helloios_12_1",
+          "helloios_13",
+          "helloios_14",
+          "helloios_auto",
+          "helloqq_11_1",
+          "helloqq_auto",
+          "hellorandomized",
+          "hellorandomizedalpn",
+          "hellorandomizednoalpn",
+          "hellosafari_16_0",
+          "hellosafari_26_3",
+          "hellosafari_auto",
+          "ios",
+          "qq",
+          "random",
+          "randomized",
+          "randomizednoalpn",
+          "safari"
+        ],
+        "v26.10.10": [
           "360",
           "android",
           "chrome",
@@ -1533,7 +1868,8 @@
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:928",
         "v26.7.28:infra/conf/transport_security.go:181",
-        "v26.9.9:infra/conf/transport_security.go:181"
+        "v26.9.9:infra/conf/transport_security.go:181",
+        "v26.10.10:infra/conf/transport_security.go:181"
       ]
     },
     {
@@ -1542,13 +1878,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "fromMitm must be the only element when used; values are otherwise not validated (default h2,http/1.1).",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:690",
         "v26.7.28:infra/conf/transport_security.go:342",
-        "v26.9.9:infra/conf/transport_security.go:342"
+        "v26.9.9:infra/conf/transport_security.go:342",
+        "v26.10.10:infra/conf/transport_security.go:343"
       ]
     },
     {
@@ -1557,7 +1895,8 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Comma-separated hex SHA-256 digests (colons allowed); each must decode to exactly 32 bytes or the load fails.",
       "evidence": [
@@ -1566,7 +1905,9 @@
         "v26.7.28:infra/conf/transport_security.go:371",
         "v26.7.28:infra/conf/transport_security.go:376",
         "v26.9.9:infra/conf/transport_security.go:371",
-        "v26.9.9:infra/conf/transport_security.go:376"
+        "v26.9.9:infra/conf/transport_security.go:376",
+        "v26.10.10:infra/conf/transport_security.go:372",
+        "v26.10.10:infra/conf/transport_security.go:377"
       ]
     },
     {
@@ -1575,14 +1916,16 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "Format x.y.z with each part < 256; v26.7.28 servers default an unset minClientVer to 26.3.27 and so refuse older Xray clients, while v26.3.27 and v26.9.9 (default commented out again) apply no minimum.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:856",
         "v26.7.28:infra/conf/transport_security.go:118",
         "v26.7.28:infra/conf/transport_security.go:119",
-        "v26.9.9:infra/conf/transport_security.go:118"
+        "v26.9.9:infra/conf/transport_security.go:118",
+        "v26.10.10:infra/conf/transport_security.go:118"
       ]
     },
     {
@@ -1591,7 +1934,8 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Server mode is chosen by target/dest; it then requires non-empty serverNames, a 32-byte base64url privateKey, non-empty shortIds (each even-length hex up to 16 chars, empty string allowed), xver 0-2, and mldsa65Seed (if set) of 32 bytes different from privateKey.",
       "evidence": [
@@ -1605,7 +1949,9 @@
         "v26.7.28:infra/conf/transport_security.go:98",
         "v26.7.28:infra/conf/transport_security.go:136",
         "v26.9.9:infra/conf/transport_security.go:92",
-        "v26.9.9:infra/conf/transport_security.go:136"
+        "v26.9.9:infra/conf/transport_security.go:136",
+        "v26.10.10:infra/conf/transport_security.go:92",
+        "v26.10.10:infra/conf/transport_security.go:136"
       ]
     },
     {
@@ -1614,7 +1960,8 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Without target/dest it is a client: password/publicKey (32-byte base64url) is required, serverNames and shortIds must be empty (use serverName and shortId), shortId is hex up to 16 chars, spiderX must start with '/', mldsa65Verify must be 1952 bytes.",
       "evidence": [
@@ -1627,7 +1974,9 @@
         "v26.7.28:infra/conf/transport_security.go:200",
         "v26.7.28:infra/conf/transport_security.go:218",
         "v26.9.9:infra/conf/transport_security.go:188",
-        "v26.9.9:infra/conf/transport_security.go:218"
+        "v26.9.9:infra/conf/transport_security.go:218",
+        "v26.10.10:infra/conf/transport_security.go:188",
+        "v26.10.10:infra/conf/transport_security.go:218"
       ]
     },
     {
@@ -1636,13 +1985,15 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "target and dest are the same field (number, host:port, or unix path); target wins when both are set.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:813",
         "v26.7.28:infra/conf/transport_security.go:60",
-        "v26.9.9:infra/conf/transport_security.go:60"
+        "v26.9.9:infra/conf/transport_security.go:60",
+        "v26.10.10:infra/conf/transport_security.go:60"
       ]
     },
     {
@@ -1651,13 +2002,15 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "detail": "password and publicKey are the same client field; password wins when both are set.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:938",
         "v26.7.28:infra/conf/transport_security.go:191",
-        "v26.9.9:infra/conf/transport_security.go:191"
+        "v26.9.9:infra/conf/transport_security.go:191",
+        "v26.10.10:infra/conf/transport_security.go:191"
       ]
     },
     {
@@ -1666,7 +2019,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -1696,6 +2050,19 @@
           "ForceIPv6v4"
         ],
         "v26.9.9": [
+          "AsIs",
+          "UseIP",
+          "UseIPv4",
+          "UseIPv6",
+          "UseIPv4v6",
+          "UseIPv6v4",
+          "ForceIP",
+          "ForceIPv4",
+          "ForceIPv6",
+          "ForceIPv4v6",
+          "ForceIPv6v4"
+        ],
+        "v26.10.10": [
           "AsIs",
           "UseIP",
           "UseIPv4",
@@ -1713,7 +2080,8 @@
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1134",
         "v26.7.28:infra/conf/transport_sockopt.go:120",
-        "v26.9.9:infra/conf/transport_sockopt.go:120"
+        "v26.9.9:infra/conf/transport_sockopt.go:120",
+        "v26.10.10:infra/conf/transport_sockopt.go:120"
       ]
     },
     {
@@ -1722,7 +2090,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "accepted"
+        "v26.9.9": "accepted",
+        "v26.10.10": "accepted"
       },
       "values": {
         "v26.3.27": [
@@ -1751,13 +2120,23 @@
           "TxtPortOnly",
           "TxtAddressOnly",
           "TxtPortAndAddress"
+        ],
+        "v26.10.10": [
+          "none",
+          "SrvPortOnly",
+          "SrvAddressOnly",
+          "SrvPortAndAddress",
+          "TxtPortOnly",
+          "TxtAddressOnly",
+          "TxtPortAndAddress"
         ]
       },
       "detail": "Case-insensitive; empty means none; anything else fails the load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1168",
         "v26.7.28:infra/conf/transport_sockopt.go:154",
-        "v26.9.9:infra/conf/transport_sockopt.go:154"
+        "v26.9.9:infra/conf/transport_sockopt.go:154",
+        "v26.10.10:infra/conf/transport_sockopt.go:154"
       ]
     },
     {
@@ -1766,12 +2145,15 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "v26.9.9 fails the load when a freedom outbound sets any addressPortStrategy other than none.",
       "evidence": [
         "v26.9.9:infra/conf/xray.go:344",
-        "v26.9.9:infra/conf/xray.go:345"
+        "v26.9.9:infra/conf/xray.go:345",
+        "v26.10.10:infra/conf/xray.go:358",
+        "v26.10.10:infra/conf/xray.go:359"
       ]
     },
     {
@@ -1780,13 +2162,17 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "absent",
-        "v26.9.9": "deprecated"
+        "v26.9.9": "deprecated",
+        "v26.10.10": "deprecated"
       },
       "detail": "On freedom outbounds v26.9.9 moves a non-AsIs outbound targetStrategy (or else settings.domainStrategy) into sockopt.domainStrategy with a warning, overwriting any sockopt.domainStrategy the config set.",
       "evidence": [
         "v26.9.9:infra/conf/xray.go:349",
         "v26.9.9:infra/conf/xray.go:352",
-        "v26.9.9:infra/conf/xray.go:362"
+        "v26.9.9:infra/conf/xray.go:362",
+        "v26.10.10:infra/conf/xray.go:363",
+        "v26.10.10:infra/conf/xray.go:366",
+        "v26.10.10:infra/conf/xray.go:376"
       ]
     },
     {
@@ -1795,13 +2181,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Must be a boolean or a number (true=256, false disables); a string fails the load.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:1096",
         "v26.7.28:infra/conf/transport_sockopt.go:82",
-        "v26.9.9:infra/conf/transport_sockopt.go:82"
+        "v26.9.9:infra/conf/transport_sockopt.go:82",
+        "v26.10.10:infra/conf/transport_sockopt.go:82"
       ]
     },
     {
@@ -1810,7 +2198,8 @@
       "status": {
         "v26.3.27": "accepted",
         "v26.7.28": "accepted",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "v26.3.27/v26.7.28 accept {tag, transportLayer} (transportLayer true is folded into sockopt.dialerProxy, and a tag together with sockopt.dialerProxy fails the load); v26.9.9 rejects any proxySettings in favour of streamSettings.sockopt.dialerProxy.",
       "evidence": [
@@ -1821,7 +2210,9 @@
         "v26.7.28:infra/conf/xray.go:229",
         "v26.7.28:infra/conf/xray.go:330",
         "v26.9.9:infra/conf/xray.go:220",
-        "v26.9.9:infra/conf/xray.go:262"
+        "v26.9.9:infra/conf/xray.go:262",
+        "v26.10.10:infra/conf/xray.go:226",
+        "v26.10.10:infra/conf/xray.go:268"
       ]
     },
     {
@@ -1830,7 +2221,8 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28 a VLESS outbound with no stream security and encryption none/empty fails the load unless its address is a private IP or a private/dotless domain (lan, local, localhost, internal, home.arpa, test, ...); v26.7.28 only checks the flat settings.address form (vnext slips through), v26.9.9 checks both forms.",
       "evidence": [
@@ -1841,7 +2233,11 @@
         "v26.9.9:infra/conf/xray.go:241",
         "v26.9.9:infra/conf/xray.go:246",
         "v26.9.9:infra/conf/xray.go:337",
-        "v26.9.9:infra/conf/vless.go:316"
+        "v26.9.9:infra/conf/vless.go:316",
+        "v26.10.10:infra/conf/xray.go:247",
+        "v26.10.10:infra/conf/xray.go:252",
+        "v26.10.10:infra/conf/xray.go:343",
+        "v26.10.10:infra/conf/vless.go:316"
       ]
     },
     {
@@ -1850,14 +2246,17 @@
       "status": {
         "v26.3.27": "absent",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "From v26.7.28 a Trojan outbound without stream security fails the load unless its server is a private IP or domain; v26.7.28 only checks the flat settings.address form, v26.9.9 checks servers[0] as well.",
       "evidence": [
         "v26.7.28:infra/conf/xray.go:259",
         "v26.7.28:infra/conf/xray.go:261",
         "v26.9.9:infra/conf/xray.go:250",
-        "v26.9.9:infra/conf/xray.go:252"
+        "v26.9.9:infra/conf/xray.go:252",
+        "v26.10.10:infra/conf/xray.go:256",
+        "v26.10.10:infra/conf/xray.go:258"
       ]
     },
     {
@@ -1866,13 +2265,15 @@
       "status": {
         "v26.3.27": "deprecated",
         "v26.7.28": "deprecated",
-        "v26.9.9": "deprecated"
+        "v26.9.9": "deprecated",
+        "v26.10.10": "deprecated"
       },
       "detail": "A Host entry in headers is moved into host (only if host is empty) with a deprecation warning.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:166",
         "v26.7.28:infra/conf/transport_method.go:637",
-        "v26.9.9:infra/conf/transport_method.go:632"
+        "v26.9.9:infra/conf/transport_method.go:632",
+        "v26.10.10:infra/conf/transport_method.go:642"
       ]
     },
     {
@@ -1881,13 +2282,15 @@
       "status": {
         "v26.3.27": "rejected",
         "v26.7.28": "rejected",
-        "v26.9.9": "rejected"
+        "v26.9.9": "rejected",
+        "v26.10.10": "rejected"
       },
       "detail": "Unlike ws, a Host entry in httpupgrade headers fails the load; use host.",
       "evidence": [
         "v26.3.27:infra/conf/transport_internet.go:207",
         "v26.7.28:infra/conf/transport_method.go:678",
-        "v26.9.9:infra/conf/transport_method.go:673"
+        "v26.9.9:infra/conf/transport_method.go:673",
+        "v26.10.10:infra/conf/transport_method.go:683"
       ]
     }
   ],
@@ -2010,6 +2413,50 @@
         "network",
         "method"
       ]
+    },
+    "v26.10.10": {
+      "accepted": [
+        "raw",
+        "tcp",
+        "xhttp",
+        "splithttp",
+        "kcp",
+        "mkcp",
+        "hysteria",
+        "masque",
+        "xdrive"
+      ],
+      "deprecated": [
+        "grpc",
+        "ws",
+        "websocket",
+        "httpupgrade"
+      ],
+      "rejected": [
+        "h2",
+        "h3",
+        "http",
+        "quic"
+      ],
+      "canonical": {
+        "raw": "tcp",
+        "tcp": "tcp",
+        "xhttp": "splithttp",
+        "splithttp": "splithttp",
+        "kcp": "mkcp",
+        "mkcp": "mkcp",
+        "grpc": "grpc",
+        "ws": "websocket",
+        "websocket": "websocket",
+        "httpupgrade": "httpupgrade",
+        "hysteria": "hysteria",
+        "masque": "masque",
+        "xdrive": "xdrive"
+      },
+      "keyAlsoAcceptedAs": [
+        "network",
+        "method"
+      ]
     }
   },
   "perVersionKeys": {
@@ -2072,6 +2519,28 @@
         "httpupgradeSettings",
         "hysteriaSettings",
         "sockopt"
+      ],
+      "v26.10.10": [
+        "address",
+        "port",
+        "method",
+        "network",
+        "security",
+        "finalmask",
+        "tlsSettings",
+        "realitySettings",
+        "rawSettings",
+        "tcpSettings",
+        "xhttpSettings",
+        "splithttpSettings",
+        "kcpSettings",
+        "grpcSettings",
+        "wsSettings",
+        "httpupgradeSettings",
+        "hysteriaSettings",
+        "masqueSettings",
+        "xdriveSettings",
+        "sockopt"
       ]
     },
     "streamSettings.rawSettings": {
@@ -2084,6 +2553,10 @@
         "acceptProxyProtocol"
       ],
       "v26.9.9": [
+        "header",
+        "acceptProxyProtocol"
+      ],
+      "v26.10.10": [
         "header",
         "acceptProxyProtocol"
       ]
@@ -2100,6 +2573,11 @@
         "response"
       ],
       "v26.9.9": [
+        "type",
+        "request",
+        "response"
+      ],
+      "v26.10.10": [
         "type",
         "request",
         "response"
@@ -2123,6 +2601,12 @@
         "method",
         "path",
         "headers"
+      ],
+      "v26.10.10": [
+        "version",
+        "method",
+        "path",
+        "headers"
       ]
     },
     "streamSettings.rawSettings.header.response": {
@@ -2139,6 +2623,12 @@
         "headers"
       ],
       "v26.9.9": [
+        "version",
+        "status",
+        "reason",
+        "headers"
+      ],
+      "v26.10.10": [
         "version",
         "status",
         "reason",
@@ -2239,6 +2729,38 @@
         "xmux",
         "downloadSettings",
         "extra"
+      ],
+      "v26.10.10": [
+        "host",
+        "path",
+        "mode",
+        "headers",
+        "xPaddingBytes",
+        "xPaddingObfsMode",
+        "xPaddingKey",
+        "xPaddingHeader",
+        "xPaddingPlacement",
+        "xPaddingMethod",
+        "uplinkHTTPMethod",
+        "sessionIDPlacement",
+        "sessionIDKey",
+        "sessionIDTable",
+        "sessionIDLength",
+        "seqPlacement",
+        "seqKey",
+        "uplinkDataPlacement",
+        "uplinkDataKey",
+        "uplinkChunkSize",
+        "noGRPCHeader",
+        "noSSEHeader",
+        "scMaxEachPostBytes",
+        "scMinPostsIntervalMs",
+        "scMaxBufferedPosts",
+        "scStreamUpServerSecs",
+        "serverMaxHeaderBytes",
+        "xmux",
+        "downloadSettings",
+        "extra"
       ]
     },
     "streamSettings.xhttpSettings.xmux": {
@@ -2259,6 +2781,14 @@
         "hKeepAlivePeriod"
       ],
       "v26.9.9": [
+        "maxConcurrency",
+        "maxConnections",
+        "cMaxReuseTimes",
+        "hMaxRequestTimes",
+        "hMaxReusableSecs",
+        "hKeepAlivePeriod"
+      ],
+      "v26.10.10": [
         "maxConcurrency",
         "maxConnections",
         "cMaxReuseTimes",
@@ -2286,6 +2816,14 @@
         "maxSendingWindow"
       ],
       "v26.9.9": [
+        "mtu",
+        "tti",
+        "uplinkCapacity",
+        "downlinkCapacity",
+        "cwndMultiplier",
+        "maxSendingWindow"
+      ],
+      "v26.10.10": [
         "mtu",
         "tti",
         "uplinkCapacity",
@@ -2324,6 +2862,16 @@
         "permit_without_stream",
         "initial_windows_size",
         "user_agent"
+      ],
+      "v26.10.10": [
+        "authority",
+        "serviceName",
+        "multiMode",
+        "idle_timeout",
+        "health_check_timeout",
+        "permit_without_stream",
+        "initial_windows_size",
+        "user_agent"
       ]
     },
     "streamSettings.wsSettings": {
@@ -2347,6 +2895,13 @@
         "headers",
         "acceptProxyProtocol",
         "heartbeatPeriod"
+      ],
+      "v26.10.10": [
+        "host",
+        "path",
+        "headers",
+        "acceptProxyProtocol",
+        "heartbeatPeriod"
       ]
     },
     "streamSettings.httpupgradeSettings": {
@@ -2363,6 +2918,12 @@
         "acceptProxyProtocol"
       ],
       "v26.9.9": [
+        "host",
+        "path",
+        "headers",
+        "acceptProxyProtocol"
+      ],
+      "v26.10.10": [
         "host",
         "path",
         "headers",
@@ -2395,6 +2956,12 @@
         "auth",
         "udpIdleTimeout",
         "masquerade"
+      ],
+      "v26.10.10": [
+        "version",
+        "auth",
+        "udpIdleTimeout",
+        "masquerade"
       ]
     },
     "streamSettings.hysteriaSettings.udphop": {
@@ -2406,7 +2973,8 @@
         "ports",
         "interval"
       ],
-      "v26.9.9": []
+      "v26.9.9": [],
+      "v26.10.10": []
     },
     "streamSettings.hysteriaSettings.masquerade": {
       "v26.3.27": [
@@ -2430,6 +2998,17 @@
         "statusCode"
       ],
       "v26.9.9": [
+        "type",
+        "dir",
+        "url",
+        "rewriteHost",
+        "xForwarded",
+        "insecure",
+        "content",
+        "headers",
+        "statusCode"
+      ],
+      "v26.10.10": [
         "type",
         "dir",
         "url",
@@ -2499,6 +3078,26 @@
         "echServerKeys",
         "echConfigList",
         "echSockopt"
+      ],
+      "v26.10.10": [
+        "certificates",
+        "serverName",
+        "alpn",
+        "enableSessionResumption",
+        "disableSystemRoot",
+        "minVersion",
+        "maxVersion",
+        "cipherSuites",
+        "fingerprint",
+        "rejectUnknownSni",
+        "curvePreferences",
+        "masterKeyLog",
+        "pinnedPeerCertSha256",
+        "verifyPeerCertByName",
+        "echServerKeys",
+        "echConfigList",
+        "echSockopt",
+        "useSystemCA"
       ]
     },
     "streamSettings.tlsSettings.certificates[]": {
@@ -2523,6 +3122,16 @@
         "buildChain"
       ],
       "v26.9.9": [
+        "certificateFile",
+        "certificate",
+        "keyFile",
+        "key",
+        "usage",
+        "ocspStapling",
+        "oneTimeLoading",
+        "buildChain"
+      ],
+      "v26.10.10": [
         "certificateFile",
         "certificate",
         "keyFile",
@@ -2605,6 +3214,30 @@
         "shortId",
         "mldsa65Verify",
         "spiderX"
+      ],
+      "v26.10.10": [
+        "masterKeyLog",
+        "show",
+        "target",
+        "dest",
+        "type",
+        "xver",
+        "serverNames",
+        "privateKey",
+        "minClientVer",
+        "maxClientVer",
+        "maxTimeDiff",
+        "shortIds",
+        "mldsa65Seed",
+        "limitFallbackUpload",
+        "limitFallbackDownload",
+        "fingerprint",
+        "serverName",
+        "password",
+        "publicKey",
+        "shortId",
+        "mldsa65Verify",
+        "spiderX"
       ]
     },
     "streamSettings.realitySettings.limitFallbackUpload": {
@@ -2622,6 +3255,11 @@
         "afterBytes",
         "bytesPerSec",
         "burstBytesPerSec"
+      ],
+      "v26.10.10": [
+        "afterBytes",
+        "bytesPerSec",
+        "burstBytesPerSec"
       ]
     },
     "streamSettings.realitySettings.limitFallbackDownload": {
@@ -2636,6 +3274,11 @@
         "burstBytesPerSec"
       ],
       "v26.9.9": [
+        "afterBytes",
+        "bytesPerSec",
+        "burstBytesPerSec"
+      ],
+      "v26.10.10": [
         "afterBytes",
         "bytesPerSec",
         "burstBytesPerSec"
@@ -2707,6 +3350,28 @@
         "addressPortStrategy",
         "happyEyeballs",
         "trustedXForwardedFor"
+      ],
+      "v26.10.10": [
+        "mark",
+        "tcpFastOpen",
+        "tproxy",
+        "acceptProxyProtocol",
+        "domainStrategy",
+        "dialerProxy",
+        "tcpKeepAliveInterval",
+        "tcpKeepAliveIdle",
+        "tcpCongestion",
+        "tcpWindowClamp",
+        "tcpMaxSeg",
+        "penetrate",
+        "tcpUserTimeout",
+        "v6only",
+        "interface",
+        "tcpMptcp",
+        "customSockopt",
+        "addressPortStrategy",
+        "happyEyeballs",
+        "trustedXForwardedFor"
       ]
     },
     "streamSettings.sockopt.happyEyeballs": {
@@ -2723,6 +3388,12 @@
         "maxConcurrentTry"
       ],
       "v26.9.9": [
+        "prioritizeIPv6",
+        "tryDelayMs",
+        "interleave",
+        "maxConcurrentTry"
+      ],
+      "v26.10.10": [
         "prioritizeIPv6",
         "tryDelayMs",
         "interleave",
@@ -2753,6 +3424,14 @@
         "opt",
         "value",
         "type"
+      ],
+      "v26.10.10": [
+        "system",
+        "network",
+        "level",
+        "opt",
+        "value",
+        "type"
       ]
     },
     "outbounds[].proxySettings": {
@@ -2764,7 +3443,50 @@
         "tag",
         "transportLayer"
       ],
-      "v26.9.9": []
+      "v26.9.9": [],
+      "v26.10.10": []
+    },
+    "streamSettings.masqueSettings": {
+      "v26.3.27": null,
+      "v26.7.28": null,
+      "v26.9.9": null,
+      "v26.10.10": [
+        "host",
+        "path",
+        "user",
+        "pass",
+        "headers",
+        "warp"
+      ]
+    },
+    "streamSettings.masqueSettings.warp": {
+      "v26.3.27": null,
+      "v26.7.28": null,
+      "v26.9.9": null,
+      "v26.10.10": [
+        "privateKey",
+        "publicKey",
+        "address"
+      ]
+    },
+    "streamSettings.xdriveSettings": {
+      "v26.3.27": null,
+      "v26.7.28": null,
+      "v26.9.9": null,
+      "v26.10.10": [
+        "remoteFolder",
+        "service",
+        "secrets",
+        "segmentBytes",
+        "flushIntervalMs",
+        "pollIntervalMs",
+        "maxPollIntervalMs",
+        "sessionTtlSeconds",
+        "concurrency",
+        "eagerWindowMs",
+        "holeTimeoutMs",
+        "template"
+      ]
     }
   }
 }

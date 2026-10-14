@@ -12,15 +12,25 @@ import { featureUses, usesFeature, valuesAtPath, versionDiagnostics } from './ch
 import { runFullDiagnostics } from '../../diagnostics';
 
 describe('the supported lines', () => {
-    it('are 26.3, 26.7 and 26.9, oldest first', () => {
-        expect(CORE_VERSIONS.map(version => version.id)).toEqual(['26.3', '26.7', '26.9']);
+    it('are 26.3, 26.7, 26.9 and 26.10, oldest first', () => {
+        expect(CORE_VERSIONS.map(version => version.id)).toEqual(['26.3', '26.7', '26.9', '26.10']);
         expect(MINIMUM_CORE_VERSION).toBe('26.3');
-        expect(LATEST_CORE_VERSION).toBe('26.9');
+        expect(LATEST_CORE_VERSION).toBe('26.10');
         expect(compareCoreVersions('26.3', '26.9')).toBeLessThan(0);
+        // Two digits compare as a number, not as text: "26.10" is newer than "26.9".
+        expect(compareCoreVersions('26.9', '26.10')).toBeLessThan(0);
+        expect(compareCoreVersions('26.10', '26.10')).toBe(0);
     });
 
     it('name the tag each one was read from', () => {
-        expect(CORE_VERSIONS.map(version => version.tag)).toEqual(['v26.3.27', 'v26.7.28', 'v26.9.9']);
+        // 26.9 stays on v26.9.9: v26.9.30 changed the config surface (xdns takes
+        // objects, WireGuard lost domainStrategy, tun gained keys), so it is not
+        // the same line with a later patch — v26.10.10 carries all of it.
+        expect(CORE_VERSIONS.map(version => version.tag)).toEqual(['v26.3.27', 'v26.7.28', 'v26.9.9', 'v26.10.10']);
+    });
+
+    it('gives each line a role the settings list can show', () => {
+        expect(CORE_VERSIONS.map(version => version.role)).toEqual(['minimum', 'remnawave', 'previous', 'latest']);
     });
 
     it('default to the line Remnawave nodes run', () => {
@@ -36,6 +46,17 @@ describe('reading a stored version back', () => {
     it('maps a tag to its line', () => {
         expect(coreVersionId('v26.3.27')).toBe('26.3');
         expect(coreVersionId('26.7.28')).toBe('26.7');
+    });
+
+    it('reads two-digit minors whole: v26.10.10 is 26.10, never 26.1', () => {
+        expect(coreVersionId('26.10')).toBe('26.10');
+        expect(coreVersionId('v26.10.10')).toBe('26.10');
+        expect(coreVersionId(' v26.10.3 ')).toBe('26.10');
+        // 26.1 is no supported line, and must not borrow 26.10's name.
+        expect(coreVersionId('v26.1.5')).toBe(DEFAULT_CORE_VERSION);
+        expect(coreVersionId('26.1')).toBe(DEFAULT_CORE_VERSION);
+        // A later minor that is not on the list falls back to the default.
+        expect(coreVersionId('v26.11.0')).toBe(DEFAULT_CORE_VERSION);
     });
 
     it('moves the old placeholders, which never did anything, onto the default', () => {

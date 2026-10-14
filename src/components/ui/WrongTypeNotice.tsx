@@ -26,8 +26,12 @@ const preview = (value: unknown): string => {
  * so configs holding one exist. Such a value is shown rather than dropped —
  * it is in the config, and it is why the config does not load — and the way
  * out is at the bottom, where a thumb finds it on a phone.
+ *
+ * The same goes the other way round for a key the core reads as a string
+ * (`expects="text"`): a boolean there fails the decode just as a string does
+ * where an object is read.
  */
-export const WrongTypeNotice = ({ field, held, onRemove }: {
+export const WrongTypeNotice = ({ field, held, onRemove, expects = 'object' }: {
     /**
      * The key, as it is spelled in the config. Not called `name`: the icon
      * test reads every `name="…"` literal in a file that draws icons as an
@@ -36,12 +40,16 @@ export const WrongTypeNotice = ({ field, held, onRemove }: {
     field: string;
     held: unknown;
     onRemove: () => void;
+    /** What the core reads at this key. Objects are the usual case. */
+    expects?: 'object' | 'text';
 }) => (
     <div className="p-3 rounded-xl border space-y-3 bg-rose-950/20 border-rose-500/40" data-wrong-type={field}>
         <div className="flex gap-2 text-[11px] leading-relaxed">
             <Icon name="WarningOctagon" weight="fill" className="shrink-0 mt-0.5 text-rose-400" />
             <p className="text-rose-200/90 break-words min-w-0">
-                {t("{name} holds {value}, and Xray reads an object here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })}
+                {expects === 'text'
+                    ? t("{name} holds {value}, and Xray reads text here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })
+                    : t("{name} holds {value}, and Xray reads an object here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })}
             </p>
         </div>
         <button

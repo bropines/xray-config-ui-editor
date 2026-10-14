@@ -270,3 +270,180 @@ describe('QUIC parameters', () => {
         expect(cleared.writes[0]).toEqual({});
     });
 });
+
+describe('xdns on 26.10', () => {
+    beforeEach(() => {
+        onLine('26.10');
+    });
+
+    const xdns = (settings: any = {}) => ({ udp: [{ type: 'xdns', settings }] });
+    const wrongKind = (container: HTMLElement, key: string) => container.querySelector(`[data-wrong-type="${key}"]`);
+
+    it('draws the lists the side reads, domains for both', () => {
+        expect(fieldsIn(draw(xdns(), 'inbound').container, UDP0)).toEqual(['domains']);
+        cleanup();
+        expect(fieldsIn(draw(xdns(), 'outbound').container, UDP0)).toEqual(['domains', 'resolvers', 'extraPoll']);
+        cleanup();
+        expect(fieldsIn(draw(xdns()).container, UDP0)).toEqual(['domains', 'resolvers', 'extraPoll']);
+    });
+
+    it('binds domains and resolvers to JSON boxes, not to text lines, and writes objects', () => {
+        const { container, last } = draw(xdns(), 'outbound');
+        const box = (key: string) => container.querySelector(`[data-field="${key}"] textarea`) as HTMLTextAreaElement;
+        expect(box('domains').getAttribute('placeholder')).toBe('[{"names": ["t.example.com"]}]');
+        fireEvent.change(box('domains'), { target: { value: '[{"names": ["t.example.com"], "types": [16]}]' } });
+        expect(last().udp[0].settings).toEqual({ domains: [{ names: ['t.example.com'], types: [16] }] });
+        fireEvent.change(box('resolvers'), { target: { value: '[{"addrs": ["1.1.1.1:53"]}]' } });
+        expect(last().udp[0].settings.resolvers).toEqual([{ addrs: ['1.1.1.1:53'] }]);
+        const poll = container.querySelector('[data-field="extraPoll"] input') as HTMLInputElement;
+        fireEvent.change(poll, { target: { value: '2' } });
+        expect(last().udp[0].settings.extraPoll).toBe(2);
+    });
+
+    it('shows a held list of strings as the wrong kind, never as text to edit, and removes it on request', () => {
+        const { container, last } = draw(xdns({ domains: ['t.example.com'], resolvers: [{ addrs: ['1.1.1.1'] }] }), 'outbound');
+        const notice = wrongKind(container, 'domains')!;
+        expect(notice.textContent).toContain('domains holds ["t.example.com"], but Xray v26.10.10 reads a list of objects here');
+        expect(wrongKind(container, 'resolvers')).toBeNull();
+        // the box starts empty: what is typed replaces the strings, nothing is coerced from them
+        const box = container.querySelector('[data-field="domains"] textarea') as HTMLTextAreaElement;
+        expect(box.value).toBe('');
+        // and the layer says what the core does about it
+        expect(container.querySelector('[data-testid="finalmask-udp-0"] [data-tone="critical"]')?.textContent).toContain('must be a list of objects');
+        fireEvent.click(notice.querySelector('button')!);
+        expect(last().udp[0].settings).toEqual({ resolvers: [{ addrs: ['1.1.1.1'] }] });
+    });
+
+    it('replaces a held value of the wrong kind with what is typed', () => {
+        const { container, last } = draw(xdns({ domains: ['t.example.com'] }), 'inbound');
+        const box = container.querySelector('[data-field="domains"] textarea') as HTMLTextAreaElement;
+        fireEvent.change(box, { target: { value: '[{"names": ["a.example.com"]}]' } });
+        expect(last().udp[0].settings).toEqual({ domains: [{ names: ['a.example.com'] }] });
+    });
+
+    it('leaves a well-formed value without a notice', () => {
+        const { container } = draw(xdns({ domains: [{ names: ['t.example.com'] }], resolvers: [{ addrs: ['1.1.1.1'] }] }), 'outbound');
+        expect(container.querySelector('[data-wrong-type]')).toBeNull();
+        expect((container.querySelector('[data-field="domains"] textarea') as HTMLTextAreaElement).value).toContain('t.example.com');
+    });
+
+    it('shows the old single domain as ignored, not refused', () => {
+        const { container } = draw(xdns({ domain: 'old.example.com', domains: [{ names: ['t.example.com'] }] }), 'inbound');
+        expect(extrasIn(container)).toEqual(['domain']);
+        expect(container.textContent).toContain('ignored by Xray v26.10.10');
+        expect(container.textContent).not.toContain('refused by Xray v26.10.10 — the config will not load');
+    });
+
+    it('reads the same held objects as the wrong kind on 26.7, where the lists are strings', () => {
+        onLine('26.7');
+        const { container } = draw(xdns({ domains: [{ names: ['t.example.com'] }] }), 'inbound');
+        expect(wrongKind(container, 'domains')!.textContent).toContain('reads a list of strings here');
+        expect((container.querySelector('[data-field="domains"] textarea') as HTMLTextAreaElement).value).toBe('');
+        expect(container.textContent).not.toContain('[object Object]');
+    });
+});
+
+describe('udphop on 26.10', () => {
+    it('has lost its sockopt, and says so about one it holds', () => {
+        onLine('26.9');
+        expect(fieldsIn(draw({ udp: [{ type: 'udphop', settings: {} }] }, 'outbound').container, UDP0)).toContain('sockopt');
+        cleanup();
+        onLine('26.10');
+        const { container, last } = draw({ udp: [{ type: 'udphop', settings: { mode: 'intervalLocal', sockopt: { mark: 255 } } }] }, 'outbound');
+        expect(fieldsIn(container, UDP0)).toEqual(['mode', 'interval', 'remotePorts', 'remoteIPs']);
+        expect(extrasIn(container)).toEqual(['sockopt']);
+        expect(container.textContent).toContain('ignored by Xray v26.10.10');
+        fireEvent.click(screen.getByText('Remove'));
+        expect(last().udp[0].settings).toEqual({ mode: 'intervalLocal' });
+    });
+
+    it('shows an interval under 5 as a load refusal', () => {
+        onLine('26.10');
+        const { container } = draw({ udp: [{ type: 'udphop', settings: { mode: 'intervalLocal', interval: 3 } }] }, 'outbound');
+        expect(container.querySelector('[data-testid="finalmask-udp-0"] [data-tone="critical"]')?.textContent).toContain('interval must be at least 5');
+    });
+});
+
+describe('noise written as an expression', () => {
+    const exp = { type: 'exp', packet: '<b 0xDEADBEEF><r 8><t>', delay: '5-10' };
+    const layer = (...items: unknown[]) => ({ udp: [{ type: 'noise', settings: { reset: '30-60', noise: items } }] });
+
+    it('offers exp on 26.10 and not before', () => {
+        onLine('26.10');
+        expect(hook(layer(), 'outbound').editor.noiseTypeOptions(undefined)).toEqual([
+            { value: 'hex', refused: false }, { value: 'str', refused: false }, { value: 'base64', refused: false }, { value: 'exp', refused: false },
+        ]);
+        onLine('26.9');
+        expect(hook(layer(), 'outbound').editor.noiseTypeOptions(undefined).map(option => option.value)).toEqual(['hex', 'str', 'base64']);
+    });
+
+    it('is shown as it is on 26.10 and kept byte for byte through edits to its neighbours', () => {
+        onLine('26.10');
+        const { container, last } = draw(layer(exp, { rand: '40-70' }), 'outbound');
+        const values = Array.from(container.querySelectorAll('input')).map(input => (input as HTMLInputElement).value);
+        expect(values).toContain('<b 0xDEADBEEF><r 8><t>');
+        expect(container.textContent).toContain('EXP');
+        expect(container.textContent).not.toContain('refused by');
+        fireEvent.change(Array.from(container.querySelectorAll('input')).find(input => (input as HTMLInputElement).value === '40-70')!, { target: { value: '50-80' } });
+        expect(last().udp[0].settings.noise[0]).toEqual(exp);
+        expect(last().udp[0].settings.noise[1]).toEqual({ rand: '50-80' });
+        expect(last().udp[0].settings.reset).toBe('30-60');
+    });
+
+    it('edits only the packet when the packet is edited, and leaves the type alone', () => {
+        onLine('26.10');
+        const { container, last } = draw(layer(exp), 'outbound');
+        const packet = Array.from(container.querySelectorAll('input')).find(input => (input as HTMLInputElement).value.startsWith('<b'))!;
+        fireEvent.change(packet, { target: { value: '<b 0xAA><n>' } });
+        expect(last().udp[0].settings.noise[0]).toEqual({ ...exp, packet: '<b 0xAA><n>' });
+    });
+
+    it('is drawn as an expression even before it has a packet, not as random junk', () => {
+        onLine('26.10');
+        const { container, last } = draw(layer({ type: 'exp' }), 'outbound');
+        expect(container.textContent).toContain('EXP');
+        const packet = container.querySelector('input[placeholder="<b 0xDEADBEEF><r 8><t>"]') as HTMLInputElement;
+        expect(packet.value).toBe('');
+        fireEvent.change(packet, { target: { value: '<t>' } });
+        expect(last().udp[0].settings.noise[0]).toEqual({ type: 'exp', packet: '<t>' });
+    });
+
+    it('stays on screen on a line that refuses it, marked', () => {
+        onLine('26.7');
+        const { container } = draw(layer(exp), 'outbound');
+        expect(container.textContent).toContain('EXP — refused by Xray v26.7.28');
+        expect(Array.from(container.querySelectorAll('input')).map(input => (input as HTMLInputElement).value)).toContain('<b 0xDEADBEEF><r 8><t>');
+        // and the line's own check says so too
+        expect(hook(layer(exp), 'outbound').editor.noiseTypeOptions('exp')).toContainEqual({ value: 'exp', refused: true });
+    });
+
+    it('keeps the generator off while it is there, because the generator would turn it into hex', () => {
+        onLine('26.10');
+        const blocked = draw(layer(exp, { type: 'hex', packet: 'aa' }), 'outbound');
+        expect((screen.getByText('Generate…').closest('button') as HTMLButtonElement).disabled).toBe(true);
+        expect(blocked.container.querySelector('[data-testid="generator-blocked"]')).not.toBeNull();
+        cleanup();
+        const open = draw(layer({ type: 'hex', packet: 'aa' }), 'outbound');
+        expect((screen.getByText('Generate…').closest('button') as HTMLButtonElement).disabled).toBe(false);
+        expect(open.container.querySelector('[data-testid="generator-blocked"]')).toBeNull();
+        expect(hook(layer(exp), 'outbound').editor.generatorBlocked('udp', 0)).toBe(true);
+        expect(hook(layer({ rand: '1-2' }), 'outbound').editor.generatorBlocked('udp', 0)).toBe(false);
+    });
+
+    it('tells a bad expression apart from a good one in the layer', () => {
+        onLine('26.10');
+        const good = draw(layer(exp), 'outbound');
+        expect(good.container.querySelector('[data-tone="critical"]')).toBeNull();
+        cleanup();
+        const bad = draw(layer({ type: 'exp', packet: '<q>' }), 'outbound');
+        expect(bad.container.querySelector('[data-tone="critical"]')?.textContent).toContain('unknown <q> in noise exp');
+    });
+});
+
+describe('where xdns sits on 26.10', () => {
+    it('warns a client about the masks listed after it', () => {
+        onLine('26.10');
+        const { container } = draw({ udp: [{ type: 'xdns', settings: { domains: [{ names: ['t.example.com'] }], resolvers: [{ addrs: ['1.1.1.1'] }] } }, { type: 'noise' }] }, 'outbound');
+        expect(container.querySelector('[data-testid="finalmask-udp-0"] [data-tone="warning"]')?.textContent).toContain('never uses the socket');
+    });
+});

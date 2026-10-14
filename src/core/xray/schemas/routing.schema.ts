@@ -13,11 +13,14 @@ import {
 } from './primitives';
 
 // --- Webhook ---
+// An object on every line (WebhookRuleConfig: v26.3.27:infra/conf/router.go:525-529,
+// v26.7.28:infra/conf/router.go:126-130, v26.9.9:infra/conf/router.go:126-130).
+// See core/xray/routing-webhook.ts for what else the core refuses about it.
 export const WebhookObjectSchema = z.object({
   /** URL to POST webhook notifications */
   url: z.string(),
-  /** Deduplication interval in seconds */
-  deduplication: z.number().optional(),
+  /** Deduplication interval in seconds — a uint32 in the core */
+  deduplication: z.number().int().min(0).max(4294967295).optional(),
   /** Custom HTTP headers for the webhook request */
   headers: z.record(z.string(), z.string()).optional(),
 }).passthrough();
@@ -71,8 +74,12 @@ export const RoutingRuleSchema = z.object({
   outboundTag: z.string().optional(),
   /** Target balancer tag (mutually exclusive with outboundTag) */
   balancerTag: z.string().optional(),
-  /** Webhook notification on match */
-  webhook: z.union([z.string(), WebhookObjectSchema]).optional(),
+  /**
+   * Webhook notification on match. An object, never a bare URL string: the
+   * rule decodes it into a struct, and a string there fails the decode and
+   * the config with it (v26.7.28:infra/conf/router.go:151-157).
+   */
+  webhook: WebhookObjectSchema.optional(),
 }).passthrough();
 
 // --- Balancer Strategy Settings ---

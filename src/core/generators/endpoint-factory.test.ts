@@ -13,6 +13,8 @@ import {
 } from './endpoint-factory';
 import { CORE_VERSIONS } from '../xray/versions';
 import { versionDiagnostics } from '../xray/versions/check';
+import { protocolsFor as offeredProtocols } from '../xray/versions/protocols';
+import { masqueProblems } from '../xray/masque';
 
 describe('createEndpoint', () => {
     it('builds an inbound that listens and an outbound that dials', () => {
@@ -127,10 +129,12 @@ describe('protocol support', () => {
 describe('what each protocol is built with, per supported core', () => {
     it('writes nothing any supported core ignores or refuses', () => {
         // The factory is version-free, so everything it writes has to mean the
-        // same thing on every line. The feature table is the judge.
+        // same thing on every line. The feature table is the judge — for the
+        // protocols a line offers: a protocol the chooser does not list on a
+        // line (masque before 26.10) is never built for it.
         for (const version of CORE_VERSIONS) {
             for (const direction of ['inbound', 'outbound'] as const) {
-                for (const protocol of protocolsFor(direction)) {
+                for (const protocol of offeredProtocols(version.id, direction, protocolsFor(direction))) {
                     const made = createEndpoint(direction, protocol);
                     const config = direction === 'inbound' ? { inbounds: [made] } : { outbounds: [made] };
                     const found = versionDiagnostics(config, version.id)
@@ -140,6 +144,22 @@ describe('what each protocol is built with, per supported core', () => {
                 }
             }
         }
+    });
+
+    it('builds masque ends the 26.10 core accepts, on the masque transport with TLS', () => {
+        // Both ends need network masque and security tls; the server also needs
+        // an address pool with a host address in it, and users under `clients`.
+        const server = createDefaultInbound('masque', { password: 'secret' });
+        const client = createDefaultOutbound('masque', { address: 'm.example.com', port: 8443 });
+        expect(server.settings).toEqual({
+            clients: [{ email: 'user@masque', pass: 'secret' }],
+            address: ['10.250.0.1/24'],
+        });
+        expect(server.streamSettings).toMatchObject({ network: 'masque', security: 'tls' });
+        expect(client.settings).toEqual({ address: 'm.example.com', port: 8443 });
+        expect(client.streamSettings).toMatchObject({ network: 'masque', security: 'tls' });
+        expect(masqueProblems(server, 'inbound', '26.10')).toEqual([]);
+        expect(masqueProblems(client, 'outbound', '26.10')).toEqual([]);
     });
 
     it('gives a hysteria server `clients` with `auth`, and version 2', () => {
@@ -171,6 +191,16 @@ describe('what each protocol is built with, per supported core', () => {
         expect((createDefaultInbound('tun').settings as any).stack).toBeUndefined();
         // AsIs is what an absent domainStrategy means, and 26.9 deprecates the key.
         expect(createDefaultOutbound('freedom').settings).toEqual({});
+    });
+
+    it.each(['socks', 'http'])('writes a %s server entry with the keys the core decodes, and no level', protocol => {
+        // The entry is {address, port, users} on every line
+        // (v26.7.28:infra/conf/socks.go:71-75 and http.go:52-56), so the
+        // `level: 0` this used to write was a key the decoder dropped. A level
+        // that counts belongs to the login: users[0].level, or the flat form's.
+        const settings = createDefaultOutbound(protocol, { address: 'p.example', port: 1080 }).settings as any;
+        expect(settings).toEqual({ servers: [{ address: 'p.example', port: 1080 }] });
+        expect(settings.servers[0]).not.toHaveProperty('level');
     });
 
     it('spells dokodemo-door the way 26.3 reads it', () => {

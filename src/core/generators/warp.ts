@@ -1,4 +1,6 @@
 import { WARP_ENDPOINT } from '../presets';
+import { generateWireguardKeyPair } from './crypto';
+import { BUILT_IN_RELAY, RelayError, registerDevice, updateDevice, type WarpRelay } from './warp-relay';
 
 export interface WarpAccount {
     id: string;
@@ -12,19 +14,131 @@ export interface WarpAccount {
     reserved: number[];
 }
 
-/**
- * Default Cloudflare WARP registration worker.
- */
-const DEFAULT_WARP_ENDPOINTS = [
-    'https://xcui.bropines.workers.dev/',
-];
+/** What a registration says about the device, whichever way the API wraps it. */
+export interface WarpDevice {
+    id: string;
+    token: string;
+    /** The three bytes WARP expects in WireGuard's reserved field, from `config.client_id`. */
+    reserved: number[];
+    /** `config.peers[0].public_key`: Cloudflare's key for this tunnel type. */
+    peerPublicKey: string;
+    /** `config.peers[0].endpoint`: the host name form, and the v4/v6 address forms. */
+    endpointHost: string;
+    endpointV4: string;
+    endpointV6: string;
+    ipv4: string;
+    ipv6: string;
+    /** False until WARP is switched on for the device; undefined when the answer does not say. */
+    warpEnabled?: boolean;
+    accountType: string;
+}
+
+const text = (value: unknown): string => typeof value === 'string' ? value : '';
+
+/** `client_id` is base64 of three bytes; anything else gives the zeros WireGuard would send anyway. */
+export const reservedFromClientId = (clientId: unknown): number[] => {
+    if (typeof clientId !== 'string' || clientId === '') return [0, 0, 0];
+    try {
+        const bytes = Array.from(atob(clientId), char => char.charCodeAt(0));
+        return bytes.length === 3 ? bytes : [0, 0, 0];
+    } catch {
+        return [0, 0, 0];
+    }
+};
 
 /**
- * Registers a new WARP device and returns account credentials.
- * Supports custom Cloudflare Workers and includes automatic retry with backoff on rate limits.
+ * Read a registration or device answer. The v0a API returns the device
+ * itself; older paths wrapped it in `result`. Both are taken.
  */
-export async function generateWarpAccount(customWorkerUrl?: string): Promise<WarpAccount> {
-    const endpoints = customWorkerUrl?.trim() ? [customWorkerUrl.trim()] : DEFAULT_WARP_ENDPOINTS;
+export const readWarpDevice = (raw: any): WarpDevice => {
+    const device = raw && typeof raw === 'object' && raw.result && typeof raw.result === 'object' ? raw.result : raw ?? {};
+    const config = device.config ?? {};
+    const peer = Array.isArray(config.peers) ? config.peers[0] ?? {} : {};
+    const endpoint = peer.endpoint ?? {};
+    const addresses = config.interface?.addresses ?? {};
+    return {
+        id: text(device.id),
+        token: text(device.token),
+        reserved: reservedFromClientId(config.client_id),
+        peerPublicKey: text(peer.public_key),
+        endpointHost: text(endpoint.host),
+        endpointV4: text(endpoint.v4),
+        endpointV6: text(endpoint.v6),
+        ipv4: text(addresses.v4),
+        ipv6: text(addresses.v6),
+        warpEnabled: typeof device.warp_enabled === 'boolean' ? device.warp_enabled : undefined,
+        accountType: text(device.account?.account_type),
+    };
+};
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/** Retry what Cloudflare rate limits, a couple of times, then give up with its message. */
+export const withRateLimitRetry = async <T>(attempt: () => Promise<T>, tries = 3, wait = sleep): Promise<T> => {
+    for (let n = 1; ; n++) {
+        try {
+            return await attempt();
+        } catch (error) {
+            if (!(error instanceof RelayError) || error.code !== 'rate_limited' || n >= tries) throw error;
+            await wait(1500 * n);
+        }
+    }
+};
+
+/**
+ * Register a device and switch WARP on for it, through `relay`. The device
+ * answer is returned with the id and token kept (a PATCH answer may carry
+ * neither).
+ */
+export const registerWarpDevice = async (relay: WarpRelay, publicKey: string): Promise<WarpDevice> => {
+    const registered = readWarpDevice(await withRateLimitRetry(() => registerDevice(relay, publicKey)));
+    if (!registered.id || !registered.token) {
+        throw new RelayError('bad_response', 'The registration came back without a device id or token.');
+    }
+    if (registered.warpEnabled !== false && registered.peerPublicKey) return registered;
+    const enabled = readWarpDevice(await updateDevice(relay, registered.id, registered.token, { warp_enabled: true }));
+    return { ...enabled, id: registered.id, token: registered.token };
+};
+
+/**
+ * Register a new WARP device for a WireGuard outbound.
+ *
+ * The key pair is made here, in the browser; the relay is sent the public key
+ * only. A custom URL that does not answer as a v2 relay is tried the old way
+ * — a bare GET that hands back a whole account — so a Worker set up for an
+ * earlier version of this editor keeps working.
+ */
+export async function generateWarpAccount(relay: WarpRelay = BUILT_IN_RELAY): Promise<WarpAccount> {
+    const { secretKey, publicKey } = generateWireguardKeyPair();
+    let device: WarpDevice;
+    try {
+        device = await registerWarpDevice(relay, publicKey);
+    } catch (error) {
+        if (!relay.builtIn && error instanceof RelayError && error.code === 'not_relay') {
+            return legacyWarpAccount(relay.url);
+        }
+        throw error;
+    }
+    if (!device.peerPublicKey) throw new RelayError('bad_response', 'The registration came back without a peer key.');
+    return {
+        id: device.id,
+        token: device.token,
+        privateKey: secretKey,
+        publicKey,
+        peerPublicKey: device.peerPublicKey,
+        endpoint: device.endpointHost || WARP_ENDPOINT,
+        ipv4: device.ipv4,
+        ipv6: device.ipv6,
+        reserved: device.reserved,
+    };
+}
+
+/**
+ * A Worker written for the editor before 1.29: GET returns a whole account,
+ * private key included. Only reached for a URL the user entered.
+ */
+async function legacyWarpAccount(url: string): Promise<WarpAccount> {
+    const endpoints = [url];
     let lastError: any;
 
     for (const url of endpoints) {

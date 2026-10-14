@@ -9,26 +9,32 @@
  *
  * One entry per major.minor. A patch release is assumed to keep the config
  * surface of its line — when that stops being true, it gets its own entry.
+ * The tag is the release the line's facts were read from; it moves to a later
+ * patch only when that patch changed nothing a config can say. v26.9.30 did
+ * (xdns takes objects instead of strings, WireGuard lost `domainStrategy`, the
+ * tun inbound gained keys), so 26.9 stays on v26.9.9 and v26.9.30's surface is
+ * carried by 26.10 — v26.10.10 has all of it.
  *
  * The oldest entry is the support floor. Older cores are not modelled: a config
  * written for them may well work, but nothing here will say so.
  */
 
-export type CoreVersionId = '26.3' | '26.7' | '26.9';
+export type CoreVersionId = '26.3' | '26.7' | '26.9' | '26.10';
 
 export interface CoreVersion {
     id: CoreVersionId;
     /** The release tag the facts for this line were read from. */
     tag: string;
     /** Why this line is on the list, in a word or two. */
-    role: 'minimum' | 'remnawave' | 'latest';
+    role: 'minimum' | 'remnawave' | 'previous' | 'latest';
 }
 
 /** Oldest first — the order `compareCoreVersions` relies on. */
 export const CORE_VERSIONS: CoreVersion[] = [
     { id: '26.3', tag: 'v26.3.27', role: 'minimum' },
     { id: '26.7', tag: 'v26.7.28', role: 'remnawave' },
-    { id: '26.9', tag: 'v26.9.9', role: 'latest' },
+    { id: '26.9', tag: 'v26.9.9', role: 'previous' },
+    { id: '26.10', tag: 'v26.10.10', role: 'latest' },
 ];
 
 /**

@@ -7,11 +7,33 @@ import { Select } from '../../ui/Select';
 import { FormField } from '../../ui/FormField';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import { generateWarpAccount, withWarpAccount, toAwgConf } from '../../../core/generators';
+import { describeRelayError } from '../../../core/generators/warp-relay';
 import { useConfigStore } from '../../../store/configStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useField, useArrayField } from '../../../hooks/useField';
+import { ListTextInput } from '../../ui/ListTextInput';
+import { wireguardOutboundProblems, type WireguardOutboundProblem } from '../../../core/xray/wireguard-outbound';
+import { useWarpRelay } from '../../../hooks/useWarpRelay';
 import { WG_DOMAIN_STRATEGIES } from './wireguard-strategies';
 import { t } from '../../../i18n';
+
+/**
+ * What the core refuses about one field, said next to it — the same words the
+ * diagnostics use (core/xray/wireguard-outbound.ts), so a check the panel save
+ * runs is one the form shows while it is being typed.
+ */
+const Problems = ({ items }: { items: WireguardOutboundProblem[] }) => (items.length === 0 ? null : (
+    <ul className="space-y-1">
+        {items.map((problem, index) => (
+            <li key={index} data-problem={problem.kind} className="text-[10px] leading-relaxed text-rose-300 break-words">
+                {problem.message}
+                {problem.suggestion && <span className="block text-slate-400">{problem.suggestion}</span>}
+            </li>
+        ))}
+    </ul>
+));
+
+const invalidClass = (invalid: boolean) => (invalid ? 'border-rose-500 bg-rose-500/10' : '');
 
 export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: any) => {
     // Pre-existing rules-of-hooks violation, caught by the new ESLint config:
@@ -24,10 +46,10 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
     // The selector returns the stored array itself, never a derived one: a
     // fresh array fails useShallow's comparison every time and puts this
     // editor back to re-rendering on every change anywhere in the app.
-    const { warpWorkerUrl, servers } = useConfigStore(useShallow(state => ({
-        warpWorkerUrl: state.warpWorkerUrl,
+    const { servers } = useConfigStore(useShallow(state => ({
         servers: state.config?.dns?.servers,
     })));
+    const relay = useWarpRelay();
     // Plain addresses only: a DoH URL is an Xray server object, not something
     // a WireGuard client knows what to do with.
     const dnsServers = useMemo(
@@ -35,16 +57,19 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
             .filter((server: unknown): server is string => typeof server === 'string' && !server.includes('://')),
         [servers],
     );
-    const settings = outbound.settings || { secretKey: "", address: ["10.0.0.1/24"], peers: [] };
+    // Only the WARP button reads this, and it writes the addresses itself:
+    // no made-up interface address here (the one this used to carry, a /24,
+    // is refused by 26.3 — see core/xray/wireguard-config.ts).
+    const settings = outbound.settings || { secretKey: "", peers: [] };
     const [loading, setLoading] = useState(false);
 
     // `outbound` is the editor's `local` state and `onChange` is its
     // `updateField(path, value)` (see OutboundModal.tsx). Every leaf below
     // binds directly to its settings path so the JSX can be restyled freely.
     const secretKey = useField<string>(outbound, onChange, ['settings', 'secretKey']);
-    const address = useField<string[]>(outbound, onChange, ['settings', 'address']);
+    const address = useField<string[] | undefined>(outbound, onChange, ['settings', 'address']);
     const mtu = useField<number>(outbound, onChange, ['settings', 'mtu']);
-    const reserved = useField<number[]>(outbound, onChange, ['settings', 'reserved']);
+    const reserved = useField<number[] | undefined>(outbound, onChange, ['settings', 'reserved']);
     const noKernelTun = useField<boolean>(outbound, onChange, ['settings', 'noKernelTun']);
     const domainStrategy = useField<string>(outbound, onChange, ['settings', 'domainStrategy']);
 
@@ -56,18 +81,27 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
         ? [{ value: current, label: current, description: t("Not accepted by Xray-core — the config will not start") }, ...strategies]
         : strategies;
     const workers = useField<number>(outbound, onChange, ['settings', 'workers']);
-    const remoteDNS = useField<string[]>(outbound, onChange, ['settings', 'remoteDNS']);
+    const remoteDNS = useField<string[] | undefined>(outbound, onChange, ['settings', 'remoteDNS']);
 
     // `workers` is read by 26.3 only and `remoteDNS` by 26.9 only
     // (infra/conf/wireguard.go per tag); elsewhere the decoder drops them.
     // Each is offered where it works and shown wherever a config already has
     // it, with a note on the lines where it does nothing.
-    const { offersAt, tag: coreTag } = useCoreVersion();
+    const { offersAt, tag: coreTag, version } = useCoreVersion();
     const workersWork = offersAt('outbound', 'settings.workers', 'wireguard');
     const remoteDnsWorks = offersAt('outbound', 'settings.remoteDNS', 'wireguard');
+    // `domainStrategy` is the other way round: every line before 26.10 reads it and 26.10 dropped
+    // the field (v26.10.10:infra/conf/wireguard.go:59-69), so it is offered where it works.
+    const strategyWorks = offersAt('outbound', 'settings.domainStrategy', 'wireguard');
+    const showStrategy = strategyWorks || domainStrategy.value !== undefined;
     const showWorkers = workersWork || workers.value !== undefined;
-    const showRemoteDns = remoteDnsWorks || (remoteDNS.value?.length ?? 0) > 0;
+    const showRemoteDns = remoteDnsWorks || (Array.isArray(remoteDNS.value) && remoteDNS.value.length > 0);
     const peers = useArrayField<any>(outbound, onChange, ['settings', 'peers']);
+
+    // The same list the diagnostics run on this outbound, for the line the
+    // config is being written for; each field shows its own.
+    const problems = wireguardOutboundProblems(outbound, version);
+    const problemsAt = (field: string) => problems.filter(problem => problem.field === field);
 
     if (outbound.protocol !== 'wireguard') return null;
 
@@ -92,16 +126,14 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
     const handleGenerateWarp = async () => {
         setLoading(true);
         try {
-            const warp = await generateWarpAccount(warpWorkerUrl);
+            const warp = await generateWarpAccount(relay);
             // Into the peer that is there: replacing the list used to drop
             // its allowedIPs, so a profile that left local networks out
             // started routing them through WARP.
             onChange('settings', withWarpAccount(settings, warp));
             toast.success(t("WARP account generated successfully"));
         } catch (e: any) {
-            toast.error(t("Failed to generate WARP account"), {
-                description: e?.message || "CORS error or proxy is down. Check your settings."
-            });
+            toast.error(t("Failed to generate WARP account"), { description: describeRelayError(e) });
         } finally {
             setLoading(false);
         }
@@ -123,12 +155,36 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label={t("Secret Key")} error={errors.secretKey}>
-                    <input className={`input-base font-mono text-rose-300 ${errors.secretKey ? 'border-rose-500 bg-rose-500/10' : ''}`} value={secretKey.value || ""} onChange={e => secretKey.onChange(e.target.value)} placeholder={t("Private Key")} />
-                </FormField>
-                <FormField label={t("Local Address (CIDR)")}>
-                    <input className="input-base font-mono" value={(address.value || []).join(', ')} onChange={e => address.onChange(e.target.value.split(',').map((s: string) => s.trim()))} placeholder={t("10.0.0.1/24, fd00::1/64")} />
-                </FormField>
+                <div className="space-y-1.5">
+                    <FormField label={t("Secret Key")} error={errors.secretKey}>
+                        <input
+                            className={`input-base font-mono text-rose-300 ${invalidClass(!!errors.secretKey || problemsAt('settings.secretKey').length > 0)}`}
+                            aria-label={t("Secret Key")}
+                            aria-invalid={problemsAt('settings.secretKey').length > 0}
+                            autoComplete="off"
+                            spellCheck={false}
+                            value={secretKey.value || ""}
+                            onChange={e => secretKey.onChange(e.target.value)}
+                            placeholder={t("Private Key")}
+                        />
+                    </FormField>
+                    <Problems items={problemsAt('settings.secretKey')} />
+                </div>
+                <div className="space-y-1.5">
+                    <FormField label={t("Local Address (CIDR)")}>
+                        {/* One host per family — /32 and /128 — is what every line takes
+                            (26.3 refuses a wider prefix, which this used to suggest). */}
+                        <ListTextInput
+                            className={`input-base font-mono ${invalidClass(problemsAt('settings.address').length > 0)}`}
+                            aria-label={t("Local Address (CIDR)")}
+                            aria-invalid={problemsAt('settings.address').length > 0}
+                            value={address.value}
+                            onChange={address.onChange}
+                            placeholder="10.0.0.2/32, fd00::2/128"
+                        />
+                    </FormField>
+                    <Problems items={problemsAt('settings.address')} />
+                </div>
             </div>
 
             {/* Advanced WG Settings */}
@@ -136,22 +192,23 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                 <FormField label={t("MTU")} help={t("Maximum Transmission Unit. Default is 1280 for WARP.")}>
                     <input type="number" className="input-base" placeholder="1280" value={mtu.value || ""} onChange={e => mtu.onChange(parseInt(e.target.value) || 0)} />
                 </FormField>
-                <FormField label={t("Reserved (CSV)")} help={t("[n,n,n] — header byte substitution. Use [0,0,0] for standard WARP.")}>
-                    <input className="input-base font-mono"
-                        placeholder="0, 0, 0"
-                        value={(reserved.value || []).map((v: any) => isNaN(v) ? 0 : v).join(', ')}
-                        onChange={e => {
-                            const raw = e.target.value.replace(/[^0-9,]/g, '');
-                            const vals = raw.split(',')
-                                .map(s => s.trim())
-                                .filter(s => s !== "")
-                                .map(s => parseInt(s))
-                                .filter(n => !isNaN(n))
-                                .slice(0, 3);
-                            reserved.onChange(vals);
-                        }}
-                    />
-                </FormField>
+                <div className="space-y-1.5">
+                    <FormField label={t("Reserved (CSV)")} help={t("[n,n,n] — header byte substitution. Use [0,0,0] for standard WARP.")}>
+                        {/* The comma stays in the box until the next number follows it;
+                            a list of any length is kept and reported, not cut to three. */}
+                        <ListTextInput<number>
+                            className={`input-base font-mono ${invalidClass(problemsAt('settings.reserved').length > 0)}`}
+                            aria-label={t("Reserved (CSV)")}
+                            aria-invalid={problemsAt('settings.reserved').length > 0}
+                            placeholder="0, 0, 0"
+                            allowed="0-9"
+                            read={Number}
+                            value={reserved.value}
+                            onChange={reserved.onChange}
+                        />
+                    </FormField>
+                    <Problems items={problemsAt('settings.reserved')} />
+                </div>
                 <div className="flex flex-col justify-center pt-5">
                     <Switch
                         checked={noKernelTun.value || false}
@@ -172,10 +229,18 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                         <Icon name="Warning" /> {errors.peers}
                     </div>
                 )}
+                <div className="mb-3">
+                    <Problems items={problemsAt('settings.peers')} />
+                </div>
                 <div className="space-y-4">
                     {peers.items.map((peer: any, i: number) => {
                         const epErr = errors[`peer_${i}_endpoint`] as string | undefined;
                         const pkErr = errors[`peer_${i}_publicKey`] as string | undefined;
+                        const at = `settings.peers[${i}]`;
+                        const endpointProblems = problemsAt(`${at}.endpoint`);
+                        const publicKeyProblems = problemsAt(`${at}.publicKey`);
+                        const preSharedProblems = problemsAt(`${at}.preSharedKey`);
+                        const allowedProblems = problemsAt(`${at}.allowedIPs`);
                         return (
                             <div key={i} className="bg-slate-950 p-4 rounded-xl border border-slate-700/50 flex flex-col gap-4 relative group">
                                 <button onClick={() => peers.remove(i)} className="absolute top-2 right-2 p-2 text-slate-600 hover:text-rose-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
@@ -183,19 +248,52 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                                 </button>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pr-6">
-                                    <FormField label={t("Endpoint")} error={epErr}>
-                                        <input className={`input-base font-mono ${epErr ? 'border-rose-500' : ''}`} value={peer.endpoint || ""} onChange={e => peers.update(i, { endpoint: e.target.value })} placeholder={t("engage.cloudflareclient.com:2408")} />
-                                    </FormField>
-                                    <FormField label={t("Public Key")} error={pkErr}>
-                                        <input className={`input-base font-mono text-emerald-300 ${pkErr ? 'border-rose-500' : ''}`} value={peer.publicKey || ""} onChange={e => peers.update(i, { publicKey: e.target.value })} placeholder={t("Public Key")} />
-                                    </FormField>
+                                    <div className="space-y-1.5">
+                                        <FormField label={t("Endpoint")} error={epErr}>
+                                            <input
+                                                className={`input-base font-mono ${invalidClass(!!epErr || endpointProblems.length > 0)}`}
+                                                aria-label={t("Endpoint")}
+                                                aria-invalid={endpointProblems.length > 0}
+                                                spellCheck={false}
+                                                value={peer.endpoint || ""}
+                                                onChange={e => peers.update(i, { endpoint: e.target.value })}
+                                                placeholder={t("engage.cloudflareclient.com:2408")}
+                                            />
+                                        </FormField>
+                                        <Problems items={endpointProblems} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <FormField label={t("Public Key")} error={pkErr}>
+                                            <input
+                                                className={`input-base font-mono text-emerald-300 ${invalidClass(!!pkErr || publicKeyProblems.length > 0)}`}
+                                                aria-label={t("Public Key")}
+                                                aria-invalid={publicKeyProblems.length > 0}
+                                                autoComplete="off"
+                                                spellCheck={false}
+                                                value={peer.publicKey || ""}
+                                                onChange={e => peers.update(i, { publicKey: e.target.value })}
+                                                placeholder={t("Public Key")}
+                                            />
+                                        </FormField>
+                                        <Problems items={publicKeyProblems} />
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                                     <div className="col-span-1 lg:col-span-3">
                                         <FormField label={t("Pre-shared Key")}>
-                                            <input className="input-base font-mono" value={peer.preSharedKey || ""} onChange={e => peers.update(i, { preSharedKey: e.target.value })} placeholder={t("Optional")} />
+                                            <input
+                                                className={`input-base font-mono ${invalidClass(preSharedProblems.length > 0)}`}
+                                                aria-label={t("Pre-shared Key")}
+                                                aria-invalid={preSharedProblems.length > 0}
+                                                autoComplete="off"
+                                                spellCheck={false}
+                                                value={peer.preSharedKey || ""}
+                                                onChange={e => peers.update(i, { preSharedKey: e.target.value })}
+                                                placeholder={t("Optional")}
+                                            />
                                         </FormField>
+                                        <Problems items={preSharedProblems} />
                                     </div>
                                     <div className="col-span-1 lg:col-span-2">
                                         <FormField label={t("Keep-alive (s)")}>
@@ -225,12 +323,18 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                                                     {peer.allowedIPs?.length > 2 ? t("Restore 0.0.0.0/0") : t("Exclude Local")}
                                                 </button>
                                             </div>
-                                            <textarea
-                                                className="input-base font-mono text-xs h-full min-h-[42px] custom-scroll resize-y"
-                                                value={(peer.allowedIPs || []).join(', ')}
-                                                onChange={e => peers.update(i, { allowedIPs: e.target.value.split(',').map(s => s.trim()) })}
+                                            {/* Emptied, the key is left out and the core's own
+                                                default, everything, applies - what the placeholder says. */}
+                                            <ListTextInput
+                                                multiline
+                                                className={`input-base font-mono text-xs h-full min-h-[42px] custom-scroll resize-y ${invalidClass(allowedProblems.length > 0)}`}
+                                                aria-label={t("Allowed IPs")}
+                                                aria-invalid={allowedProblems.length > 0}
+                                                value={peer.allowedIPs}
+                                                onChange={next => peers.update(i, { allowedIPs: next })}
                                                 placeholder="0.0.0.0/0, ::/0"
                                             />
+                                            <Problems items={allowedProblems} />
                                         </div>
                                     </div>
                                 </div>
@@ -243,13 +347,17 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
 
             {/* General WG Engine Settings */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-4">
-                <Select
-                    label={t("Domain Strategy")}
-                    hint={t("How the peer's endpoint domain is resolved. WireGuard accepts only the Force variants; anything else stops the core from starting.")}
-                    value={domainStrategy.value || "ForceIP"}
-                    onChange={val => domainStrategy.onChange(val)}
-                    options={domainStrategyOptions}
-                />
+                {showStrategy && (
+                    <Select
+                        label={t("Domain Strategy")}
+                        hint={strategyWorks
+                            ? t("How the peer's endpoint domain is resolved. WireGuard accepts only the Force variants; anything else stops the core from starting.")
+                            : t("Xray 26.10 dropped this setting; {tag} ignores it, so it does nothing here.", { tag: coreTag })}
+                        value={domainStrategy.value || "ForceIP"}
+                        onChange={val => domainStrategy.onChange(val)}
+                        options={domainStrategyOptions}
+                    />
+                )}
                 {showWorkers && (
                     <FormField
                         label={t("Workers")}
@@ -261,19 +369,27 @@ export const OutboundWireguard = ({ outbound, onChange, errors = {} as any }: an
                     </FormField>
                 )}
                 {showRemoteDns && (
-                    <FormField
-                        label={t("Remote DNS")}
-                        help={remoteDnsWorks
-                            ? t("DNS server(s) resolved through the WireGuard tunnel itself (not Xray's DNS module) — comma-separated. Useful when the peer's network only resolves internal names.")
-                            : t("Arrived in Xray 26.9; {tag} drops it, so it does nothing here.", { tag: coreTag })}
-                    >
-                        <input
-                            className="input-base font-mono"
-                            placeholder="1.1.1.1, 1.0.0.1"
-                            value={(remoteDNS.value || []).join(', ')}
-                            onChange={e => remoteDNS.onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
-                        />
-                    </FormField>
+                    <div className="space-y-1.5">
+                        <FormField
+                            label={t("Remote DNS")}
+                            help={remoteDnsWorks
+                                ? t("DNS server(s) resolved through the WireGuard tunnel itself (not Xray's DNS module) — comma-separated. Useful when the peer's network only resolves internal names.")
+                                : t("Arrived in Xray 26.9; {tag} drops it, so it does nothing here.", { tag: coreTag })}
+                        >
+                            {/* The comma is kept while the next address is typed: this used
+                                to filter empty entries on every keystroke, which took the
+                                comma out of the box as it went in. */}
+                            <ListTextInput
+                                className={`input-base font-mono ${invalidClass(problemsAt('settings.remoteDNS').length > 0)}`}
+                                aria-label={t("Remote DNS")}
+                                aria-invalid={problemsAt('settings.remoteDNS').length > 0}
+                                placeholder="1.1.1.1, 1.0.0.1"
+                                value={remoteDNS.value}
+                                onChange={remoteDNS.onChange}
+                            />
+                        </FormField>
+                        <Problems items={problemsAt('settings.remoteDNS')} />
+                    </div>
                 )}
             </div>
         </div>

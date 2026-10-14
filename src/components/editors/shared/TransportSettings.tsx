@@ -179,6 +179,10 @@ const TLS_FIELD_CONFIGS = () => ({
         label: t("ECH Force Query"),
         help: t("How hard to insist on fetching the ECH config over DNS: none, half or full. Only Xray 26.3 reads it."),
     },
+    useSystemCA: {
+        label: t("Trust the system CA store"),
+        help: t("From Xray 26.10 the certificates of a server are checked against a CA bundle built into Xray. Turn this on to use the operating system's store instead, which is where a private or corporate CA lives."),
+    },
 });
 
 export const TransportSettings = ({ streamSettings = {}, onChange, isClient = false, errors = {}, protocol }: TransportProps) => {
@@ -240,7 +244,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
                 replacement: 'pinnedPeerCertSha256 / verifyPeerCertByName',
             }]
             : []),
-        ...keyNotices(tlsValue, ['verifyPeerCertInNames', 'echForceQuery'], { scope: side, settingsPath: 'streamSettings.tlsSettings', protocol }, version),
+        ...keyNotices(tlsValue, ['verifyPeerCertInNames', 'echForceQuery', 'useSystemCA'], { scope: side, settingsPath: 'streamSettings.tlsSettings', protocol }, version),
     ].filter(notice => notice.status !== 'accepted');
     // Keys the line refuses or drops stay out of the form; a held one is in
     // the notices above it, with a remove button.

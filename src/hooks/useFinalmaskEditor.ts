@@ -18,9 +18,12 @@ import { useCoreVersion } from './useCoreVersion';
 import {
     finalmaskIssues,
     FINALMASK_PATH,
+    isNoiseExpItem,
     maskKeyStatus,
     maskTypeChoices,
     maskTypeStatus,
+    noiseItemTypeAccepted,
+    noiseItemTypeChoices,
     offeredMaskKeys,
     offeredQuicKeys,
     quicKeyStatus,
@@ -278,6 +281,22 @@ export function useFinalmaskEditor(finalmask: any, onChange: (v: any) => void, s
         setSetting(list, index, 'noise', items);
     };
 
+    /**
+     * The packet encodings the item chooser lists, the one the item holds
+     * included — a refused one stays on screen, marked, rather than turning
+     * into a different value in the box.
+     */
+    const noiseTypeOptions = (held: unknown): { value: string; refused: boolean }[] =>
+        noiseItemTypeChoices(version, held).map(value => ({ value, refused: !noiseItemTypeAccepted(version, value) }));
+
+    /**
+     * The generator rebuilds the whole list from hex packets and junk, so
+     * applying it over a list with an item written as an expression (26.10's
+     * `exp`) would turn that item into hex nonsense. It stays off until the
+     * expression is gone; every other edit leaves the item as it was.
+     */
+    const generatorBlocked = (list: MaskList, index: number) => noiseItems(list, index).some(isNoiseExpItem);
+
     // Ready-made noise: into the noise layer the chain has, or a new one by
     // the socket — the placement lives with the presets, not here.
     const noiseOffered = maskTypeStatus(version, 'udp', 'noise', side).accepted;
@@ -318,6 +337,8 @@ export function useFinalmaskEditor(finalmask: any, onChange: (v: any) => void, s
         addNoiseItem,
         updateNoiseItem,
         removeNoiseItem,
+        noiseTypeOptions,
+        generatorBlocked,
         noisePresets,
         applyNoisePreset,
         setQuic,

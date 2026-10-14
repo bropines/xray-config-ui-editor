@@ -8,13 +8,24 @@ import { Switch } from '../../ui/Switch';
 // SchemaForm needed the same box for object-typed keys: one, not two.
 import { JsonInput } from '../../ui/JsonInput';
 import { useSyncedText } from '../../../hooks/useSyncedText';
+import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import {
     useFinalmaskEditor,
     type ChainView,
     type ExtraKey,
     type LayerView,
 } from '../../../hooks/useFinalmaskEditor';
-import type { FinalmaskIssue, MaskKey, MaskList, MaskSide } from '../../../core/xray/versions/finalmask-rules';
+import {
+    heldTypeMatches,
+    isNoiseExpItem,
+    masqueReadsQuicParams,
+    udphopDefaultsInterval,
+    type FinalmaskIssue,
+    type MaskKey,
+    type MaskList,
+    type MaskSide,
+} from '../../../core/xray/versions/finalmask-rules';
+import type { CoreVersionId } from '../../../core/xray/versions';
 import { NoiseGeneratorModal } from '../noise/NoiseGeneratorModal';
 import { t } from '../../../i18n';
 
@@ -203,7 +214,11 @@ const QuicSection = ({ editor }: { editor: Editor }) => (
     <section className="space-y-3 pt-4 border-t border-slate-800/50">
         <div className="text-[10px] text-blue-400 uppercase font-bold flex items-center gap-1.5">
             {t("QUIC Parameters")}
-            <Help>{t("Read by the hysteria and XHTTP (HTTP/3) transports only. An empty field is left out of the config, so the core uses its default.")}</Help>
+            <Help>
+                {masqueReadsQuicParams(editor.version)
+                    ? t("Read by the hysteria, MASQUE and XHTTP (HTTP/3) transports only. An empty field is left out of the config, so the core uses its default.")
+                    : t("Read by the hysteria and XHTTP (HTTP/3) transports only. An empty field is left out of the config, so the core uses its default.")}
+            </Help>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {editor.quic.fields.map(spec => (
@@ -224,12 +239,23 @@ const QuicSection = ({ editor }: { editor: Editor }) => (
 
 // ── Fields ───────────────────────────────────────────────────────────────
 
-/** Short notes for the keys whose format is not obvious from the name. */
-const hintFor = (key: string): string | undefined => {
-    switch (key) {
-        case 'domains': return t("Domains this server answers for, one per line: example.com or example.com:txt.");
-        case 'resolvers': return t("Resolvers the client queries through, one per line: example.com+udp://1.1.1.1:53.");
-        case 'interval': return t("Seconds between hops, at least 5: 10 or 5-30.");
+/** Short notes for the keys whose format is not obvious from the name — and that read differently on some lines. */
+const hintFor = (spec: MaskKey, line: CoreVersionId): string | undefined => {
+    const objects = spec.shape === 'objects';
+    switch (spec.key) {
+        case 'domains':
+            return objects
+                ? t("Domains the tunnel runs under, as a JSON list of objects: names, and optionally lenLimit, labelLimit, types (1 A, 5 CNAME, 16 TXT, 28 AAAA) and edns0. Both the server and the client read it.")
+                : t("Domains this server answers for, one per line: example.com or example.com:txt.");
+        case 'resolvers':
+            return objects
+                ? t("Resolvers the client queries through, as a JSON list of objects holding addrs: 1.1.1.1:53, or tcp://8.8.8.8. A bare address is UDP on port 53.")
+                : t("Resolvers the client queries through, one per line: example.com+udp://1.1.1.1:53.");
+        case 'extraPoll': return t("Extra empty polling queries sent after each packet and each poll, 0 to 3.");
+        case 'interval':
+            return udphopDefaultsInterval(line)
+                ? t("Seconds between hops: 10 or 5-30, at least 5. Empty means 30.")
+                : t("Seconds between hops, at least 5: 10 or 5-30.");
         case 'packetSize': return t("Switches salamander to gecko framing (1-2048), which plain salamander and 26.3 cannot talk to.");
         case 'lengths': return t("One range per line; overrides length when set.");
         case 'delays': return t("One range per line; overrides delay when set.");
@@ -241,12 +267,13 @@ const hintFor = (key: string): string | undefined => {
 
 const PLACEHOLDERS: Record<string, string> = {
     length: '100-200', delay: '10-20', maxSplit: '0', reset: '0', packetSize: '1200-1400',
-    packets: 'tlshello', url: 'realm://TOKEN@host/ID', interval: '5-30', remotePorts: '20000-30000,443',
+    packets: 'tlshello', url: 'realm://TOKEN@host/ID', interval: '5-30', remotePorts: '20000-30000,443', extraPoll: '0',
     brutalUp: '100 mbps', brutalDown: '100 mbps', maxIdleTimeout: '30', keepAlivePeriod: '10',
 };
 
 const Label = ({ spec, showSide }: { spec: MaskKey; showSide: boolean }) => {
-    const hint = hintFor(spec.key);
+    const { version } = useCoreVersion();
+    const hint = hintFor(spec, version);
     return (
         <span className="label-xs flex items-center gap-1.5">
             <span className="font-mono normal-case">{spec.key}</span>
@@ -273,11 +300,17 @@ const MaskField = ({ spec, value, onChange, showSide, noise }: {
     showSide: boolean;
     noise?: NoiseTarget;
 }) => {
-    const wide = ['json', 'noise', 'strings', 'ranges', 'udpHop', 'flags'].includes(spec.shape);
+    const { tag } = useCoreVersion();
+    const wide = ['json', 'objects', 'noise', 'strings', 'ranges', 'udpHop', 'flags'].includes(spec.shape);
+    // A value of the wrong kind is in the config whether the form likes it or
+    // not: shown as it is, with a way out, and the input below starts empty so
+    // that filling it in replaces it — never an input that would coerce it.
+    const wrongKind = !heldTypeMatches(spec, value);
     return (
         <div className={`flex flex-col gap-1.5 ${wide ? 'md:col-span-2' : ''}`} data-field={spec.key}>
             {spec.shape !== 'bool' && <Label spec={spec} showSide={showSide} />}
-            <FieldInput spec={spec} value={value} onChange={onChange} showSide={showSide} noise={noise} />
+            {wrongKind && <HeldWrongKind spec={spec} value={value} tag={tag} onRemove={() => onChange(undefined)} />}
+            <FieldInput spec={spec} value={wrongKind ? undefined : value} onChange={onChange} showSide={showSide} noise={noise} />
         </div>
     );
 };
@@ -313,8 +346,10 @@ const FieldInput = ({ spec, value, onChange, showSide, noise }: {
         case 'strings':
         case 'ranges':
             return <LinesInput value={value} onChange={onChange} />;
+        case 'objects':
+            return <JsonInput value={value} onChange={onChange} expects="array" placeholder={spec.example ? `[${spec.example}]` : undefined} ariaLabel={spec.key} />;
         case 'json':
-            return <JsonInput value={value} onChange={onChange} />;
+            return <JsonInput value={value} onChange={onChange} expects={spec.expects ?? 'any'} />;
         case 'noise':
             return noise ? <NoiseEditor target={noise} value={value} /> : null;
         case 'udpHop':
@@ -416,8 +451,6 @@ const UdpHopInput = ({ value, onChange }: { value: unknown; onChange: (value: un
 
 // ── Noise ────────────────────────────────────────────────────────────────
 
-const PACKET_TYPES = ['hex', 'str', 'base64'];
-
 const NoiseEditor = ({ target, value }: { target: NoiseTarget; value: unknown }) => {
     const { list, index, editor } = target;
     const items = Array.isArray(value) ? value : [];
@@ -427,6 +460,7 @@ const NoiseEditor = ({ target, value }: { target: NoiseTarget; value: unknown })
     // like. It is a separate sheet because it needs the room.
     const [generating, setGenerating] = useState(false);
     const layer = editor.chains.find(chain => chain.list === list)?.layers[index];
+    const generatorBlocked = editor.generatorBlocked(list, index);
     return (
         <div className="space-y-2">
             {generating && (
@@ -439,7 +473,10 @@ const NoiseEditor = ({ target, value }: { target: NoiseTarget; value: unknown })
             )}
             {items.map((raw, i) => {
                 const item = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
-                const isPacket = item.packet !== undefined;
+                // An exp item is a packet item even before it has a packet: the core
+                // wants a string there, and drawing it as random junk would hide the type.
+                const isExp = isNoiseExpItem(item);
+                const isPacket = item.packet !== undefined || isExp;
                 return (
                     <div key={i} className="flex flex-wrap gap-2 items-center bg-slate-950 p-2 rounded border border-slate-800/50">
                         <Select
@@ -448,7 +485,10 @@ const NoiseEditor = ({ target, value }: { target: NoiseTarget; value: unknown })
                                 ? update(i, { packet: undefined, type: undefined, rand: '40-70' })
                                 : update(i, { rand: undefined, packet: isPacket ? item.packet : '', type: kind })}
                             options={[
-                                ...PACKET_TYPES.map(kind => ({ value: kind, label: kind.toUpperCase() })),
+                                ...editor.noiseTypeOptions(isPacket ? item.type : undefined).map(({ value: kind, refused }) => ({
+                                    value: kind,
+                                    label: refused ? `${kind.toUpperCase()} — ${t("refused by Xray {tag}", { tag: editor.tag })}` : kind.toUpperCase(),
+                                })),
                                 { value: 'rand', label: t("RAND") },
                             ]}
                             className="w-28 shrink-0"
@@ -456,8 +496,8 @@ const NoiseEditor = ({ target, value }: { target: NoiseTarget; value: unknown })
                         {isPacket ? (
                             <input
                                 className="input-base text-[10px] font-mono flex-1 min-w-[8rem] py-1 h-7"
-                                placeholder={t("Packet")}
-                                value={typeof item.packet === 'string' ? item.packet : JSON.stringify(item.packet)}
+                                placeholder={isExp ? '<b 0xDEADBEEF><r 8><t>' : t("Packet")}
+                                value={typeof item.packet === 'string' ? item.packet : item.packet === undefined ? '' : JSON.stringify(item.packet)}
                                 onChange={e => {
                                     let next = e.target.value;
                                     // Pasted "0x…" hex keeps only the digits the core decodes.
@@ -488,10 +528,15 @@ const NoiseEditor = ({ target, value }: { target: NoiseTarget; value: unknown })
                 <Button variant="secondary" size="sm" icon="Plus" onClick={() => editor.addNoiseItem(list, index)}>
                     {t("Add Noise Packet")}
                 </Button>
-                <Button variant="secondary" size="sm" icon="Sparkle" onClick={() => setGenerating(true)}>
+                <Button variant="secondary" size="sm" icon="Sparkle" disabled={generatorBlocked} onClick={() => setGenerating(true)}>
                     {t("Generate…")}
                 </Button>
             </div>
+            {generatorBlocked && (
+                <div className="text-[11px] text-slate-500" data-testid="generator-blocked">
+                    {t("The generator rebuilds the whole list from hex packets, so it stays off while a packet is an exp expression.")}
+                </div>
+            )}
         </div>
     );
 };
@@ -517,6 +562,43 @@ const IssueList = ({ issues }: { issues: FinalmaskIssue[] }) =>
             {issues.map((issue, i) => <Notice key={i} tone={issue.severity}>{issue.message}</Notice>)}
         </div>
     );
+
+/** What the core reads a key as, for HeldWrongKind. */
+const expectedKind = (spec: MaskKey): string => {
+    switch (spec.shape) {
+        case 'strings': return t("a list of strings");
+        case 'ranges': return t("a list of numbers or ranges");
+        case 'objects': return t("a list of objects");
+        case 'noise': return t("a list of noise items");
+        case 'json': return spec.expects === 'array' ? t("a list") : t("an object");
+        default: return t("an object");
+    }
+};
+
+/**
+ * A key that holds a value of another JSON type than the core decodes it
+ * from: a string where it reads an object, an object in a list of strings.
+ * The decode fails and the config does not load; the value is shown rather
+ * than dropped, and the way out is at the bottom, where a thumb finds it.
+ * (Same shape as ui/WrongTypeNotice, which only knows how to say "object".)
+ */
+const HeldWrongKind = ({ spec, value, tag, onRemove }: { spec: MaskKey; value: unknown; tag: string; onRemove: () => void }) => (
+    <div className="p-3 rounded-xl border space-y-3 bg-rose-950/20 border-rose-500/40" data-wrong-type={spec.key}>
+        <div className="flex gap-2 text-[11px] leading-relaxed">
+            <Icon name="WarningOctagon" weight="fill" className="shrink-0 mt-0.5 text-rose-400" />
+            <p className="text-rose-200/90 break-words min-w-0">
+                {t("{field} holds {value}, but Xray {tag} reads {expected} here — it cannot read the config until this is replaced or removed.", { field: spec.key, value: preview(value), tag, expected: expectedKind(spec) })}
+            </p>
+        </div>
+        <button
+            type="button"
+            onClick={onRemove}
+            className="h-9 px-4 rounded-lg border bg-slate-950/40 text-[11px] font-bold transition-colors border-rose-500/40 text-rose-200 hover:border-rose-400"
+        >
+            {t("Remove it")}
+        </button>
+    </div>
+);
 
 const preview = (value: unknown): string => {
     const text = typeof value === 'string' ? value : JSON.stringify(value);

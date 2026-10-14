@@ -6,6 +6,7 @@ import { DurationInput } from '../../ui/DurationInput';
 import { Help } from '../../ui/Help';
 import { Icon } from '../../ui/Icon';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
+import { MasqueSettingsEditor } from './MasqueSettingsEditor';
 import { useTransportFields } from '../../../hooks/useTransportFields';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import type { FeatureStatus } from '../../../core/xray/versions/features';
@@ -172,6 +173,7 @@ export const NetworkSection = ({
         grpcHealthCheckTimeout,
         grpcInitialWindowsSize,
         xhttpSettings,
+        masqueSettings,
     } = fields;
     const { tag } = useCoreVersion();
     const section = networkSection(net);
@@ -369,6 +371,24 @@ export const NetworkSection = ({
 
         {section === 'hysteria' && (
             <HysteriaSection streamSettings={streamSettings} fields={fields} side={side} protocol={protocol} />
+        )}
+
+        {section === 'masque' && (
+            <MasqueSettingsEditor
+                settings={masqueSettings.value}
+                onChange={masqueSettings.onChange}
+                isClient={isClient}
+                protocol={protocol}
+            />
+        )}
+
+        {/* 26.10's other new transport. Nothing draws its settings, and the ones a config holds are kept. */}
+        {section === 'xdrive' && (
+            <div className="border-t border-slate-800/50 pt-4" data-xdrive-note>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                    {t("The xdrive transport carries traffic through a cloud drive. This editor does not draw its settings: the ones in your config are kept as they are, and can be edited in the JSON view.")}
+                </p>
+            </div>
         )}
         </>
     );

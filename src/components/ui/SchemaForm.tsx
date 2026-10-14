@@ -404,6 +404,15 @@ interface SchemaFormProps {
     fieldConfigs?: Record<string, FieldConfig>;
     excludeKeys?: string[];
     /**
+     * Keys where an empty string is a value the core reads, not an absence.
+     * Every other key drops out of the config when it is emptied; these keep
+     * the `""`. A tun inbound's `autoOutboundsInterface` is one: absent
+     * means "auto" when routes are listed, and `""` is how it is switched off.
+     * Only an editor handed to `fieldEditors` writes one — a plain text box
+     * still removes its key when it is cleared.
+     */
+    emptyKeeps?: string[];
+    /**
      * Real paths on the REALITY target, forwarded to the spiderX field's
      * generator. Threaded through as a prop because this folder may not read
      * the store.
@@ -440,6 +449,7 @@ export const SchemaForm = ({
     errors = {},
     fieldConfigs = {},
     excludeKeys = [],
+    emptyKeeps = [],
     spiderPaths,
     fieldEditors = {}
 }: SchemaFormProps) => {
@@ -448,7 +458,7 @@ export const SchemaForm = ({
 
     const handleFieldChange = (key: string, fieldValue: any) => {
         const newValue = { ...value };
-        if (fieldValue === undefined || fieldValue === '') {
+        if (fieldValue === undefined || (fieldValue === '' && !emptyKeeps.includes(key))) {
             delete newValue[key];
         } else {
             newValue[key] = fieldValue;

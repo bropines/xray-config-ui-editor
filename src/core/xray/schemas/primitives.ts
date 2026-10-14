@@ -98,8 +98,10 @@ export const TransportNetworkSchema = z.enum([
   'websocket', 'ws', // ws is alias for websocket
   'httpupgrade',
   'hysteria',
-  // Only the masque outbound may use it, and it may use nothing else.
+  // 26.10. Only a masque proxy may use it, and it may use nothing else.
   'masque',
+  // 26.10. A cloud drive as the carrier; no editor draws it, a config's own is kept.
+  'xdrive',
 ]);
 
 // --- Transport Security ---

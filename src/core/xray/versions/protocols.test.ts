@@ -12,9 +12,11 @@ const CANDIDATES = ['vless', 'socks', 'masque'] as const;
 
 describe('protocolsFor', () => {
     it('leaves out a protocol the line does not register', () => {
-        // No supported line registers masque (inbound.protocol.masque).
+        // masque is registered from 26.10 only (inbound.protocol.masque).
         for (const line of CORE_VERSIONS) {
-            expect(protocolsFor(line.id, 'inbound', CANDIDATES)).toEqual(['vless', 'socks']);
+            const expected = line.id === '26.10' ? ['vless', 'socks', 'masque'] : ['vless', 'socks'];
+            expect(protocolsFor(line.id, 'inbound', CANDIDATES)).toEqual(expected);
+            expect(protocolsFor(line.id, 'outbound', CANDIDATES)).toEqual(expected);
         }
     });
 

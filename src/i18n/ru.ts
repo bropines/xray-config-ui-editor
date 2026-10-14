@@ -81,8 +81,6 @@ export const ru: Record<string, string> = {
         'И задайте короткий срок жизни. На панели, которая ещё не умеет ограниченные токены, любой токен может всё — там срок жизни остаётся единственным ограничением.',
     'Hysteria': 'Hysteria',
     'QUIC-based, with its own congestion control': 'На QUIC, со своим контролем перегрузки',
-    'CONNECT-IP over HTTP/3 — only the masque outbound may use it':
-        'CONNECT-IP поверх HTTP/3 — доступен только outbound masque',
     'Removed from Xray — use {replacement}': 'Удалён из Xray — используйте {replacement}',
 
     // ── Core versions ──
@@ -970,6 +968,359 @@ export const ru: Record<string, string> = {
     '{what} lists "{value}", which is not a network written as address/prefix — the inbound will not start.':
         'В {what} указано «{value}», а это не сеть в виде адрес/префикс — inbound не запустится.',
     'Write a single address as {example}.': 'Один адрес записывается как {example}.',
+    'Automatic': 'Автоматически',
+    'or an interface name, e.g. eth0': 'или имя интерфейса, например eth0',
+    'Not set: Xray does not bind its own connections to an interface.':
+        'Не задано: Xray не привязывает свои соединения к интерфейсу.',
+    'Off: Xray\'s own connections are not bound to an interface, so they follow the system routes.':
+        'Выключено: собственные соединения Xray не привязаны к интерфейсу и идут по системным маршрутам.',
+    'Not set: Xray uses "auto", because autoSystemRoutingTable lists routes.':
+        'Не задано: Xray берёт «auto», потому что в autoSystemRoutingTable перечислены маршруты.',
+    '"auto": Xray chooses the interface for its own connections itself, and never the TUN.':
+        '«auto»: Xray сам выбирает интерфейс для своих соединений — и никогда не TUN.',
+    'Pinned: Xray binds its own connections to the interface {name}.':
+        'Закреплено: Xray привязывает свои соединения к интерфейсу {name}.',
+    '{name} holds {value}, and Xray reads text here — it cannot read the config until this is replaced or removed.':
+        'В {name} записано {value}, а Xray ждёт здесь текст — он не прочитает конфиг, пока это не заменить или не убрать.',
+    'Xray {tag} matches 2022 method names exactly, in lower case: write {name}.':
+        'Xray {tag} сравнивает имена методов 2022 точно, в нижнем регистре: напишите {name}.',
+    'A 2022 key is {need} random bytes in base64: openssl rand -base64 {need} writes one.':
+        'Ключ 2022 — это {need} случайных байт в base64: его выдаёт openssl rand -base64 {need}.',
+    '{what} is empty, and Xray {tag} cannot run a 2022 method without its key — the config will not load.':
+        '{what} не задан, а без ключа Xray {tag} не может работать с методом 2022 — конфиг не загрузится.',
+    '{what} is not base64. Xray {tag} decodes a 2022 key from base64 and refuses the config when it cannot.':
+        '{what} — не base64. Xray {tag} раскодирует ключ 2022 из base64 и отвергает конфиг, если не может.',
+    '{what} decodes to {bytes} bytes, and {method} needs a key of at least {need} — Xray {tag} refuses the config.':
+        '{what} раскодируется в {bytes} байт, а {method} нужен ключ не короче {need} — Xray {tag} отвергает конфиг.',
+    '{what} is {bytes} bytes, and {method} takes a key of exactly {need} — Xray {tag} refuses the config.':
+        '{what} — {bytes} байт, а {method} принимает ключ ровно из {need} — Xray {tag} отвергает конфиг.',
+    '{what} is {shown}: with users listed, Xray {tag} serves only the AES 2022 methods — the config will not load.':
+        '{what} — {shown}: при списке пользователей Xray {tag} обслуживает только AES-методы 2022 — конфиг не загрузится.',
+    'Use 2022-blake3-aes-128-gcm or 2022-blake3-aes-256-gcm, or list no users to serve one key.':
+        'Используйте 2022-blake3-aes-128-gcm или 2022-blake3-aes-256-gcm либо уберите список пользователей и обслуживайте один ключ.',
+    '{what} is {shown}. With a 2022 method a user is told apart by its key alone, and Xray {tag} refuses a method on it — the config will not load.':
+        '{what} — {shown}. С методом 2022 пользователя отличают только по ключу, и метод у пользователя Xray {tag} отвергает — конфиг не загрузится.',
+    'Remove the method from this user.': 'Уберите метод у этого пользователя.',
+    '{what} is missing. Once the first user has an address this inbound is a relay, and Xray {tag} wants an address on every user.':
+        '{what} не задан. Раз у первого пользователя есть адрес, этот inbound — ретранслятор, и Xray {tag} требует адрес у каждого пользователя.',
+    '{what} is empty, and Xray {tag} refuses a Shadowsocks account without a password — the config will not load.':
+        '{what} не задан, а учётную запись Shadowsocks без пароля Xray {tag} отвергает — конфиг не загрузится.',
+    '{what} is {shown}, which Xray {tag} does not know as a Shadowsocks cipher — the config will not load.':
+        '{what} — {shown}, такого шифра Shadowsocks Xray {tag} не знает — конфиг не загрузится.',
+    '{what} is {shown}, which is not an AEAD cipher — Xray {tag} refuses a user without one and the config will not load.':
+        '{what} — {shown}, а это не AEAD-шифр; пользователя без такого шифра Xray {tag} отвергает, и конфиг не загрузится.',
+    'The relay WARP accounts are registered through. Leave it empty for the one built into the editor; to use your own, deploy workers/warp from the repository and enter its address and key.':
+        'Ретранслятор, через который регистрируются аккаунты WARP. Оставьте пустым, чтобы использовать встроенный в редактор; для своего задеплойте workers/warp из репозитория и укажите его адрес и ключ.',
+    'Worker key': 'Ключ воркера',
+    'The access key your worker expects: one of its BUILT_IN_KEYS or its ACCESS_KEYS secret. Sent as X-Xcui-Key.':
+        'Ключ доступа, который ждёт ваш воркер: один из его BUILT_IN_KEYS или секрет ACCESS_KEYS. Передаётся в заголовке X-Xcui-Key.',
+    'The built-in relay uses the key built into the editor; this box counts once a URL of your own is entered.':
+        'Встроенный ретранслятор использует ключ, встроенный в редактор; это поле действует, когда указан ваш собственный URL.',
+    'Your worker\'s key': 'Ключ вашего воркера',
+    'Built in': 'Встроенный',
+    'Hide': 'Скрыть',
+    'Show': 'Показать',
+    'Checking…': 'Проверка…',
+    'Check the relay': 'Проверить воркер',
+    'The relay answers and takes the key.': 'Воркер отвечает и принимает ключ.',
+    'Needs Xray 26.10 or newer': 'Нужен Xray 26.10 или новее',
+    'Registers a new Cloudflare WARP device and enrols a key for MASQUE on it. The outbound reaches Cloudflare over HTTP/3 — QUIC on UDP 443, like the official app\'s MASQUE mode — instead of WireGuard. The key is made in this browser and never sent anywhere.':
+        'Регистрирует новое устройство Cloudflare WARP и привязывает к нему ключ для MASQUE. Outbound подключается к Cloudflare по HTTP/3 — QUIC на UDP 443, как официальное приложение в режиме MASQUE, — а не по WireGuard. Ключ создаётся в этом браузере и никуда не отправляется.',
+    'MASQUE needs Xray 26.10 or newer, which connects to WARP over it by itself; the editor targets {tag}. Pick the newer line in Settings → General to use it.':
+        'Для MASQUE нужен Xray 26.10 или новее — он сам подключается к WARP по этому протоколу; редактор сейчас настроен на {tag}. Чтобы воспользоваться, выберите более новую линию в Настройки → Общие.',
+    'Every machine that runs this config needs Xray 26.10 or newer: older cores either have no masque or cannot speak Cloudflare\'s version of it.':
+        'На каждой машине, где работает этот конфиг, нужен Xray 26.10 или новее: в более старых ядрах либо нет masque, либо они не понимают вариант Cloudflare.',
+    'There is no allowed-IPs list here. Keep local networks off the tunnel with a routing rule that sends them to direct.':
+        'Списка allowedIPs здесь нет. Чтобы локальные сети не шли в туннель, отправьте их в direct правилом маршрутизации.',
+    'Where UDP is blocked, set the outbound\'s TLS ALPN to h2 to use HTTP/2 over TCP instead.':
+        'Если UDP заблокирован, поставьте в TLS этого outbound ALPN h2 — тогда пойдёт HTTP/2 поверх TCP.',
+    'The WARP relay refused the access key. Check the worker key in Settings.':
+        'Воркер WARP не принял ключ доступа. Проверьте ключ воркера в настройках.',
+    'The WARP relay does not serve this site. A self-hosted editor needs its address in the relay\'s ALLOWED_ORIGINS.':
+        'Воркер WARP не обслуживает этот сайт. Для редактора на своём хостинге добавьте его адрес в ALLOWED_ORIGINS воркера.',
+    'Cloudflare is limiting registrations right now. Wait a minute and try again.':
+        'Cloudflare сейчас ограничивает регистрации. Подождите минуту и попробуйте снова.',
+    'That URL does not answer as a WARP relay. Check the worker URL in Settings.':
+        'По этому адресу не отвечает воркер WARP. Проверьте URL воркера в настройках.',
+    'The WARP relay could not be reached: {message}': 'Не удалось связаться с воркером WARP: {message}',
+    'WARP registration failed: {message}': 'Регистрация WARP не удалась: {message}',
+    'WARP over MASQUE added as {tag}': 'WARP через MASQUE добавлен как {tag}',
+    'WARP did not register': 'WARP не зарегистрировался',
+    'Press Generate WARP in the WireGuard card: it registers a device with Cloudflare and fills in the key, the peer\'s public key and the addresses.':
+        'Нажмите Generate WARP в карточке WireGuard: она зарегистрирует устройство в Cloudflare и заполнит ключ, публичный ключ пира и адреса.',
+    '{what} is empty. Every supported Xray refuses a WireGuard outbound without its secret key — the config will not load.':
+        '{what} не задан. Любой поддерживаемый Xray отвергает outbound WireGuard без секретного ключа — конфиг не загрузится.',
+    'Paste the private key this client was given; the matching public key is what the server lists for its peer.':
+        'Вставьте приватный ключ, выданный этому клиенту; парный ему публичный ключ сервер указывает для своего пира.',
+    '{what} decodes to {bytes} bytes and a WireGuard key is 32, so the tunnel cannot come up and every connection through this outbound fails.':
+        '{what} раскодируется в {bytes} байт, а ключ WireGuard — это 32, поэтому туннель не поднимется и все соединения через этот outbound будут падать.',
+    '{what} lists "{value}", which is not an IP address — the outbound will not start.':
+        'В {what} указано «{value}», а это не IP-адрес — outbound не запустится.',
+    'Write it as {example}.': 'Запишите как {example}.',
+    'Three numbers from 0 to 255, such as {example} — or remove it.':
+        'Три числа от 0 до 255, например {example}, — или уберите.',
+    '{what} lists "{value}", which is not an IP address. Xray {tag} reads every entry as one and stops the core from starting on anything else.':
+        'В {what} указано «{value}», а это не IP-адрес. Xray {tag} читает каждую запись как адрес и на чём-либо другом не даёт ядру запуститься.',
+    'Use an IP address, for example {example}.': 'Укажите IP-адрес, например {example}.',
+    '{what} has no peer. A WireGuard outbound has nothing to send through without one: Xray 26.7 and later refuse the config, and 26.3 starts an outbound that fails every connection.':
+        'В {what} нет пира. Без него outbound WireGuard некуда отправлять трафик: Xray 26.7 и новее отвергают конфиг, а 26.3 запускает outbound, на котором падает каждое соединение.',
+    '{what} has no peer. Xray {tag} refuses a WireGuard outbound without one — the config will not load.':
+        'В {what} нет пира. Outbound WireGuard без пира Xray {tag} отвергает — конфиг не загрузится.',
+    '{what} has no peer. Xray {tag} starts the outbound, but it has nothing to send through, so every connection fails.':
+        'В {what} нет пира. Xray {tag} запускает outbound, но отправлять трафик некуда, поэтому падает каждое соединение.',
+    'Add the peer your provider or server gave you: its public key and its endpoint.':
+        'Добавьте пир, который выдал провайдер или сервер: его публичный ключ и endpoint.',
+    '{what} is empty. A peer is known by its public key, so this one can never connect.':
+        '{what} не задан. Пира узнают по публичному ключу, поэтому этот никогда не подключится.',
+    '{what} is empty. A peer is known by its public key, and Xray {tag} refuses the outbound without one — the config will not load.':
+        '{what} не задан. Пира узнают по публичному ключу, и outbound без него Xray {tag} отвергает — конфиг не загрузится.',
+    '{what} is empty. A peer is known by its public key; Xray {tag} leaves it out of the device request, so this peer never connects.':
+        '{what} не задан. Пира узнают по публичному ключу; Xray {tag} не передаёт его устройству, поэтому этот пир никогда не подключится.',
+    'Paste the server\'s public key — the one that goes with its secret key.':
+        'Вставьте публичный ключ сервера — тот, что парный к его секретному ключу.',
+    '{what} is empty. A client has to be told where its peer is: Xray 26.7 and later refuse the config, and 26.3 never connects.':
+        '{what} не задан. Клиенту нужно знать, где его пир: Xray 26.7 и новее отвергают конфиг, а 26.3 так и не подключается.',
+    '{what} is empty. Xray {tag} refuses a WireGuard peer without an endpoint — the config will not load.':
+        '{what} не задан. Пир WireGuard без endpoint Xray {tag} отвергает — конфиг не загрузится.',
+    '{what} is empty. Xray {tag} leaves it out of the device request, so a client has nowhere to send its handshake and never connects.':
+        '{what} не задан. Xray {tag} не передаёт его устройству, поэтому клиенту некуда отправить рукопожатие и он не подключится.',
+    'Write it as host:port, for example {example}.': 'Запишите как host:port, например {example}.',
+    '{what} is "{value}", which is not host:port, so Xray cannot connect to it and every connection through this outbound fails.':
+        '{what} — «{value}», а это не host:port, поэтому Xray не сможет к нему подключиться и все соединения через этот outbound будут падать.',
+    '{what} lists "{value}", which is not a network written as address/prefix — the tunnel cannot come up and every connection through this outbound fails.':
+        'В {what} указано «{value}», а это не сеть в виде адрес/префикс — туннель не поднимется и все соединения через этот outbound будут падать.',
+    '{what} is {value}, but Xray reads an object there. It cannot decode the rule, so the config will not load.':
+        '{what} — {value}, а Xray ждёт там объект. Правило не раскодируется, и конфиг не загрузится.',
+    'Write it as an object: {example}.': 'Запишите объектом: {example}.',
+    'Replace it with an object that has a url, or remove it.': 'Замените объектом с url или уберите.',
+    '{what} is {value}, but Xray reads a string there. It cannot decode the rule, so the config will not load.':
+        '{what} — {value}, а Xray ждёт там строку. Правило не раскодируется, и конфиг не загрузится.',
+    'This rule\'s webhook has no url, so Xray builds no notification for it and nothing is sent.':
+        'У webhook этого правила нет url, поэтому Xray не создаёт уведомление и ничего не отправляется.',
+    'Set the url to post to, or remove the webhook.': 'Укажите url, на который отправлять, или уберите webhook.',
+    '{what} is {value}, but Xray reads a whole number of seconds, zero or more. It cannot decode the rule, so the config will not load.':
+        '{what} — {value}, а Xray ждёт целое число секунд, ноль или больше. Правило не раскодируется, и конфиг не загрузится.',
+    '{what} is {value}, but Xray reads an object of header names to strings there. It cannot decode the rule, so the config will not load.':
+        '{what} — {value}, а Xray ждёт там объект «имя заголовка → строка». Правило не раскодируется, и конфиг не загрузится.',
+    '{what} gives "{name}" the value {value}, and header values are strings. Xray cannot decode the rule, so the config will not load.':
+        'В {what} заголовку «{name}» задано {value}, а значения заголовков — строки. Xray не раскодирует правило, и конфиг не загрузится.',
+    '{what} is {value}, but Xray reads an object of header names to strings there. It cannot decode this outbound, so the config will not load.':
+        '{what} — {value}, а Xray ждёт там объект «имя заголовка → строка». Этот outbound не раскодируется, и конфиг не загрузится.',
+    'Write it as an object, for example {example}.': 'Запишите объектом, например {example}.',
+    '{what} gives "{name}" the value {value}, and header values are strings. Xray cannot decode this outbound, so the config will not load.':
+        'В {what} заголовку «{name}» задано {value}, а значения заголовков — строки. Xray не раскодирует этот outbound, и конфиг не загрузится.',
+    'Put the value in quotes.': 'Возьмите значение в кавычки.',
+    'Extra headers sent with the request that opens the tunnel through this proxy, after the login. A value may use {source} and {target}, which Xray fills in for each connection.':
+        'Дополнительные заголовки запроса, который открывает туннель через этот прокси, — после логина. В значении можно использовать {source} и {target}: Xray подставит их для каждого соединения.',
+    '{what} holds a value that is not a byte (a whole number from 0 to 255); Xray cannot decode it and the config will not load.':
+        'В {what} есть значение, которое не является байтом (целым числом от 0 до 255); Xray не раскодирует его, и конфиг не загрузится.',
+    'it is empty': 'он пустой',
+    'it is neither a PEM block nor standard base64': 'это не блок PEM и не стандартный base64',
+    'it is neither a PKCS #8 nor a SEC 1 private key': 'это не приватный ключ ни в PKCS #8, ни в SEC 1',
+    'it is not an ECDSA key on P-256': 'это не ключ ECDSA на P-256',
+    'it is not a PKIX public key': 'это не публичный ключ PKIX',
+    'WARP\'s own keys are an ECDSA P-256 pair: the private key as PEM or base64 (PKCS #8 or SEC 1), the public key as PEM or base64 (PKIX).':
+        'Ключи WARP — пара ECDSA P-256: приватный в PEM или base64 (PKCS #8 или SEC 1), публичный в PEM или base64 (PKIX).',
+    '{what} holds {value}, but Xray {tag} reads {expected} there — it cannot read the config until that is fixed.':
+        'В {what} записано {value}, а Xray {tag} ждёт там {expected} — он не прочитает конфиг, пока это не исправить.',
+    'text': 'текст',
+    '{what} cannot be used together with warp — Xray {tag} refuses the config when both are set.':
+        '{what} нельзя использовать вместе с warp — если заданы оба, Xray {tag} отвергает конфиг.',
+    'WARP signs in with its key. Remove user and pass, or remove warp.':
+        'WARP входит по своему ключу. Уберите user и pass либо уберите warp.',
+    '{what} is not a usable key: {reason}. Xray {tag} refuses the config.':
+        '{what} — непригодный ключ: {reason}. Xray {tag} отвергает конфиг.',
+    '{what} is "{value}": it has to start with a slash and may use only the variables target and ipproto, in braces — Xray {tag} refuses the config.':
+        '{what} — «{value}»: путь должен начинаться с косой черты и может содержать только переменные target и ipproto в фигурных скобках — Xray {tag} отвергает конфиг.',
+    'The default is /.well-known/masque/ip/*/*/ ; leave the path empty to use it.':
+        'По умолчанию — /.well-known/masque/ip/*/*/ ; чтобы его использовать, оставьте путь пустым.',
+    '{what} is "{value}", which is not a host name with an optional port — Xray {tag} refuses the config.':
+        '{what} — «{value}», а это не имя хоста с необязательным портом — Xray {tag} отвергает конфиг.',
+    'Write only the name, like example.com or example.com:8443 — no scheme and no path.':
+        'Пишите только имя, например example.com или example.com:8443, — без схемы и пути.',
+    'an object of text values': 'объект с текстовыми значениями',
+    '{what} is not a valid HTTP header — Xray {tag} refuses the config.':
+        '{what} — недопустимый HTTP-заголовок — Xray {tag} отвергает конфиг.',
+    '{what} cannot be set: Xray {tag} manages that header itself and refuses the config.':
+        '{what} задавать нельзя: этим заголовком Xray {tag} управляет сам и отвергает конфиг.',
+    'Use the host field for the Host header.': 'Для заголовка Host используйте поле host.',
+    '{what} cannot be set while user or pass is: they build the Authorization header, and Xray {tag} refuses the config when both are there.':
+        '{what} нельзя задавать вместе с user или pass: из них собирается заголовок Authorization, и если есть и то и другое, Xray {tag} отвергает конфиг.',
+    '{what} cannot contain a colon — it separates the user from the password in the sign-in, and Xray {tag} refuses the config.':
+        'В {what} не может быть двоеточия — оно отделяет пользователя от пароля при входе, и Xray {tag} отвергает конфиг.',
+    '{what} is empty — with warp set, Xray {tag} needs the address WARP gave this device, and refuses the config without one.':
+        '{what} не задан — при заданном warp Xray {tag} нужен адрес, выданный этому устройству WARP, и без него конфиг отвергается.',
+    'a list of text': 'список строк',
+    '{what} lists "{value}", which is not an IP address or prefix — Xray {tag} refuses the config.':
+        'В {what} указано «{value}», а это не IP-адрес и не префикс — Xray {tag} отвергает конфиг.',
+    '{what} takes at most one IPv4 and one IPv6 address — Xray {tag} refuses a second of either.':
+        '{what} принимает не больше одного адреса IPv4 и одного IPv6 — второй любого из них Xray {tag} отвергает.',
+    'A masque outbound runs only over the masque transport: Xray {tag} refuses to start it on {network}.':
+        'Outbound masque работает только на транспорте masque: на {network} Xray {tag} его не запускает.',
+    'A masque inbound runs only over the masque transport: Xray {tag} refuses to start it on {network}.':
+        'Inbound masque работает только на транспорте masque: на {network} Xray {tag} его не запускает.',
+    'Set the network to masque.': 'Поставьте сеть masque.',
+    'A masque outbound needs security tls: Xray {tag} refuses to start it without.':
+        'Outbound masque требует security tls: без него Xray {tag} его не запускает.',
+    'A masque inbound needs security tls: Xray {tag} refuses to start it without.':
+        'Inbound masque требует security tls: без него Xray {tag} его не запускает.',
+    'Set security to tls.': 'Поставьте security tls.',
+    '{what} is not set — Xray {tag} refuses a masque outbound without a port.':
+        '{what} не задан — outbound masque без порта Xray {tag} отвергает.',
+    'a whole number from 1 to 65535': 'целое число от 1 до 65535',
+    '{what} is not set — Xray {tag} refuses a masque outbound without a server address.':
+        '{what} не задан — outbound masque без адреса сервера Xray {tag} отвергает.',
+    '{what} lists "{value}", which is not an IP address — Xray {tag} refuses the config. Host names are not accepted there.':
+        'В {what} указано «{value}», а это не IP-адрес — Xray {tag} отвергает конфиг. Имена хостов там не принимаются.',
+    'A masque outbound cannot use Mux — Xray {tag} refuses the config.':
+        'Outbound masque не может использовать Mux — Xray {tag} отвергает конфиг.',
+    'Turn Mux off.': 'Выключите Mux.',
+    '{what} is empty — every masque user needs an email, and Xray {tag} refuses the config without one.':
+        '{what} не задан — каждому пользователю masque нужен email, без него Xray {tag} отвергает конфиг.',
+    '{what} "{value}" contains a colon — Xray {tag} refuses it, because the colon separates the user from the password in the sign-in.':
+        '{what} «{value}» содержит двоеточие — Xray {tag} его отвергает: двоеточие отделяет пользователя от пароля при входе.',
+    '{what} is empty — Xray {tag} refuses a masque user without a password.':
+        '{what} не задан — пользователя masque без пароля Xray {tag} отвергает.',
+    '{what} "{value}" is used twice (case does not matter) — Xray {tag} refuses a duplicate user.':
+        '{what} «{value}» встречается дважды (регистр не важен) — повторяющегося пользователя Xray {tag} отвергает.',
+    '{what} is not set — a masque inbound hands out addresses from it, and Xray {tag} refuses the config without at least one prefix.':
+        '{what} не задан — из него inbound masque раздаёт адреса, и без хотя бы одного префикса Xray {tag} отвергает конфиг.',
+    'Add a prefix like 10.250.0.1/24: the server takes that address and clients get the rest.':
+        'Добавьте префикс вроде 10.250.0.1/24: сервер берёт этот адрес, клиенты получают остальные.',
+    '{what} lists "{value}", which is not an address prefix like 10.250.0.1/24 — Xray {tag} refuses the config.':
+        'В {what} указано «{value}», а это не префикс адреса вида 10.250.0.1/24 — Xray {tag} отвергает конфиг.',
+    '{what} takes at most one IPv4 and one IPv6 prefix — Xray {tag} refuses a second of either.':
+        '{what} принимает не больше одного префикса IPv4 и одного IPv6 — второй любого из них Xray {tag} отвергает.',
+    '{what} lists "{value}", which is the network\'s own address — the server takes the address it is given for itself, and Xray {tag} will not start with one that is not a host address.':
+        'В {what} указано «{value}» — это адрес самой сети. Сервер забирает указанный адрес себе, а с адресом, который не является адресом хоста, Xray {tag} не запустится.',
+    'Write the server\'s address inside the network, like 10.250.0.1/24.':
+        'Укажите адрес сервера внутри сети, например 10.250.0.1/24.',
+    '{what} lists "{value}", which leaves no address to give a client — Xray {tag} will not start.':
+        'В {what} указано «{value}» — клиентам не остаётся ни одного адреса, Xray {tag} не запустится.',
+    'Use a larger network, like a /24.': 'Возьмите сеть побольше, например /24.',
+    'a whole number': 'целое число',
+    '{what} is {value}; Xray {tag} takes 0 (the default) or 1280 to 65535.':
+        '{what} — {value}; Xray {tag} принимает 0 (по умолчанию) или от 1280 до 65535.',
+    'A masque inbound listens on an IP address, not on "{value}" — Xray {tag} fails to start it.':
+        'Inbound masque слушает IP-адрес, а не «{value}» — Xray {tag} его не запустит.',
+    'Leave listen empty to use every address.': 'Оставьте listen пустым, чтобы слушать все адреса.',
+    'The masque transport can only be used by the masque outbound — Xray {tag} refuses the config.':
+        'Транспорт masque может использовать только outbound masque — Xray {tag} отвергает конфиг.',
+    'The masque transport can only be used by the masque inbound — Xray {tag} refuses the config.':
+        'Транспорт masque может использовать только inbound masque — Xray {tag} отвергает конфиг.',
+    'Pick another network, or change the protocol to masque.':
+        'Выберите другую сеть или смените протокол на masque.',
+    '{type} has to be the last UDP mask on Xray {tag}. Anywhere else the core stops with "{error}" when it sets the connection up.':
+        'На Xray {tag} {type} должен быть последней UDP-маской. В любом другом месте ядро останавливается с «{error}» при установке соединения.',
+    'xdns on Xray {tag} dials its own resolvers and never uses the socket, so a client skips every UDP mask listed after it while a server still applies them. Put xdns last in the list.':
+        'На Xray {tag} xdns сам обращается к своим резолверам и не использует сокет, поэтому клиент пропускает все UDP-маски после него, а сервер их всё равно применяет. Поставьте xdns в конец списка.',
+    'With no ips, xicmp on Xray {tag} pings the address this outbound dials, and refuses to dial at all when that is a domain ("empty ip addresses"). List the server\'s IP addresses in ips.':
+        'Без ips xicmp на Xray {tag} пингует адрес, к которому подключается этот outbound, а если это домен — не подключается вовсе («empty ip addresses»). Перечислите IP-адреса сервера в ips.',
+    'A noise item that sets both packet and rand is refused by Xray {tag} when the config loads. Keep one of them.':
+        'Элемент шума, в котором заданы и packet, и rand, Xray {tag} отвергает при загрузке конфига. Оставьте что-то одно.',
+    'The packet of a noise item of type exp has to be a string such as <b 0xDEADBEEF><r 8><t>; Xray {tag} refuses the config otherwise.':
+        'packet у элемента шума типа exp должен быть строкой вида <b 0xDEADBEEF><r 8><t>; иначе Xray {tag} отвергает конфиг.',
+    'Xray {tag} refuses this noise expression when the config loads: {problem}.':
+        'Это выражение шума Xray {tag} отвергает при загрузке конфига: {problem}.',
+    'xdns {key} on Xray {tag} must be a list of plain strings. Objects, or anything else, make Xray fail to read the config at all.':
+        'На Xray {tag} xdns {key} должен быть списком простых строк. С объектами или чем-либо ещё Xray вообще не прочитает конфиг.',
+    '{field} must be {expected} for Xray {tag}; as written the config does not load.':
+        'Для Xray {tag} {field} должен быть {expected}; в таком виде конфиг не загрузится.',
+    'xdns {key} on Xray {tag} must be a list of objects such as {example}. Plain strings, or anything else, make Xray fail to read the config at all.':
+        'На Xray {tag} xdns {key} должен быть списком объектов вида {example}. С простыми строками или чем-либо ещё Xray вообще не прочитает конфиг.',
+    'a list of whole numbers': 'список целых чисел',
+    '{field} is {value}, outside {range}, so Xray {tag} refuses the config at load.':
+        '{field} — {value}, вне диапазона {range}, поэтому Xray {tag} отвергает конфиг при загрузке.',
+    '"{name}" is not a domain Xray {tag} accepts (it contains ".."), so the config does not load.':
+        '«{name}» — не домен, который принимает Xray {tag} (в нём есть «..»), поэтому конфиг не загрузится.',
+    '"{name}" does not fit xdns\'s limits (lenLimit {lenLimit}, labelLimit {labelLimit}): too little room is left for data, so Xray {tag} refuses the config at load.':
+        '«{name}» не укладывается в ограничения xdns (lenLimit {lenLimit}, labelLimit {labelLimit}): для данных остаётся слишком мало места, поэтому Xray {tag} отвергает конфиг при загрузке.',
+    'Record type {kind} is not one xdns can use (1 A, 5 CNAME, 16 TXT, 28 AAAA), so Xray {tag} stops when it builds the mask.':
+        'Тип записи {kind} xdns использовать не может (1 A, 5 CNAME, 16 TXT, 28 AAAA), поэтому Xray {tag} останавливается при сборке маски.',
+    'Resolver address "{value}" uses a scheme Xray {tag} refuses: only udp:// and tcp:// load ("invalid protocol").':
+        'Адрес резолвера «{value}» использует схему, которую Xray {tag} отвергает: загружаются только udp:// и tcp:// («invalid protocol»).',
+    'An xdns client builds its queries from its domains, and this one has none: every connection fails ("empty domains").':
+        'Клиент xdns строит запросы из своих доменов, а у этого их нет: каждое соединение падает («empty domains»).',
+    'udphop\'s interval starts at {from} seconds, and Xray {tag} refuses a start under 5 when it loads the config ("interval must be at least 5"). Leave it empty for the default of 30.':
+        'Интервал udphop начинается с {from} с, а начало меньше 5 Xray {tag} отвергает при загрузке конфига («interval must be at least 5»). Оставьте пустым для значения по умолчанию 30.',
+    'Read by the hysteria, MASQUE and XHTTP (HTTP/3) transports only. An empty field is left out of the config, so the core uses its default.':
+        'Читают только транспорты hysteria, MASQUE и XHTTP (HTTP/3). Пустое поле в конфиг не пишется, и ядро берёт значение по умолчанию.',
+    'Domains the tunnel runs under, as a JSON list of objects: names, and optionally lenLimit, labelLimit, types (1 A, 5 CNAME, 16 TXT, 28 AAAA) and edns0. Both the server and the client read it.':
+        'Домены, под которыми работает туннель, — JSON-список объектов: names и по желанию lenLimit, labelLimit, types (1 A, 5 CNAME, 16 TXT, 28 AAAA) и edns0. Читают и сервер, и клиент.',
+    'Resolvers the client queries through, as a JSON list of objects holding addrs: 1.1.1.1:53, or tcp://8.8.8.8. A bare address is UDP on port 53.':
+        'Резолверы, через которые клиент делает запросы, — JSON-список объектов с addrs: 1.1.1.1:53 или tcp://8.8.8.8. Голый адрес — это UDP на порту 53.',
+    'Extra empty polling queries sent after each packet and each poll, 0 to 3.':
+        'Дополнительные пустые опрашивающие запросы после каждого пакета и каждого опроса, от 0 до 3.',
+    'Seconds between hops: 10 or 5-30, at least 5. Empty means 30.':
+        'Секунды между прыжками: 10 или 5-30, не меньше 5. Пусто — 30.',
+    'The generator rebuilds the whole list from hex packets, so it stays off while a packet is an exp expression.':
+        'Генератор пересобирает весь список из hex-пакетов, поэтому он недоступен, пока какой-то пакет — выражение exp.',
+    'a list of strings': 'список строк',
+    'a list of numbers or ranges': 'список чисел или диапазонов',
+    'a list of objects': 'список объектов',
+    'a list of noise items': 'список элементов шума',
+    'a list': 'список',
+    'an object': 'объект',
+    '{field} holds {value}, but Xray {tag} reads {expected} here — it cannot read the config until this is replaced or removed.':
+        'В {field} записано {value}, а Xray {tag} ждёт здесь {expected} — он не прочитает конфиг, пока это не заменить или не убрать.',
+    'MASQUE Settings': 'Настройки MASQUE',
+    'MASQUE carries IP packets inside an HTTP request. The TLS ALPN picks the carrier: h2 on its own runs it over HTTP/2 on TCP, anything else over HTTP/3 on QUIC (a server that lists both listens on both).':
+        'MASQUE передаёт IP-пакеты внутри HTTP-запроса. Носитель выбирает ALPN в TLS: один h2 — HTTP/2 поверх TCP, всё остальное — HTTP/3 поверх QUIC (сервер, у которого указано и то и другое, слушает оба).',
+    'The request path, starting with a slash. target and ipproto can be used as variables, in braces. Empty uses the well-known path, or / for WARP.':
+        'Путь запроса, начиная с косой черты. target и ipproto можно использовать как переменные в фигурных скобках. Пусто — стандартный путь, или / для WARP.',
+    'The authority of the request. Empty uses the TLS server name; with WARP it is cloudflareaccess.com.':
+        'Authority запроса. Пусто — имя сервера из TLS; для WARP это cloudflareaccess.com.',
+    'Sent as Basic credentials in the Authorization header. Cannot be combined with WARP, and cannot contain a colon.':
+        'Передаётся как Basic-учётные данные в заголовке Authorization. Несовместимо с WARP и не может содержать двоеточие.',
+    'Extra request headers, as an object of text values. Host and Capsule-Protocol are set by Xray and refused. User-Agent also takes chrome, firefox, safari, edge, curl or golang as shorthand.':
+        'Дополнительные заголовки запроса — объект с текстовыми значениями. Host и Capsule-Protocol Xray задаёт сам и не принимает. Для User-Agent можно писать сокращения chrome, firefox, safari, edge, curl или golang.',
+    'Connect to Cloudflare WARP': 'Подключаться к Cloudflare WARP',
+    'Signs in to the WARP endpoint with the device\'s own key pair instead of a user name and password. It needs the private key, the public key the endpoint presents, and the address WARP gave this device.':
+        'Вход на узел WARP по собственной паре ключей устройства вместо имени и пароля. Нужны приватный ключ, публичный ключ, который предъявляет узел, и адрес, выданный этому устройству WARP.',
+    'Private key': 'Приватный ключ',
+    'Public key': 'Публичный ключ',
+    'Device addresses': 'Адреса устройства',
+    'What WARP assigned this device: at most one IPv4 and one IPv6 address, bare or as a prefix.':
+        'Что WARP выдал этому устройству: не больше одного адреса IPv4 и одного IPv6, просто адресом или префиксом.',
+    'Registered with WARP: the server, TLS name and WARP keys are filled in.':
+        'Зарегистрировано в WARP: сервер, имя TLS и ключи WARP заполнены.',
+    'MASQUE carries IP packets inside an HTTP request, so on the wire it looks like ordinary web traffic. It uses the masque transport and nothing else, it needs TLS, and it is the one outbound the core refuses to multiplex.':
+        'MASQUE передаёт IP-пакеты внутри HTTP-запроса, поэтому на проводе он выглядит как обычный веб-трафик. Он работает только на транспорте masque, требует TLS и это единственный outbound, который ядро отказывается мультиплексировать.',
+    'Registering again makes a new WARP device with new keys and replaces the ones below.':
+        'Повторная регистрация создаёт новое устройство WARP с новыми ключами и заменяет те, что ниже.',
+    'To use Cloudflare WARP, register a device: it fills in Cloudflare\'s server, the TLS name and the WARP keys. The private key is made in this browser.':
+        'Чтобы использовать Cloudflare WARP, зарегистрируйте устройство: заполнятся сервер Cloudflare, имя TLS и ключи WARP. Приватный ключ создаётся в этом браузере.',
+    'Register a new WARP device': 'Зарегистрировать новое устройство WARP',
+    'Register with WARP': 'Зарегистрировать в WARP',
+    'Clients sign in with an email and a password, and are given an address from the pool below. The server keeps the first address of each prefix for itself. It listens on an IP address (every address when left empty) and needs the masque transport with TLS.':
+        'Клиенты входят по email и паролю и получают адрес из пула ниже. Первый адрес каждого префикса сервер оставляет себе. Он слушает IP-адрес (все адреса, если не задано) и требует транспорт masque с TLS.',
+    'Address pool': 'Пул адресов',
+    'One IPv4 and/or one IPv6 prefix, with the server\'s own address in it, like 10.250.0.1/24. The network address itself, and for IPv4 the broadcast address, cannot be the server\'s.':
+        'Один префикс IPv4 и/или один IPv6 с адресом самого сервера внутри, например 10.250.0.1/24. Адрес самой сети, а для IPv4 и широковещательный адрес, сервер занять не может.',
+    'The tunnel\'s packet size: empty for the default (1280), otherwise 1280 to 65535.':
+        'Размер пакета туннеля: пусто — по умолчанию (1280), иначе от 1280 до 65535.',
+    'Users': 'Пользователи',
+    'A masque proxy runs only on the masque transport — Xray {tag} refuses to start it on anything else.':
+        'Прокси masque работает только на транспорте masque — на любом другом Xray {tag} его не запускает.',
+    'The masque transport can only be used by a masque proxy — Xray {tag} refuses the config otherwise.':
+        'Транспорт masque может использовать только прокси masque — иначе Xray {tag} отвергает конфиг.',
+    'CONNECT-IP over HTTP/3 or HTTP/2 — only a masque proxy may use it':
+        'CONNECT-IP поверх HTTP/3 или HTTP/2 — только для прокси masque',
+    'MASQUE runs only with TLS — Xray {tag} refuses to start it without.':
+        'MASQUE работает только с TLS — без него Xray {tag} его не запускает.',
+    'Points the system\'s DNS at the TUN gateway. On Linux the core refuses the config unless a gateway is set.':
+        'Направляет системный DNS на шлюз TUN. На Linux ядро отвергает конфиг, если шлюз не задан.',
+    'Windows only. "dns" keeps DNS queries on the TUN and "misconfigtun" blocks an IP version no route of which leads there. It needs autoSystemRoutingTable, and "dns" needs dns.':
+        'Только Windows. «dns» удерживает DNS-запросы в TUN, а «misconfigtun» блокирует версию IP, ни один маршрут которой туда не ведёт. Требует autoSystemRoutingTable, а «dns» — ещё и dns.',
+    'Trust the system CA store': 'Доверять системному хранилищу УЦ',
+    'From Xray 26.10 the certificates of a server are checked against a CA bundle built into Xray. Turn this on to use the operating system\'s store instead, which is where a private or corporate CA lives.':
+        'С Xray 26.10 сертификаты сервера проверяются по набору УЦ, встроенному в Xray. Включите, чтобы вместо него использовать хранилище операционной системы — там живут частные и корпоративные УЦ.',
+    'Xray 26.10 dropped this setting; {tag} ignores it, so it does nothing here.':
+        'В Xray 26.10 эту настройку убрали; {tag} её игнорирует, поэтому здесь она ни на что не влияет.',
+    'Previous release': 'Предыдущий релиз',
+    'The xdrive transport carries traffic through a cloud drive. This editor does not draw its settings: the ones in your config are kept as they are, and can be edited in the JSON view.':
+        'Транспорт xdrive передаёт трафик через облачный диск. Этот редактор не рисует его настройки: те, что есть в конфиге, сохраняются как есть, править их можно в режиме JSON.',
+    'WARP Generator': 'Генератор WARP',
     // ── Freedom: fragment, noises and the rest of its settings ──────────────
     'Domain Strategy (legacy key)': 'Стратегия доменов (старый ключ)',
     'TLS Fragmentation': 'Фрагментация TLS',
@@ -1001,8 +1352,6 @@ export const ru: Record<string, string> = {
 
     // ── MASQUE ──────────────────────────────────────────────────────────────
     'MASQUE Server': 'Сервер MASQUE',
-    'MASQUE carries IP packets inside an HTTP/3 request, so on the wire it looks like ordinary QUIC web traffic. It uses the masque transport and nothing else, and it is the one outbound the core refuses to multiplex.':
-        'MASQUE везёт IP-пакеты внутри HTTP/3-запроса, поэтому в сети выглядит как обычный веб-трафик поверх QUIC. Он использует транспорт masque и никакой другой, и это единственный outbound, которому ядро отказывает в mux.',
     'Resolvers reached through the tunnel. IP addresses only — the core parses each one at startup and will not run if a hostname is in the list.':
         'Резолверы, доступные через туннель. Только IP-адреса — ядро разбирает каждый при старте и не запустится, если в списке окажется имя хоста.',
 
@@ -1592,7 +1941,6 @@ export const ru: Record<string, string> = {
         'DNS-серверы, которые резолвятся через сам туннель WireGuard, а не через DNS-модуль Xray; перечисляются через запятую. Нужно, когда сеть пира отдаёт только внутренние имена.',
     'Outbound profile generated successfully': 'Профиль outbound создан',
     'Generation failed': 'Не удалось сгенерировать',
-    'Generate WARP(WG) Outbound': 'Сгенерировать WARP-outbound (WireGuard)',
     'This tool registers a new Cloudflare WARP account and generates a pre-configured WireGuard outbound profile.':
         'Инструмент регистрирует новый аккаунт Cloudflare WARP и собирает готовый outbound-профиль WireGuard.',
     'WARP Configuration Profile': 'Профиль настроек WARP',
@@ -1930,8 +2278,6 @@ export const ru: Record<string, string> = {
     'Core Compatibility & Generators': 'Совместимость с ядром и генераторы',
     'Target Xray-core Version': 'Целевая версия Xray-core',
     'WARP Worker URL': 'URL воркера WARP',
-    'Optional: Your private Cloudflare Worker URL for CORS-safe registration.':
-        'Необязательно: адрес вашего Cloudflare Worker для регистрации без проблем с CORS.',
     'Use Observatory for steady periodic checks, or Burst Observatory for randomised stealth checks. Pick one based on how your balancers are set up.':
         'Observatory делает обычные периодические проверки, Burst Observatory — случайные скрытные. Выбирайте по тому, как устроены ваши балансировщики.',
     'Statistics': 'Статистика',

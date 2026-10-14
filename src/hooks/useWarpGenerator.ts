@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { generateWarpAccount, withWarpAccount, withoutWarpAccount, type WarpAccount } from '../core/generators/warp';
-import { useConfigStore } from '../store/configStore';
-import { useShallow } from 'zustand/react/shallow';
+import { useWarpRelay } from './useWarpRelay';
+import { describeRelayError } from '../core/generators/warp-relay';
+import { buildWarpMasqueOutbound, generateWarpMasqueAccount } from '../core/generators/warp-masque';
+import { useCoreVersion } from './useCoreVersion';
 import { getPresets } from '../core/presets';
 import { t } from '../i18n';
 
@@ -18,14 +20,49 @@ import { t } from '../i18n';
  * applies instead. The component is left as pure JSX composition over the
  * state and handler returned below.
  */
+export type WarpTunnel = 'wireguard' | 'masque';
+
+/**
+ * Where the MASQUE-to-WARP block lives, as the version table names it. Only a
+ * line whose masque transport has `warp` can reach Cloudflare over MASQUE
+ * (26.10 on; v26.10.10:infra/conf/transport_method.go:798-840).
+ */
+export const MASQUE_WARP_PATH = 'streamSettings.masqueSettings.warp';
+
 export function useWarpGenerator(onGenerate: (outbound: any) => void, onClose: () => void) {
-    const { warpWorkerUrl } = useConfigStore(useShallow(state => ({ warpWorkerUrl: state.warpWorkerUrl })));
+    const relay = useWarpRelay();
+    const { offersAt, tag: coreTag } = useCoreVersion();
+    const masqueOffered = offersAt('outbound', MASQUE_WARP_PATH, 'masque');
     const [loading, setLoading] = useState(false);
+    const [tunnel, setTunnel] = useState<WarpTunnel>('wireguard');
     const [presetType, setPresetType] = useState('standard');
     const [excludeLocal, setExcludeLocal] = useState(true);
 
+    /**
+     * MASQUE has no keyless fallback: a masque outbound whose warp block has
+     * no key is a config the core refuses, so a failed registration adds
+     * nothing and says why.
+     */
+    const generateMasque = async () => {
+        try {
+            const account = await generateWarpMasqueAccount(relay);
+            const outbound = buildWarpMasqueOutbound(account, `warp-masque-${Math.floor(Math.random() * 1000)}`);
+            onGenerate(outbound);
+            toast.success(t("WARP over MASQUE added as {tag}", { tag: outbound.tag }));
+            onClose();
+        } catch (e) {
+            console.error(e);
+            toast.error(t("WARP did not register"), { description: describeRelayError(e), duration: 12000 });
+        }
+    };
+
     const handleGenerate = async () => {
         setLoading(true);
+        if (tunnel === 'masque') {
+            await generateMasque();
+            setLoading(false);
+            return;
+        }
         try {
             // 1. Register a WARP account. A failure does not stop the
             //    profile: it is built without keys, and the outbound's own
@@ -33,10 +70,10 @@ export function useWarpGenerator(onGenerate: (outbound: any) => void, onClose: (
             let warp: WarpAccount | null = null;
             let failure = '';
             try {
-                warp = await generateWarpAccount(warpWorkerUrl);
+                warp = await generateWarpAccount(relay);
             } catch (e: any) {
                 console.error(e);
-                failure = e?.message || t("Network error or proxy timeout.");
+                failure = describeRelayError(e);
             }
 
             // 2. Fetch templates
@@ -127,6 +164,10 @@ export function useWarpGenerator(onGenerate: (outbound: any) => void, onClose: (
 
     return {
         loading,
+        tunnel,
+        setTunnel,
+        masqueOffered,
+        coreTag,
         presetType,
         setPresetType,
         excludeLocal,

@@ -130,6 +130,13 @@ export const TLS_FIELDS: Record<string, FieldSpec> = {
             + 'certificates the peer presents (v26.7.28:transport/internet/tls/config.go:298-311).',
     },
     disableSystemRoot: { direction: 'client', advanced: true, note: 'Trust store is a client concern.' },
+    useSystemCA: {
+        direction: 'client',
+        advanced: true,
+        note: 'Read where the trust store is built for verifying a peer '
+            + '(v26.10.10:transport/internet/tls/config.go:369-390). 26.10 only: the line '
+            + 'drops the system store as its default, so this brings it back.',
+    },
     echConfigList: { direction: 'client', advanced: true },
     echForceQuery: {
         direction: 'client',

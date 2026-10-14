@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { runFullDiagnostics } from './index';
 import { fragmentProblems, noiseProblem } from '../xray/freedom-fragment';
+import { generateWireguardKeyPair } from '../generators/crypto';
 
 /**
  * Two ways an outbound stops a config loading, or stops working once it has,
@@ -15,10 +16,21 @@ const critical = (config: any, snippets: any[] = []) =>
 
 const base = (outbounds: any[]) => ({ inbounds: [], outbounds, routing: { rules: [] } });
 
+/**
+ * A WireGuard outbound the core would run, so that what is being asserted
+ * about a chain is not drowned by "this one has no key" (which is reported,
+ * see core/xray/wireguard-outbound.ts).
+ */
+const wireguardSettings = () => ({
+    secretKey: generateWireguardKeyPair().secretKey,
+    address: ['10.0.0.2/32'],
+    peers: [{ publicKey: generateWireguardKeyPair().publicKey, endpoint: 'vpn.example.com:51820' }],
+});
+
 describe('chains', () => {
     it('says nothing about a chain that ends at a real outbound', () => {
         expect(critical(base([
-            { tag: 'wg', protocol: 'wireguard', streamSettings: { sockopt: { dialerProxy: 'obfs' } } },
+            { tag: 'wg', protocol: 'wireguard', settings: wireguardSettings(), streamSettings: { sockopt: { dialerProxy: 'obfs' } } },
             { tag: 'obfs', protocol: 'freedom' },
         ]))).toEqual([]);
     });

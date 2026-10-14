@@ -95,3 +95,7 @@ cobase*
 !public/*.ico
 xray_docs/
 docs_temp/
+
+# --- Cloudflare Workers (workers/*) ---
+.wrangler/
+.dev.vars

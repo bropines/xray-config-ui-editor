@@ -24,7 +24,12 @@ const ROOT = join(import.meta.dir, '..', '..');
 const FINDINGS = join(import.meta.dir, 'findings');
 const OUT = join(ROOT, 'src', 'core', 'xray', 'versions', 'features.data.ts');
 
-const TAG_TO_ID: Record<string, string> = { 'v26.3.27': '26.3', 'v26.7.28': '26.7', 'v26.9.9': '26.9' };
+const TAG_TO_ID: Record<string, string> = {
+    'v26.3.27': '26.3',
+    'v26.7.28': '26.7',
+    'v26.9.9': '26.9',
+    'v26.10.10': '26.10',
+};
 const TAGS = Object.keys(TAG_TO_ID);
 
 const PRESENCE_KINDS = new Set(['field', 'alias', 'rename', 'removed-feature', 'section']);
@@ -119,7 +124,14 @@ for (const area of ['protocols', 'transport', 'finalmask', 'toplevel']) {
         if (!status) { skipped.push(`${area}: ${item.path} (unreadable status)`); continue; }
         if (Object.values(status).every(value => value === 'accepted')) continue;
 
-        const evidence = (item.evidence ?? []).slice(0, 2);
+        // Two citations from the older tags, plus one from the newest: the row
+        // has to say where its newest column was read, or nobody can check it.
+        const cited: string[] = item.evidence ?? [];
+        const newest = `${Object.keys(TAG_TO_ID).at(-1)}:`;
+        const evidence = [
+            ...cited.filter(entry => !entry.startsWith(newest)).slice(0, 2),
+            ...cited.filter(entry => entry.startsWith(newest)).slice(0, 1),
+        ];
         const detail = sentence(item.detail);
         let path: string = item.path;
 
@@ -172,7 +184,7 @@ const body = rows.map(row => [
     `        path: ${literal(row.path)},`,
     row.value !== undefined ? `        value: ${literal(row.value)},` : null,
     row.nonEmpty ? '        nonEmpty: true,' : null,
-    `        status: { '26.3': ${literal(row.status['26.3'])}, '26.7': ${literal(row.status['26.7'])}, '26.9': ${literal(row.status['26.9'])} },`,
+    `        status: { '26.3': ${literal(row.status['26.3'])}, '26.7': ${literal(row.status['26.7'])}, '26.9': ${literal(row.status['26.9'])}, '26.10': ${literal(row.status['26.10'])} },`,
     row.replacement ? `        replacement: ${literal(row.replacement)},` : null,
     `        detail: ${literal(row.detail)},`,
     `        evidence: ${literal(row.evidence)},`,

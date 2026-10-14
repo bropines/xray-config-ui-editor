@@ -166,7 +166,9 @@ describe('what only a client uses', () => {
 
     it('still has to pass Build(): domainStrategy is one of the Force family', () => {
         // A value set rather than a rule, so it arrives through the version table.
-        for (const line of LINES) {
+        // Only the lines whose struct still has the key: it is gone from
+        // v26.10.10 (infra/conf/wireguard.go:59-69), where it is dropped, not judged.
+        for (const line of LINES.filter(line => line !== '26.10')) {
             const bad = runFullDiagnostics({ inbounds: [server({ secretKey: SECRET, domainStrategy: 'AsIs' })] } as any, [], line);
             expect(bad.map(d => `${d.severity} ${d.field}`)).toEqual(['critical settings.domainStrategy']);
             const good = runFullDiagnostics({ inbounds: [server({ secretKey: SECRET, domainStrategy: 'forceipv4' })] } as any, [], line);

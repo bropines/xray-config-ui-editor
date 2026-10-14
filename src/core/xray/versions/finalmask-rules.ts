@@ -7,9 +7,14 @@
  * mask takes on the chosen line, including the ones nothing ever changed.
  * MASK_KEYS is that list, read off the structs in
  * `infra/conf/transport_internet.go` (v26.3.27) and
- * `infra/conf/transport_finalmask.go` (v26.7.28, v26.9.9). Where a FEATURES
- * row exists for a key it still wins — `maskKeyStatus` asks it first — and
- * finalmask-rules.test.ts holds the two to each other.
+ * `infra/conf/transport_finalmask.go` (v26.7.28, v26.9.9, v26.10.10). Where a
+ * FEATURES row exists for a key it still wins — `maskKeyStatus` asks it first
+ * — and finalmask-rules.test.ts holds the two to each other.
+ *
+ * A key can change its JSON type between lines, and then the table says so
+ * with one entry per type and disjoint `lines`: xdns `domains` is a list of
+ * strings on 26.7 and 26.9 and a list of objects on 26.10. Every lookup here
+ * is by key *and* line for that reason.
  *
  * The chain rules at the bottom are the part no key table can say: a mask
  * that only works at one end of the list, and which end that is, moved
@@ -17,7 +22,8 @@
  * severity follows who pays: an inbound that cannot listen stops the core
  * from starting (`v26.9.9:app/proxyman/inbound/inbound.go:115` returns the
  * handler's error from Start), an outbound that cannot dial only fails its
- * own connections.
+ * own connections. What does fail at load — xdns and udphop settings, a noise
+ * expression — is critical on either side.
  */
 import { t } from '../../../i18n';
 import { coreVersion, type CoreVersionId } from './index';
@@ -37,13 +43,16 @@ export const FINALMASK_PATH = 'streamSettings.finalmask';
  *   ports   PortList: `443` or `"20000-30000,443"`
  *   choice  a string from `options`; empty means the core's default
  *   flags   a comma-separated combination of `options`
- *   json    anything with inner structure (items, TLS, sockopt)
+ *   objects a list of JSON objects (`[]struct`): a string in it is a type
+ *           error that fails the decode of the whole config
+ *   json    anything with inner structure (items, TLS); `expects` says which
+ *           kind of JSON the struct reads when it is not left open
  *   noise   the noise mask's item list
  *   udpHop  quicParams.udpHop: `{ports, interval}`
  */
 export type MaskKeyShape =
     | 'string' | 'strings' | 'range' | 'ranges' | 'ports' | 'number' | 'bool'
-    | 'choice' | 'flags' | 'json' | 'noise' | 'udpHop';
+    | 'choice' | 'flags' | 'objects' | 'json' | 'noise' | 'udpHop';
 
 export interface MaskKey {
     key: string;
@@ -55,15 +64,24 @@ export interface MaskKey {
     options?: string[];
     /** A second spelling the core falls back to: shown when present, never offered. */
     legacy?: boolean;
+    /** `json` only: the JSON kind the struct reads. Unset leaves it open. */
+    expects?: 'object' | 'array';
+    /** `objects` only: one element as the core reads it, for a placeholder. */
+    example?: string;
 }
 
-const ALL: CoreVersionId[] = ['26.3', '26.7', '26.9'];
-const FROM_267: CoreVersionId[] = ['26.7', '26.9'];
+const ALL: CoreVersionId[] = ['26.3', '26.7', '26.9', '26.10'];
+const FROM_267: CoreVersionId[] = ['26.7', '26.9', '26.10'];
+const FROM_269: CoreVersionId[] = ['26.9', '26.10'];
 const ONLY_263: CoreVersionId[] = ['26.3'];
+const ONLY_267_269: CoreVersionId[] = ['26.7', '26.9'];
 const ONLY_269: CoreVersionId[] = ['26.9'];
+const ONLY_2610: CoreVersionId[] = ['26.10'];
+const UNTIL_267: CoreVersionId[] = ['26.3', '26.7'];
 
 // Sudoku is one struct for both lists and the same on every line:
-// v26.3.27:transport_internet.go:1618, v26.9.9:transport_finalmask.go:654.
+// v26.3.27:transport_internet.go:1618, v26.9.9:transport_finalmask.go:654,
+// v26.10.10:transport_finalmask.go:749.
 // The snake_case keys are fallbacks Build() reads when the camelCase one is empty.
 const SUDOKU: MaskKey[] = [
     { key: 'password', shape: 'string', lines: ALL },
@@ -83,11 +101,12 @@ const HEADER_TYPES = ['header-dtls', 'header-srtp', 'header-utp', 'header-wechat
 
 export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
     tcp: {
-        // v26.3.27:transport_internet.go:1270, v26.9.9:transport_finalmask.go:103
+        // v26.3.27:transport_internet.go:1270, v26.9.9:transport_finalmask.go:103,
+        // v26.10.10:transport_finalmask.go:103 — three lists of item lists
         'header-custom': [
-            { key: 'clients', shape: 'json', lines: ALL },
-            { key: 'servers', shape: 'json', lines: ALL },
-            { key: 'errors', shape: 'json', lines: ALL },
+            { key: 'clients', shape: 'json', lines: ALL, expects: 'array' },
+            { key: 'servers', shape: 'json', lines: ALL, expects: 'array' },
+            { key: 'errors', shape: 'json', lines: ALL, expects: 'array' },
         ],
         // v26.3.27:transport_internet.go:1383; lengths/delays from v26.7.28:transport_finalmask.go:238
         fragment: [
@@ -99,11 +118,11 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
             { key: 'maxSplit', shape: 'range', lines: ALL },
         ],
         sudoku: SUDOKU,
-        // v26.7.28:transport_finalmask.go:723; hostname only reaches newClientConn
-        // (v26.9.9:transport/internet/finalmask/xmc/config.go:13).
+        // v26.7.28:transport_finalmask.go:723, v26.10.10:transport_finalmask.go:868; hostname
+        // only reaches newClientConn (v26.9.9:transport/internet/finalmask/xmc/config.go:13).
         xmc: [
             { key: 'password', shape: 'string', lines: FROM_267 },
-            { key: 'profiles', shape: 'json', lines: FROM_267 },
+            { key: 'profiles', shape: 'json', lines: FROM_267, expects: 'array' },
             { key: 'hostname', shape: 'string', lines: FROM_267, side: 'outbound' },
         ],
     },
@@ -112,8 +131,8 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
         // matched exactly — "" and "prefix" are the same thing.
         'header-custom': [
             { key: 'mode', shape: 'choice', lines: FROM_267, options: ['prefix', 'standalone'] },
-            { key: 'client', shape: 'json', lines: ALL },
-            { key: 'server', shape: 'json', lines: ALL },
+            { key: 'client', shape: 'json', lines: ALL, expects: 'array' },
+            { key: 'server', shape: 'json', lines: ALL, expects: 'array' },
         ],
         // v26.3.27:transport_internet.go:1547 (domain defaults to www.baidu.com)
         'header-dns': [{ key: 'domain', shape: 'string', lines: ONLY_263 }],
@@ -139,11 +158,21 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
         sudoku: SUDOKU,
         // v26.3.27:transport_internet.go:1662 took one domain. v26.7.28:transport_finalmask.go:695
         // splits it: the server answers for `domains` (xdns/server.go:69), the
-        // client sends through `resolvers` (xdns/client.go:58).
+        // client sends through `resolvers` (xdns/client.go:58). Both are lists of
+        // strings on 26.7 and 26.9 (v26.9.9:transport_finalmask.go:701-702).
+        //
+        // v26.10.10:transport_finalmask.go:805 makes both lists of OBJECTS, and a
+        // string in either fails the decode of the whole config. `domains` is now
+        // read on both sides — the client builds its queries from it
+        // (xdns/client.go:57-75) — while `resolvers` and `extraPoll` are the
+        // client's alone (xdns/server.go reads neither).
         xdns: [
             { key: 'domain', shape: 'string', lines: ONLY_263 },
-            { key: 'domains', shape: 'strings', lines: FROM_267, side: 'inbound' },
-            { key: 'resolvers', shape: 'strings', lines: FROM_267, side: 'outbound' },
+            { key: 'domains', shape: 'strings', lines: ONLY_267_269, side: 'inbound' },
+            { key: 'resolvers', shape: 'strings', lines: ONLY_267_269, side: 'outbound' },
+            { key: 'domains', shape: 'objects', lines: ONLY_2610, example: '{"names": ["t.example.com"]}' },
+            { key: 'resolvers', shape: 'objects', lines: ONLY_2610, side: 'outbound', example: '{"addrs": ["1.1.1.1:53"]}' },
+            { key: 'extraPoll', shape: 'number', lines: ONLY_2610, side: 'outbound' },
         ],
         // v26.3.27:transport_internet.go:1676; v26.7.28:transport_finalmask.go:798. Only the
         // client opens a datagram ICMP socket (v26.9.9:finalmask/xicmp/client.go:56).
@@ -153,29 +182,33 @@ export const MASK_KEYS: Record<MaskList, Record<string, MaskKey[]>> = {
             { key: 'ips', shape: 'strings', lines: FROM_267 },
             { key: 'dgram', shape: 'bool', lines: FROM_267, side: 'outbound' },
         ],
-        // v26.7.28:transport_finalmask.go:818; ipMode/portMapping v26.9.9:transport_finalmask.go:825
+        // v26.7.28:transport_finalmask.go:818; ipMode/portMapping v26.9.9:transport_finalmask.go:825,
+        // v26.10.10:transport_finalmask.go:963 (tlsConfig and portMapping are pointers to structs)
         realm: [
             { key: 'url', shape: 'string', lines: FROM_267 },
             { key: 'stunServers', shape: 'strings', lines: FROM_267 },
-            { key: 'tlsConfig', shape: 'json', lines: FROM_267 },
-            { key: 'ipMode', shape: 'choice', lines: ONLY_269, options: ['dual', 'v4', 'v6'] },
-            { key: 'portMapping', shape: 'json', lines: ONLY_269 },
+            { key: 'tlsConfig', shape: 'json', lines: FROM_267, expects: 'object' },
+            { key: 'ipMode', shape: 'choice', lines: FROM_269, options: ['dual', 'v4', 'v6'] },
+            { key: 'portMapping', shape: 'json', lines: FROM_269, expects: 'object' },
         ],
-        // v26.9.9:transport_finalmask.go:911. The whole mask is client-only
-        // (finalmask/udphop/config.go:19), so its keys carry no side of their own.
+        // v26.9.9:transport_finalmask.go:911, v26.10.10:transport_finalmask.go:1053. The whole
+        // mask is client-only (finalmask/udphop/config.go:19, v26.10.10: config.go:16), so its
+        // keys carry no side of their own. 26.10 lost the mask's own sockopt: the hops dial
+        // with the outbound's (v26.10.10:transport/internet/memory_settings.go:76).
         udphop: [
-            { key: 'mode', shape: 'flags', lines: ONLY_269, options: ['intervalLocal', 'intervalRemote', 'perConnRemote'] },
-            { key: 'interval', shape: 'range', lines: ONLY_269 },
-            { key: 'remotePorts', shape: 'ports', lines: ONLY_269 },
-            { key: 'remoteIPs', shape: 'strings', lines: ONLY_269 },
-            { key: 'sockopt', shape: 'json', lines: ONLY_269 },
+            { key: 'mode', shape: 'flags', lines: FROM_269, options: ['intervalLocal', 'intervalRemote', 'perConnRemote'] },
+            { key: 'interval', shape: 'range', lines: FROM_269 },
+            { key: 'remotePorts', shape: 'ports', lines: FROM_269 },
+            { key: 'remoteIPs', shape: 'strings', lines: FROM_269 },
+            { key: 'sockopt', shape: 'json', lines: ONLY_269, expects: 'object' },
         ],
     },
 };
 
 /**
  * `finalmask.quicParams`, one struct per line: v26.3.27:transport_internet.go:630,
- * v26.7.28:transport_finalmask.go:930, v26.9.9:transport_finalmask.go:993.
+ * v26.7.28:transport_finalmask.go:930, v26.9.9:transport_finalmask.go:993,
+ * v26.10.10:transport_finalmask.go:1132 (the same keys as 26.9).
  * All numbers are plain integers — `maxIdleTimeout` and `keepAlivePeriod` in
  * seconds — and there is no handshake timeout at all.
  */
@@ -184,7 +217,7 @@ export const QUIC_KEYS: MaskKey[] = [
     { key: 'bbrProfile', shape: 'choice', lines: FROM_267, options: ['conservative', 'standard', 'aggressive'] },
     { key: 'brutalUp', shape: 'string', lines: ALL },
     { key: 'brutalDown', shape: 'string', lines: ALL },
-    { key: 'brutalDisableLossCompensation', shape: 'bool', lines: ONLY_269 },
+    { key: 'brutalDisableLossCompensation', shape: 'bool', lines: FROM_269 },
     { key: 'maxIdleTimeout', shape: 'number', lines: ALL },
     { key: 'keepAlivePeriod', shape: 'number', lines: ALL },
     { key: 'initStreamReceiveWindow', shape: 'number', lines: ALL },
@@ -193,12 +226,12 @@ export const QUIC_KEYS: MaskKey[] = [
     { key: 'maxConnectionReceiveWindow', shape: 'number', lines: ALL },
     { key: 'maxIncomingStreams', shape: 'number', lines: ALL },
     { key: 'disablePathMTUDiscovery', shape: 'bool', lines: ALL },
-    { key: 'disableChromeParrot', shape: 'bool', lines: ONLY_269 },
-    { key: 'disableGSO', shape: 'bool', lines: ONLY_269 },
-    { key: 'disableStatelessReset', shape: 'bool', lines: ONLY_269 },
+    { key: 'disableChromeParrot', shape: 'bool', lines: FROM_269 },
+    { key: 'disableGSO', shape: 'bool', lines: FROM_269 },
+    { key: 'disableStatelessReset', shape: 'bool', lines: FROM_269 },
     { key: 'debug', shape: 'bool', lines: ALL },
     // Gone from the struct in 26.9, where the udphop mask does the job.
-    { key: 'udpHop', shape: 'udpHop', lines: ['26.3', '26.7'] },
+    { key: 'udpHop', shape: 'udpHop', lines: UNTIL_267 },
 ];
 
 /** Masks the core refuses to run on a server (`WrapPacketConnServer` errors). */
@@ -236,6 +269,15 @@ const statusOf = (
     return spec.legacy ? { status: 'accepted', legacy: true } : { status: 'accepted' };
 };
 
+/**
+ * The entry for a key as `version` reads it. Where the lines disagree about
+ * the key's type there is one entry per type, so the line decides; a key no
+ * entry gives to this line comes back as some other line's entry, which
+ * `statusOf` then calls absent.
+ */
+const specFor = (specs: MaskKey[], key: string, version: CoreVersionId): MaskKey | undefined =>
+    specs.find(spec => spec.key === key && spec.lines.includes(version)) ?? specs.find(spec => spec.key === key);
+
 /** What `version` does with one settings key of one mask, seen from `side`. */
 export const maskKeyStatus = (
     version: CoreVersionId,
@@ -247,13 +289,43 @@ export const maskKeyStatus = (
     statusOf(
         version,
         `${FINALMASK_PATH}.${list}[type=${type.toLowerCase()}].settings.${key}`,
-        maskKeys(list, type).find(spec => spec.key === key),
+        specFor(maskKeys(list, type), key, version),
         side,
     );
 
 /** What `version` does with one quicParams key. */
 export const quicKeyStatus = (version: CoreVersionId, key: string, side?: MaskSide): KeyStatus =>
-    statusOf(version, `${FINALMASK_PATH}.quicParams.${key}`, QUIC_KEYS.find(spec => spec.key === key), side);
+    statusOf(version, `${FINALMASK_PATH}.quicParams.${key}`, specFor(QUIC_KEYS, key, version), side);
+
+/**
+ * Whether a value already in a config is the JSON type the core decodes this
+ * key from. A mask's settings are unmarshalled into its typed struct when
+ * the mask is built (v26.10.10:infra/conf/loader.go:51, returned by
+ * Mask.Build at transport_finalmask.go:1121-1124), and a value of the wrong
+ * type — a string where a struct is read, an object in a list of strings —
+ * is a type error that stops the config from loading, not just that key from
+ * working. A form must therefore show such a value as it is and offer to
+ * remove it, never draw an input that would coerce it. Only the collection
+ * shapes are checked: they are the ones whose editors parse text, and scalars
+ * are what the inputs already write.
+ */
+export const heldTypeMatches = (spec: MaskKey, value: unknown): boolean => {
+    if (value === undefined || value === null) return true;
+    const list = Array.isArray(value) ? value : null;
+    switch (spec.shape) {
+        case 'strings': return !!list && list.every(entry => typeof entry === 'string');
+        // Int32Range reads a number or a string.
+        case 'ranges': return !!list && list.every(entry => typeof entry === 'string' || typeof entry === 'number');
+        case 'objects': return !!list && list.every(isObject);
+        case 'noise': return !!list && list.every(isObject);
+        case 'udpHop': return isObject(value);
+        case 'json':
+            if (spec.expects === 'object') return isObject(value);
+            if (spec.expects === 'array') return list !== null;
+            return true;
+        default: return true;
+    }
+};
 
 /**
  * The keys a form should offer for a mask: decoded on this line, not a
@@ -331,6 +403,105 @@ export const toMkcpLegacy = (type: string, settings: unknown): { type: 'mkcp-leg
     }
 };
 
+// ── Noise items ─────────────────────────────────────────────────────────
+
+const NOISE_ITEM_TYPES = 'finalmask.udp.noise.item.type';
+
+/** Whether `version` takes this encoding for a noise item's packet (case-insensitive, as the core compares). */
+export const noiseItemTypeAccepted = (version: CoreVersionId, type: string): boolean =>
+    allowedValues(version, NOISE_ITEM_TYPES).some(value => value.toLowerCase() === type.toLowerCase());
+
+/**
+ * The packet encodings a noise item's chooser offers on a line, plus the one
+ * the item already holds, whatever it is — a chooser that cannot show the
+ * held value hides it, and "exp" on a line that refuses it is exactly the
+ * value that needs to stay on screen.
+ */
+export const noiseItemTypeChoices = (version: CoreVersionId, held?: unknown): string[] => {
+    const offered = ['hex', 'str', 'base64', 'exp'].filter(type => noiseItemTypeAccepted(version, type));
+    return typeof held === 'string' && held !== '' && !offered.includes(held) ? [...offered, held] : offered;
+};
+
+/**
+ * A noise item written as an expression (v26.10.10:transport_finalmask.go:317):
+ * the core builds its bytes from a string of tags, so there is no packet to
+ * decode and no recipe that could hold it.
+ */
+export const isNoiseExpItem = (item: unknown): boolean =>
+    isObject(item) && typeof item.type === 'string' && item.type.toLowerCase() === 'exp';
+
+const atoi = (text: string): number | null => (/^[+-]?\d+$/.test(text) ? Number(text) : null);
+
+/** `ParseRangeString` (v26.10.10:infra/conf/common.go:355): "114", "114-514", "-114-514", "". Null where it errors. */
+const parseRangeString = (text: string): [number, number] | null => {
+    const single = atoi(text);
+    if (single !== null) return [single, single];
+    if (text === '') return [0, 0];
+    let pair: string[];
+    if (text.startsWith('-')) {
+        const at = text.indexOf('-', 1);
+        pair = at < 0 ? [text] : [text.slice(0, at), text.slice(at + 1)];
+    } else {
+        const at = text.indexOf('-');
+        pair = at < 0 ? [text] : [text.slice(0, at), text.slice(at + 1)];
+    }
+    if (pair.length !== 2) return null;
+    const left = atoi(pair[0]!);
+    const right = atoi(pair[1]!);
+    return left !== null && right !== null ? [left, right] : null;
+};
+
+/** The core's own wording for what is wrong with one `<tag arg>`; null when it builds. */
+const noiseTagProblem = (key: string, arg: string): string | null => {
+    switch (key) {
+        case 'b': {
+            let hex = arg.split(/\s+/).join('');
+            if (hex.startsWith('0x')) hex = hex.slice(2);
+            if (hex.startsWith('0X')) hex = hex.slice(2);
+            if (hex === '') return 'empty bytes in noise exp';
+            return /^([0-9a-fA-F]{2})+$/.test(hex) ? null : `invalid hex in noise exp: ${arg}`;
+        }
+        case 'r':
+        case 'rc':
+        case 'rd': {
+            if (arg === '') return `<${key}> in noise exp needs a size`;
+            const size = parseRangeString(arg);
+            if (!size) return `invalid range string: ${arg}`;
+            return size[0] < 0 || size[1] < size[0] || size[1] > 65535 ? `invalid size in noise exp: ${arg}` : null;
+        }
+        case 't':
+        case 'c':
+        case 'n':
+            return arg === '' ? null : `<${key}> in noise exp takes no argument`;
+        default:
+            return `unknown <${key}> in noise exp`;
+    }
+};
+
+/**
+ * What `parseNoiseExp` (v26.10.10:transport_finalmask.go:363) would answer to
+ * an expression like `<b 0xDEADBEEF><r 8><t>`, in its words, or null when it
+ * builds. Only whitespace may sit between the tags, and there has to be at
+ * least one. Tags are lower-case letters only, which is what the pattern at
+ * :361 matches.
+ */
+export const noiseExpProblem = (exp: string): string | null => {
+    const tag = /<\s*([a-z]+)(?:\s+([^>]*?))?\s*>/g;
+    let last = 0;
+    let count = 0;
+    for (const match of exp.matchAll(tag)) {
+        const before = exp.slice(last, match.index);
+        if (before.trim() !== '') return `invalid noise exp near ${before}`;
+        last = match.index + match[0].length;
+        const problem = noiseTagProblem(match[1]!, match[2] ?? '');
+        if (problem) return problem;
+        count++;
+    }
+    const rest = exp.slice(last);
+    if (rest.trim() !== '') return `invalid noise exp near ${rest}`;
+    return count === 0 ? `empty noise exp: ${exp}` : null;
+};
+
 // ── Chain rules ─────────────────────────────────────────────────────────
 
 export interface FinalmaskIssue {
@@ -348,43 +519,94 @@ export interface FinalmaskIssue {
  * still udp[0] (finalmask.go:32); v26.9.9 reverses the slice before numbering
  * (finalmask.go:22), which puts level 0 at udp[last].
  *
+ * v26.10.10 has no levels any more: NewFinalMask reverses the lists
+ * (finalmask.go:45-46) and a mask that supplies the connection itself
+ * declares `HandleDial` (and `HandleListen` on a server) — DialUDP and
+ * ListenPacket refuse it at any index but 0, "incorrect index: N" (:151,
+ * :220), and index 0 of the reversed list is udp[last] again. Those are
+ * xicmp (xicmp/config.go:10-12) and udphop (udphop/config.go:9); realm lost
+ * its check (realm/config.go:8-14), so it may sit anywhere.
+ *
  *   xicmp   v26.3.27:finalmask/xicmp/client.go:60, server.go:54;
  *           v26.7.28:finalmask/xicmp/config.go:17; v26.9.9:finalmask/xicmp/config.go:12
  *   realm   v26.7.28:finalmask/realm/config.go:16; v26.9.9:finalmask/realm/config.go:12
  *   udphop  v26.9.9:finalmask/udphop/config.go:12
  */
 const OUTERMOST: Record<string, Partial<Record<CoreVersionId, 'first' | 'last'>>> = {
-    xicmp: { '26.3': 'first', '26.7': 'first', '26.9': 'last' },
+    xicmp: { '26.3': 'first', '26.7': 'first', '26.9': 'last', '26.10': 'last' },
     realm: { '26.7': 'first', '26.9': 'last' },
-    udphop: { '26.9': 'last' },
+    udphop: { '26.9': 'last', '26.10': 'last' },
 };
+
+/** What the core calls a mask in the wrong place, where it is not "requires being at the outermost level". */
+const WRONG_INDEX_ERROR: Partial<Record<CoreVersionId, string>> = { '26.10': 'incorrect index' };
 
 /**
  * A UDP sudoku mask must be at level == count-1 ("must be the innermost mask
  * in chain"): udp[last] before 26.9, udp[0] after the reversal.
  * v26.3.27:finalmask/sudoku/config.go:46, v26.7.28:finalmask/sudoku/config.go:46,
- * v26.9.9:finalmask/sudoku/config.go:40.
+ * v26.9.9:finalmask/sudoku/config.go:40. v26.10.10 dropped the check
+ * (sudoku/config.go:38-44).
  */
 const INNERMOST: Record<string, Partial<Record<CoreVersionId, 'first' | 'last'>>> = {
     sudoku: { '26.3': 'last', '26.7': 'last', '26.9': 'first' },
 };
 
 /**
+ * Not a refusal but a place the mask belongs: an xdns client in v26.10.10
+ * dials its own resolvers and never touches the connection it is handed
+ * (xdns/config.go:9 calls NewClient(c, dialer)), so whatever sits nearer the
+ * socket than it is wrapped around a connection nobody uses — on a client
+ * only; a server still applies it (xdns/config.go:13). Its end is the socket's.
+ */
+const SOCKET_BOUND: Record<string, Partial<Record<CoreVersionId, 'last'>>> = {
+    xdns: { '26.10': 'last' },
+};
+
+/**
  * The end of a mask list the core wraps around the socket first — the mask
  * whose output is what goes on the wire. 26.3 walks the list forward
  * (v26.3.27:finalmask/finalmask.go:31), 26.7 walks it backward
- * (v26.7.28:finalmask.go:32) and 26.9 reverses it before walking
- * (v26.9.9:finalmask.go:22).
+ * (v26.7.28:finalmask.go:32), 26.9 reverses it before walking
+ * (v26.9.9:finalmask.go:22) and 26.10 reverses it in NewFinalMask
+ * (v26.10.10:finalmask.go:45-46).
  */
 export const socketEnd = (version: CoreVersionId): 'first' | 'last' => (version === '26.3' ? 'first' : 'last');
 
-/** The end of the UDP list a mask of this type has to hold on this line, if it has to hold one. */
+/**
+ * The end of the UDP list a mask of this type has to hold on this line, if it
+ * has to hold one — or, for xdns on a client, ought to.
+ */
 export const pinnedEnd = (version: CoreVersionId, type: string): 'first' | 'last' | undefined => {
     const key = type.toLowerCase();
-    return OUTERMOST[key]?.[version] ?? INNERMOST[key]?.[version];
+    return OUTERMOST[key]?.[version] ?? INNERMOST[key]?.[version] ?? SOCKET_BOUND[key]?.[version];
 };
 
 const UDPHOP_MODES = ['intervallocal', 'intervalremote', 'perconnremote'];
+
+/**
+ * How a line treats udphop's interval. 26.9 has no default and checks both
+ * ends when the mask is built for a dial (v26.9.9:finalmask/udphop/conn.go:62);
+ * 26.10 turns 0 into 30-30 and refuses a start under 5 while the config loads
+ * (v26.10.10:transport_finalmask.go:1088-1094).
+ */
+const UDPHOP_INTERVAL: Partial<Record<CoreVersionId, 'dial' | 'load'>> = { '26.9': 'dial', '26.10': 'load' };
+
+/** Whether a line fills in udphop's interval when it is left out (30), instead of failing each dial. */
+export const udphopDefaultsInterval = (version: CoreVersionId): boolean => UDPHOP_INTERVAL[version] === 'load';
+
+/**
+ * Whether the MASQUE transport reads quicParams on this line. Hysteria and
+ * XHTTP always did (v26.9.9:hysteria/dialer.go:324, splithttp/dialer.go:159);
+ * v26.10.10 adds MASQUE (transport/internet/masque/dialer.go:52, hub.go:92).
+ */
+export const masqueReadsQuicParams = (version: CoreVersionId): boolean => ONLY_2610.includes(version);
+
+/** A client with no xicmp ips targets the address it dials, which must be an IP (v26.10.10:finalmask/xicmp/config.go:15, client.go:72). */
+const XICMP_DIALS_ADDRESS: CoreVersionId[] = ['26.10'];
+
+/** The DNS record types an xdns domain may list: A, CNAME, TXT, AAAA (v26.10.10:finalmask/xdns/domain.go:97). */
+const XDNS_RECORD_TYPES = [1, 5, 16, 28];
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
     value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -423,10 +645,10 @@ export const parseInt32Range = (value: unknown): [number, number] | null => {
  * The runtime rules for one finalmask on one line, from one side.
  *
  * Covers what FEATURES and VALUE_SETS cannot: where in the chain a mask may
- * sit, and the xdns/udphop settings the core refuses to start without. Keys
- * and types a line does not know are left to those tables, so nothing here
- * repeats a finding the version check already reports. Types the line does
- * not register are skipped for the same reason.
+ * sit, and the xdns/udphop/noise settings the core refuses to start without.
+ * Keys and types a line does not know are left to those tables, so nothing
+ * here repeats a finding the version check already reports. Types the line
+ * does not register are skipped for the same reason.
  */
 export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, direction: MaskSide): FinalmaskIssue[] => {
     if (!isObject(finalmask)) return [];
@@ -441,9 +663,10 @@ export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, dire
         const masks = Array.isArray(finalmask[list]) ? finalmask[list] as unknown[] : [];
         if (masks.length < 2) continue;
         // The wrapping order flipped in 26.7: v26.3.27:finalmask/finalmask.go:31/207
-        // walk forward, v26.7.28:finalmask.go:32/216 walk backward and
-        // v26.9.9:finalmask.go:22/204 reverse first — the same list is a
-        // different wire format on either side of 26.3 → 26.7.
+        // walk forward, v26.7.28:finalmask.go:32/216 walk backward,
+        // v26.9.9:finalmask.go:22/204 reverse first and v26.10.10:finalmask.go:45-46
+        // reverse in NewFinalMask — the same list is a different wire format on
+        // either side of 26.3 → 26.7.
         const name = list.toUpperCase();
         out.push({
             path: `${FINALMASK_PATH}.${list}`,
@@ -459,6 +682,8 @@ export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, dire
     const quicParams = isObject(finalmask.quicParams) ? finalmask.quicParams : {};
     const hopPorts = isObject(quicParams.udpHop) ? quicParams.udpHop.ports : undefined;
     const hopping = hopPorts !== undefined && hopPorts !== null && hopPorts !== '' && hopPorts !== 0;
+    // quicParams.udpHop is a key of 26.3 and 26.7 only (QUIC_KEYS).
+    const hasQuicHop = QUIC_KEYS.some(spec => spec.key === 'udpHop' && spec.lines.includes(version));
 
     udp.forEach((mask, index) => {
         const type = typeOf(mask);
@@ -469,12 +694,15 @@ export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, dire
         // With one mask, level 0 is also the last level: nothing to place.
         const outer = OUTERMOST[type]?.[version];
         if (outer && udp.length > 1 && index !== (outer === 'first' ? 0 : last)) {
+            const refusal = WRONG_INDEX_ERROR[version];
             out.push({
                 path: at,
                 severity: runtime,
-                message: outer === 'first'
-                    ? t("{type} has to be the first UDP mask on Xray {tag}. Anywhere else the core stops with \"requires being at the outermost level\" when it sets the connection up.", { type, tag })
-                    : t("{type} has to be the last UDP mask on Xray {tag}. Anywhere else the core stops with \"requires being at the outermost level\" when it sets the connection up.", { type, tag }),
+                message: refusal
+                    ? t("{type} has to be the last UDP mask on Xray {tag}. Anywhere else the core stops with \"{error}\" when it sets the connection up.", { type, tag, error: refusal })
+                    : outer === 'first'
+                        ? t("{type} has to be the first UDP mask on Xray {tag}. Anywhere else the core stops with \"requires being at the outermost level\" when it sets the connection up.", { type, tag })
+                        : t("{type} has to be the last UDP mask on Xray {tag}. Anywhere else the core stops with \"requires being at the outermost level\" when it sets the connection up.", { type, tag }),
             });
         }
         const inner = INNERMOST[type]?.[version];
@@ -487,12 +715,21 @@ export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, dire
                     : t("A UDP sudoku mask has to be the last in the list on Xray {tag}. Anywhere else the core stops with \"must be the innermost mask in chain\".", { tag }),
             });
         }
+        // An xdns client ignores the socket and everything nearer to it; only a
+        // client does, so only an outbound is told.
+        if (SOCKET_BOUND[type]?.[version] === 'last' && direction === 'outbound' && udp.length > 1 && index !== last) {
+            out.push({
+                path: at,
+                severity: 'warning',
+                message: t("xdns on Xray {tag} dials its own resolvers and never uses the socket, so a client skips every UDP mask listed after it while a server still applies them. Put xdns last in the list.", { tag }),
+            });
+        }
 
         // Before 26.9 a client also refuses these on top of quicParams.udpHop:
         // the hop conn is what they would wrap (v26.3.27:finalmask/xicmp/client.go:60,
         // v26.7.28:finalmask/xicmp/config.go:17, realm/config.go:16), and a hop conn
         // exists once ports are set (v26.7.28:transport/internet/hysteria/dialer.go:162).
-        if (direction === 'outbound' && hopping && version !== '26.9' && (type === 'xicmp' || type === 'realm')) {
+        if (direction === 'outbound' && hopping && hasQuicHop && (type === 'xicmp' || type === 'realm')) {
             out.push({
                 path: at,
                 severity: 'warning',
@@ -502,10 +739,77 @@ export const finalmaskIssues = (finalmask: unknown, version: CoreVersionId, dire
 
         const settings = settingsOf(mask);
         if (type === 'xdns') out.push(...xdnsIssues(settings, `${at}.settings`, version, direction, tag));
-        if (type === 'udphop') out.push(...udphopIssues(settings, at, direction, tag));
+        if (type === 'udphop') out.push(...udphopIssues(settings, at, version, direction, tag));
+        if (type === 'xicmp' && direction === 'outbound' && XICMP_DIALS_ADDRESS.includes(version) && nonEmptyStrings(settings.ips).length === 0) {
+            out.push({
+                path: `${at}.settings.ips`,
+                severity: 'info',
+                message: t("With no ips, xicmp on Xray {tag} pings the address this outbound dials, and refuses to dial at all when that is a domain (\"empty ip addresses\"). List the server's IP addresses in ips.", { tag }),
+            });
+        }
+        if (type === 'noise') out.push(...noiseIssues(settings, `${at}.settings`, version, tag));
     });
 
     return out;
+};
+
+/** The core's `item.Packet` is set whenever the key is present, even as null (RawMessage keeps the bytes). */
+const noiseIssues = (settings: Record<string, unknown>, at: string, version: CoreVersionId, tag: string): FinalmaskIssue[] => {
+    const out: FinalmaskIssue[] = [];
+    const items = Array.isArray(settings.noise) ? settings.noise : [];
+    items.forEach((item, index) => {
+        if (!isObject(item)) return;
+        const here = `${at}.noise[${index}]`;
+        // v26.3.27:transport_internet.go:1442, v26.7.28:transport_finalmask.go:310,
+        // v26.9.9:transport_finalmask.go:313, v26.10.10:transport_finalmask.go:314 — on every line.
+        const rand = parseInt32Range(item.rand);
+        if (item.packet !== undefined && rand && rand[1] > 0) {
+            out.push({
+                path: here,
+                severity: 'critical',
+                message: t("A noise item that sets both packet and rand is refused by Xray {tag} when the config loads. Keep one of them.", { tag }),
+            });
+        }
+        if (!isNoiseExpItem(item) || !noiseItemTypeAccepted(version, 'exp')) return;
+        // v26.10.10:transport_finalmask.go:317-325
+        if (typeof item.packet !== 'string') {
+            out.push({
+                path: `${here}.packet`,
+                severity: 'critical',
+                message: t("The packet of a noise item of type exp has to be a string such as <b 0xDEADBEEF><r 8><t>; Xray {tag} refuses the config otherwise.", { tag }),
+            });
+            return;
+        }
+        const problem = noiseExpProblem(item.packet);
+        if (problem) {
+            out.push({
+                path: `${here}.packet`,
+                severity: 'critical',
+                message: t("Xray {tag} refuses this noise expression when the config loads: {problem}.", { tag, problem }),
+            });
+        }
+    });
+    return out;
+};
+
+// ── xdns ────────────────────────────────────────────────────────────────
+
+const wholeNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647;
+
+/**
+ * `xdns.NewDomain`'s arithmetic (v26.10.10:finalmask/xdns/domain.go:82-129):
+ * whether a name leaves room for at least 17 bytes of payload per query under
+ * these limits. Both of its failures are the same to a user — the limits and
+ * the name do not fit — so it answers yes or no.
+ */
+const domainFits = (name: string, lenLimit: number, labelLimit: number): boolean => {
+    const length = new TextEncoder().encode(`${name}.`).length;
+    if (length > 255 || lenLimit < length + 1) return false;
+    const n = Math.floor((lenLimit - length - 1) / (labelLimit + 1));
+    const left = (lenLimit - length - 1) % (labelLimit + 1);
+    const total = n * labelLimit + (left > 1 ? left - 1 : 0);
+    return Math.floor(total * 5 / 8) >= 17;
 };
 
 const xdnsIssues = (
@@ -515,7 +819,9 @@ const xdnsIssues = (
     direction: MaskSide,
     tag: string,
 ): FinalmaskIssue[] => {
-    if (version === '26.3') {
+    // What the line reads `domains` as: nothing on 26.3, which took one domain.
+    const listShape = maskKeys('udp', 'xdns').find(spec => spec.key === 'domains' && spec.lines.includes(version))?.shape;
+    if (listShape === undefined) {
         // v26.3.27:transport_internet.go:1667 — "empty domain" at load.
         return typeof settings.domain === 'string' && settings.domain !== ''
             ? []
@@ -525,7 +831,27 @@ const xdnsIssues = (
                 message: t("xdns needs a domain on Xray {tag}; without one the config does not load (\"empty domain\").", { tag }),
             }];
     }
+    return listShape === 'objects'
+        ? xdnsObjectIssues(settings, at, version, direction, tag)
+        : xdnsStringIssues(settings, at, direction, tag);
+};
+
+/** 26.7 and 26.9: lists of strings. */
+const xdnsStringIssues = (settings: Record<string, unknown>, at: string, direction: MaskSide, tag: string): FinalmaskIssue[] => {
     const out: FinalmaskIssue[] = [];
+    // A list of anything but strings is a type error for Go's decoder: the
+    // config does not load (v26.9.9:transport_finalmask.go:701-702).
+    for (const key of ['domains', 'resolvers']) {
+        const value = settings[key];
+        if (value !== undefined && value !== null && !(Array.isArray(value) && value.every(entry => typeof entry === 'string'))) {
+            out.push({
+                path: `${at}.${key}`,
+                severity: 'critical',
+                message: t("xdns {key} on Xray {tag} must be a list of plain strings. Objects, or anything else, make Xray fail to read the config at all.", { key, tag }),
+            });
+        }
+    }
+    if (out.length > 0) return out;
     const domains = nonEmptyStrings(settings.domains);
     const resolvers = nonEmptyStrings(settings.resolvers);
     if (domains.length === 0 && resolvers.length === 0) {
@@ -565,9 +891,147 @@ const xdnsIssues = (
     return out;
 };
 
-const udphopIssues = (settings: Record<string, unknown>, at: string, direction: MaskSide, tag: string): FinalmaskIssue[] => {
+/**
+ * 26.10: lists of objects (v26.10.10:transport_finalmask.go:793-809).
+ *
+ * What fails where: a value of the wrong type fails the config at load, and so
+ * do the checks in Build() (:811-866: every name through NewDomain, the
+ * resolver schemes, extraPoll). The types of the record kinds are only
+ * checked when the listener or the dial builds the mask (xdns/server.go:58,
+ * client.go:75), and so is an empty list of domains or resolvers.
+ */
+const xdnsObjectIssues = (
+    settings: Record<string, unknown>,
+    at: string,
+    version: CoreVersionId,
+    direction: MaskSide,
+    tag: string,
+): FinalmaskIssue[] => {
     const out: FinalmaskIssue[] = [];
-    // v26.9.9:finalmask/udphop/config.go:19
+    const runtime: FinalmaskIssue['severity'] = direction === 'inbound' ? 'critical' : 'warning';
+    const critical = (path: string, message: string) => out.push({ path, severity: 'critical', message });
+    const wrongType = (path: string, expected: string) =>
+        critical(path, t("{field} must be {expected} for Xray {tag}; as written the config does not load.", { field: path.slice(at.length + 1), expected, tag }));
+    const spec = (key: string) => maskKeys('udp', 'xdns').find(entry => entry.key === key && entry.lines.includes(version));
+
+    let names = 0;
+    const domains = settings.domains;
+    if (domains !== undefined && domains !== null) {
+        if (!Array.isArray(domains) || !domains.every(isObject)) {
+            critical(`${at}.domains`, t("xdns {key} on Xray {tag} must be a list of objects such as {example}. Plain strings, or anything else, make Xray fail to read the config at all.", { key: 'domains', tag, example: spec('domains')?.example }));
+        } else {
+            domains.forEach((domain, index) => {
+                const here = `${at}.domains[${index}]`;
+                const given = domain.names;
+                const list = given === undefined || given === null ? [] : given;
+                if (!Array.isArray(list) || !list.every(entry => typeof entry === 'string')) wrongType(`${here}.names`, t("a list of strings"));
+                for (const key of ['lenLimit', 'labelLimit', 'edns0']) {
+                    if (domain[key] !== undefined && domain[key] !== null && !wholeNumber(domain[key])) wrongType(`${here}.${key}`, t("a whole number"));
+                }
+                if (domain.types !== undefined && domain.types !== null && !(Array.isArray(domain.types) && domain.types.every(wholeNumber))) {
+                    wrongType(`${here}.types`, t("a list of whole numbers"));
+                }
+                if (out.some(issue => issue.path.startsWith(`${here}.`))) return;
+
+                // Build() defaults both limits when they are 0 (:815-820), then NewDomain checks them.
+                const lenLimit = wholeNumber(domain.lenLimit) && domain.lenLimit !== 0 ? domain.lenLimit : 255;
+                const labelLimit = wholeNumber(domain.labelLimit) && domain.labelLimit !== 0 ? domain.labelLimit : 63;
+                const edns0 = wholeNumber(domain.edns0) ? domain.edns0 : 0;
+                if (lenLimit < 0 || lenLimit > 255) critical(`${here}.lenLimit`, t("{field} is {value}, outside {range}, so Xray {tag} refuses the config at load.", { field: 'lenLimit', value: lenLimit, range: '0-255', tag }));
+                if (labelLimit < 0 || labelLimit > 63) critical(`${here}.labelLimit`, t("{field} is {value}, outside {range}, so Xray {tag} refuses the config at load.", { field: 'labelLimit', value: labelLimit, range: '0-63', tag }));
+                if (edns0 !== 0 && (edns0 < 512 || edns0 > 4096)) critical(`${here}.edns0`, t("{field} is {value}, outside {range}, so Xray {tag} refuses the config at load.", { field: 'edns0', value: edns0, range: '0 or 512-4096', tag }));
+
+                const written = list as string[];
+                names += written.length;
+                written.forEach((name, nameIndex) => {
+                    const where = `${here}.names[${nameIndex}]`;
+                    if (name.includes('..')) {
+                        critical(where, t("\"{name}\" is not a domain Xray {tag} accepts (it contains \"..\"), so the config does not load.", { name, tag }));
+                    } else if (lenLimit >= 0 && lenLimit <= 255 && labelLimit >= 0 && labelLimit <= 63 && !domainFits(name, lenLimit, labelLimit)) {
+                        critical(where, t("\"{name}\" does not fit xdns's limits (lenLimit {lenLimit}, labelLimit {labelLimit}): too little room is left for data, so Xray {tag} refuses the config at load.", { name, lenLimit, labelLimit, tag }));
+                    }
+                });
+                // The kinds are not checked at load, only when the mask is built (xdns/domain.go:95-101).
+                const unknown = (Array.isArray(domain.types) ? domain.types as number[] : []).filter(kind => !XDNS_RECORD_TYPES.includes(kind));
+                for (const kind of unknown) {
+                    out.push({
+                        path: `${here}.types`,
+                        severity: runtime,
+                        message: t("Record type {kind} is not one xdns can use (1 A, 5 CNAME, 16 TXT, 28 AAAA), so Xray {tag} stops when it builds the mask.", { kind, tag }),
+                    });
+                }
+            });
+        }
+    }
+
+    let addrs = 0;
+    const resolvers = settings.resolvers;
+    if (resolvers !== undefined && resolvers !== null) {
+        if (!Array.isArray(resolvers) || !resolvers.every(isObject)) {
+            critical(`${at}.resolvers`, t("xdns {key} on Xray {tag} must be a list of objects such as {example}. Plain strings, or anything else, make Xray fail to read the config at all.", { key: 'resolvers', tag, example: spec('resolvers')?.example }));
+        } else {
+            resolvers.forEach((resolver, index) => {
+                const here = `${at}.resolvers[${index}]`;
+                const given = resolver.addrs;
+                if (given === undefined || given === null) return;
+                if (!Array.isArray(given) || !given.every(entry => typeof entry === 'string')) {
+                    wrongType(`${here}.addrs`, t("a list of strings"));
+                    return;
+                }
+                addrs += given.length;
+                (given as string[]).forEach((addr, addrIndex) => {
+                    // :838-852 — no scheme means udp; url.Parse lower-cases the scheme.
+                    const marker = addr.indexOf('://');
+                    const scheme = marker < 0 ? 'udp' : addr.slice(0, marker).toLowerCase();
+                    if (scheme !== 'udp' && scheme !== 'tcp') {
+                        critical(`${here}.addrs[${addrIndex}]`, t("Resolver address \"{value}\" uses a scheme Xray {tag} refuses: only udp:// and tcp:// load (\"invalid protocol\").", { value: addr, tag }));
+                    }
+                });
+            });
+        }
+    }
+
+    // :862 — also read by the client only, but Build() checks it for both.
+    const poll = settings.extraPoll;
+    if (poll !== undefined && poll !== null) {
+        if (!wholeNumber(poll)) wrongType(`${at}.extraPoll`, t("a whole number"));
+        else if (poll < 0 || poll > 3) critical(`${at}.extraPoll`, t("{field} is {value}, outside {range}, so Xray {tag} refuses the config at load.", { field: 'extraPoll', value: poll, range: '0-3', tag }));
+    }
+
+    if (out.some(issue => issue.severity === 'critical')) return out;
+
+    // Empty lists are not a load error any more: the listener (xdns/server.go:46)
+    // and the dial (client.go:57, :60) say so when they build the mask.
+    if (names === 0) {
+        out.push({
+            path: `${at}.domains`,
+            severity: runtime,
+            message: direction === 'inbound'
+                ? t("An xdns server answers for its domains, and this one has none: the inbound fails to start (\"empty domains\").")
+                : t("An xdns client builds its queries from its domains, and this one has none: every connection fails (\"empty domains\")."),
+        });
+    }
+    if (direction === 'outbound' && addrs === 0) {
+        out.push({
+            path: `${at}.resolvers`,
+            severity: 'warning',
+            message: t("An xdns client sends through its resolvers, and this one has none: every connection fails (\"empty resolvers\")."),
+        });
+    }
+    return out;
+};
+
+// ── udphop ──────────────────────────────────────────────────────────────
+
+const udphopIssues = (
+    settings: Record<string, unknown>,
+    at: string,
+    version: CoreVersionId,
+    direction: MaskSide,
+    tag: string,
+): FinalmaskIssue[] => {
+    const out: FinalmaskIssue[] = [];
+    // v26.9.9:finalmask/udphop/config.go:19, v26.10.10:finalmask/udphop/config.go:16
     if (direction === 'inbound') {
         out.push({
             path: at,
@@ -595,14 +1059,23 @@ const udphopIssues = (settings: Record<string, unknown>, at: string, direction: 
             }
         }
     }
-    // v26.9.9:finalmask/udphop/conn.go:62 — checked when the mask is built for
-    // a dial, with no default: a missing interval is 0 and fails.
     const interval = parseInt32Range(settings.interval);
-    if (direction === 'outbound' && interval && (interval[0] < 5 || interval[1] < 5)) {
+    const handling = UDPHOP_INTERVAL[version];
+    if (interval && handling === 'dial' && direction === 'outbound' && (interval[0] < 5 || interval[1] < 5)) {
+        // v26.9.9:finalmask/udphop/conn.go:62 — checked when the mask is built for
+        // a dial, with no default: a missing interval is 0 and fails.
         out.push({
             path: `${at}.settings.interval`,
             severity: 'warning',
             message: t("udphop needs an interval of at least 5 seconds at both ends (10, or \"5-30\"); otherwise every connection fails (\"invalid interval\")."),
+        });
+    }
+    if (interval && handling === 'load' && !(interval[0] === 0 && interval[1] === 0) && interval[0] < 5) {
+        // v26.10.10:transport_finalmask.go:1088-1094 — 0 is the default (30), a start under 5 is refused at load.
+        out.push({
+            path: `${at}.settings.interval`,
+            severity: 'critical',
+            message: t("udphop's interval starts at {from} seconds, and Xray {tag} refuses a start under 5 when it loads the config (\"interval must be at least 5\"). Leave it empty for the default of 30.", { from: interval[0], tag }),
         });
     }
     return out;

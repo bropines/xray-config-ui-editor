@@ -22,30 +22,35 @@ import { validateInbound } from '../validators';
  * it could not be created and an existing one opened with a blank chooser.
  *
  * The list below is `inboundConfigLoader`, which is the same twelve names on
- * all three tags (v26.3.27:infra/conf/xray.go:25-38,
- * v26.7.28:infra/conf/xray.go:22-35, v26.9.9:infra/conf/xray.go:23-36). It is
- * written out rather than read: a test that fetched the core would pass on a
- * bad day and fail on a good one.
+ * the first three tags (v26.3.27:infra/conf/xray.go:25-38,
+ * v26.7.28:infra/conf/xray.go:22-35, v26.9.9:infra/conf/xray.go:23-36) and
+ * thirteen on v26.10.10, which adds `masque` (:24-38). It is written out rather
+ * than read: a test that fetched the core would pass on a bad day and fail on
+ * a good one.
  */
 const REGISTERED = [
     'tunnel', 'dokodemo-door', 'http', 'shadowsocks', 'mixed', 'socks',
     'vless', 'vmess', 'trojan', 'wireguard', 'hysteria', 'tun',
 ];
+const SINCE_2610 = ['masque'];
 
-const offeredOn = (line: (typeof CORE_VERSIONS)[number]['id']) =>
+type Line = (typeof CORE_VERSIONS)[number]['id'];
+const registeredOn = (line: Line) => (line === '26.10' ? [...REGISTERED, ...SINCE_2610] : REGISTERED);
+
+const offeredOn = (line: Line) =>
     protocolsFor(line, 'inbound', InboundProtocolSchema.options);
 
 describe('the chooser against the loader', () => {
     it('offers every inbound protocol the core registers, on every line', () => {
         for (const line of CORE_VERSIONS) {
-            const missing = REGISTERED.filter(protocol => !offeredOn(line.id).includes(protocol));
+            const missing = registeredOn(line.id).filter(protocol => !offeredOn(line.id).includes(protocol));
             expect(missing).toEqual([]);
         }
     });
 
     it('offers nothing the core does not register', () => {
         for (const line of CORE_VERSIONS) {
-            const extra = offeredOn(line.id).filter(protocol => !REGISTERED.includes(protocol));
+            const extra = offeredOn(line.id).filter(protocol => !registeredOn(line.id).includes(protocol));
             expect(extra).toEqual([]);
         }
     });
@@ -69,7 +74,8 @@ describe('every registered inbound protocol', () => {
     it('is the whole of what the factory builds, bar the one alias of ours', () => {
         // `shadowsocks-2022` is this app's name for shadowsocks with the 2022
         // ciphers — not a protocol the loader knows, and not offered.
-        const extra = buildableProtocols('inbound').filter(protocol => !REGISTERED.includes(protocol) && protocol !== 'shadowsocks-2022');
+        const extra = buildableProtocols('inbound').filter(protocol =>
+            !REGISTERED.includes(protocol) && !SINCE_2610.includes(protocol) && protocol !== 'shadowsocks-2022');
         expect(extra).toEqual([]);
     });
 });

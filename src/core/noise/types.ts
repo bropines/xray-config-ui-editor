@@ -8,6 +8,11 @@
  * packet to a destination:
  *
  *   packet + type   fixed bytes; type is hex | str | base64 | array ("" = array)
+ *   packet + exp    (26.10 only) a string expression such as `<b 0xDEADBEEF><r 8><t>`
+ *                   the core builds the bytes from (v26.10.10:transport_finalmask.go:317).
+ *                   There are no bytes to hold, so a recipe cannot represent it:
+ *                   `packetBytes` answers null for it, and the generator stays
+ *                   off a list that holds one rather than rewrite it as hex.
  *   rand            a random datagram whose length is drawn from [from, to)
  *                   (common/crypto RandBetween: the upper bound is exclusive)
  *   randRange       the byte values `rand` draws from, [from, to] inclusive

@@ -15,16 +15,16 @@ import type { CoreVersionId } from './index';
 
 type Status = CoreFeature['status'];
 
-const everywhere = (status: Status['26.3']): Status => ({ '26.3': status, '26.7': status, '26.9': status });
+const everywhere = (status: Status['26.3']): Status => ({ '26.3': status, '26.7': status, '26.9': status, '26.10': status });
 
-const same = (values: string[]): Record<CoreVersionId, string[]> => ({ '26.3': values, '26.7': values, '26.9': values });
+const same = (values: string[]): Record<CoreVersionId, string[]> => ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
 
 /** HysteriaServerConfig is {version, clients} on 26.3 and {version, users, clients} after. */
-const HYSTERIA_SERVER = ['v26.3.27:infra/conf/hysteria.go:39', 'v26.7.28:infra/conf/hysteria.go:39', 'v26.9.9:infra/conf/hysteria.go:39'];
+const HYSTERIA_SERVER = ['v26.3.27:infra/conf/hysteria.go:39', 'v26.7.28:infra/conf/hysteria.go:39', 'v26.9.9:infra/conf/hysteria.go:39', 'v26.10.10:infra/conf/hysteria.go:39'];
 /** HysteriaUserConfig is {auth, level, email} on every line. */
-const HYSTERIA_USER = ['v26.3.27:infra/conf/hysteria.go:33', 'v26.7.28:infra/conf/hysteria.go:33', 'v26.9.9:infra/conf/hysteria.go:33'];
+const HYSTERIA_USER = ['v26.3.27:infra/conf/hysteria.go:33', 'v26.7.28:infra/conf/hysteria.go:33', 'v26.9.9:infra/conf/hysteria.go:33', 'v26.10.10:infra/conf/hysteria.go:33'];
 /** TunConfig: {name, MTU, userLevel} on 26.3; eight keys from 26.7; no `stack` anywhere. */
-const TUN_CONFIG = ['v26.3.27:infra/conf/tun.go:8', 'v26.7.28:infra/conf/tun.go:14', 'v26.9.9:infra/conf/tun.go:14'];
+const TUN_CONFIG = ['v26.3.27:infra/conf/tun.go:8', 'v26.7.28:infra/conf/tun.go:14', 'v26.9.9:infra/conf/tun.go:14', 'v26.10.10:infra/conf/tun.go:18'];
 
 export const INBOUND_FEATURES: CoreFeature[] = [
     // ── hysteria: the Hysteria 1 shape this editor used to write ────────
@@ -72,10 +72,10 @@ export const INBOUND_FEATURES: CoreFeature[] = [
         protocol: ['tun'],
         path: 'settings.autoOutboundsInterface',
         value,
-        status: { '26.3': 'absent', '26.7': 'rejected', '26.9': 'rejected' },
+        status: { '26.3': 'absent', '26.7': 'rejected', '26.9': 'rejected', '26.10': 'rejected' },
         replacement: 'settings.autoOutboundsInterface: "auto"',
         detail: 'autoOutboundsInterface is a string; a boolean fails to decode on the lines that read it.',
-        evidence: ['v26.7.28:infra/conf/tun.go:22', 'v26.9.9:infra/conf/tun.go:22'],
+        evidence: ['v26.7.28:infra/conf/tun.go:22', 'v26.9.9:infra/conf/tun.go:22', 'v26.10.10:infra/conf/tun.go:26'],
     })),
 
     // ── wrapper ─────────────────────────────────────────────────────────
@@ -87,20 +87,23 @@ export const INBOUND_FEATURES: CoreFeature[] = [
         scope: 'inbound',
         path: 'listen',
         value: '',
-        status: { '26.3': 'rejected', '26.7': 'rejected', '26.9': 'accepted' },
+        status: { '26.3': 'rejected', '26.7': 'rejected', '26.9': 'accepted', '26.10': 'accepted' },
         detail: 'An empty listen string crashes the loader before 26.9; leave the key out to listen on every address.',
-        evidence: ['v26.3.27:infra/conf/xray.go:152', 'v26.7.28:infra/conf/xray.go:152', 'v26.9.9:infra/conf/xray.go:144'],
+        evidence: ['v26.3.27:infra/conf/xray.go:152', 'v26.7.28:infra/conf/xray.go:152', 'v26.9.9:infra/conf/xray.go:144', 'v26.10.10:infra/conf/xray.go:147'],
     },
 ];
 
 /**
  * Classic cipher names are lower-cased before the switch; the 2022 names are
- * looked up case-sensitively in sing-shadowsocks' list. Canonical spellings
- * come first — the choosers show those and hide the `aead_*` and `plain`
- * aliases, which the check still has to accept.
+ * looked up case-sensitively in sing-shadowsocks' list up to 26.9 and
+ * lower-cased first from 26.10. Canonical spellings come first — the choosers
+ * show those and hide the `aead_*` and `plain` aliases, which the core still
+ * accepts. These are what a chooser offers; whether a config's method is
+ * accepted depends on more than the name, and is judged by
+ * core/xray/shadowsocks-inbound.
  */
-const SS_2022 = ['2022-blake3-aes-128-gcm', '2022-blake3-aes-256-gcm', '2022-blake3-chacha20-poly1305'];
-const SS_CLASSIC = [
+export const SS_2022 = ['2022-blake3-aes-128-gcm', '2022-blake3-aes-256-gcm', '2022-blake3-chacha20-poly1305'];
+export const SS_CLASSIC = [
     'aes-128-gcm', 'aes-256-gcm', 'chacha20-poly1305', 'chacha20-ietf-poly1305',
     'xchacha20-poly1305', 'xchacha20-ietf-poly1305',
     'aead_aes_128_gcm', 'aead_aes_256_gcm', 'aead_chacha20_poly1305', 'aead_xchacha20_poly1305',
@@ -115,7 +118,7 @@ const VLESS_INBOUND_FLOWS = ['', 'xtls-rprx-vision'];
 const VLESS_FLOW_EVIDENCE = [
     'v26.3.27:infra/conf/vless.go:44', 'v26.3.27:infra/conf/vless.go:65',
     'v26.7.28:infra/conf/vless.go:50', 'v26.7.28:infra/conf/vless.go:72',
-    'v26.9.9:infra/conf/vless.go:53', 'v26.9.9:infra/conf/vless.go:77',
+    'v26.9.9:infra/conf/vless.go:53', 'v26.10.10:infra/conf/vless.go:53', 'v26.9.9:infra/conf/vless.go:77', 'v26.10.10:infra/conf/vless.go:77',
 ];
 
 /** `https`/`ssl` are the core's own aliases of `tls`; kept last so a chooser can drop them. */
@@ -131,10 +134,16 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
             '26.3': [...SS_2022, ...SS_CLASSIC, 'none', 'plain'],
             '26.7': [...SS_2022, ...SS_CLASSIC],
             '26.9': [...SS_2022, ...SS_CLASSIC],
+            '26.10': [...SS_2022, ...SS_CLASSIC],
         },
         outside: 'rejected',
+        // The list is for the chooser. `method` is not read at all by a
+        // multi-user classic server, is compared exactly for 2022 names up to
+        // 26.9, and may not be empty for one account — none of which a flat
+        // list can say. shadowsocksInboundProblems does.
+        offeredOnly: true,
         detail: '"none"/"plain" were removed in 26.7 and fail with "unknown cipher method", as does any other unknown name.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:101', 'v26.9.9:infra/conf/shadowsocks.go:101'],
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:101', 'v26.9.9:infra/conf/shadowsocks.go:101', 'v26.10.10:infra/conf/shadowsocks.go:99'],
     },
     ...([
         ['inbound.vless.flow', 'settings.flow'],
@@ -159,7 +168,7 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
         allowed: same(['http', 'tls', 'quic', 'fakedns', 'fakedns+others', 'https', 'ssl']),
         outside: 'rejected',
         detail: 'Lower-cased and switched on; any other name fails the load with "unknown protocol".',
-        evidence: ['v26.3.27:infra/conf/xray.go:71', 'v26.7.28:infra/conf/xray.go:68', 'v26.9.9:infra/conf/xray.go:79'],
+        evidence: ['v26.3.27:infra/conf/xray.go:71', 'v26.7.28:infra/conf/xray.go:68', 'v26.9.9:infra/conf/xray.go:79', 'v26.10.10:infra/conf/xray.go:82'],
     },
     {
         id: 'inbound.socks.auth',
@@ -170,7 +179,7 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
         outside: 'absent',
         caseSensitive: true,
         detail: 'Compared exactly; any other value, "Password" included, quietly falls back to noauth.',
-        evidence: ['v26.3.27:infra/conf/socks.go:40', 'v26.7.28:infra/conf/socks.go:41', 'v26.9.9:infra/conf/socks.go:41'],
+        evidence: ['v26.3.27:infra/conf/socks.go:40', 'v26.7.28:infra/conf/socks.go:41', 'v26.9.9:infra/conf/socks.go:41', 'v26.10.10:infra/conf/socks.go:41'],
     },
     {
         // A WireGuard server never resolves anything with it — the strategy is
@@ -182,9 +191,10 @@ export const INBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'inbound',
         protocol: ['wireguard'],
         path: 'settings.domainStrategy',
-        allowed: same(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']),
+        // 26.10 has no such field, so nothing checks the value.
+        allowed: { ...same(['', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4']), '26.10': null },
         outside: 'rejected',
-        detail: 'Lower-cased and switched on for an inbound too; anything outside the ForceIP family fails with "unsupported domain strategy".',
-        evidence: ['v26.3.27:infra/conf/wireguard.go:105', 'v26.7.28:infra/conf/wireguard.go:127', 'v26.9.9:infra/conf/wireguard.go:128'],
+        detail: 'Lower-cased and switched on for an inbound too; anything outside the ForceIP family fails with "unsupported domain strategy". 26.10 dropped the key.',
+        evidence: ['v26.3.27:infra/conf/wireguard.go:105', 'v26.7.28:infra/conf/wireguard.go:127', 'v26.9.9:infra/conf/wireguard.go:128', 'v26.10.10:infra/conf/wireguard.go:59-69'],
     },
 ];

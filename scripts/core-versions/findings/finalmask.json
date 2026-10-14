@@ -11,546 +11,591 @@
       "path": "streamSettings.finalmask",
       "maskType": null,
       "kind": "field",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
-      "detail": "finalmask exists in all three tags with the same top-level keys tcp, udp and quicParams; in v26.3.27 its structs live in transport_internet.go and from v26.7.28 in the new transport_finalmask.go.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1720", "v26.3.27:infra/conf/transport_internet.go:1731", "v26.7.28:infra/conf/transport_finalmask.go:947", "v26.7.28:infra/conf/transport_internet.go:50", "v26.9.9:infra/conf/transport_finalmask.go:1013", "v26.9.9:infra/conf/transport_internet.go:50"]
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "detail": "finalmask exists in all four tags with the same top-level keys tcp, udp and quicParams; in v26.3.27 its structs live in transport_internet.go and from v26.7.28 in the new transport_finalmask.go.",
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1720", "v26.3.27:infra/conf/transport_internet.go:1731", "v26.7.28:infra/conf/transport_finalmask.go:947", "v26.7.28:infra/conf/transport_internet.go:50", "v26.9.9:infra/conf/transport_finalmask.go:1013", "v26.9.9:infra/conf/transport_internet.go:50", "v26.10.10:infra/conf/transport_finalmask.go:1152", "v26.10.10:infra/conf/transport_internet.go:54"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].type | streamSettings.finalmask.udp[].type",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "type is lower-cased and looked up in a per-list map, so an unknown type or a type placed in the wrong list (e.g. fragment under udp, salamander under tcp) fails the load with 'unknown config id'; a missing settings object is treated as {}.",
-      "evidence": ["v26.3.27:infra/conf/loader.go:26", "v26.3.27:infra/conf/loader.go:46", "v26.3.27:infra/conf/transport_internet.go:1705", "v26.3.27:infra/conf/transport_internet.go:1709", "v26.7.28:infra/conf/transport_finalmask.go:919", "v26.9.9:infra/conf/loader.go:26", "v26.9.9:infra/conf/transport_finalmask.go:982"]
+      "evidence": ["v26.3.27:infra/conf/loader.go:26", "v26.3.27:infra/conf/loader.go:46", "v26.3.27:infra/conf/transport_internet.go:1705", "v26.3.27:infra/conf/transport_internet.go:1709", "v26.7.28:infra/conf/transport_finalmask.go:919", "v26.9.9:infra/conf/loader.go:26", "v26.9.9:infra/conf/transport_finalmask.go:982", "v26.10.10:infra/conf/loader.go:26", "v26.10.10:infra/conf/transport_finalmask.go:1121"]
     },
     {
       "path": "streamSettings.finalmask.udp",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": "udp[0] is applied nearest the socket (outermost on the wire)", "v26.7.28": "udp[last] is applied nearest the socket (outermost on the wire)", "v26.9.9": "udp[last] is applied nearest the socket (outermost on the wire)" },
-      "detail": "The wrapping order of UDP masks flipped after v26.3.27 (v26.7.28 iterates slices.Backward, v26.9.9 reverses the slice), so a chain of two or more masks means a different wire format on v26.3.27 than on later tags and mixed-version peers will not interoperate.",
-      "evidence": ["v26.3.27:transport/internet/finalmask/finalmask.go:22", "v26.3.27:transport/internet/finalmask/finalmask.go:31", "v26.7.28:transport/internet/finalmask/finalmask.go:32", "v26.7.28:transport/internet/finalmask/finalmask.go:65", "v26.9.9:transport/internet/finalmask/finalmask.go:22"]
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": "udp[0] is applied nearest the socket (outermost on the wire)", "v26.7.28": "udp[last] is applied nearest the socket (outermost on the wire)", "v26.9.9": "udp[last] is applied nearest the socket (outermost on the wire)", "v26.10.10": "udp[last] is applied nearest the socket (outermost on the wire)" },
+      "detail": "The wrapping order of UDP masks flipped after v26.3.27 (v26.7.28 iterates slices.Backward, v26.9.9 reverses the slice), so a chain of two or more masks means a different wire format on v26.3.27 than on later tags and mixed-version peers will not interoperate. v26.10.10 still reverses the slice, now in NewFinalMask, before its dial and listen loops walk it.",
+      "evidence": ["v26.3.27:transport/internet/finalmask/finalmask.go:22", "v26.3.27:transport/internet/finalmask/finalmask.go:31", "v26.7.28:transport/internet/finalmask/finalmask.go:32", "v26.7.28:transport/internet/finalmask/finalmask.go:65", "v26.9.9:transport/internet/finalmask/finalmask.go:22", "v26.10.10:transport/internet/finalmask/finalmask.go:46", "v26.10.10:transport/internet/finalmask/finalmask.go:179", "v26.10.10:transport/internet/finalmask/finalmask.go:239"]
     },
     {
       "path": "streamSettings.finalmask.tcp",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": "tcp[0] is applied nearest the socket", "v26.7.28": "tcp[last] is applied nearest the socket", "v26.9.9": "tcp[last] is applied nearest the socket" },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": "tcp[0] is applied nearest the socket", "v26.7.28": "tcp[last] is applied nearest the socket", "v26.9.9": "tcp[last] is applied nearest the socket", "v26.10.10": "tcp[last] is applied nearest the socket" },
       "detail": "TCP mask chains flipped order the same way as UDP after v26.3.27, so multi-mask tcp lists are not wire-compatible between v26.3.27 and later tags.",
-      "evidence": ["v26.3.27:transport/internet/finalmask/finalmask.go:199", "v26.3.27:transport/internet/finalmask/finalmask.go:207", "v26.7.28:transport/internet/finalmask/finalmask.go:216", "v26.7.28:transport/internet/finalmask/finalmask.go:227", "v26.9.9:transport/internet/finalmask/finalmask.go:204"]
+      "evidence": ["v26.3.27:transport/internet/finalmask/finalmask.go:199", "v26.3.27:transport/internet/finalmask/finalmask.go:207", "v26.7.28:transport/internet/finalmask/finalmask.go:216", "v26.7.28:transport/internet/finalmask/finalmask.go:227", "v26.9.9:transport/internet/finalmask/finalmask.go:204", "v26.10.10:transport/internet/finalmask/finalmask.go:45", "v26.10.10:transport/internet/finalmask/finalmask.go:88", "v26.10.10:transport/internet/finalmask/finalmask.go:376"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "header-dns",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27 (unknown config id); the replacement is {\"type\":\"mkcp-legacy\",\"settings\":{\"header\":\"dns\",\"value\":<old domain>}}, and the domain still defaults to www.baidu.com.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1246", "v26.3.27:infra/conf/transport_internet.go:1553", "v26.7.28:infra/conf/transport_finalmask.go:77", "v26.7.28:infra/conf/transport_finalmask.go:609", "v26.9.9:infra/conf/transport_finalmask.go:79"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1246", "v26.3.27:infra/conf/transport_internet.go:1553", "v26.7.28:infra/conf/transport_finalmask.go:77", "v26.7.28:infra/conf/transport_finalmask.go:609", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:79"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "header-dtls",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; use mkcp-legacy with settings.header \"dtls\".",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1247", "v26.7.28:infra/conf/transport_finalmask.go:615", "v26.9.9:infra/conf/transport_finalmask.go:79"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1247", "v26.7.28:infra/conf/transport_finalmask.go:615", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:79"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "header-srtp",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; use mkcp-legacy with settings.header \"srtp\".",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1248", "v26.7.28:infra/conf/transport_finalmask.go:617", "v26.9.9:infra/conf/transport_finalmask.go:79"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1248", "v26.7.28:infra/conf/transport_finalmask.go:617", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:79"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "header-utp",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; use mkcp-legacy with settings.header \"utp\".",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1249", "v26.7.28:infra/conf/transport_finalmask.go:619", "v26.9.9:infra/conf/transport_finalmask.go:79"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1249", "v26.7.28:infra/conf/transport_finalmask.go:619", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:79"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "header-wechat",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; use mkcp-legacy with settings.header \"wechat\".",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1250", "v26.7.28:infra/conf/transport_finalmask.go:621", "v26.9.9:infra/conf/transport_finalmask.go:79"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1250", "v26.7.28:infra/conf/transport_finalmask.go:621", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:79"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "header-wireguard",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; use mkcp-legacy with settings.header \"wireguard\".",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1251", "v26.7.28:infra/conf/transport_finalmask.go:623", "v26.9.9:infra/conf/transport_finalmask.go:79"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1251", "v26.7.28:infra/conf/transport_finalmask.go:623", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:79"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "mkcp-original",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; mkcp-legacy with empty settings (no header, no value) builds the same original.Config.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1252", "v26.7.28:infra/conf/transport_finalmask.go:601", "v26.7.28:infra/conf/transport_finalmask.go:603", "v26.9.9:infra/conf/transport_finalmask.go:606"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1252", "v26.7.28:infra/conf/transport_finalmask.go:601", "v26.7.28:infra/conf/transport_finalmask.go:603", "v26.9.9:infra/conf/transport_finalmask.go:606", "v26.10.10:infra/conf/transport_finalmask.go:701"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "mkcp-aes128gcm",
       "kind": "mask-type",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "rejected" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Removed after v26.3.27; mkcp-legacy with no header and settings.value set to the old password builds the same aes128gcm.Config.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1253", "v26.3.27:infra/conf/transport_internet.go:1599", "v26.7.28:infra/conf/transport_finalmask.go:605", "v26.9.9:infra/conf/transport_finalmask.go:608"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1253", "v26.3.27:infra/conf/transport_internet.go:1599", "v26.7.28:infra/conf/transport_finalmask.go:605", "v26.9.9:infra/conf/transport_finalmask.go:608", "v26.10.10:infra/conf/transport_finalmask.go:703"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "mkcp-legacy",
       "kind": "mask-type",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "renamedFrom": "header-dns, header-dtls, header-srtp, header-utp, header-wechat, header-wireguard, mkcp-original, mkcp-aes128gcm",
       "detail": "New in v26.7.28 and replaces the eight v26.3.27 mKCP/header types with settings {header, value}; note that kcpSettings.header/seed still error in v26.7.28 with a message naming the removed type names, and are silently ignored in v26.9.9.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:79", "v26.7.28:infra/conf/transport_finalmask.go:595", "v26.7.28:infra/conf/transport_method.go:538", "v26.9.9:infra/conf/transport_finalmask.go:81", "v26.9.9:infra/conf/transport_method.go:530", "v26.9.9:infra/conf/transport_method.go:535"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:79", "v26.7.28:infra/conf/transport_finalmask.go:595", "v26.7.28:infra/conf/transport_method.go:538", "v26.9.9:infra/conf/transport_finalmask.go:81", "v26.9.9:infra/conf/transport_method.go:530", "v26.9.9:infra/conf/transport_method.go:535", "v26.10.10:infra/conf/transport_finalmask.go:81", "v26.10.10:infra/conf/transport_finalmask.go:698"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.header",
       "maskType": "mkcp-legacy",
       "kind": "value",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["", "dns", "dtls", "srtp", "utp", "wechat", "wireguard"], "v26.9.9": ["", "dns", "dtls", "srtp", "utp", "wechat", "wireguard"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["", "dns", "dtls", "srtp", "utp", "wechat", "wireguard"], "v26.9.9": ["", "dns", "dtls", "srtp", "utp", "wechat", "wireguard"], "v26.10.10": ["", "dns", "dtls", "srtp", "utp", "wechat", "wireguard"] },
       "detail": "Case-insensitive; any other non-empty header fails the load ('invalid header'); with header empty, value empty means mkcp-original and a non-empty value is the aes128gcm password, while with header dns the value is the domain (default www.baidu.com).",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:600", "v26.7.28:infra/conf/transport_finalmask.go:608", "v26.7.28:infra/conf/transport_finalmask.go:626", "v26.9.9:infra/conf/transport_finalmask.go:611", "v26.9.9:infra/conf/transport_finalmask.go:629"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:600", "v26.7.28:infra/conf/transport_finalmask.go:608", "v26.7.28:infra/conf/transport_finalmask.go:626", "v26.9.9:infra/conf/transport_finalmask.go:611", "v26.9.9:infra/conf/transport_finalmask.go:629", "v26.10.10:infra/conf/transport_finalmask.go:706", "v26.10.10:infra/conf/transport_finalmask.go:724"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].type",
       "maskType": "xmc",
       "kind": "mask-type",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New TCP-only mask in v26.7.28 with settings {hostname, profiles, password}; it is rejected in the udp list and on v26.3.27.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:74", "v26.7.28:infra/conf/transport_finalmask.go:723", "v26.9.9:infra/conf/transport_finalmask.go:76", "v26.9.9:infra/conf/transport_finalmask.go:726"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:74", "v26.7.28:infra/conf/transport_finalmask.go:723", "v26.9.9:infra/conf/transport_finalmask.go:76", "v26.9.9:infra/conf/transport_finalmask.go:726", "v26.10.10:infra/conf/transport_finalmask.go:76", "v26.10.10:infra/conf/transport_finalmask.go:868", "v26.10.10:infra/conf/transport_finalmask.go:906"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].settings.profiles",
       "maskType": "xmc",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Required and non-empty; each profile needs username matching ^[A-Za-z0-9_]{3,16}$, a parseable uuid, and non-empty texturesValue and texturesSignature, otherwise the load fails.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:738", "v26.7.28:infra/conf/transport_finalmask.go:741", "v26.7.28:infra/conf/transport_finalmask.go:745", "v26.7.28:infra/conf/transport_finalmask.go:749", "v26.7.28:infra/conf/transport_finalmask.go:762", "v26.9.9:infra/conf/transport_finalmask.go:741", "v26.9.9:infra/conf/transport_finalmask.go:765"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:738", "v26.7.28:infra/conf/transport_finalmask.go:741", "v26.7.28:infra/conf/transport_finalmask.go:745", "v26.7.28:infra/conf/transport_finalmask.go:749", "v26.7.28:infra/conf/transport_finalmask.go:762", "v26.9.9:infra/conf/transport_finalmask.go:741", "v26.9.9:infra/conf/transport_finalmask.go:765", "v26.10.10:infra/conf/transport_finalmask.go:883", "v26.10.10:infra/conf/transport_finalmask.go:907"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].settings.password",
       "maskType": "xmc",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Required non-empty (an RSA key is derived from it at load time); hostname is optional and unchecked.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:766", "v26.7.28:infra/conf/transport_finalmask.go:770", "v26.9.9:infra/conf/transport_finalmask.go:769"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:766", "v26.7.28:infra/conf/transport_finalmask.go:770", "v26.9.9:infra/conf/transport_finalmask.go:769", "v26.10.10:infra/conf/transport_finalmask.go:911"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "realm",
       "kind": "mask-type",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New UDP mask in v26.7.28 (NAT traversal via a rendezvous URL plus STUN) with settings {url, stunServers, tlsConfig}; tlsConfig takes the normal TLS object and its Build errors fail the load.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:85", "v26.7.28:infra/conf/transport_finalmask.go:818", "v26.7.28:infra/conf/transport_finalmask.go:885", "v26.9.9:infra/conf/transport_finalmask.go:87", "v26.9.9:infra/conf/transport_finalmask.go:821"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:85", "v26.7.28:infra/conf/transport_finalmask.go:818", "v26.7.28:infra/conf/transport_finalmask.go:885", "v26.9.9:infra/conf/transport_finalmask.go:87", "v26.9.9:infra/conf/transport_finalmask.go:821", "v26.10.10:infra/conf/transport_finalmask.go:87", "v26.10.10:infra/conf/transport_finalmask.go:963", "v26.10.10:infra/conf/transport_finalmask.go:971"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.url",
       "maskType": "realm",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["realm://TOKEN@host[:port]/ID", "realm+http://TOKEN@host[:port]/ID"], "v26.9.9": ["realm://TOKEN@host[:port]/ID", "realm+http://TOKEN@host[:port]/ID"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["realm://TOKEN@host[:port]/ID", "realm+http://TOKEN@host[:port]/ID"], "v26.9.9": ["realm://TOKEN@host[:port]/ID", "realm+http://TOKEN@host[:port]/ID"], "v26.10.10": ["realm://TOKEN@host[:port]/ID", "realm+http://TOKEN@host[:port]/ID"] },
       "detail": "Required: scheme must be realm (https, default port 443) or realm+http (http, default port 80), and host, the userinfo token and the path id must all be non-empty, otherwise the load fails.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:834", "v26.7.28:infra/conf/transport_finalmask.go:843", "v26.7.28:infra/conf/transport_finalmask.go:856", "v26.7.28:infra/conf/transport_finalmask.go:864", "v26.9.9:infra/conf/transport_finalmask.go:839", "v26.9.9:infra/conf/transport_finalmask.go:873"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:834", "v26.7.28:infra/conf/transport_finalmask.go:843", "v26.7.28:infra/conf/transport_finalmask.go:856", "v26.7.28:infra/conf/transport_finalmask.go:864", "v26.9.9:infra/conf/transport_finalmask.go:839", "v26.9.9:infra/conf/transport_finalmask.go:873", "v26.10.10:infra/conf/transport_finalmask.go:981", "v26.10.10:infra/conf/transport_finalmask.go:1015"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.stunServers",
       "maskType": "realm",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Required non-empty list and every entry must be host:port (net.SplitHostPort), otherwise the load fails.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:872", "v26.7.28:infra/conf/transport_finalmask.go:877", "v26.9.9:infra/conf/transport_finalmask.go:877"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:872", "v26.7.28:infra/conf/transport_finalmask.go:877", "v26.9.9:infra/conf/transport_finalmask.go:877", "v26.10.10:infra/conf/transport_finalmask.go:1019"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.ipMode",
       "maskType": "realm",
       "kind": "value",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["dual", "v4", "v6"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["dual", "v4", "v6"], "v26.10.10": ["dual", "v4", "v6"] },
       "detail": "New in v26.9.9 and lower-cased; any other value is not rejected but silently behaves as dual, and in v26.7.28 the key is ignored.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:825", "v26.9.9:infra/conf/transport_finalmask.go:906", "v26.9.9:transport/internet/finalmask/realm/client.go:38", "v26.7.28:infra/conf/transport_finalmask.go:818"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:825", "v26.9.9:infra/conf/transport_finalmask.go:906", "v26.9.9:transport/internet/finalmask/realm/client.go:38", "v26.7.28:infra/conf/transport_finalmask.go:818", "v26.10.10:infra/conf/transport_finalmask.go:967", "v26.10.10:infra/conf/transport_finalmask.go:1048", "v26.10.10:transport/internet/finalmask/realm/client.go:39"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.portMapping",
       "maskType": "realm",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["enabled", "timeout", "lifetime"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["enabled", "timeout", "lifetime"], "v26.10.10": ["enabled", "timeout", "lifetime"] },
       "detail": "New in v26.9.9 as an object {enabled: bool, timeout: seconds (default 10), lifetime: seconds (default 600)}; negative numbers only make the UPnP/NAT-PMP mapping fail with a logged error at runtime, and in v26.7.28 the key is ignored.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:826", "v26.9.9:infra/conf/transport_finalmask.go:907", "v26.9.9:transport/internet/finalmask/realm/config.proto:17", "v26.9.9:transport/internet/finalmask/realm/portmap.go:29", "v26.9.9:transport/internet/finalmask/realm/client.go:48"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:826", "v26.9.9:infra/conf/transport_finalmask.go:907", "v26.9.9:transport/internet/finalmask/realm/config.proto:17", "v26.9.9:transport/internet/finalmask/realm/portmap.go:29", "v26.9.9:transport/internet/finalmask/realm/client.go:48", "v26.10.10:infra/conf/transport_finalmask.go:968", "v26.10.10:infra/conf/transport_finalmask.go:1049", "v26.10.10:transport/internet/finalmask/realm/config.proto:17", "v26.10.10:transport/internet/finalmask/realm/portmap.go:29", "v26.10.10:transport/internet/finalmask/realm/client.go:48"]
     },
     {
       "path": "streamSettings.finalmask.udp[].type",
       "maskType": "udphop",
       "kind": "mask-type",
-      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "renamedFrom": "streamSettings.finalmask.quicParams.udpHop",
       "detail": "New UDP mask in v26.9.9 that replaces quicParams.udpHop; it is client-only (an inbound using it fails at runtime with 'udphop: client only').",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:88", "v26.9.9:infra/conf/transport_finalmask.go:911", "v26.9.9:transport/internet/finalmask/udphop/config.go:19"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:88", "v26.9.9:infra/conf/transport_finalmask.go:911", "v26.9.9:transport/internet/finalmask/udphop/config.go:19", "v26.10.10:infra/conf/transport_finalmask.go:88", "v26.10.10:infra/conf/transport_finalmask.go:1053", "v26.10.10:transport/internet/finalmask/udphop/config.go:9", "v26.10.10:transport/internet/finalmask/udphop/config.go:16"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.mode",
       "maskType": "udphop",
       "kind": "value",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["intervalLocal", "intervalRemote", "perConnRemote"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": ["intervalLocal", "intervalRemote", "perConnRemote"], "v26.10.10": ["intervalLocal", "intervalRemote", "perConnRemote"] },
       "detail": "Required: a comma-separated, case-insensitive combination of the listed values with no spaces around commas, and an empty or unknown entry fails the load ('invalid mode').",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:913", "v26.9.9:infra/conf/transport_finalmask.go:929", "v26.9.9:infra/conf/transport_finalmask.go:938"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:913", "v26.9.9:infra/conf/transport_finalmask.go:929", "v26.9.9:infra/conf/transport_finalmask.go:938", "v26.10.10:infra/conf/transport_finalmask.go:1054", "v26.10.10:infra/conf/transport_finalmask.go:1062", "v26.10.10:infra/conf/transport_finalmask.go:1071"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.interval",
       "maskType": "udphop",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
-      "detail": "Int32Range (\"5-30\" or 10) whose both ends must be at least 5, so it is effectively required; unlike the old quicParams.udpHop.interval, 0/missing is not a default and fails at runtime with 'invalid interval'.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:914", "v26.9.9:infra/conf/transport_finalmask.go:960", "v26.9.9:transport/internet/finalmask/udphop/conn.go:62"]
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": "omitted or 0 means 30; a start under 5 fails the load" },
+      "detail": "Int32Range (\"5-30\" or 10). v26.9.9: both ends must be at least 5 and there is no default, so 0/missing fails at runtime with 'invalid interval' (unlike the old quicParams.udpHop.interval, where 0 meant default). v26.10.10: 0/missing becomes 30-30 and a start under 5 (including \"0-30\") fails the LOAD with 'interval must be at least 5'.",
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:914", "v26.9.9:infra/conf/transport_finalmask.go:960", "v26.9.9:transport/internet/finalmask/udphop/conn.go:62", "v26.10.10:infra/conf/transport_finalmask.go:1055", "v26.10.10:infra/conf/transport_finalmask.go:1088", "v26.10.10:infra/conf/transport_finalmask.go:1092", "v26.10.10:transport/internet/finalmask/udphop/conn.go:56"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.remotePorts",
       "maskType": "udphop",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "renamedFrom": "quicParams.udpHop.ports",
-      "detail": "PortList (number or \"20000-30000,443\" string) whose parse errors fail the load; sockopt (a full sockopt object, built at load) is also accepted for the hop dials.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:912", "v26.9.9:infra/conf/transport_finalmask.go:915", "v26.9.9:infra/conf/common.go:247"]
+      "detail": "PortList (number or \"20000-30000,443\" string) whose parse errors fail the load. v26.9.9 also took a sockopt object on the mask for the hop dials; v26.10.10 dropped it, so the hops dial with the outbound's own streamSettings.sockopt.",
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:912", "v26.9.9:infra/conf/transport_finalmask.go:915", "v26.9.9:infra/conf/common.go:247", "v26.10.10:infra/conf/transport_finalmask.go:1057", "v26.10.10:infra/conf/transport_finalmask.go:1102", "v26.10.10:infra/conf/common.go:247", "v26.10.10:transport/internet/memory_settings.go:76"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.remoteIPs",
       "maskType": "udphop",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Each entry must be an IP address or CIDR prefix, otherwise the load fails ('invalid ip').",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:916", "v26.9.9:infra/conf/transport_finalmask.go:941", "v26.9.9:infra/conf/transport_finalmask.go:953"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:916", "v26.9.9:infra/conf/transport_finalmask.go:941", "v26.9.9:infra/conf/transport_finalmask.go:953", "v26.10.10:infra/conf/transport_finalmask.go:1056", "v26.10.10:infra/conf/transport_finalmask.go:1075", "v26.10.10:infra/conf/transport_finalmask.go:1086"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.udpHop",
       "maskType": null,
       "kind": "removed-feature",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "absent" },
-      "values": { "v26.3.27": ["ports", "interval"], "v26.7.28": ["ports", "interval"], "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": ["ports", "interval"], "v26.7.28": ["ports", "interval"], "v26.9.9": null, "v26.10.10": null },
       "detail": "Dropped from QuicParamsConfig in v26.9.9 with no warning, so it is silently ignored and port hopping stops; migrate to a udp mask {type: udphop, settings: {mode, remotePorts: <ports>, interval}} (hysteriaSettings.congestion/up/down/udphop, which only warned in earlier tags, are likewise silently ignored in v26.9.9).",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:635", "v26.3.27:infra/conf/transport_internet.go:541", "v26.7.28:infra/conf/transport_finalmask.go:936", "v26.7.28:infra/conf/transport_method.go:780", "v26.9.9:infra/conf/transport_finalmask.go:993", "v26.9.9:infra/conf/transport_method.go:752"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:635", "v26.3.27:infra/conf/transport_internet.go:541", "v26.7.28:infra/conf/transport_finalmask.go:936", "v26.7.28:infra/conf/transport_method.go:780", "v26.9.9:infra/conf/transport_finalmask.go:993", "v26.9.9:infra/conf/transport_method.go:752", "v26.10.10:infra/conf/transport_finalmask.go:1132", "v26.10.10:infra/conf/transport_method.go:762"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.udpHop.ports",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "In v26.3.27 ports is raw JSON and a parse error silently yields an empty port list, whereas from v26.7.28 it is a typed PortList and an invalid value fails the load.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:504", "v26.3.27:infra/conf/transport_internet.go:1925", "v26.7.28:infra/conf/transport_method.go:743", "v26.7.28:infra/conf/common.go:244"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:504", "v26.3.27:infra/conf/transport_internet.go:1925", "v26.7.28:infra/conf/transport_method.go:743", "v26.7.28:infra/conf/common.go:244", "v26.10.10:infra/conf/transport_finalmask.go:1132"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.udpHop.interval",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Each non-zero end of the range must be at least 5 or the load fails ('Interval must be at least 5'); 0 means default.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1935", "v26.7.28:infra/conf/transport_internet.go:256"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1935", "v26.7.28:infra/conf/transport_internet.go:256", "v26.10.10:infra/conf/transport_finalmask.go:1132"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.bbrProfile",
       "maskType": null,
       "kind": "value",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["conservative", "standard", "aggressive"], "v26.9.9": ["conservative", "standard", "aggressive"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["conservative", "standard", "aggressive"], "v26.9.9": ["conservative", "standard", "aggressive"], "v26.10.10": ["conservative", "standard", "aggressive"] },
       "detail": "New in v26.7.28, case-insensitive, empty means standard, and any other value fails the load ('unknown bbr profile').",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:933", "v26.7.28:infra/conf/transport_internet.go:219", "v26.7.28:infra/conf/transport_internet.go:226", "v26.7.28:transport/internet/hysteria/congestion/bbr/bbr_sender.go:100", "v26.9.9:infra/conf/transport_finalmask.go:996", "v26.9.9:infra/conf/transport_internet.go:219"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:933", "v26.7.28:infra/conf/transport_internet.go:219", "v26.7.28:infra/conf/transport_internet.go:226", "v26.7.28:transport/internet/hysteria/congestion/bbr/bbr_sender.go:100", "v26.9.9:infra/conf/transport_finalmask.go:996", "v26.9.9:infra/conf/transport_internet.go:219", "v26.10.10:infra/conf/transport_finalmask.go:1135", "v26.10.10:infra/conf/transport_internet.go:245"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.brutalDisableLossCompensation",
       "maskType": null,
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New boolean in v26.9.9 passed straight through; silently ignored in earlier tags.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:999", "v26.9.9:infra/conf/transport_internet.go:288"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:999", "v26.9.9:infra/conf/transport_internet.go:288", "v26.10.10:infra/conf/transport_finalmask.go:1138", "v26.10.10:infra/conf/transport_internet.go:314"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.disableChromeParrot",
       "maskType": null,
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New boolean in v26.9.9 passed straight through; silently ignored in earlier tags.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:1007", "v26.9.9:infra/conf/transport_internet.go:296"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:1007", "v26.9.9:infra/conf/transport_internet.go:296", "v26.10.10:infra/conf/transport_finalmask.go:1146", "v26.10.10:infra/conf/transport_internet.go:322"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.disableGSO",
       "maskType": null,
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New boolean in v26.9.9 passed straight through; silently ignored in earlier tags.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:1008", "v26.9.9:infra/conf/transport_internet.go:297"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:1008", "v26.9.9:infra/conf/transport_internet.go:297", "v26.10.10:infra/conf/transport_finalmask.go:1147", "v26.10.10:infra/conf/transport_internet.go:323"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.disableStatelessReset",
       "maskType": null,
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New boolean in v26.9.9 passed straight through; silently ignored in earlier tags.",
-      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:1010", "v26.9.9:infra/conf/transport_internet.go:299"]
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:1010", "v26.9.9:infra/conf/transport_internet.go:299", "v26.10.10:infra/conf/transport_finalmask.go:1149", "v26.10.10:infra/conf/transport_internet.go:325"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.congestion",
       "maskType": null,
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": ["", "reno", "bbr", "brutal", "force-brutal"], "v26.7.28": ["", "reno", "bbr", "brutal", "force-brutal"], "v26.9.9": ["", "reno", "bbr", "brutal", "force-brutal"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["", "reno", "bbr", "brutal", "force-brutal"], "v26.7.28": ["", "reno", "bbr", "brutal", "force-brutal"], "v26.9.9": ["", "reno", "bbr", "brutal", "force-brutal"], "v26.10.10": ["", "reno", "bbr", "brutal", "force-brutal"] },
       "detail": "Unchanged across tags: case-insensitive, force-brutal requires a non-zero brutalUp, and any other value fails the load.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1913", "v26.3.27:infra/conf/transport_internet.go:1921", "v26.7.28:infra/conf/transport_internet.go:245", "v26.9.9:infra/conf/transport_internet.go:245", "v26.9.9:infra/conf/transport_internet.go:250"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1913", "v26.3.27:infra/conf/transport_internet.go:1921", "v26.7.28:infra/conf/transport_internet.go:245", "v26.9.9:infra/conf/transport_internet.go:245", "v26.9.9:infra/conf/transport_internet.go:250", "v26.10.10:infra/conf/transport_internet.go:271", "v26.10.10:infra/conf/transport_internet.go:276"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.brutalUp | streamSettings.finalmask.quicParams.brutalDown",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Bandwidth strings with unit b/bps, k/kb/kbps, m/mb/mbps, g/gb/gbps or t/tb/tbps (1024-based bits, divided by 8); an unknown unit fails the load, and a non-zero result below 65536 bytes/s (i.e. under 512 kbps) fails the load in every tag.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:462", "v26.3.27:infra/conf/transport_internet.go:1906", "v26.7.28:infra/conf/transport_method.go:701", "v26.7.28:infra/conf/transport_internet.go:238", "v26.9.9:infra/conf/transport_method.go:696", "v26.9.9:infra/conf/transport_internet.go:238"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:462", "v26.3.27:infra/conf/transport_internet.go:1906", "v26.7.28:infra/conf/transport_method.go:701", "v26.7.28:infra/conf/transport_internet.go:238", "v26.9.9:infra/conf/transport_method.go:696", "v26.9.9:infra/conf/transport_internet.go:238", "v26.10.10:infra/conf/transport_method.go:706", "v26.10.10:infra/conf/transport_internet.go:264"]
     },
     {
       "path": "streamSettings.finalmask.quicParams.{initStreamReceiveWindow,maxStreamReceiveWindow,initConnectionReceiveWindow,maxConnectionReceiveWindow,maxIdleTimeout,keepAlivePeriod,maxIncomingStreams}",
       "maskType": null,
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Unchanged across tags when non-zero: the four receive windows must be at least 16384, maxIdleTimeout 4-120, keepAlivePeriod 2-60 and maxIncomingStreams at least 8, otherwise the load fails.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1939", "v26.3.27:infra/conf/transport_internet.go:1951", "v26.3.27:infra/conf/transport_internet.go:1954", "v26.3.27:infra/conf/transport_internet.go:1957", "v26.7.28:infra/conf/transport_internet.go:260", "v26.9.9:infra/conf/transport_internet.go:256", "v26.9.9:infra/conf/transport_internet.go:274"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1939", "v26.3.27:infra/conf/transport_internet.go:1951", "v26.3.27:infra/conf/transport_internet.go:1954", "v26.3.27:infra/conf/transport_internet.go:1957", "v26.7.28:infra/conf/transport_internet.go:260", "v26.9.9:infra/conf/transport_internet.go:256", "v26.9.9:infra/conf/transport_internet.go:274", "v26.10.10:infra/conf/transport_internet.go:282", "v26.10.10:infra/conf/transport_internet.go:300"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.domain",
       "maskType": "xdns",
       "kind": "rename",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
-      "detail": "Required non-empty string in v26.3.27 ('empty domain'); from v26.7.28 the mere presence of the key fails the load via PrintRemovedFeatureError pointing to domains (server) and resolvers (client), so a v26.7.28+ xdns config also fails on v26.3.27 because domain is missing there.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1663", "v26.3.27:infra/conf/transport_internet.go:1667", "v26.7.28:infra/conf/transport_finalmask.go:696", "v26.7.28:infra/conf/transport_finalmask.go:704", "v26.9.9:infra/conf/transport_finalmask.go:707"]
+      "status": { "v26.3.27": "accepted", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "detail": "Required non-empty string in v26.3.27 ('empty domain'); v26.7.28 and v26.9.9 fail the load on the mere presence of the key via PrintRemovedFeatureError pointing to domains (server) and resolvers (client), so a v26.7.28+ xdns config also fails on v26.3.27 because domain is missing there; the v26.10.10 XDNS struct has no such field, so the key is dropped silently.",
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1663", "v26.3.27:infra/conf/transport_internet.go:1667", "v26.7.28:infra/conf/transport_finalmask.go:696", "v26.7.28:infra/conf/transport_finalmask.go:704", "v26.9.9:infra/conf/transport_finalmask.go:707", "v26.10.10:infra/conf/transport_finalmask.go:805", "v26.10.10:infra/conf/transport_finalmask.go:811"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.domains",
       "maskType": "xdns",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": ["names","lenLimit","labelLimit","types","edns0"] },
       "renamedFrom": "domain",
-      "detail": "Server-side list of entries 'domain' or 'domain:txt|a|aaaa' (record type), parsed when the listener starts, so a bad entry fails at runtime rather than at load.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:698", "v26.7.28:transport/internet/finalmask/xdns/spec.go:14", "v26.7.28:transport/internet/finalmask/xdns/spec.go:27", "v26.7.28:transport/internet/finalmask/xdns/server.go:74", "v26.9.9:infra/conf/transport_finalmask.go:701"]
+      "detail": "Server-side list of strings 'domain' or 'domain:txt|a|aaaa' (record type) in v26.7.28 and v26.9.9, parsed when the listener starts, so a bad entry fails at runtime rather than at load. v26.10.10 reads a list of OBJECTS {names[], lenLimit, labelLimit, types[], edns0} on BOTH sides (the client builds its queries from it too), so a plain string there is a JSON type error that fails the decode of the whole config; Build() checks every name with NewDomain at load (no \"..\", lenLimit 0-255, labelLimit 0-63, edns0 0 or 512-4096), and an empty list is refused only when the listener starts or the dial happens ('empty domains').",
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:698", "v26.7.28:transport/internet/finalmask/xdns/spec.go:14", "v26.7.28:transport/internet/finalmask/xdns/spec.go:27", "v26.7.28:transport/internet/finalmask/xdns/server.go:74", "v26.9.9:infra/conf/transport_finalmask.go:701", "v26.10.10:infra/conf/transport_finalmask.go:793", "v26.10.10:infra/conf/transport_finalmask.go:806", "v26.10.10:infra/conf/transport_finalmask.go:814", "v26.10.10:transport/internet/finalmask/xdns/domain.go:82", "v26.10.10:transport/internet/finalmask/xdns/server.go:46", "v26.10.10:transport/internet/finalmask/xdns/client.go:57"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.resolvers",
       "maskType": "xdns",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["domain[:txt|a|aaaa]+udp://IP:port"], "v26.9.9": ["domain[:txt|a|aaaa]+udp://IP:port"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["domain[:txt|a|aaaa]+udp://IP:port"], "v26.9.9": ["domain[:txt|a|aaaa]+udp://IP:port"], "v26.10.10": ["{\"addrs\": [\"[udp://|tcp://]host[:port]\"]}"] },
       "renamedFrom": "domain",
-      "detail": "Client-side list where every entry must contain '+udp://' or the load fails, and at least one of domains or resolvers must be non-empty ('empty domains & empty resolvers'); the part after +udp:// must be a literal IP:port, but that is only checked at dial time.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:699", "v26.7.28:infra/conf/transport_finalmask.go:707", "v26.7.28:infra/conf/transport_finalmask.go:712", "v26.7.28:transport/internet/finalmask/xdns/spec.go:65", "v26.7.28:transport/internet/finalmask/xdns/client.go:78", "v26.9.9:infra/conf/transport_finalmask.go:710", "v26.9.9:infra/conf/transport_finalmask.go:715", "v26.9.9:transport/internet/finalmask/xdns/client.go:82"]
+      "detail": "Client-side list of strings where every entry must contain '+udp://' (v26.7.28, v26.9.9) or the load fails, and at least one of domains or resolvers must be non-empty ('empty domains & empty resolvers'); the part after +udp:// must be a literal IP:port, but that is only checked at dial time. v26.10.10 reads a list of objects {addrs[]} instead: an address defaults to udp:// and port 53, only the udp and tcp schemes load ('invalid protocol'), the '+udp://' form is gone (a string entry fails the JSON decode of the config), and an empty list is refused only when the client dials ('empty resolvers'); a server ignores resolvers.",
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:699", "v26.7.28:infra/conf/transport_finalmask.go:707", "v26.7.28:infra/conf/transport_finalmask.go:712", "v26.7.28:transport/internet/finalmask/xdns/spec.go:65", "v26.7.28:transport/internet/finalmask/xdns/client.go:78", "v26.9.9:infra/conf/transport_finalmask.go:710", "v26.9.9:infra/conf/transport_finalmask.go:715", "v26.9.9:transport/internet/finalmask/xdns/client.go:82", "v26.10.10:infra/conf/transport_finalmask.go:801", "v26.10.10:infra/conf/transport_finalmask.go:836", "v26.10.10:infra/conf/transport_finalmask.go:848", "v26.10.10:transport/internet/finalmask/xdns/client.go:60", "v26.10.10:transport/internet/finalmask/xdns/resolver.go:17", "v26.10.10:transport/internet/finalmask/xdns/resolver_udp.go:26"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.listenIp",
       "maskType": "xicmp",
       "kind": "removed-feature",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "absent", "v26.9.9": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "absent", "v26.9.9": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "v26.3.27 listen address (default 0.0.0.0); dropped in v26.7.28 with no warning, so it is silently ignored (the new ips key has different meaning, not a rename).",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1677", "v26.3.27:infra/conf/transport_internet.go:1687", "v26.7.28:infra/conf/transport_finalmask.go:798", "v26.9.9:infra/conf/transport_finalmask.go:801"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1677", "v26.3.27:infra/conf/transport_internet.go:1687", "v26.7.28:infra/conf/transport_finalmask.go:798", "v26.9.9:infra/conf/transport_finalmask.go:801", "v26.10.10:infra/conf/transport_finalmask.go:943"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.id",
       "maskType": "xicmp",
       "kind": "removed-feature",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "absent", "v26.9.9": "absent" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "absent", "v26.9.9": "absent", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "v26.3.27 uint16 ICMP id; dropped in v26.7.28 (the client now picks a random id) and silently ignored.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1678", "v26.7.28:infra/conf/transport_finalmask.go:798", "v26.7.28:transport/internet/finalmask/xicmp/client.go:81"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1678", "v26.7.28:infra/conf/transport_finalmask.go:798", "v26.7.28:transport/internet/finalmask/xicmp/client.go:81", "v26.10.10:infra/conf/transport_finalmask.go:943"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.dgram",
       "maskType": "xicmp",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New boolean in v26.7.28; on the client it uses unprivileged udp4/udp6 ICMP sockets instead of raw ip4:icmp/ip6:ipv6-icmp.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:799", "v26.7.28:transport/internet/finalmask/xicmp/client.go:55", "v26.9.9:infra/conf/transport_finalmask.go:802"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:799", "v26.7.28:transport/internet/finalmask/xicmp/client.go:55", "v26.9.9:infra/conf/transport_finalmask.go:802", "v26.10.10:infra/conf/transport_finalmask.go:944"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.ips",
       "maskType": "xicmp",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
-      "detail": "New in v26.7.28; every entry must be a plain IP address (no CIDR, no hostname) or the load fails, and the client picks a random one as the ICMP target while the server uses them as a set.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:800", "v26.7.28:infra/conf/transport_finalmask.go:805", "v26.9.9:infra/conf/transport_finalmask.go:808", "v26.9.9:transport/internet/finalmask/xicmp/client.go:277", "v26.9.9:transport/internet/finalmask/xicmp/server.go:61"]
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "detail": "New in v26.7.28; every entry must be a plain IP address (no CIDR, no hostname) or the load fails, and the client picks a random one as the ICMP target while the server uses them as a set. In v26.10.10 a client with no ips targets the dial address instead, and refuses to dial at all when that address is a domain ('empty ip addresses').",
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:800", "v26.7.28:infra/conf/transport_finalmask.go:805", "v26.9.9:infra/conf/transport_finalmask.go:808", "v26.9.9:transport/internet/finalmask/xicmp/client.go:277", "v26.9.9:transport/internet/finalmask/xicmp/server.go:61", "v26.10.10:infra/conf/transport_finalmask.go:945", "v26.10.10:infra/conf/transport_finalmask.go:949", "v26.10.10:transport/internet/finalmask/xicmp/config.go:15", "v26.10.10:transport/internet/finalmask/xicmp/client.go:72"]
     },
     {
       "path": "streamSettings.finalmask.udp",
       "maskType": "xicmp",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": "must be udp[0]", "v26.7.28": "must be udp[0]", "v26.9.9": "must be udp[last]" },
-      "detail": "xicmp must sit at mask level 0 or it fails at runtime ('requires being at the outermost level'); level 0 is udp[0] in v26.3.27 and v26.7.28 but udp[last] in v26.9.9, and before v26.9.9 it also fails when quicParams.udpHop is in use, and in every tag when the UDP is carried over a stream (FakePacketConn).",
-      "evidence": ["v26.3.27:transport/internet/finalmask/xicmp/client.go:60", "v26.3.27:transport/internet/finalmask/xicmp/server.go:54", "v26.7.28:transport/internet/finalmask/xicmp/config.go:17", "v26.7.28:transport/internet/finalmask/finalmask.go:32", "v26.9.9:transport/internet/finalmask/xicmp/config.go:12", "v26.9.9:transport/internet/finalmask/finalmask.go:22"]
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": "must be udp[0]", "v26.7.28": "must be udp[0]", "v26.9.9": "must be udp[last]", "v26.10.10": "must be udp[last]" },
+      "detail": "xicmp must sit at mask level 0 or it fails at runtime ('requires being at the outermost level'); level 0 is udp[0] in v26.3.27 and v26.7.28 but udp[last] in v26.9.9, and before v26.9.9 it also fails when quicParams.udpHop is in use, and in every tag up to v26.9.9 when the UDP is carried over a stream (FakePacketConn). v26.10.10 dropped those checks: xicmp declares HandleDial and HandleListen, and FinalMask refuses any other index when it dials or listens ('incorrect index: N'), so it is still udp[last] and nothing else conditions it.",
+      "evidence": ["v26.3.27:transport/internet/finalmask/xicmp/client.go:60", "v26.3.27:transport/internet/finalmask/xicmp/server.go:54", "v26.7.28:transport/internet/finalmask/xicmp/config.go:17", "v26.7.28:transport/internet/finalmask/finalmask.go:32", "v26.9.9:transport/internet/finalmask/xicmp/config.go:12", "v26.9.9:transport/internet/finalmask/finalmask.go:22", "v26.10.10:transport/internet/finalmask/finalmask.go:151", "v26.10.10:transport/internet/finalmask/finalmask.go:220", "v26.10.10:transport/internet/finalmask/xicmp/config.go:10", "v26.10.10:transport/internet/finalmask/xicmp/config.go:12"]
     },
     {
       "path": "streamSettings.finalmask.udp",
       "maskType": "realm",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": "must be udp[0]", "v26.9.9": "must be udp[last]" },
-      "detail": "realm must sit at mask level 0 or it fails at runtime; that is udp[0] in v26.7.28 and udp[last] in v26.9.9, and in v26.7.28 it also fails together with quicParams.udpHop.",
-      "evidence": ["v26.7.28:transport/internet/finalmask/realm/config.go:16", "v26.7.28:transport/internet/finalmask/realm/config.go:23", "v26.9.9:transport/internet/finalmask/realm/config.go:12", "v26.9.9:transport/internet/finalmask/realm/config.go:19"]
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": "must be udp[0]", "v26.9.9": "must be udp[last]", "v26.10.10": "any position" },
+      "detail": "realm must sit at mask level 0 or it fails at runtime; that is udp[0] in v26.7.28 and udp[last] in v26.9.9, and in v26.7.28 it also fails together with quicParams.udpHop. v26.10.10 removed the check: realm/config.go wraps the connection wherever it sits.",
+      "evidence": ["v26.7.28:transport/internet/finalmask/realm/config.go:16", "v26.7.28:transport/internet/finalmask/realm/config.go:23", "v26.9.9:transport/internet/finalmask/realm/config.go:12", "v26.9.9:transport/internet/finalmask/realm/config.go:19", "v26.10.10:transport/internet/finalmask/realm/config.go:8", "v26.10.10:transport/internet/finalmask/realm/config.go:12"]
     },
     {
       "path": "streamSettings.finalmask.udp",
       "maskType": "udphop",
       "kind": "constraint",
-      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": "must be udp[last]" },
-      "detail": "udphop must be the last udp mask or it fails at runtime, which makes it mutually exclusive with xicmp and realm (they need the same slot).",
-      "evidence": ["v26.9.9:transport/internet/finalmask/udphop/config.go:12", "v26.9.9:transport/internet/finalmask/finalmask.go:22"]
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": "must be udp[last]", "v26.10.10": "must be udp[last]" },
+      "detail": "udphop must be the last udp mask or it fails at runtime, which makes it mutually exclusive with xicmp and realm (they need the same slot). In v26.10.10 only xicmp shares that slot (both declare HandleDial and FinalMask refuses a HandleDial mask at any index but 0, with 'incorrect index: N'); realm no longer holds one.",
+      "evidence": ["v26.9.9:transport/internet/finalmask/udphop/config.go:12", "v26.9.9:transport/internet/finalmask/finalmask.go:22", "v26.10.10:transport/internet/finalmask/udphop/config.go:9", "v26.10.10:transport/internet/finalmask/finalmask.go:151"]
     },
     {
       "path": "streamSettings.finalmask.udp",
       "maskType": "sudoku",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": "must be udp[last]", "v26.7.28": "must be udp[last]", "v26.9.9": "must be udp[0]" },
-      "detail": "A udp sudoku mask must be at the innermost level (level == count-1) or it fails at runtime; that index is udp[last] before v26.9.9 and udp[0] in v26.9.9.",
-      "evidence": ["v26.3.27:transport/internet/finalmask/sudoku/config.go:46", "v26.7.28:transport/internet/finalmask/sudoku/config.go:46", "v26.9.9:transport/internet/finalmask/sudoku/config.go:40", "v26.9.9:transport/internet/finalmask/finalmask.go:22"]
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": "must be udp[last]", "v26.7.28": "must be udp[last]", "v26.9.9": "must be udp[0]", "v26.10.10": "any position" },
+      "detail": "A udp sudoku mask must be at the innermost level (level == count-1) or it fails at runtime; that index is udp[last] before v26.9.9 and udp[0] in v26.9.9. v26.10.10 removed the check: sudoku/config.go wraps the connection wherever it sits.",
+      "evidence": ["v26.3.27:transport/internet/finalmask/sudoku/config.go:46", "v26.7.28:transport/internet/finalmask/sudoku/config.go:46", "v26.9.9:transport/internet/finalmask/sudoku/config.go:40", "v26.9.9:transport/internet/finalmask/finalmask.go:22", "v26.10.10:transport/internet/finalmask/sudoku/config.go:38", "v26.10.10:transport/internet/finalmask/sudoku/config.go:42"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.mode",
       "maskType": "header-custom",
       "kind": "value",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["", "prefix", "standalone"], "v26.9.9": ["", "prefix", "standalone"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["", "prefix", "standalone"], "v26.9.9": ["", "prefix", "standalone"], "v26.10.10": ["", "prefix", "standalone"] },
       "detail": "New in v26.7.28 and case-sensitive; any other value fails the load ('unknown udp mode'), standalone builds a UDPStandaloneConfig instead of the prefix-style UDPConfig, and v26.3.27 ignores the key (always prefix).",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:505", "v26.7.28:infra/conf/transport_finalmask.go:511", "v26.7.28:infra/conf/transport_finalmask.go:582", "v26.9.9:infra/conf/transport_finalmask.go:508", "v26.9.9:infra/conf/transport_finalmask.go:514"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:505", "v26.7.28:infra/conf/transport_finalmask.go:511", "v26.7.28:infra/conf/transport_finalmask.go:582", "v26.9.9:infra/conf/transport_finalmask.go:508", "v26.9.9:infra/conf/transport_finalmask.go:514", "v26.10.10:infra/conf/transport_finalmask.go:603", "v26.10.10:infra/conf/transport_finalmask.go:609"]
     },
     {
       "path": "streamSettings.finalmask.{tcp[].settings.clients[][],servers[][],errors[][] | udp[].settings.client[],server[]}.capture",
       "maskType": "header-custom",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New in v26.7.28: saves the item's bytes under a variable name that must match ^[A-Za-z_][A-Za-z0-9_]*$, and capture alone (without packet, rand, reuse or transform) fails the load.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:68", "v26.7.28:infra/conf/transport_finalmask.go:93", "v26.7.28:infra/conf/transport_finalmask.go:348", "v26.7.28:infra/conf/transport_finalmask.go:380", "v26.7.28:infra/conf/transport_finalmask.go:403", "v26.9.9:infra/conf/transport_finalmask.go:351"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:68", "v26.7.28:infra/conf/transport_finalmask.go:93", "v26.7.28:infra/conf/transport_finalmask.go:348", "v26.7.28:infra/conf/transport_finalmask.go:380", "v26.7.28:infra/conf/transport_finalmask.go:403", "v26.9.9:infra/conf/transport_finalmask.go:351", "v26.10.10:infra/conf/transport_finalmask.go:96", "v26.10.10:infra/conf/transport_finalmask.go:446", "v26.10.10:infra/conf/transport_finalmask.go:477", "v26.10.10:infra/conf/transport_finalmask.go:501"]
     },
     {
       "path": "streamSettings.finalmask.{tcp[].settings.clients[][],servers[][],errors[][] | udp[].settings.client[],server[]}.reuse",
       "maskType": "header-custom",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New in v26.7.28: emits a previously captured variable (same name pattern); an unknown variable only fails at runtime ('unknown variable').",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:95", "v26.7.28:infra/conf/transport_finalmask.go:350", "v26.7.28:infra/conf/transport_finalmask.go:383", "v26.9.9:transport/internet/finalmask/header/custom/evaluator.go:140"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:95", "v26.7.28:infra/conf/transport_finalmask.go:350", "v26.7.28:infra/conf/transport_finalmask.go:383", "v26.9.9:transport/internet/finalmask/header/custom/evaluator.go:140", "v26.10.10:transport/internet/finalmask/header/custom/evaluator.go:140"]
     },
     {
       "path": "streamSettings.finalmask.{tcp[].settings.clients[][],servers[][],errors[][] | udp[].settings.client[],server[]}.transform",
       "maskType": "header-custom",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": ["concat", "slice", "xor16", "xor32", "be16", "be32", "le16", "le32", "le64", "pad", "truncate", "add", "sub", "and", "or", "shl", "shr"], "v26.9.9": ["concat", "slice", "xor16", "xor32", "be16", "be32", "le16", "le32", "le64", "pad", "truncate", "add", "sub", "and", "or", "shl", "shr"] },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": ["concat", "slice", "xor16", "xor32", "be16", "be32", "le16", "le32", "le64", "pad", "truncate", "add", "sub", "and", "or", "shl", "shr"], "v26.9.9": ["concat", "slice", "xor16", "xor32", "be16", "be32", "le16", "le32", "le64", "pad", "truncate", "add", "sub", "and", "or", "shl", "shr"], "v26.10.10": ["concat", "slice", "xor16", "xor32", "be16", "be32", "le16", "le32", "le64", "pad", "truncate", "add", "sub", "and", "or", "shl", "shr"] },
       "detail": "New in v26.7.28 as {op, args[]}: empty op or empty args fails the load, each arg must set exactly one of bytes (with type), u64, reuse, metadata or a nested transform, while an unknown op or metadata name (local_port, remote_port, src_port_u16, dst_port_u16, local_ip4_u32, remote_ip4_u32, src_ip4_u32, dst_ip4_u32) only fails at runtime.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:355", "v26.7.28:infra/conf/transport_finalmask.go:360", "v26.7.28:infra/conf/transport_finalmask.go:414", "v26.7.28:infra/conf/transport_finalmask.go:417", "v26.7.28:infra/conf/transport_finalmask.go:453", "v26.7.28:transport/internet/finalmask/header/custom/evaluator.go:166", "v26.7.28:transport/internet/finalmask/header/custom/evaluator.go:271", "v26.7.28:transport/internet/finalmask/header/custom/evaluator.go:609", "v26.9.9:infra/conf/transport_finalmask.go:358"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:355", "v26.7.28:infra/conf/transport_finalmask.go:360", "v26.7.28:infra/conf/transport_finalmask.go:414", "v26.7.28:infra/conf/transport_finalmask.go:417", "v26.7.28:infra/conf/transport_finalmask.go:453", "v26.7.28:transport/internet/finalmask/header/custom/evaluator.go:166", "v26.7.28:transport/internet/finalmask/header/custom/evaluator.go:271", "v26.7.28:transport/internet/finalmask/header/custom/evaluator.go:609", "v26.9.9:infra/conf/transport_finalmask.go:358", "v26.10.10:infra/conf/transport_finalmask.go:453"]
     },
     {
       "path": "streamSettings.finalmask.{tcp[].settings.clients[][],servers[][],errors[][] | udp[].settings.client[],server[]}",
       "maskType": "header-custom",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": ["packet", "rand"], "v26.7.28": ["packet", "rand", "reuse", "transform"], "v26.9.9": ["packet", "rand", "reuse", "transform"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["packet", "rand"], "v26.7.28": ["packet", "rand", "reuse", "transform"], "v26.9.9": ["packet", "rand", "reuse", "transform"], "v26.10.10": ["packet", "rand", "reuse", "transform"] },
       "detail": "At most one item kind per item or the load fails: v26.3.27 only forbids packet together with rand>0, while v26.7.28+ allows at most one of packet, rand>0, reuse and transform ('exactly one item kind must be set').",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1279", "v26.3.27:infra/conf/transport_internet.go:1491", "v26.7.28:infra/conf/transport_finalmask.go:387", "v26.7.28:infra/conf/transport_finalmask.go:400", "v26.9.9:infra/conf/transport_finalmask.go:403"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1279", "v26.3.27:infra/conf/transport_internet.go:1491", "v26.7.28:infra/conf/transport_finalmask.go:387", "v26.7.28:infra/conf/transport_finalmask.go:400", "v26.9.9:infra/conf/transport_finalmask.go:403", "v26.10.10:infra/conf/transport_finalmask.go:498"]
     },
     {
       "path": "streamSettings.finalmask.*[].settings.*.type (header-custom items, noise items, transform args)",
       "maskType": "header-custom, noise",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": ["", "array", "str", "hex", "base64"], "v26.7.28": ["", "array", "str", "hex", "base64"], "v26.9.9": ["", "array", "str", "hex", "base64"] },
-      "detail": "Unchanged encoding selector for packet/bytes; any other value or undecodable hex/base64 fails the load, randRange must stay within 0-255, and a noise item with both packet and rand fails the load.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1204", "v26.3.27:infra/conf/transport_internet.go:1233", "v26.3.27:infra/conf/transport_internet.go:1442", "v26.7.28:infra/conf/transport_finalmask.go:63", "v26.9.9:infra/conf/transport_finalmask.go:65", "v26.9.9:infra/conf/transport_finalmask.go:324"]
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["", "array", "str", "hex", "base64"], "v26.7.28": ["", "array", "str", "hex", "base64"], "v26.9.9": ["", "array", "str", "hex", "base64"], "v26.10.10": ["", "array", "str", "hex", "base64"] },
+      "detail": "Unchanged encoding selector for packet/bytes; any other value or undecodable hex/base64 fails the load, randRange must stay within 0-255, and a noise item with both packet and rand fails the load. v26.10.10 adds the value exp for noise items only: header-custom items and transform args still refuse it ('unknown type').",
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1204", "v26.3.27:infra/conf/transport_internet.go:1233", "v26.3.27:infra/conf/transport_internet.go:1442", "v26.7.28:infra/conf/transport_finalmask.go:63", "v26.9.9:infra/conf/transport_finalmask.go:65", "v26.9.9:infra/conf/transport_finalmask.go:324", "v26.7.28:infra/conf/transport_finalmask.go:310", "v26.9.9:infra/conf/transport_finalmask.go:313", "v26.10.10:infra/conf/transport_finalmask.go:65", "v26.10.10:infra/conf/transport_finalmask.go:314", "v26.10.10:infra/conf/transport_finalmask.go:340"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].settings.lengths",
       "maskType": "fragment",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New in v26.7.28: an array of Int32Range that overrides length when non-empty, and the last entry's min must be non-zero; on v26.3.27 it is ignored, so a config that relies only on lengths fails there with 'LengthMin can't be 0'.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:238", "v26.7.28:infra/conf/transport_finalmask.go:265", "v26.7.28:infra/conf/transport_finalmask.go:275", "v26.9.9:infra/conf/transport_finalmask.go:241", "v26.9.9:infra/conf/transport_finalmask.go:279", "v26.3.27:infra/conf/transport_internet.go:1414"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:238", "v26.7.28:infra/conf/transport_finalmask.go:265", "v26.7.28:infra/conf/transport_finalmask.go:275", "v26.9.9:infra/conf/transport_finalmask.go:241", "v26.9.9:infra/conf/transport_finalmask.go:279", "v26.3.27:infra/conf/transport_internet.go:1414", "v26.10.10:infra/conf/transport_finalmask.go:241", "v26.10.10:infra/conf/transport_finalmask.go:279"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].settings.delays",
       "maskType": "fragment",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New in v26.7.28: an array of Int32Range that overrides delay when non-empty; ignored on v26.3.27.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:239", "v26.7.28:infra/conf/transport_finalmask.go:279", "v26.9.9:infra/conf/transport_finalmask.go:242"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:239", "v26.7.28:infra/conf/transport_finalmask.go:279", "v26.9.9:infra/conf/transport_finalmask.go:242", "v26.10.10:infra/conf/transport_finalmask.go:242"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].settings.length",
       "maskType": "fragment",
       "kind": "constraint",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "Effectively required: the (last) length range's min must be non-zero or the load fails, so fragment with empty settings never loads; in v26.7.28+ it may be omitted when lengths is given.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1414", "v26.7.28:infra/conf/transport_finalmask.go:271", "v26.7.28:infra/conf/transport_finalmask.go:275", "v26.9.9:infra/conf/transport_finalmask.go:278"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1414", "v26.7.28:infra/conf/transport_finalmask.go:271", "v26.7.28:infra/conf/transport_finalmask.go:275", "v26.9.9:infra/conf/transport_finalmask.go:278", "v26.10.10:infra/conf/transport_finalmask.go:278"]
     },
     {
       "path": "streamSettings.finalmask.tcp[].settings.packets",
       "maskType": "fragment",
       "kind": "value",
-      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": ["", "tlshello", "N-M (N >= 1)"], "v26.7.28": ["", "tlshello", "N-M (N >= 1)"], "v26.9.9": ["", "tlshello", "N-M (N >= 1)"] },
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["", "tlshello", "N-M (N >= 1)"], "v26.7.28": ["", "tlshello", "N-M (N >= 1)"], "v26.9.9": ["", "tlshello", "N-M (N >= 1)"], "v26.10.10": ["", "tlshello", "N-M (N >= 1)"] },
       "detail": "Unchanged: case-insensitive tlshello or empty, otherwise a numeric range whose start must not be 0, else the load fails.",
-      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1393", "v26.3.27:infra/conf/transport_internet.go:1408", "v26.7.28:infra/conf/transport_finalmask.go:246", "v26.9.9:infra/conf/transport_finalmask.go:264"]
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1393", "v26.3.27:infra/conf/transport_internet.go:1408", "v26.7.28:infra/conf/transport_finalmask.go:246", "v26.9.9:infra/conf/transport_finalmask.go:264", "v26.10.10:infra/conf/transport_finalmask.go:264"]
     },
     {
       "path": "streamSettings.finalmask.udp[].settings.packetSize",
       "maskType": "salamander",
       "kind": "field",
-      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted" },
-      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null },
+      "status": { "v26.3.27": "absent", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
       "detail": "New in v26.7.28: a non-zero Int32Range switches salamander to the 'gecko' framing (not wire-compatible with plain salamander or with v26.3.27, which ignores the key), and it fails the load unless min > 0 and max <= 2048; the password must be at least 4 bytes at runtime in every tag.",
-      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:632", "v26.7.28:infra/conf/transport_finalmask.go:636", "v26.7.28:infra/conf/transport_finalmask.go:640", "v26.9.9:infra/conf/transport_finalmask.go:635", "v26.9.9:infra/conf/transport_finalmask.go:641", "v26.9.9:transport/internet/finalmask/salamander/salamander.go:13"]
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:632", "v26.7.28:infra/conf/transport_finalmask.go:636", "v26.7.28:infra/conf/transport_finalmask.go:640", "v26.9.9:infra/conf/transport_finalmask.go:635", "v26.9.9:infra/conf/transport_finalmask.go:641", "v26.9.9:transport/internet/finalmask/salamander/salamander.go:13", "v26.10.10:infra/conf/transport_finalmask.go:730", "v26.10.10:infra/conf/transport_finalmask.go:736", "v26.10.10:transport/internet/finalmask/salamander/salamander.go:13"]
+    },
+    {
+      "path": "streamSettings.finalmask.udp[].settings.extraPoll",
+      "maskType": "xdns",
+      "kind": "field",
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "absent", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "detail": "New in v26.10.10: an int32 of extra empty polling queries the xdns client sends after every packet and every poll, 0 to 3 or the load fails ('c.ExtraPoll < 0 || c.ExtraPoll > 3'); a server never reads it.",
+      "evidence": ["v26.7.28:infra/conf/transport_finalmask.go:695", "v26.9.9:infra/conf/transport_finalmask.go:698", "v26.10.10:infra/conf/transport_finalmask.go:808", "v26.10.10:infra/conf/transport_finalmask.go:862", "v26.10.10:transport/internet/finalmask/xdns/client.go:352", "v26.10.10:transport/internet/finalmask/xdns/client.go:377"]
+    },
+    {
+      "path": "streamSettings.finalmask.udp[].settings.sockopt",
+      "maskType": "udphop",
+      "kind": "removed-feature",
+      "status": { "v26.3.27": "absent", "v26.7.28": "absent", "v26.9.9": "accepted", "v26.10.10": "absent" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": null },
+      "detail": "Only v26.9.9 has it: the udphop mask took its own sockopt object for the hop dials; v26.10.10 dropped the field, so the key is silently ignored and the hops dial with the outbound's own streamSettings.sockopt.",
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:912", "v26.9.9:infra/conf/transport_finalmask.go:923", "v26.10.10:infra/conf/transport_finalmask.go:1053", "v26.10.10:transport/internet/memory_settings.go:76"]
+    },
+    {
+      "path": "streamSettings.finalmask.udp",
+      "maskType": "xdns",
+      "kind": "constraint",
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": "a client wants it as udp[last]; masks listed after it are skipped" },
+      "detail": "From v26.10.10 an xdns client never uses the socket it is handed: it dials its own resolvers through the Dialer (xdns/config.go:9 calls NewClient(c, dialer), which has no connection parameter), so every UDP mask nearer the socket than it, which is every mask listed after it, is wrapped around a connection nobody reads and does nothing on the client, while a server (NewServer(c, conn)) still applies them. Before v26.10.10 xdns wrapped the raw connection like any other mask.",
+      "evidence": ["v26.9.9:transport/internet/finalmask/xdns/config.go:13", "v26.10.10:transport/internet/finalmask/xdns/config.go:9", "v26.10.10:transport/internet/finalmask/xdns/config.go:13", "v26.10.10:transport/internet/finalmask/xdns/client.go:56", "v26.10.10:transport/internet/finalmask/finalmask.go:195"]
+    },
+    {
+      "path": "streamSettings.finalmask.udp[].settings.noise[].type",
+      "maskType": "noise",
+      "kind": "value",
+      "status": { "v26.3.27": "accepted", "v26.7.28": "accepted", "v26.9.9": "accepted", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": ["","array","str","hex","base64"], "v26.7.28": ["","array","str","hex","base64"], "v26.9.9": ["","array","str","hex","base64"], "v26.10.10": ["","array","str","hex","base64","exp"] },
+      "detail": "Case-insensitive. A noise item takes the packet encodings every line has; v26.10.10 adds exp, whose packet is a string expression the core turns into segments. On the earlier lines exp is not a packet encoding, so PraseByteSlice answers 'unknown type' and the config does not load.",
+      "evidence": ["v26.3.27:infra/conf/transport_internet.go:1233", "v26.7.28:infra/conf/transport_finalmask.go:63", "v26.9.9:infra/conf/transport_finalmask.go:65", "v26.10.10:infra/conf/transport_finalmask.go:317", "v26.10.10:infra/conf/transport_finalmask.go:340"]
+    },
+    {
+      "path": "streamSettings.finalmask.udp[].settings.noise[].packet",
+      "maskType": "noise",
+      "kind": "constraint",
+      "status": { "v26.3.27": "rejected", "v26.7.28": "rejected", "v26.9.9": "rejected", "v26.10.10": "accepted" },
+      "values": { "v26.3.27": null, "v26.7.28": null, "v26.9.9": null, "v26.10.10": "string of <b HEX> <r N> <rc N> <rd N> <t> <c> <n> tags" },
+      "detail": "For a noise item of type exp (v26.10.10 only) the packet must be a JSON string, else the load fails ('\"packet\" of noise \"type\": \"exp\" must be a string'); only whitespace may sit between the <tags>, b takes hex (optionally 0x-prefixed, spaces ignored), r/rc/rd take a size or range of 0-65535 (random bytes, letters, digits), t is a 4-byte timestamp, c a 4-byte counter and n an 8-byte nonce and take no argument, and an unknown tag or an empty expression fails the load. rand and randRange are ignored for an exp item, but packet together with rand > 0 still fails the load; delay applies. On the earlier lines the type exp itself is refused.",
+      "evidence": ["v26.9.9:infra/conf/transport_finalmask.go:65", "v26.10.10:infra/conf/transport_finalmask.go:317", "v26.10.10:infra/conf/transport_finalmask.go:361", "v26.10.10:infra/conf/transport_finalmask.go:363", "v26.10.10:infra/conf/transport_finalmask.go:392", "v26.10.10:transport/internet/finalmask/noise/conn.go:46"]
     }
   ],
   "maskTypes": {
@@ -566,141 +611,183 @@
       "tcp": ["header-custom", "fragment", "sudoku", "xmc"],
       "udp": ["header-custom", "mkcp-legacy", "noise", "salamander", "sudoku", "xdns", "xicmp", "realm", "udphop"]
     },
-    "_evidence": ["v26.3.27:infra/conf/transport_internet.go:1238", "v26.3.27:infra/conf/transport_internet.go:1244", "v26.7.28:infra/conf/transport_finalmask.go:70", "v26.7.28:infra/conf/transport_finalmask.go:77", "v26.9.9:infra/conf/transport_finalmask.go:72", "v26.9.9:infra/conf/transport_finalmask.go:79"],
-    "_consumers": "tcp masks are applied by raw/tcp, websocket, httpupgrade, grpc and xhttp; udp masks by mkcp, hysteria, xhttp (QUIC/H3) and the udp transport, plus the wireguard proxy from v26.7.28; quicParams is read by hysteria and xhttp only (same in all three tags)."
+    "v26.10.10": {
+      "tcp": ["header-custom", "fragment", "sudoku", "xmc"],
+      "udp": ["header-custom", "mkcp-legacy", "noise", "salamander", "sudoku", "xdns", "xicmp", "realm", "udphop"]
+    },
+    "_evidence": ["v26.3.27:infra/conf/transport_internet.go:1238", "v26.3.27:infra/conf/transport_internet.go:1244", "v26.7.28:infra/conf/transport_finalmask.go:70", "v26.7.28:infra/conf/transport_finalmask.go:77", "v26.9.9:infra/conf/transport_finalmask.go:72", "v26.9.9:infra/conf/transport_finalmask.go:79", "v26.10.10:infra/conf/transport_finalmask.go:72", "v26.10.10:infra/conf/transport_finalmask.go:79"],
+    "_consumers": "tcp masks are applied by raw/tcp, websocket, httpupgrade, grpc and xhttp, and from v26.10.10 by masque and xdrive as well; udp masks by mkcp, hysteria, xhttp (QUIC/H3) and the udp transport, plus the wireguard proxy from v26.7.28 and masque from v26.10.10; quicParams is read by hysteria and xhttp in every tag, and by masque in v26.10.10 (v26.10.10:transport/internet/masque/dialer.go:52, hub.go:92)."
   },
-  "perVersionKeysNote": "Keys each struct decodes. null = the mask type does not exist in that tag (the type itself is rejected). xdns 'domain' is still decoded in v26.7.28+ but only to reject it, so it is listed separately.",
+  "perVersionKeysNote": "Keys each struct decodes. null = the mask type does not exist in that tag (the type itself is rejected). xdns 'domain' is still decoded in v26.7.28 and v26.9.9 but only to reject it, so it is listed separately; v26.10.10 has no such field. In v26.10.10 xdns domains/resolvers are lists of objects, whose own keys are listed under udp[type=xdns].settings.domains[] and .resolvers[].",
   "perVersionKeys": {
     "streamSettings.finalmask": {
       "v26.3.27": ["tcp", "udp", "quicParams"],
       "v26.7.28": ["tcp", "udp", "quicParams"],
-      "v26.9.9": ["tcp", "udp", "quicParams"]
+      "v26.9.9": ["tcp", "udp", "quicParams"],
+      "v26.10.10": ["tcp", "udp", "quicParams"]
     },
     "streamSettings.finalmask.tcp[] | streamSettings.finalmask.udp[]": {
       "v26.3.27": ["type", "settings"],
       "v26.7.28": ["type", "settings"],
-      "v26.9.9": ["type", "settings"]
+      "v26.9.9": ["type", "settings"],
+      "v26.10.10": ["type", "settings"]
     },
     "streamSettings.finalmask.quicParams": {
       "v26.3.27": ["congestion", "debug", "brutalUp", "brutalDown", "udpHop", "initStreamReceiveWindow", "maxStreamReceiveWindow", "initConnectionReceiveWindow", "maxConnectionReceiveWindow", "maxIdleTimeout", "keepAlivePeriod", "disablePathMTUDiscovery", "maxIncomingStreams"],
       "v26.7.28": ["congestion", "debug", "bbrProfile", "brutalUp", "brutalDown", "udpHop", "initStreamReceiveWindow", "maxStreamReceiveWindow", "initConnectionReceiveWindow", "maxConnectionReceiveWindow", "maxIdleTimeout", "keepAlivePeriod", "disablePathMTUDiscovery", "maxIncomingStreams"],
-      "v26.9.9": ["congestion", "debug", "bbrProfile", "brutalUp", "brutalDown", "brutalDisableLossCompensation", "initStreamReceiveWindow", "maxStreamReceiveWindow", "initConnectionReceiveWindow", "maxConnectionReceiveWindow", "maxIdleTimeout", "keepAlivePeriod", "disablePathMTUDiscovery", "disableChromeParrot", "disableGSO", "maxIncomingStreams", "disableStatelessReset"]
+      "v26.9.9": ["congestion", "debug", "bbrProfile", "brutalUp", "brutalDown", "brutalDisableLossCompensation", "initStreamReceiveWindow", "maxStreamReceiveWindow", "initConnectionReceiveWindow", "maxConnectionReceiveWindow", "maxIdleTimeout", "keepAlivePeriod", "disablePathMTUDiscovery", "disableChromeParrot", "disableGSO", "maxIncomingStreams", "disableStatelessReset"],
+      "v26.10.10": ["congestion", "debug", "bbrProfile", "brutalUp", "brutalDown", "brutalDisableLossCompensation", "initStreamReceiveWindow", "maxStreamReceiveWindow", "initConnectionReceiveWindow", "maxConnectionReceiveWindow", "maxIdleTimeout", "keepAlivePeriod", "disablePathMTUDiscovery", "disableChromeParrot", "disableGSO", "maxIncomingStreams", "disableStatelessReset"]
     },
     "streamSettings.finalmask.quicParams.udpHop": {
       "v26.3.27": ["ports", "interval"],
       "v26.7.28": ["ports", "interval"],
-      "v26.9.9": []
+      "v26.9.9": [],
+      "v26.10.10": []
     },
     "tcp[type=header-custom].settings": {
       "v26.3.27": ["clients", "servers", "errors"],
       "v26.7.28": ["clients", "servers", "errors"],
-      "v26.9.9": ["clients", "servers", "errors"]
+      "v26.9.9": ["clients", "servers", "errors"],
+      "v26.10.10": ["clients", "servers", "errors"]
     },
     "tcp[type=header-custom].settings.{clients,servers,errors}[][]": {
       "v26.3.27": ["delay", "rand", "randRange", "type", "packet"],
       "v26.7.28": ["delay", "rand", "randRange", "capture", "type", "reuse", "transform", "packet"],
-      "v26.9.9": ["delay", "rand", "randRange", "capture", "type", "reuse", "transform", "packet"]
+      "v26.9.9": ["delay", "rand", "randRange", "capture", "type", "reuse", "transform", "packet"],
+      "v26.10.10": ["delay", "rand", "randRange", "capture", "type", "reuse", "transform", "packet"]
     },
     "udp[type=header-custom].settings": {
       "v26.3.27": ["client", "server"],
       "v26.7.28": ["mode", "client", "server"],
-      "v26.9.9": ["mode", "client", "server"]
+      "v26.9.9": ["mode", "client", "server"],
+      "v26.10.10": ["mode", "client", "server"]
     },
     "udp[type=header-custom].settings.{client,server}[]": {
       "v26.3.27": ["rand", "randRange", "type", "packet"],
       "v26.7.28": ["rand", "randRange", "capture", "type", "reuse", "transform", "packet"],
-      "v26.9.9": ["rand", "randRange", "capture", "type", "reuse", "transform", "packet"]
+      "v26.9.9": ["rand", "randRange", "capture", "type", "reuse", "transform", "packet"],
+      "v26.10.10": ["rand", "randRange", "capture", "type", "reuse", "transform", "packet"]
     },
     "header-custom item .transform": {
       "v26.3.27": [],
       "v26.7.28": ["op", "args"],
-      "v26.9.9": ["op", "args"]
+      "v26.9.9": ["op", "args"],
+      "v26.10.10": ["op", "args"]
     },
     "header-custom item .transform.args[]": {
       "v26.3.27": [],
       "v26.7.28": ["type", "bytes", "u64", "reuse", "metadata", "transform"],
-      "v26.9.9": ["type", "bytes", "u64", "reuse", "metadata", "transform"]
+      "v26.9.9": ["type", "bytes", "u64", "reuse", "metadata", "transform"],
+      "v26.10.10": ["type", "bytes", "u64", "reuse", "metadata", "transform"]
     },
     "tcp[type=fragment].settings": {
       "v26.3.27": ["packets", "length", "delay", "maxSplit"],
       "v26.7.28": ["packets", "length", "delay", "lengths", "delays", "maxSplit"],
-      "v26.9.9": ["packets", "length", "delay", "lengths", "delays", "maxSplit"]
+      "v26.9.9": ["packets", "length", "delay", "lengths", "delays", "maxSplit"],
+      "v26.10.10": ["packets", "length", "delay", "lengths", "delays", "maxSplit"]
     },
     "tcp|udp[type=sudoku].settings": {
       "v26.3.27": ["password", "ascii", "customTable", "custom_table", "customTables", "custom_tables", "paddingMin", "padding_min", "paddingMax", "padding_max"],
       "v26.7.28": ["password", "ascii", "customTable", "custom_table", "customTables", "custom_tables", "paddingMin", "padding_min", "paddingMax", "padding_max"],
-      "v26.9.9": ["password", "ascii", "customTable", "custom_table", "customTables", "custom_tables", "paddingMin", "padding_min", "paddingMax", "padding_max"]
+      "v26.9.9": ["password", "ascii", "customTable", "custom_table", "customTables", "custom_tables", "paddingMin", "padding_min", "paddingMax", "padding_max"],
+      "v26.10.10": ["password", "ascii", "customTable", "custom_table", "customTables", "custom_tables", "paddingMin", "padding_min", "paddingMax", "padding_max"]
     },
     "tcp[type=xmc].settings": {
       "v26.3.27": null,
       "v26.7.28": ["hostname", "profiles", "password"],
-      "v26.9.9": ["hostname", "profiles", "password"]
+      "v26.9.9": ["hostname", "profiles", "password"],
+      "v26.10.10": ["hostname", "profiles", "password"]
     },
     "tcp[type=xmc].settings.profiles[]": {
       "v26.3.27": null,
       "v26.7.28": ["username", "uuid", "texturesValue", "texturesSignature"],
-      "v26.9.9": ["username", "uuid", "texturesValue", "texturesSignature"]
+      "v26.9.9": ["username", "uuid", "texturesValue", "texturesSignature"],
+      "v26.10.10": ["username", "uuid", "texturesValue", "texturesSignature"]
     },
     "udp[type=header-dns].settings": {
       "v26.3.27": ["domain"],
       "v26.7.28": null,
-      "v26.9.9": null
+      "v26.9.9": null,
+      "v26.10.10": null
     },
     "udp[type=header-dtls|header-srtp|header-utp|header-wechat|header-wireguard|mkcp-original].settings": {
       "v26.3.27": [],
       "v26.7.28": null,
-      "v26.9.9": null
+      "v26.9.9": null,
+      "v26.10.10": null
     },
     "udp[type=mkcp-aes128gcm].settings": {
       "v26.3.27": ["password"],
       "v26.7.28": null,
-      "v26.9.9": null
+      "v26.9.9": null,
+      "v26.10.10": null
     },
     "udp[type=mkcp-legacy].settings": {
       "v26.3.27": null,
       "v26.7.28": ["header", "value"],
-      "v26.9.9": ["header", "value"]
+      "v26.9.9": ["header", "value"],
+      "v26.10.10": ["header", "value"]
     },
     "udp[type=noise].settings": {
       "v26.3.27": ["reset", "noise"],
       "v26.7.28": ["reset", "noise"],
-      "v26.9.9": ["reset", "noise"]
+      "v26.9.9": ["reset", "noise"],
+      "v26.10.10": ["reset", "noise"]
     },
     "udp[type=noise].settings.noise[]": {
       "v26.3.27": ["rand", "randRange", "type", "packet", "delay"],
       "v26.7.28": ["rand", "randRange", "type", "packet", "delay"],
-      "v26.9.9": ["rand", "randRange", "type", "packet", "delay"]
+      "v26.9.9": ["rand", "randRange", "type", "packet", "delay"],
+      "v26.10.10": ["rand", "randRange", "type", "packet", "delay"]
     },
     "udp[type=salamander].settings": {
       "v26.3.27": ["password"],
       "v26.7.28": ["password", "packetSize"],
-      "v26.9.9": ["password", "packetSize"]
+      "v26.9.9": ["password", "packetSize"],
+      "v26.10.10": ["password", "packetSize"]
     },
     "udp[type=xdns].settings": {
       "v26.3.27": ["domain"],
       "v26.7.28": ["domains", "resolvers"],
       "v26.9.9": ["domains", "resolvers"],
-      "_rejectedIfPresent": { "v26.3.27": [], "v26.7.28": ["domain"], "v26.9.9": ["domain"] }
+      "v26.10.10": ["domains", "resolvers", "extraPoll"],
+      "_rejectedIfPresent": { "v26.3.27": [], "v26.7.28": ["domain"], "v26.9.9": ["domain"], "v26.10.10": [] }
+    },
+    "udp[type=xdns].settings.domains[]": {
+      "v26.3.27": null,
+      "v26.7.28": null,
+      "v26.9.9": null,
+      "v26.10.10": ["names", "lenLimit", "labelLimit", "types", "edns0"]
+    },
+    "udp[type=xdns].settings.resolvers[]": {
+      "v26.3.27": null,
+      "v26.7.28": null,
+      "v26.9.9": null,
+      "v26.10.10": ["addrs"]
     },
     "udp[type=xicmp].settings": {
       "v26.3.27": ["listenIp", "id"],
       "v26.7.28": ["dgram", "ips"],
-      "v26.9.9": ["dgram", "ips"]
+      "v26.9.9": ["dgram", "ips"],
+      "v26.10.10": ["dgram", "ips"]
     },
     "udp[type=realm].settings": {
       "v26.3.27": null,
       "v26.7.28": ["url", "stunServers", "tlsConfig"],
-      "v26.9.9": ["url", "stunServers", "tlsConfig", "ipMode", "portMapping"]
+      "v26.9.9": ["url", "stunServers", "tlsConfig", "ipMode", "portMapping"],
+      "v26.10.10": ["url", "stunServers", "tlsConfig", "ipMode", "portMapping"]
     },
     "udp[type=realm].settings.portMapping": {
       "v26.3.27": null,
       "v26.7.28": null,
-      "v26.9.9": ["enabled", "timeout", "lifetime"]
+      "v26.9.9": ["enabled", "timeout", "lifetime"],
+      "v26.10.10": ["enabled", "timeout", "lifetime"]
     },
     "udp[type=udphop].settings": {
       "v26.3.27": null,
       "v26.7.28": null,
-      "v26.9.9": ["sockopt", "mode", "interval", "remotePorts", "remoteIPs"]
+      "v26.9.9": ["sockopt", "mode", "interval", "remotePorts", "remoteIPs"],
+      "v26.10.10": ["mode", "interval", "remoteIPs", "remotePorts"]
     }
   }
 }

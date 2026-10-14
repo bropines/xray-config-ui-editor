@@ -79,9 +79,11 @@ describe('freedom', () => {
 });
 
 describe('shadowsocks', () => {
-    // ShadowsocksClientConfig in 26.x: address, port, level, email, method,
-    // password, servers. uot/uotVersion lived in servers[] and are gone.
-    it('does not offer uot at the top level, where it never existed', () => {
+    // ShadowsocksClientConfig from 26.7: address, port, level, email, method,
+    // password, servers. 26.3 also has uot/uotVersion, flat and in servers[]
+    // (v26.3.27:infra/conf/shadowsocks.go:168-169 and :179-180); the version
+    // table knows both, the schema declares the server-entry one only.
+    it('does not declare uot at the top level, though 26.3 reads one there', () => {
         const keys = outboundKeys('shadowsocks');
         expect(keys).not.toContain('uot');
         expect(keys).not.toContain('uotVersion');
