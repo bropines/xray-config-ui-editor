@@ -6,6 +6,7 @@ import type { Inbound, Outbound } from '../types';
 import { DEFAULT_DNS_UPSTREAM } from '../presets/dns';
 import { generateUUID, generateShortId, generateShadowsocks2022Key } from './crypto';
 import { isShadowsocks2022Method } from '../xray/shadowsocks-keys';
+import { canonicalProtocol } from '../xray/shadowsocks-rules';
 
 /**
  * An inbound and an outbound are the same object seen from two ends: the same
@@ -343,8 +344,11 @@ const PROTOCOLS: Record<string, ProtocolSpec> = {
     },
 };
 
-// The 2022 ciphers are the same protocol with a different default method, and
-// both spellings appear in real configs, so the alias builds the same shapes.
+// `shadowsocks-2022` is a way of asking this factory for Shadowsocks with a
+// 2022 method as the default, not a protocol: the loader registers
+// `shadowsocks` alone and stops at any other name ("unknown config id",
+// v26.7.28:infra/conf/loader.go:26 — see core/xray/shadowsocks-rules). So the
+// alias builds the same shapes, and `createEndpoint` writes the real name.
 PROTOCOLS['shadowsocks-2022'] = PROTOCOLS.shadowsocks!;
 
 /** Protocols this factory can build for a given side. */
@@ -402,7 +406,7 @@ export const createEndpoint = <D extends EndpointDirection>(
     if (direction === 'inbound') {
         const inbound: Inbound = {
             tag: ctx.tag,
-            protocol,
+            protocol: canonicalProtocol(protocol),
             settings: shape.settings ?? {},
         };
         if (!shape.omitPort) inbound.port = ctx.port;
@@ -415,7 +419,7 @@ export const createEndpoint = <D extends EndpointDirection>(
 
     const outbound: Outbound = {
         tag: ctx.tag,
-        protocol,
+        protocol: canonicalProtocol(protocol),
         settings: shape.settings ?? {},
     };
     if (stream) outbound.streamSettings = stream as Outbound['streamSettings'];

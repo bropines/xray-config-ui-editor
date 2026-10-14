@@ -13,6 +13,8 @@
  *                   There are no bytes to hold, so a recipe cannot represent it:
  *                   `packetBytes` answers null for it, and the generator stays
  *                   off a list that holds one rather than rewrite it as hex.
+ *                   exp.ts reads the expression; the AmneziaWG export writes
+ *                   it as the tag chain it mostly already is.
  *   rand            a random datagram whose length is drawn from [from, to)
  *                   (common/crypto RandBetween: the upper bound is exclusive)
  *   randRange       the byte values `rand` draws from, [from, to] inclusive

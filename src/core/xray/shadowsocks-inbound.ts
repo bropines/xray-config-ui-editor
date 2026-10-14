@@ -80,18 +80,31 @@
  *
  * The same words are shown beside the inbound (editors/inbound/core-notes) and
  * in the diagnostics (versions/rules.ts); this is the only place that decides.
+ * What the inbound shares with the outbound — how a line reads a cipher name
+ * and a key, and the protocol's own name — is in shadowsocks-rules.ts; the
+ * outbound's half is shadowsocks-outbound.ts.
  */
 import { t } from '../../i18n';
-import { SHADOWSOCKS_METHOD_ALIASES, SS_2022, SS_CLASSIC } from './versions/features.inbound';
-import { ss2022KeyBytes } from './shadowsocks-keys';
-import { compareCoreVersions, coreVersion, type CoreVersionId } from './versions';
-
-type Json = Record<string, unknown>;
-
-const isObject = (value: unknown): value is Json =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
+import {
+    aeadNames,
+    caseHint,
+    isAeadCipher,
+    isClassicCipher,
+    isObject,
+    isShadowsocksProtocol,
+    keyProblem,
+    named2022,
+    present,
+    protocolNameProblem,
+    shadowsocksLine,
+    singleAccountNames,
+    text,
+    type Json,
+} from './shadowsocks-rules';
+import { coreVersion, type CoreVersionId } from './versions';
 
 export type ShadowsocksInboundProblemKind =
+    | 'protocol.name'
     | 'method.unknown' | 'user.method' | 'password.empty'
     | 'method.chacha' | 'user.method2022' | 'relay.address'
     | 'key.empty' | 'key.base64' | 'key.short' | 'key.size';
@@ -106,39 +119,7 @@ export interface ShadowsocksInboundProblem {
 
 /** The two names this app uses; the loader lower-cases the protocol before looking it up (v26.7.28:infra/conf/loader.go:46). */
 export const isShadowsocksInbound = (inbound: unknown): boolean =>
-    isObject(inbound)
-    && typeof inbound.protocol === 'string'
-    && ['shadowsocks', 'shadowsocks-2022'].includes(inbound.protocol.toLowerCase());
-
-/** What the lines differ in; see the table above. */
-const lineOf = (version: CoreVersionId) => ({
-    usersAlias: compareCoreVersions(version, '26.7') >= 0,
-    noneAtTop: compareCoreVersions(version, '26.7') < 0,
-    exact2022Names: compareCoreVersions(version, '26.10') < 0,
-    exactKeySize: compareCoreVersions(version, '26.10') >= 0,
-});
-
-/** The classic AEAD names every line takes for an account, lower case. */
-const AEAD = new Set(SS_CLASSIC);
-
-/** The names a chooser shows: no `aead_*` spelling, no `plain`. */
-const canonical = (names: string[]): string[] => names.filter(name => !SHADOWSOCKS_METHOD_ALIASES.has(name));
-
-/**
- * Go's `base64.StdEncoding.DecodeString`: the standard alphabet with padding,
- * `\r` and `\n` skipped. The number of bytes it yields, or undefined when it
- * fails.
- */
-const base64Bytes = (text: string): number | undefined => {
-    const clean = text.replace(/[\r\n]/g, '');
-    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(clean)) return undefined;
-    const padding = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
-    return (clean.length / 4) * 3 - padding;
-};
-
-const text = (value: unknown): string => (typeof value === 'string' ? value : '');
-
-const present = (value: unknown): boolean => value !== undefined && value !== null;
+    isObject(inbound) && isShadowsocksProtocol(inbound.protocol);
 
 /**
  * Everything about a Shadowsocks inbound's cipher and 2022 keys that stops a
@@ -148,11 +129,16 @@ const present = (value: unknown): boolean => value !== undefined && value !== nu
 export const shadowsocksInboundProblems = (inbound: unknown, version: CoreVersionId): ShadowsocksInboundProblem[] => {
     if (!isShadowsocksInbound(inbound)) return [];
     const settings: Json = isObject((inbound as Json).settings) ? ((inbound as Json).settings as Json) : {};
-    const line = lineOf(version);
+    const line = shadowsocksLine(version);
     const { tag } = coreVersion(version);
     const problems: ShadowsocksInboundProblem[] = [];
     const add = (kind: ShadowsocksInboundProblemKind, field: string, message: string, suggestion?: string) =>
         problems.push({ kind, field, message, suggestion });
+
+    // Not a name the loader has: nothing below runs until it is `shadowsocks`,
+    // but what is wrong with the rest is worth saying now rather than after.
+    const name = protocolNameProblem((inbound as Json).protocol);
+    if (name) add('protocol.name', 'protocol', name.message, name.suggestion);
 
     // The users list the line reads — `clients` wins whenever it is an array,
     // empty or not; 26.3 has no other spelling.
@@ -162,48 +148,20 @@ export const shadowsocksInboundProblems = (inbound: unknown, version: CoreVersio
     const users: unknown[] | undefined = listKey ? (settings[listKey] as unknown[]) : undefined;
 
     const method = text(settings.method);
-    const lowered = method.toLowerCase();
     // A 2022 name, as this line compares it.
-    const named2022 = (line.exact2022Names ? SS_2022.includes(method) : SS_2022.includes(lowered)) ? lowered : undefined;
-    // Spelled like one, but not matched: only where the comparison is exact.
-    const missCased2022 = line.exact2022Names && !named2022 && SS_2022.includes(lowered) ? lowered : undefined;
-    const caseHint = missCased2022
-        ? t("Xray {tag} matches 2022 method names exactly, in lower case: write {name}.", { tag, name: missCased2022 })
-        : undefined;
-    // What the chooser would list for a single account on this line.
-    const singleNames = [...canonical(SS_2022), ...canonical(SS_CLASSIC), ...(line.noneAtTop ? ['none'] : [])];
+    const is2022 = named2022(method, version);
+    const hint = caseHint(method, version);
 
     const checkKey = (value: unknown, field: string, methodName: string) => {
-        const key = text(value);
-        const need = ss2022KeyBytes(methodName);
-        const how = t("A 2022 key is {need} random bytes in base64: openssl rand -base64 {need} writes one.", { need });
-        if (key === '' && !line.exactKeySize) {
-            add('key.empty', field, t("{what} is empty, and Xray {tag} cannot run a 2022 method without its key — the config will not load.", { what: field, tag }), how);
-            return;
-        }
-        const decoded = base64Bytes(key);
-        if (!line.exactKeySize) {
-            if (decoded === undefined) {
-                add('key.base64', field, t("{what} is not base64. Xray {tag} decodes a 2022 key from base64 and refuses the config when it cannot.", { what: field, tag }), how);
-            } else if (decoded < need) {
-                add('key.short', field, t("{what} decodes to {bytes} bytes, and {method} needs a key of at least {need} — Xray {tag} refuses the config.", { what: field, bytes: decoded, method: methodName, need, tag }), how);
-            }
-            return;
-        }
-        // 26.10: what base64 cannot read is taken as the bytes it is.
-        const bytes = decoded ?? new TextEncoder().encode(key).length;
-        if (key === '') {
-            add('key.empty', field, t("{what} is empty, and Xray {tag} cannot run a 2022 method without its key — the config will not load.", { what: field, tag }), how);
-        } else if (bytes !== need) {
-            add('key.size', field, t("{what} is {bytes} bytes, and {method} takes a key of exactly {need} — Xray {tag} refuses the config.", { what: field, bytes, method: methodName, need, tag }), how);
-        }
+        const found = keyProblem(text(value), field, methodName, version);
+        if (found) add(found.kind, field, found.message, found.suggestion);
     };
 
-    if (named2022) {
+    if (is2022) {
         // ── 2022 ───────────────────────────────────────────────────────
         const entries = users ?? [];
         if (entries.length > 0) {
-            if (!named2022.includes('aes')) {
+            if (!is2022.includes('aes')) {
                 add('method.chacha', 'settings.method', t("{what} is {shown}: with users listed, Xray {tag} serves only the AES 2022 methods — the config will not load.", { what: 'settings.method', shown: JSON.stringify(method), tag }),
                     t("Use 2022-blake3-aes-128-gcm or 2022-blake3-aes-256-gcm, or list no users to serve one key."));
             }
@@ -219,10 +177,10 @@ export const shadowsocksInboundProblems = (inbound: unknown, version: CoreVersio
                 if (relay && !present(entry.address)) {
                     add('relay.address', `${at}.address`, t("{what} is missing. Once the first user has an address this inbound is a relay, and Xray {tag} wants an address on every user.", { what: `${at}.address`, tag }));
                 }
-                checkKey(entry.password, `${at}.password`, named2022);
+                checkKey(entry.password, `${at}.password`, is2022);
             });
         }
-        checkKey(settings.password, 'settings.password', named2022);
+        checkKey(settings.password, 'settings.password', is2022);
         return problems;
     }
 
@@ -231,10 +189,9 @@ export const shadowsocksInboundProblems = (inbound: unknown, version: CoreVersio
         if (text(settings.password) === '') {
             add('password.empty', 'settings.password', t("{what} is empty, and Xray {tag} refuses a Shadowsocks account without a password — the config will not load.", { what: 'settings.password', tag }));
         }
-        const known = AEAD.has(lowered) || (line.noneAtTop && (lowered === 'none' || lowered === 'plain'));
-        if (!known) {
+        if (!isClassicCipher(method, version)) {
             add('method.unknown', 'settings.method', t("{what} is {shown}, which Xray {tag} does not know as a Shadowsocks cipher — the config will not load.", { what: 'settings.method', shown: JSON.stringify(method), tag }),
-                caseHint ?? t("Xray {tag} takes: {values}.", { tag, values: singleNames.join(', ') }));
+                hint ?? t("Xray {tag} takes: {values}.", { tag, values: singleAccountNames(version).join(', ') }));
         }
         return problems;
     }
@@ -246,9 +203,9 @@ export const shadowsocksInboundProblems = (inbound: unknown, version: CoreVersio
         if (text(entry.password) === '') {
             add('password.empty', `${at}.password`, t("{what} is empty, and Xray {tag} refuses a Shadowsocks account without a password — the config will not load.", { what: `${at}.password`, tag }));
         }
-        if (!AEAD.has(text(entry.method).toLowerCase())) {
+        if (!isAeadCipher(text(entry.method))) {
             add('user.method', `${at}.method`, t("{what} is {shown}, which is not an AEAD cipher — Xray {tag} refuses a user without one and the config will not load.", { what: `${at}.method`, shown: JSON.stringify(text(entry.method)), tag }),
-                caseHint ?? t("Xray {tag} takes: {values}.", { tag, values: canonical(SS_CLASSIC).join(', ') }));
+                hint ?? t("Xray {tag} takes: {values}.", { tag, values: aeadNames().join(', ') }));
         }
     });
     return problems;

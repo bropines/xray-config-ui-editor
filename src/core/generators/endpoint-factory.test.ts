@@ -70,6 +70,24 @@ describe('createEndpoint', () => {
             .toBe('2022-blake3-aes-128-gcm');
     });
 
+    it('writes shadowsocks, never the 2022 spelling it was asked for, on either side', () => {
+        // The loader registers `shadowsocks` alone and stops at any other name
+        // ("unknown config id": v26.7.28:infra/conf/xray.go:26 and :44, loader.go:26).
+        for (const spelling of ['shadowsocks-2022', 'Shadowsocks-2022']) {
+            for (const direction of ['inbound', 'outbound'] as const) {
+                const made = createEndpoint(direction, spelling, { method: '2022-blake3-aes-256-gcm' });
+                expect(made.protocol).toBe('shadowsocks');
+            }
+        }
+        // ...and still builds the shape for it, with the 2022 method as the default.
+        expect((createDefaultInbound('shadowsocks-2022').settings as any).method).toBe('2022-blake3-aes-128-gcm');
+        expect(createDefaultInbound('shadowsocks-2022').protocol).toBe('shadowsocks');
+        // No other protocol's name is touched.
+        for (const protocol of protocolsFor('outbound').filter(name => name !== 'shadowsocks-2022')) {
+            expect(createEndpoint('outbound', protocol).protocol).toBe(protocol);
+        }
+    });
+
     it('drops the transport for protocols that have none', () => {
         const tun = createDefaultInbound('tun');
         expect(tun.streamSettings).toBeUndefined();
@@ -118,7 +136,8 @@ describe('protocol support', () => {
         for (const direction of ['inbound', 'outbound'] as const) {
             for (const protocol of protocolsFor(direction)) {
                 const made = createEndpoint(direction, protocol);
-                expect(made.protocol).toBe(protocol);
+                // `shadowsocks-2022` asks for Shadowsocks with a 2022 method; what it writes is `shadowsocks`.
+                expect(made.protocol).toBe(protocol === 'shadowsocks-2022' ? 'shadowsocks' : protocol);
                 expect(made.tag).toBeTruthy();
                 expect(made.settings).toBeDefined();
             }

@@ -5,7 +5,7 @@
  * WireGuardConfig to an inbound and to an outbound and tells them apart with
  * a flag it sets itself (`IsClient`, v26.3.27:infra/conf/xray.go:35 and :54,
  * v26.7.28:infra/conf/xray.go:32 and :51, v26.9.9:infra/conf/xray.go:33 and
- * :52). The editor only ever drew the client half, so an inbound could be
+ * :52, v26.10.10:infra/conf/xray.go:34 and :55). The editor only ever drew the client half, so an inbound could be
  * chosen and never completed — the factory wrote an empty `secretKey`, and
  * Build() refuses that before it looks at anything else.
  *
@@ -17,16 +17,24 @@
  *   peers[]: publicKey, preSharedKey,
  *            allowedIPs, keepAlive   every line
  *   peers[]: email, level            from 26.7, where an inbound's peer became
- *                                    a user (v26.7.28:infra/conf/wireguard.go:97-110)
+ *                                    a user (v26.7.28:infra/conf/wireguard.go:97-110,
+ *                                    v26.10.10:infra/conf/wireguard.go:97-113)
  *   peers[].endpoint                 26.3 passes it on to the device
  *                                    (v26.3.27:proxy/wireguard/wireguard.go:79);
  *                                    from 26.7 the server keeps nothing of it
- *                                    (v26.7.28:proxy/wireguard/config.go:26-31)
+ *                                    (v26.7.28:proxy/wireguard/config.go:26-31,
+ *                                    the same lines at v26.10.10)
  *
- * `reserved`, `domainStrategy`, `noKernelTun` and, on 26.9, `remoteDNS` are
- * decoded for an inbound as well and used by the client alone — see
- * CLIENT_ONLY_KEYS. Two of them still have to be valid, because Build()
- * checks them before it knows which side it is building.
+ * 26.10 reads the same of a server as 26.7 and 26.9 do; what changed is the
+ * struct around it, which lost `domainStrategy`
+ * (v26.10.10:infra/conf/wireguard.go:59-69).
+ *
+ * `reserved`, `noKernelTun`, `domainStrategy` (26.3 to 26.9) and `remoteDNS`
+ * (from 26.9) are decoded for an inbound as well and used by the client alone
+ * — see CLIENT_ONLY_KEYS. Build() checks `reserved` before it knows which side
+ * it is building, on every line, and `domainStrategy` too on the lines that
+ * have it, so those still have to be valid; on 26.10 a `domainStrategy` is
+ * dropped unread on either side.
  */
 
 import validator from 'validator';
@@ -50,7 +58,8 @@ const { isIP } = validator;
 /**
  * What Build() gives the interface when `address` is left out — the same pair
  * on every line (v26.3.27:infra/conf/wireguard.go:73-75,
- * v26.7.28:infra/conf/wireguard.go:80-82, v26.9.9:infra/conf/wireguard.go:81-83).
+ * v26.7.28:infra/conf/wireguard.go:80-82, v26.9.9:infra/conf/wireguard.go:81-83,
+ * v26.10.10:infra/conf/wireguard.go:80-82).
  * The core writes the IPv6 one out in full; this is the same address.
  */
 export const WIREGUARD_DEFAULT_ADDRESSES = ['10.0.0.1', 'fd59:7153:2388:b5fd::1'] as const;
@@ -59,16 +68,38 @@ export const WIREGUARD_DEFAULT_ADDRESSES = ['10.0.0.1', 'fd59:7153:2388:b5fd::1'
  * Keys the struct has that only an outbound uses.
  *
  *   reserved        bytes written into each packet by the client's bind
- *                   (v26.3.27:proxy/wireguard/client.go:129, v26.7.28:proxy/wireguard/client.go:316)
- *   domainStrategy  how a peer's endpoint name is resolved (v26.7.28:proxy/wireguard/client.go:345)
+ *                   (v26.3.27:proxy/wireguard/client.go:129, v26.7.28:proxy/wireguard/client.go:316,
+ *                   v26.10.10:proxy/wireguard/client.go:295)
+ *   domainStrategy  how a peer's endpoint name is resolved, 26.3 to 26.9
+ *                   (v26.7.28:proxy/wireguard/client.go:345). 26.10 has no such
+ *                   field on either side (v26.10.10:infra/conf/wireguard.go:59-69):
+ *                   the client looks the name up for both families
+ *                   (v26.10.10:proxy/wireguard/client.go:344) and the key is
+ *                   dropped. Still listed, so one a config holds is shown.
  *   noKernelTun     a server is on gVisor whatever this says
- *                   (v26.3.27:proxy/wireguard/config.go:34-38, v26.7.28:proxy/wireguard/server.go:98)
- *   remoteDNS       the tunnel's own resolver, 26.9 (v26.9.9:proxy/wireguard/client.go:113)
+ *                   (v26.3.27:proxy/wireguard/config.go:34-38, v26.7.28:proxy/wireguard/server.go:98,
+ *                   v26.10.10:proxy/wireguard/server.go:98); the client reads it
+ *                   (v26.10.10:proxy/wireguard/client.go:116)
+ *   remoteDNS       the tunnel's own resolver, from 26.9 (v26.9.9:proxy/wireguard/client.go:113,
+ *                   v26.10.10:proxy/wireguard/client.go:101-108)
  *
  * The inbound editor does not offer them. One a config already holds is
  * shown, with what it is, and stays until someone removes it.
  */
 export const CLIENT_ONLY_KEYS = ['reserved', 'domainStrategy', 'noKernelTun', 'remoteDNS'] as const;
+
+/**
+ * Whether a WireGuard *outbound* on this line reads the key at all — what an
+ * inbound holding it should be told. `domainStrategy` left the struct in 26.10
+ * (v26.10.10:infra/conf/wireguard.go:59-69) and `remoteDNS` arrived in 26.9
+ * (v26.9.9:proxy/wireguard/client.go:113); on the other lines nothing reads
+ * them on either side.
+ */
+export const outboundReadsClientKey = (key: (typeof CLIENT_ONLY_KEYS)[number], version: CoreVersionId): boolean => {
+    if (key === 'domainStrategy') return compareCoreVersions(version, '26.10') < 0;
+    if (key === 'remoteDNS') return compareCoreVersions(version, '26.9') >= 0;
+    return true;
+};
 
 /** Whether a server on this line does anything with a peer's `endpoint` — see the table above. */
 export const serverReadsPeerEndpoint = (version: CoreVersionId): boolean =>
@@ -120,53 +151,67 @@ const keyProblem = (
 /**
  * Everything about a WireGuard inbound that stops a core running it.
  *
- * Refused by Build(), the same on all three lines — the config does not load:
+ * Refused by Build(), the same on every line — the config does not load:
  *
  *   secretKey empty        ParseWireGuardKey answers "key must not be empty" and
  *                          Build() returns "invalid WireGuard secret key"
  *                          (v26.3.27:infra/conf/wireguard.go:68-71 and :129-131,
  *                          v26.7.28:infra/conf/wireguard.go:75-78 and :151-153,
- *                          v26.9.9:infra/conf/wireguard.go:76-79 and :153-155)
+ *                          v26.9.9:infra/conf/wireguard.go:76-79 and :153-155,
+ *                          v26.10.10:infra/conf/wireguard.go:75-78 and :137-139)
  *   secretKey undecodable  "failed to deserialize key", by the same route
  *                          (v26.3.27:infra/conf/wireguard.go:151, v26.7.28:infra/conf/wireguard.go:173,
- *                          v26.9.9:infra/conf/wireguard.go:175)
+ *                          v26.9.9:infra/conf/wireguard.go:175, v26.10.10:infra/conf/wireguard.go:159)
  *   a peer's publicKey or  parsed only when not empty, and then it has to parse
  *   preSharedKey           (v26.3.27:infra/conf/wireguard.go:25-37,
  *   undecodable            v26.7.28:infra/conf/wireguard.go:32-44,
- *                          v26.9.9:infra/conf/wireguard.go:32-44)
+ *                          v26.9.9:infra/conf/wireguard.go:32-44,
+ *                          v26.10.10:infra/conf/wireguard.go:32-44)
  *   reserved               "should be empty or 3 bytes" (v26.3.27:infra/conf/wireguard.go:100-102,
- *                          v26.7.28:infra/conf/wireguard.go:122-124, v26.9.9:infra/conf/wireguard.go:123-125)
- *   domainStrategy         "unsupported domain strategy" — a value set, not a rule:
- *                          `inbound.wireguard.domainStrategy` in versions/features.inbound.ts
+ *                          v26.7.28:infra/conf/wireguard.go:122-124, v26.9.9:infra/conf/wireguard.go:123-125,
+ *                          v26.10.10:infra/conf/wireguard.go:122-124)
+ *   domainStrategy         26.3 to 26.9: "unsupported domain strategy" — a value
+ *                          set, not a rule: `inbound.wireguard.domainStrategy` in
+ *                          versions/features.inbound.ts. 26.10 has no such field
+ *                          (v26.10.10:infra/conf/wireguard.go:59-69), so nothing is
+ *                          checked and the key is dropped
+ *                          (`inbound.wireguard.domainStrategy.key` in
+ *                          versions/features.v2610.ts).
  *
  * Refused when the inbound is created — Build() passes, the core does not start:
  *
- *   a key that is not      26.7 and 26.9 decode the hex themselves and want 32
- *   32 bytes               bytes: the secret key through `common.Must2`, which
- *                          panics (v26.7.28:proxy/wireguard/server.go:103, ParseKey
- *                          at :390-398), a peer's public key as an error
- *                          (v26.7.28:proxy/wireguard/config.go:12-15). 26.3, and
- *                          every line for a pre-shared key, hand the hex to
- *                          wireguard-go's IpcSet (v26.3.27:proxy/wireguard/tun.go:75,
- *                          v26.7.28:proxy/wireguard/server.go:309 and :316), which
+ *   a key that is not      26.7, 26.9 and 26.10 decode the hex themselves and
+ *   32 bytes               want 32 bytes: the secret key through `common.Must2`,
+ *                          which panics (v26.7.28:proxy/wireguard/server.go:103,
+ *                          ParseKey at :390-398; v26.10.10:proxy/wireguard/server.go:103,
+ *                          ParseKey at :391-399), a peer's public key as an error
+ *                          (v26.7.28:proxy/wireguard/config.go:12-15, the same lines
+ *                          at v26.10.10). 26.3, and every line for a pre-shared key,
+ *                          hand the hex to wireguard-go's IpcSet
+ *                          (v26.3.27:proxy/wireguard/tun.go:75,
+ *                          v26.7.28:proxy/wireguard/server.go:309 and :316,
+ *                          v26.10.10:proxy/wireguard/server.go:311 and :318), which
  *                          takes exactly 32 — that check is in the dependency
  *                          (pinned at v26.3.27:go.mod:29, the same commit on all
- *                          three tags), not in this repository.
- *   a peer with no         26.7 and 26.9: ParseKey("") is zero bytes, so the peer's
- *   publicKey              account fails and NewServer returns the error
+ *                          four tags — v26.10.10:go.mod:32), not in this repository.
+ *   a peer with no         26.7, 26.9 and 26.10: ParseKey("") is zero bytes, so the
+ *   publicKey              peer's account fails and NewServer returns the error
  *                          (v26.7.28:proxy/wireguard/server.go:108-112,
- *                          v26.7.28:proxy/wireguard/config.go:12-15).
+ *                          v26.7.28:proxy/wireguard/config.go:12-15;
+ *                          v26.10.10:proxy/wireguard/server.go:108-112).
  *                          26.3 builds it, then leaves `public_key=` out of the
  *                          device request and sends the peer's allowed IPs anyway
  *                          (v26.3.27:proxy/wireguard/wireguard.go:71-85) — lines
  *                          with no peer of their own. Not a working peer on any line.
- *   allowedIPs             26.7 and 26.9: each one through netip.ParsePrefix
- *                          (v26.7.28:proxy/wireguard/config.go:17-23), so a bare
- *                          address is refused. 26.3 passes them to IpcSet unread
+ *   allowedIPs             26.7 and later: each one through netip.ParsePrefix
+ *                          (v26.7.28:proxy/wireguard/config.go:17-23, the same lines
+ *                          at v26.10.10), so a bare address is refused. 26.3 passes
+ *                          them to IpcSet unread
  *                          (v26.3.27:proxy/wireguard/wireguard.go:83-85), which
  *                          parses a prefix too.
- *   address                26.7 and 26.9: an address or any prefix
- *                          (v26.7.28:proxy/wireguard/server.go:83-96). 26.3: an
+ *   address                26.7 and later: an address or any prefix
+ *                          (v26.7.28:proxy/wireguard/server.go:83-96, the same lines
+ *                          at v26.10.10). 26.3: an
  *                          address, or a prefix that is exactly one host — /32 or
  *                          /128 (v26.3.27:proxy/wireguard/wireguard.go:29-46). So
  *                          `10.0.0.1/24` starts on 26.7 and not on 26.3; that one
@@ -278,12 +323,13 @@ const ipv4Hosts = (entries: unknown): string[] =>
  * of the interface's /24 that nothing uses yet.
  *
  * A peer left without `allowedIPs` is given everything — "0.0.0.0/0" and
- * "::0/0" (v26.7.28:infra/conf/wireguard.go:50-54). That is right for a
+ * "::0/0" (v26.7.28:infra/conf/wireguard.go:50-54, the same lines at
+ * v26.10.10). That is right for a
  * client, whose one peer is the way out, and wrong for a server with several:
  * every peer would claim every address, WireGuard sends an address to one
  * peer only, and from 26.7 Xray names the user behind a connection by the
  * first peer whose list contains its source
- * (v26.7.28:proxy/wireguard/server.go:195-207). So a new peer starts with one
+ * (v26.7.28:proxy/wireguard/server.go:195-207, v26.10.10:proxy/wireguard/server.go:199-211). So a new peer starts with one
  * address of its own, which is also the address the client has to be given.
  *
  * Undefined when the /24 is full or the interface has no IPv4 at all.

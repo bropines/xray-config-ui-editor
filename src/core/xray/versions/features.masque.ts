@@ -1,6 +1,6 @@
 /**
- * Hand-written feature rows for MASQUE, and for the other keys that arrived
- * with 26.10 and have no editor of their own yet.
+ * Hand-written feature rows for MASQUE and xdrive, the two transports that
+ * arrived with 26.10.
  *
  * Kept apart from features.ts so each area owns its rows; they are merged
  * there and win over generated rows for the same place. Same rules as the
@@ -56,6 +56,24 @@ const masqueKeys: { key: string; parent: string; evidence: string; detail: strin
     { key: 'warp.address', parent: `${MS}.warp`, evidence: MASQUE_WARP_CONFIG, detail: 'The address WARP assigned the device: at most one IPv4 and one IPv6 address or prefix.' },
 ];
 
+const XS = `${ST}.xdriveSettings`;
+
+/** `XDriveConfig` (v26.10.10:infra/conf/transport_method.go:969-982), one row per field, with its line. */
+const xdriveKeys: { key: string; line: number; detail: string }[] = [
+    { key: 'remoteFolder', line: 970, detail: 'Where the files go: a folder path for local, a folder id for Google Drive, {folder} in a template.' },
+    { key: 'service', line: 971, detail: 'The store: local, Google Drive or template, compared exactly; anything else fails the config.' },
+    { key: 'secrets', line: 972, detail: 'Credentials: exactly three for Google Drive (client ID, client secret, refresh token); {secret0}… in a template.' },
+    { key: 'segmentBytes', line: 973, detail: 'The largest piece written as one file; 0 is 512 KiB, capped at 16 MiB.' },
+    { key: 'flushIntervalMs', line: 974, detail: 'How long data waits before a short piece is written; 0 is 20 ms.' },
+    { key: 'pollIntervalMs', line: 975, detail: 'The fastest polling for the files the other side writes; 0 is 50 ms.' },
+    { key: 'maxPollIntervalMs', line: 976, detail: 'The slowest polling once idle; 0 is 500 ms, never below the poll interval.' },
+    { key: 'sessionTtlSeconds', line: 977, detail: 'How long an unclaimed or idle session is kept; 0 is 5 minutes.' },
+    { key: 'concurrency', line: 978, detail: 'File transfers at once; 0 is 8, capped at 64.' },
+    { key: 'eagerWindowMs', line: 979, detail: 'How long after traffic polling stays at its fastest; 0 is 2 s.' },
+    { key: 'holeTimeoutMs', line: 980, detail: 'How long a missing piece is waited for while later ones arrive; 0 is 30 s.' },
+    { key: 'template', line: 981, detail: 'The HTTP calls of a template store: put, get, list and delete, with auth and retry; required for template.' },
+];
+
 export const MASQUE_FEATURES: CoreFeature[] = [
     ...SIDES.flatMap(scope => [
         {
@@ -77,10 +95,10 @@ export const MASQUE_FEATURES: CoreFeature[] = [
         } satisfies CoreFeature)),
 
         // ── xdrive: the other transport 26.10 registers ─────────────────
-        // Cloud-drive storage as a carrier. Its value, `network: "xdrive"`, is in
-        // the `stream.network` set; the settings key is dropped on older lines. No
-        // editor draws it, so only the key itself has a row — its fields are
-        // not enumerated.
+        // A shared store as the carrier. Its value, `network: "xdrive"`, is in
+        // the `stream.network` set; the settings key is dropped on older lines,
+        // and so is every field of it (each row is covered by the key's).
+        // What Build() and the store refuse is in core/xray/xdrive.ts.
         {
             id: `${scope}.xdriveSettings`,
             scope,
@@ -89,5 +107,14 @@ export const MASQUE_FEATURES: CoreFeature[] = [
             detail: 'The xdrive transport settings arrived in 26.10; earlier lines have no such key and drop it silently.',
             evidence: [...STREAM_STRUCT_WITHOUT, 'v26.10.10:infra/conf/transport_internet.go:67'],
         } satisfies CoreFeature,
+        ...xdriveKeys.map(({ key, line, detail }) => ({
+            id: `${scope}.xdriveSettings.${key}`,
+            scope,
+            path: `${XS}.${key}`,
+            status: s('absent', 'absent', 'absent', 'accepted'),
+            coveredBy: `${scope}.xdriveSettings`,
+            detail,
+            evidence: [...STREAM_STRUCT_WITHOUT.slice(-1), `v26.10.10:infra/conf/transport_method.go:${line}`],
+        } satisfies CoreFeature)),
     ]),
 ];

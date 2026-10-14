@@ -13,6 +13,7 @@ import { wireguardInboundProblems } from '../xray/wireguard-inbound';
 import { wireguardOutboundProblems } from '../xray/wireguard-outbound';
 import { httpHeadersProblems } from '../xray/http-outbound-headers';
 import { webhookProblems } from '../xray/routing-webhook';
+import { attrsProblems } from '../xray/routing-attrs';
 import { t } from '../../i18n';
 import type { CoreVersionId } from '../xray/versions';
 
@@ -284,6 +285,15 @@ export const runFullDiagnostics = (
         // is not a string, ...) fails the rule and with it the config; one
         // with no url is dropped without a word. See core/xray/routing-webhook.ts.
         for (const problem of webhookProblems(rule)) {
+            diagnostics.push({
+                section: 'routing', itemIndex: i, field: problem.field,
+                severity: problem.severity, message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
+        // `attrs` is a map of strings on every line: anything else fails the
+        // rule's decode and the config with it. See core/xray/routing-attrs.ts.
+        for (const problem of attrsProblems(rule)) {
             diagnostics.push({
                 section: 'routing', itemIndex: i, field: problem.field,
                 severity: problem.severity, message: problem.message, suggestion: problem.suggestion,

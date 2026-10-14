@@ -40,7 +40,8 @@ export interface NetworkOption {
  * `masque` is the other way round: from 26.10 the core allows the masque
  * transport only on the masque proxy (inbound or outbound), and that proxy uses
  * no other, so it is offered there and nowhere else. Lines before 26.10 do not
- * register it at all.
+ * register it at all. `xdrive`, 26.10's other new transport, has no such tie
+ * and is offered wherever the line has it.
  */
 const REMOVED: Record<string, string> = {
     http: 'XHTTP (stream-one H2/H3)',
@@ -132,6 +133,14 @@ export const networkOptions = (
 ): NetworkOption[] => {
     let options = BASE_NETWORKS();
 
+    // xdrive (26.10) carries any stream proxy, through files in a shared
+    // store; the form for its settings is XDriveSettingsEditor. Offered only
+    // where the line registers it — anywhere else a held one is the `current`
+    // below, shown with what the line says about it.
+    if (allowedValues(version, 'stream.network').includes('xdrive')) {
+        options.push({ value: 'xdrive', label: 'xdrive', description: t("Carries traffic as files in a shared folder or on a cloud drive") });
+    }
+
     // A hysteria proxy checks its transport when the handler is created —
     // see the `hysteria.stream.network` value set. Where the line narrows the
     // list, offer only what it keeps.
@@ -193,6 +202,18 @@ const SETTINGS_SECTION: Record<string, string> = {
     wsSettings: 'ws',
     httpupgradeSettings: 'httpupgrade',
     hysteriaSettings: 'hysteria',
+    masqueSettings: 'masque',
+    xdriveSettings: 'xdrive',
+};
+
+/**
+ * Settings objects only some lines have. On a line without the field the
+ * decoder drops it, so it is not a leftover there — the version table reports
+ * it as absent instead.
+ */
+const SETTINGS_SINCE: Record<string, CoreVersionId> = {
+    masqueSettings: '26.10',
+    xdriveSettings: '26.10',
 };
 
 /**
@@ -204,11 +225,12 @@ const SETTINGS_SECTION: Record<string, string> = {
  * the load on 26.3 and 26.7. `quicSettings` is not in the list — no supported
  * line has the key, so it is dropped unread.
  */
-export const leftoverTransportSettings = (stream: any, network: string): string[] => {
+export const leftoverTransportSettings = (stream: any, network: string, version: CoreVersionId = DEFAULT_CORE_VERSION): string[] => {
     if (!stream || typeof stream !== 'object') return [];
     const running = networkSection(network);
     return Object.keys(SETTINGS_SECTION).filter(key =>
-        stream[key] !== undefined && stream[key] !== null && SETTINGS_SECTION[key] !== running);
+        stream[key] !== undefined && stream[key] !== null && SETTINGS_SECTION[key] !== running
+        && (SETTINGS_SINCE[key] === undefined || compareCoreVersions(version, SETTINGS_SINCE[key]!) >= 0));
 };
 
 /**

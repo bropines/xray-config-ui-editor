@@ -50,7 +50,11 @@ export const InboundCoreNotes = ({ inbound, onChange }: InboundCoreNotesProps) =
                 // somebody's key — replacing it is theirs to decide, below.
                 actions: kind === 'secretKey.empty'
                     ? [{ label: t("Generate a key"), run: () => onChange(['settings', 'secretKey'], generateWireguardKeyPair().secretKey) }]
-                    : [],
+                    // `shadowsocks-2022` is no protocol; the 2022 cipher is the
+                    // method, which stays. Renaming it takes nothing away.
+                    : kind === 'protocol.name'
+                        ? [{ label: t("Use shadowsocks"), run: () => onChange('protocol', 'shadowsocks') }]
+                        : [],
             };
         }
         if (note.kind === 'conflict') {

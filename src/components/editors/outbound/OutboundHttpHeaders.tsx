@@ -43,7 +43,7 @@ export const OutboundHttpHeaders = ({ outbound, onChange }: {
                     <JsonInput
                         value={wrong ? undefined : held}
                         onChange={headers.onChange}
-                        expects="object"
+                        expects="string-map"
                         // The shape to type, not prose: the same in every language.
                         placeholder='{ "User-Agent": "Mozilla/5.0" }'
                         ariaLabel={t("Headers")}

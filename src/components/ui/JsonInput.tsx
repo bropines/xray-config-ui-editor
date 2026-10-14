@@ -2,17 +2,36 @@ import React from 'react';
 import { useSyncedText } from '../../hooks/useSyncedText';
 import { t } from '../../i18n';
 
-/** Which JSON value a key takes; `any` leaves that to whoever reads it. */
-export type JsonKind = 'object' | 'array' | 'any';
+/**
+ * Which JSON value a key takes; `any` leaves that to whoever reads it.
+ * `string-map` is an object whose values are all strings — a Go
+ * `map[string]string`, which refuses a number or a nested object as a value
+ * just as it refuses a list in place of the object. A `null` value is let
+ * through: Go reads it as an empty string (see core/xray/string-map.ts).
+ */
+export type JsonKind = 'object' | 'array' | 'any' | 'string-map';
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const isKind = (value: unknown, kind: JsonKind): boolean => {
     if (kind === 'any') return true;
     if (kind === 'array') return Array.isArray(value);
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
+    if (kind === 'string-map') return isObject(value) && Object.values(value).every(entry => entry === null || typeof entry === 'string');
+    return isObject(value);
 };
 
 const formatJson = (value: unknown) => (value === undefined ? '' : JSON.stringify(value, null, 2));
 const parseJson = (text: string) => (text.trim() === '' ? undefined : JSON.parse(text));
+
+/** Whether the text says exactly `value` — the box is showing what the config holds, not an edit. */
+const shows = (text: string, value: unknown): boolean => {
+    try {
+        return JSON.stringify(parseJson(text)) === JSON.stringify(value);
+    } catch {
+        return false;
+    }
+};
 
 /**
  * What the text in the box is, right now. Derived from the text on every
@@ -43,6 +62,11 @@ const statusOf = (text: string, expects: JsonKind): 'ok' | 'invalid' | 'wrong-ki
  * JsonField is the other JSON editor, and the wrong one for a field: it is
  * the whole-document CodeMirror view, sized for a screen, and an emptied one
  * writes a skeleton config (`{ inbounds: [], outbounds: [] }`).
+ *
+ * A `string-map` box shows a held object with a value that is not a string
+ * as it is, marked invalid but without the "keeps the last valid value" line:
+ * the config holds exactly that, and the caller names each such value and
+ * what the core does with it (see RuleAttrs).
  */
 export const JsonInput = ({ value, onChange, expects = 'any', placeholder, ariaLabel }: {
     value: unknown;
@@ -54,6 +78,7 @@ export const JsonInput = ({ value, onChange, expects = 'any', placeholder, ariaL
 }) => {
     const [text, setText] = useSyncedText(value, formatJson, parseJson);
     const status = statusOf(text, expects);
+    const heldStringMap = status === 'wrong-kind' && expects === 'string-map' && shows(text, value);
     return (
         <div className="flex flex-col gap-1">
             <textarea
@@ -72,11 +97,13 @@ export const JsonInput = ({ value, onChange, expects = 'any', placeholder, ariaL
             {status === 'invalid' && (
                 <span className="text-[10px] text-rose-400">{t("Not valid JSON yet — the config keeps the last valid value.")}</span>
             )}
-            {status === 'wrong-kind' && (
+            {status === 'wrong-kind' && !heldStringMap && (
                 <span className="text-[10px] text-rose-400">
                     {expects === 'array'
                         ? t("This key takes a JSON list, in square brackets — the config keeps the last valid value.")
-                        : t("This key takes a JSON object, in braces — the config keeps the last valid value.")}
+                        : expects === 'string-map'
+                            ? t("This key takes a JSON object whose values are all strings, in quotes — the config keeps the last valid value.")
+                            : t("This key takes a JSON object, in braces — the config keeps the last valid value.")}
                 </span>
             )}
         </div>

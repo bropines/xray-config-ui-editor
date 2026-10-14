@@ -27,9 +27,6 @@ export const UNTRANSLATED = new Set([
     'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4',
     'IPIfNonMatch', 'IPOnDemand', 'vlessRoute',
     'leastLoad', 'leastPing', 'roundRobin', 'random',
-    'aes-256-gcm', 'aes-128-gcm', 'chacha20-ietf-poly1305',
-    'xchacha20-ietf-poly1305', '2022-blake3-aes-128-gcm',
-    '2022-blake3-aes-256-gcm', '2022-blake3-chacha20-poly1305',
     'RAND', 'AUTO',
 
     // Transport and protocol names

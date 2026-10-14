@@ -203,10 +203,10 @@ describe('the transport section of a masque proxy', () => {
         expect(form.current().masqueSettings).toEqual({ path: '/m/' });
     });
 
-    it('says what it does not draw for the other new transport, and keeps its settings', () => {
+    it('draws the other new transport with its own form, and keeps its settings', () => {
         const held = { network: 'xdrive', security: 'tls', xdriveSettings: { service: 'local', remoteFolder: '/tmp/x' } };
         const form = mountSection(held, 'vless', true);
-        expect(form.container.querySelector('[data-xdrive-note]')).not.toBeNull();
+        expect(form.container.querySelector('[data-xdrive-settings]')).not.toBeNull();
         expect(form.container.querySelector('[data-masque-settings]')).toBeNull();
         expect(form.current()).toEqual(held);
     });

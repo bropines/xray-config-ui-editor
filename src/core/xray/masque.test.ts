@@ -249,6 +249,11 @@ describe('masqueSettings.path, host, user and headers', () => {
         expect(settingsKinds({ pass: 'b', headers: { authorization: 'Bearer x' } })).toEqual(['headers.authorization']);
     });
 
+    it('takes a null header value, which Go decodes as an empty string', () => {
+        expect(settingsKinds({ headers: { 'X-Empty': null } })).toEqual([]);
+        expect(settingsKinds({ headers: { 'X-Num': 5 } })).toEqual(['type']);
+    });
+
     it('keeps a colon out of the user name (:872-874)', () => {
         expect(settingsKinds({ user: 'a:b', pass: 'p' })).toEqual(['user']);
         expect(settingsKinds({ user: 'ab', pass: 'a:b' })).toEqual([]);

@@ -28,6 +28,7 @@
 import { t } from '../../../i18n';
 import { coreVersion, type CoreVersionId } from './index';
 import { allowedValues, coreValueSet, FEATURES, type FeatureStatus } from './features';
+import { parseNoiseExp } from '../../noise/exp';
 
 export type MaskList = 'tcp' | 'udp';
 export type MaskSide = 'inbound' | 'outbound';
@@ -430,76 +431,17 @@ export const noiseItemTypeChoices = (version: CoreVersionId, held?: unknown): st
 export const isNoiseExpItem = (item: unknown): boolean =>
     isObject(item) && typeof item.type === 'string' && item.type.toLowerCase() === 'exp';
 
-const atoi = (text: string): number | null => (/^[+-]?\d+$/.test(text) ? Number(text) : null);
-
-/** `ParseRangeString` (v26.10.10:infra/conf/common.go:355): "114", "114-514", "-114-514", "". Null where it errors. */
-const parseRangeString = (text: string): [number, number] | null => {
-    const single = atoi(text);
-    if (single !== null) return [single, single];
-    if (text === '') return [0, 0];
-    let pair: string[];
-    if (text.startsWith('-')) {
-        const at = text.indexOf('-', 1);
-        pair = at < 0 ? [text] : [text.slice(0, at), text.slice(at + 1)];
-    } else {
-        const at = text.indexOf('-');
-        pair = at < 0 ? [text] : [text.slice(0, at), text.slice(at + 1)];
-    }
-    if (pair.length !== 2) return null;
-    const left = atoi(pair[0]!);
-    const right = atoi(pair[1]!);
-    return left !== null && right !== null ? [left, right] : null;
-};
-
-/** The core's own wording for what is wrong with one `<tag arg>`; null when it builds. */
-const noiseTagProblem = (key: string, arg: string): string | null => {
-    switch (key) {
-        case 'b': {
-            let hex = arg.split(/\s+/).join('');
-            if (hex.startsWith('0x')) hex = hex.slice(2);
-            if (hex.startsWith('0X')) hex = hex.slice(2);
-            if (hex === '') return 'empty bytes in noise exp';
-            return /^([0-9a-fA-F]{2})+$/.test(hex) ? null : `invalid hex in noise exp: ${arg}`;
-        }
-        case 'r':
-        case 'rc':
-        case 'rd': {
-            if (arg === '') return `<${key}> in noise exp needs a size`;
-            const size = parseRangeString(arg);
-            if (!size) return `invalid range string: ${arg}`;
-            return size[0] < 0 || size[1] < size[0] || size[1] > 65535 ? `invalid size in noise exp: ${arg}` : null;
-        }
-        case 't':
-        case 'c':
-        case 'n':
-            return arg === '' ? null : `<${key}> in noise exp takes no argument`;
-        default:
-            return `unknown <${key}> in noise exp`;
-    }
-};
-
 /**
  * What `parseNoiseExp` (v26.10.10:transport_finalmask.go:363) would answer to
  * an expression like `<b 0xDEADBEEF><r 8><t>`, in its words, or null when it
  * builds. Only whitespace may sit between the tags, and there has to be at
  * least one. Tags are lower-case letters only, which is what the pattern at
- * :361 matches.
+ * :361 matches. The grammar itself is read in one place, core/noise/exp.ts,
+ * which the AmneziaWG export reads too.
  */
 export const noiseExpProblem = (exp: string): string | null => {
-    const tag = /<\s*([a-z]+)(?:\s+([^>]*?))?\s*>/g;
-    let last = 0;
-    let count = 0;
-    for (const match of exp.matchAll(tag)) {
-        const before = exp.slice(last, match.index);
-        if (before.trim() !== '') return `invalid noise exp near ${before}`;
-        last = match.index + match[0].length;
-        const problem = noiseTagProblem(match[1]!, match[2] ?? '');
-        if (problem) return problem;
-        count++;
-    }
-    const rest = exp.slice(last);
-    if (rest.trim() !== '') return `invalid noise exp near ${rest}`;
-    return count === 0 ? `empty noise exp: ${exp}` : null;
+    const parsed = parseNoiseExp(exp);
+    return 'error' in parsed ? parsed.error : null;
 };
 
 // ── Chain rules ─────────────────────────────────────────────────────────

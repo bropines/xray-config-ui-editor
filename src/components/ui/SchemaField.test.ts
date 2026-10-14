@@ -70,6 +70,13 @@ describe('getSchemaTypeAndDetails', () => {
         expect(getSchemaTypeAndDetails(z.record(z.string(), z.string()).optional()).type).toBe('record');
     });
 
+    it('marks a record of strings, so the box refuses a value that is not one', () => {
+        // Headers and attrs are map[string]string in the core: a number there
+        // fails the decode of the whole config.
+        expect(getSchemaTypeAndDetails(z.record(z.string(), z.string()).optional()).stringValues).toBe(true);
+        expect(getSchemaTypeAndDetails(z.record(z.string(), z.unknown())).stringValues).toBe(false);
+    });
+
     it('does not fall back to string when a union also holds a structure', () => {
         // A text box can hold one branch of `"url" | { url }` and destroys the other.
         expect(getSchemaTypeAndDetails(z.union([z.string(), z.object({ url: z.string() })])).type).toBe('unknown');

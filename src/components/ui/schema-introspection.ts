@@ -39,6 +39,8 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     type: SchemaFieldKind;
     options?: string[];
     innerSchema?: z.ZodTypeAny;
+    /** A record whose values are strings: the core's map[string]string. */
+    stringValues?: boolean;
 } {
     let current = schema;
 
@@ -76,7 +78,10 @@ export function getSchemaTypeAndDetails(schema: z.ZodTypeAny): {
     // A map of names to values — HTTP headers, socket options. It has no
     // shape to draw fields from, but it is an object all the same.
     if (current instanceof z.ZodRecord || typeName === 'record') {
-        return { type: 'record' };
+        // map[string]string in the core (headers, attrs): a value that is not
+        // a string fails the decode, so the box should refuse one.
+        const values = (current as { _def?: { valueType?: unknown } })._def?.valueType;
+        return { type: 'record', stringValues: defTag(values) === 'string' || values instanceof z.ZodString };
     }
     if (current instanceof z.ZodUnion || typeName === 'union') {
         const options = (current as any)._def.options || [];

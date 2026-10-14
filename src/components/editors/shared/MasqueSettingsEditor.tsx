@@ -198,7 +198,7 @@ export const MasqueSettingsEditor = ({ settings, onChange, isClient, protocol }:
                         </label>
                         <JsonInput
                             value={value.headers}
-                            expects="object"
+                            expects="string-map"
                             placeholder={'{ "User-Agent": "chrome" }'}
                             ariaLabel={t("Headers")}
                             onChange={next => set('headers', next)}

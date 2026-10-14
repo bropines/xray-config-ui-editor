@@ -97,6 +97,17 @@ describe('shadowsocks', () => {
         expect(server).toContain('uotVersion');
         expect(server).not.toContain('UoTVersion');
     });
+
+    it('takes any text as a method: which names a line accepts is the version check\'s to say', () => {
+        // cipherFromString lower-cases and has aead_* spellings (v26.7.28:infra/conf/shadowsocks.go:17-30);
+        // an enum refused both, so a config every core loads could not be saved from the form.
+        const schema = outboundSettingsSchemaFor('shadowsocks')!;
+        for (const method of ['AES-256-GCM', 'aead_aes_256_gcm', 'xchacha20-ietf-poly1305', '2022-blake3-aes-128-gcm']) {
+            expect(schema.safeParse({ servers: [{ address: 'e.com', port: 443, method, password: 'p' }] }).success).toBe(true);
+            expect(schema.safeParse({ address: 'e.com', port: 443, method, password: 'p' }).success).toBe(true);
+        }
+        expect(schema.safeParse({ address: 'e.com', port: 443, method: 5, password: 'p' }).success).toBe(false);
+    });
 });
 
 describe('loopback and blackhole', () => {

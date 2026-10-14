@@ -15,7 +15,7 @@ const typeInto = (box: HTMLTextAreaElement, value: string) => {
     fireEvent.change(box, { target: { value } });
 };
 
-const draw = (value: unknown, expects?: 'object' | 'array' | 'any') => {
+const draw = (value: unknown, expects?: 'object' | 'array' | 'any' | 'string-map') => {
     const writes: unknown[] = [];
     const view = render(<JsonInput value={value} onChange={next => writes.push(next)} expects={expects} />);
     const box = view.container.querySelector('textarea') as HTMLTextAreaElement;
@@ -71,6 +71,30 @@ describe('JsonInput', () => {
         expect(container.textContent).toContain('JSON list');
         typeInto(box, '["a"]');
         expect(writes).toEqual([['a']]);
+    });
+
+    it('takes only an object of strings for a string map', () => {
+        // A Go map[string]string: a number as a value fails the decode as surely as a list does.
+        const { box, writes, container } = draw(undefined, 'string-map');
+        for (const text of ['"GET"', '[]', '{"a": 1}', '{"a": true}', '{"a": {"b": "c"}}']) {
+            typeInto(box, text);
+            expect(container.textContent).toContain('values are all strings');
+            expect(box.getAttribute('aria-invalid')).toBe('true');
+        }
+        expect(writes).toEqual([]);
+        typeInto(box, '{"a": "1"}');
+        expect(writes).toEqual([{ a: '1' }]);
+    });
+
+    it('shows a held string map with a bad value as it is, without claiming to keep another', () => {
+        // The config holds exactly this; the caller names the bad value.
+        const { box, container } = draw({ a: 1 }, 'string-map');
+        expect(box.value).toBe('{\n  "a": 1\n}');
+        expect(box.getAttribute('aria-invalid')).toBe('true');
+        expect(container.textContent).not.toContain('keeps the last valid value');
+        // Once edited, it is an edit again, and the line comes back.
+        typeInto(box, '{"a": 2}');
+        expect(container.textContent).toContain('keeps the last valid value');
     });
 
     it('takes any JSON when nothing narrower is asked for', () => {

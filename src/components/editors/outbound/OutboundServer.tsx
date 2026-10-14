@@ -12,9 +12,76 @@ import {
     serverShape,
     withCredentials,
 } from '../../../core/xray/outbound-credentials';
+import {
+    shadowsocksOutboundProblems,
+    shadowsocksUot,
+    type ShadowsocksOutboundProblem,
+} from '../../../core/xray/shadowsocks-outbound';
+import { canonicalNames, protocolNameProblem, text } from '../../../core/xray/shadowsocks-rules';
 import { OutboundHttpHeaders } from './OutboundHttpHeaders';
 import { isHttpOutbound } from '../../../core/xray/http-outbound-headers';
 import { t } from '../../../i18n';
+
+/**
+ * What the core refuses about one field, said next to it — the same words the
+ * diagnostics use (core/xray/shadowsocks-outbound), so a check the panel save
+ * runs is one the form shows while it is being typed.
+ */
+const Problems = ({ items }: { items: ShadowsocksOutboundProblem[] }) => (items.length === 0 ? null : (
+    <ul className="space-y-1 mt-1">
+        {items.map((problem, index) => (
+            <li key={index} data-problem={problem.kind} className="text-[10px] leading-relaxed text-rose-300 break-words">
+                {problem.message}
+                {problem.suggestion && <span className="block text-slate-400">{problem.suggestion}</span>}
+            </li>
+        ))}
+    </ul>
+));
+
+const invalidClass = (invalid: boolean) => (invalid ? 'border-rose-500 bg-rose-500/10' : '');
+
+/**
+ * What is wrong with the outbound as a whole rather than with a field, and
+ * what a key the line does nothing with is doing in it. Information first, the
+ * buttons at the foot where a thumb finds them.
+ */
+const ShadowsocksNotes = ({ problems, nameProblem, onUseShadowsocks, uot }: {
+    problems: ShadowsocksOutboundProblem[];
+    nameProblem?: { message: string; suggestion: string };
+    onUseShadowsocks: () => void;
+    uot?: { keys: string[]; text: string[]; onRemove: () => void };
+}) => {
+    if (!nameProblem && problems.length === 0 && !uot) return null;
+    const button = 'h-9 px-4 rounded-lg border bg-slate-950/40 text-[11px] font-bold transition-colors';
+    return (
+        <div className="mt-4 space-y-3">
+            {nameProblem && (
+                <div className="p-3 rounded-xl border space-y-3 bg-rose-950/20 border-rose-500/40" data-problem="protocol.name">
+                    <p className="text-[11px] leading-relaxed text-rose-200/90 break-words">{nameProblem.message}</p>
+                    <p className="text-[10px] leading-relaxed text-slate-400 break-words">{nameProblem.suggestion}</p>
+                    <button type="button" onClick={onUseShadowsocks} className={`${button} border-rose-500/40 text-rose-200 hover:border-rose-400`}>
+                        {t("Use shadowsocks")}
+                    </button>
+                </div>
+            )}
+            {problems.length > 0 && (
+                <div className="p-3 rounded-xl border bg-rose-950/20 border-rose-500/40">
+                    <Problems items={problems} />
+                </div>
+            )}
+            {uot && (
+                <div className="p-3 rounded-xl border space-y-3 bg-amber-950/20 border-amber-500/30" data-held-uot={uot.keys.join(',')}>
+                    {uot.text.map((line, index) => (
+                        <p key={index} className="text-[11px] leading-relaxed text-slate-300 break-words">{line}</p>
+                    ))}
+                    <button type="button" onClick={uot.onRemove} className={`${button} border-amber-500/40 text-amber-200 hover:border-amber-400`}>
+                        {t("Remove")}
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const isShadowsocks = outbound.protocol === 'shadowsocks' || outbound.protocol === 'shadowsocks-2022';
@@ -34,7 +101,11 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     // card follows whichever the config uses instead of always writing
     // `servers[0]`, which on a flat config is a key nothing reads.
     const withLogin = hasLogin(outbound.protocol);
-    const isFlat = isHysteria || (withLogin && serverShape(outbound) === 'flat');
+    // Shadowsocks has them too, by the same test and on every line
+    // (v26.7.28:infra/conf/shadowsocks.go:201-212): a form that always wrote
+    // `servers[0]` drew empty boxes for a flat config and edited a list the
+    // core had already replaced.
+    const isFlat = isHysteria || ((withLogin || isShadowsocks) && serverShape(outbound) === 'flat');
     // One identifier: a UUID for vless and vmess, a password for trojan and
     // shadowsocks. Nothing else has one — this box used to be drawn for
     // socks, http and hysteria as well, bound to nothing.
@@ -55,11 +126,22 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const port = useField<number>(outbound, onChange, [...basePath, 'port']);
     const method = useField<string>(outbound, onChange, [...basePath, 'method']);
     const uot = useField<boolean>(outbound, onChange, [...basePath, 'uot']);
-    // UDP over TCP exists in the shadowsocks client config on 26.3 and is
-    // gone from 26.7 on, where the key is dropped silently. Offered where it
-    // works; shown wherever a config already sets it, so it is not hidden.
-    const { offers, values } = useCoreVersion();
-    const showUot = isShadowsocks && (offers('outbound.shadowsocks.servers.uot') || uot.value !== undefined);
+    const uotVersion = useField<number | undefined>(outbound, onChange, [...basePath, 'uotVersion']);
+    const { version, tag: coreTag, values } = useCoreVersion();
+    // UDP over TCP is read by Xray 26.3 and handed to a 2022 cipher only
+    // (v26.3.27:infra/conf/shadowsocks.go:223-224); 26.7 on has no such key.
+    // Offered where it does something; a value the config holds elsewhere is
+    // still drawn, with what the line does with it and a way to remove it.
+    const ssProblems = isShadowsocks ? shadowsocksOutboundProblems(outbound, version) : [];
+    const problemsAt = (key: string) => ssProblems.filter(problem => problem.key === key);
+    const uotState = isShadowsocks ? shadowsocksUot(outbound, version) : undefined;
+    const nameProblem = isShadowsocks ? protocolNameProblem(outbound.protocol) : undefined;
+    // What the chosen line takes (none only where it works, no aead_* twins),
+    // plus whatever the config holds, so a name the line refuses is shown and
+    // not swapped for one it does not have.
+    const heldMethod = text(method.value);
+    const methodNames = canonicalNames(values('outbound.shadowsocks.method'));
+    const methodOptions = heldMethod !== '' && !methodNames.includes(heldMethod) ? [...methodNames, heldMethod] : methodNames;
     // vmess/vless keep the identifier under users[0].id; trojan/shadowsocks keep it as `password`.
     const userIdField = useField<string>(
         outbound,
@@ -154,21 +236,23 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 <div className="md:col-span-3">
                     <FormField label={t("Address (IP or Domain)")} error={errors.address}>
                         <input
-                            className="input-base"
+                            className={`input-base ${invalidClass(problemsAt('address').length > 0)}`}
                             placeholder={t("example.com")}
                             value={address.value || ""}
                             onChange={e => address.onChange(e.target.value)}
                         />
+                        <Problems items={problemsAt('address')} />
                     </FormField>
                 </div>
                 <FormField label={t("Port")} error={errors.port}>
                     <input
                         type="number"
-                        className="input-base"
+                        className={`input-base ${invalidClass(problemsAt('port').length > 0)}`}
                         placeholder="443"
                         value={port.value || ""}
                         onChange={e => port.onChange(parseInt(e.target.value) || 0)}
                     />
+                    <Problems items={problemsAt('port')} />
                 </FormField>
             </div>
 
@@ -176,10 +260,11 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 {supportsUserId && (
                     <FormField label={isShadowsocks || outbound.protocol === 'trojan' ? t("Password") : t("UUID / ID")}>
                         <input
-                            className="input-base font-mono text-xs"
+                            className={`input-base font-mono text-xs ${invalidClass(isShadowsocks && problemsAt('password').length > 0)}`}
                             value={userId.value || ""}
                             onChange={e => userId.onChange(e.target.value)}
                         />
+                        <Problems items={problemsAt('password')} />
                     </FormField>
                 )}
 
@@ -221,30 +306,45 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                 )}
 
                 {isShadowsocks && (
-                    <Select
-                        label={t("Method")}
-                        value={method.value || (outbound.protocol === 'shadowsocks-2022' ? "2022-blake3-aes-128-gcm" : "aes-256-gcm")}
-                        onChange={val => method.onChange(val)}
-                        options={outbound.protocol === 'shadowsocks' ? [
-                            { value: "aes-256-gcm", label: t("aes-256-gcm") },
-                            { value: "aes-128-gcm", label: t("aes-128-gcm") },
-                            { value: "chacha20-ietf-poly1305", label: t("chacha20-ietf-poly1305") },
-                            { value: "xchacha20-ietf-poly1305", label: t("xchacha20-ietf-poly1305") },
-                        ] : [
-                            { value: "2022-blake3-aes-128-gcm", label: t("2022-blake3-aes-128-gcm") },
-                            { value: "2022-blake3-aes-256-gcm", label: t("2022-blake3-aes-256-gcm") },
-                            { value: "2022-blake3-chacha20-poly1305", label: t("2022-blake3-chacha20-poly1305") },
-                        ]}
-                    />
+                    <div>
+                        {/* An outbound has no default cipher: an empty method is
+                            refused on every line, so an empty one is shown as
+                            empty rather than as a name the config does not hold. */}
+                        <Select
+                            label={t("Method")}
+                            value={text(method.value)}
+                            onChange={val => method.onChange(val)}
+                            placeholder={t("Choose a method")}
+                            options={methodOptions.map(name => ({ value: name, label: name }))}
+                        />
+                        <Problems items={problemsAt('method')} />
+                    </div>
                 )}
 
-                {showUot && (
-                    <div className="flex items-center gap-2 pt-6">
+                {uotState?.effect === 'works' && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-6">
                         <Switch
                             checked={uot.value === true}
                             onChange={checked => uot.onChange(checked)}
                             label={t("UDP over TCP (UOT)")}
                         />
+                        {/* Read by this line, so drawn when the config holds it: a
+                            number the core decodes as an int, never text. */}
+                        {uotState.held.includes('uotVersion') && (
+                            <label className="flex items-center gap-2 text-[11px] text-slate-400">
+                                {t("UDP over TCP version")}
+                                <input
+                                    type="number"
+                                    step={1}
+                                    className="input-base w-20 py-1 text-xs"
+                                    value={typeof uotVersion.value === 'number' ? uotVersion.value : ''}
+                                    onChange={e => {
+                                        const next = parseInt(e.target.value, 10);
+                                        uotVersion.onChange(Number.isNaN(next) ? undefined : next);
+                                    }}
+                                />
+                            </label>
+                        )}
                     </div>
                 )}
 
@@ -252,6 +352,27 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     server, whichever shape the server is in. */}
                 {isHttpOutbound(outbound) && <OutboundHttpHeaders outbound={outbound} onChange={onChange} />}
             </div>
+
+            {isShadowsocks && (
+                <ShadowsocksNotes
+                    problems={ssProblems.filter(problem => problem.key === 'servers')}
+                    nameProblem={nameProblem}
+                    onUseShadowsocks={() => onChange('protocol', 'shadowsocks')}
+                    uot={uotState && uotState.effect !== 'works' && uotState.held.length > 0 ? {
+                        keys: uotState.held,
+                        text: uotState.effect === 'method'
+                            ? problemsAt('uot').map(problem => problem.message)
+                            : [t("{what} does not exist in Xray {tag}, which drops it silently — it does nothing there.", { what: uotState.held.join(', '), tag: coreTag })],
+                        onRemove: () => {
+                            const target = isFlat ? outbound.settings : outbound.settings?.servers?.[0];
+                            const kept = Object.fromEntries(
+                                Object.entries(target ?? {}).filter(([key]) => !(uotState.held as string[]).includes(key)),
+                            );
+                            onChange(basePath, kept);
+                        },
+                    } : undefined}
+                />
+            )}
         </Card>
     );
 };

@@ -294,6 +294,28 @@ describe('what is written for a new 2022 account', () => {
     });
 });
 
+describe('the protocol name', () => {
+    it('is no protocol: the loader has one Shadowsocks, and its 2022 ciphers are methods', () => {
+        // v26.7.28:infra/conf/xray.go:26 registers `shadowsocks` alone; loader.go:26 answers "unknown config id".
+        const settings = { method: AES128, password: KEY16 };
+        for (const line of LINES) {
+            const [problem, ...rest] = shadowsocksInboundProblems(inbound(settings, 'shadowsocks-2022'), line);
+            expect(problem).toMatchObject({ kind: 'protocol.name', field: 'protocol' });
+            expect(problem!.suggestion).toContain('shadowsocks');
+            // What else is wrong with it is still said.
+            expect(rest).toEqual([]);
+            expect(shadowsocksInboundProblems(inbound({ method: 'x', password: 'p' }, 'shadowsocks-2022'), line).map(p => p.kind))
+                .toEqual(['protocol.name', 'method.unknown']);
+            expect(shadowsocksInboundProblems(inbound(settings, 'shadowsocks'), line)).toEqual([]);
+        }
+    });
+
+    it('is reported by the diagnostics, on the protocol', () => {
+        const config = { inbounds: [inbound({ method: AES128, password: KEY16 }, 'shadowsocks-2022')] };
+        expect(ruleDiagnostics(config, '26.7').filter(d => d.field === 'protocol')).toHaveLength(1);
+    });
+});
+
 describe('where it is reported', () => {
     it('is critical, in the diagnostics, on the field', () => {
         const config = { inbounds: [inbound({ method: 'rc4-md5', password: 'p' })] };

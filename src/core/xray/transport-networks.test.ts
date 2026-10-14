@@ -64,10 +64,17 @@ describe('what the chooser offers', () => {
         expect(networkProblem('masque', 'masque', '26.9')).toContain('v26.9.9');
         const held = networkOptions('vless', 'masque', '26.10').find(option => option.value === 'masque')!;
         expect(held.disabled).toBe(true);
-        // xdrive is registered on 26.10, never offered, and shown when held.
-        expect(values('vless', undefined, '26.10')).not.toContain('xdrive');
+        // xdrive is registered on 26.10, offered there and only there, and shown when held.
+        expect(values('vless', undefined, '26.10')).toContain('xdrive');
+        for (const version of ['26.3', '26.7', '26.9'] as const) {
+            expect(values('vless', undefined, version)).not.toContain('xdrive');
+        }
+        expect(values('vless', 'xdrive', '26.9')).toContain('xdrive');
+        expect(networkOptions('vless', 'xdrive', '26.9').find(option => option.value === 'xdrive')!.disabled).toBe(true);
         expect(networkProblem('vless', 'xdrive', '26.10')).toBeUndefined();
         expect(networkProblem('vless', 'xdrive', '26.9')).toContain('v26.9.9');
+        // Not for a proxy tied to its own transport.
+        expect(values('masque', undefined, '26.10')).not.toContain('xdrive');
     });
 
     it('lets a masque proxy run on TLS only', () => {
@@ -153,6 +160,15 @@ describe('which transport runs', () => {
     it('names settings objects of transports the config does not run', () => {
         expect(leftoverTransportSettings({ network: 'ws', wsSettings: {}, kcpSettings: { seed: 'x' } }, 'ws')).toEqual(['kcpSettings']);
         expect(leftoverTransportSettings({ network: 'raw', rawSettings: {}, tcpSettings: {} }, 'raw')).toEqual([]);
+    });
+
+    it('counts masqueSettings and xdriveSettings as leftovers only on the line that builds them', () => {
+        // v26.10.10:infra/conf/transport_internet.go:201-220 builds both whenever
+        // present; 26.9 and older have no such fields and drop them.
+        const stream = { network: 'ws', wsSettings: {}, masqueSettings: { path: '/' }, xdriveSettings: { service: 'local' } };
+        expect(leftoverTransportSettings(stream, 'ws', '26.10')).toEqual(['masqueSettings', 'xdriveSettings']);
+        expect(leftoverTransportSettings(stream, 'ws', '26.9')).toEqual([]);
+        expect(leftoverTransportSettings({ network: 'masque', masqueSettings: {} }, 'masque', '26.10')).toEqual([]);
         // No supported line has quicSettings at all; it is dropped unread.
         expect(leftoverTransportSettings({ network: 'ws', quicSettings: {} }, 'ws')).toEqual([]);
     });

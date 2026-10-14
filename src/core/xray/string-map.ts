@@ -11,7 +11,11 @@
  * v26.7.28:infra/conf/router.go:154-157 for a routing rule). The config does
  * not load; there is no "ignore this key".
  *
- * A JSON `null` is a nil map and fine, like an absent key.
+ * A JSON `null` is a nil map and fine, like an absent key. So is a `null`
+ * *value*: encoding/json ignores a null for a string (decode.go, literalStore —
+ * the Go standard library, go 1.26 at v26.3.27:go.mod:3, go 1.27 at
+ * v26.10.10:go.mod:3), so the key is kept with an empty string and nothing
+ * fails.
  */
 
 export type StringMapProblem =
@@ -28,7 +32,7 @@ export const stringMapProblems = (value: unknown): StringMapProblem[] => {
     if (value === undefined || value === null) return [];
     if (!isPlainObject(value)) return [{ kind: 'not-object', held: value }];
     return Object.entries(value)
-        .filter(([, held]) => typeof held !== 'string')
+        .filter(([, held]) => held !== null && typeof held !== 'string')
         .map(([name, held]): StringMapProblem => ({ kind: 'not-string', name, held }));
 };
 

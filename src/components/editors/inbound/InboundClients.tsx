@@ -7,6 +7,7 @@ import { Switch } from '../../ui/Switch';
 import { generateUUID, generateShortId } from '../../../core/generators';
 import { generateShadowsocks2022Key } from '../../../core/generators/crypto';
 import { isShadowsocks2022Method } from '../../../core/xray/shadowsocks-keys';
+import { text } from '../../../core/xray/shadowsocks-rules';
 import { SHADOWSOCKS_METHOD_ALIASES } from '../../../core/xray/versions/features.inbound';
 import { useField, useArrayField } from '../../../hooks/useField';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
@@ -17,7 +18,7 @@ import { t } from '../../../i18n';
 
 /** What a chooser lists: the line's values, plus the current one so it is never shown blank. */
 const withCurrent = (offered: string[], current: string | undefined): string[] =>
-    current !== undefined && !offered.includes(current) ? [...offered, current] : offered;
+    current !== undefined && current !== '' && !offered.includes(current) ? [...offered, current] : offered;
 
 export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) => {
     const { remnawave } = useConfigStore(useShallow(state => ({ remnawave: state.remnawave })));
@@ -59,18 +60,21 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
 
     // 1. Shadowsocks / SS-2022
     if (proto === 'shadowsocks' || proto === 'shadowsocks-2022') {
-        const is2022 = proto === 'shadowsocks-2022';
         // The line's cipher list (none/plain only on 26.3), without the
-        // aead_* spellings of the same ciphers.
+        // aead_* spellings of the same ciphers. `shadowsocks-2022` is not a
+        // protocol (the notes above say so, with a button), so it gets the
+        // whole list like any other Shadowsocks inbound.
         const offered = values('inbound.shadowsocks.method')
-            .filter(name => !SHADOWSOCKS_METHOD_ALIASES.has(name))
-            .filter(name => !is2022 || name.startsWith('2022-'));
-        const current = method.value || (is2022 ? "2022-blake3-aes-128-gcm" : "aes-256-gcm");
+            .filter(name => !SHADOWSOCKS_METHOD_ALIASES.has(name));
+        // What the config holds, or nothing: a cipher shown here that the
+        // config does not contain would be a default nobody chose, and
+        // the diagnostics would then speak of a method the form seems to have.
+        const current = text(method.value);
         return (
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
                     <Icon name="Key" />{" "}
-                    {t("{protocol} credentials", { protocol: is2022 ? 'SS-2022' : 'Shadowsocks' })}
+                    {t("{protocol} credentials", { protocol: 'Shadowsocks' })}
                     {remnawave.connected && <span className="text-[10px] text-indigo-400 ml-auto flex items-center gap-1 font-normal"><Icon name="Cloud" /> {t("Remnawave Active")}</span>}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -79,6 +83,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
                             hint={t("Encryption algorithm for Shadowsocks.")}
                             value={current}
                             onChange={val => method.onChange(val)}
+                            placeholder={t("Choose a method")}
                             options={withCurrent(offered, current).map(name => ({ value: name, label: name }))}
                         />
                     <div>

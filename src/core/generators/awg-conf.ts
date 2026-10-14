@@ -25,6 +25,14 @@
  * right for a round-trip through the editor and wrong for a .conf, where
  * `<b 0xzz>` is not a packet).
  *
+ * 26.10's `exp` items are the one kind the recipe cannot hold — they are
+ * built from an expression, not bytes — and they are also the kind closest to
+ * AWG: `<b>`, `<r n>`, `<rc n>`, `<rd n>` and `<t>` are the same tags with the
+ * same meaning, and `<n>` is `<r 8>`. Such an item goes out as its own tag
+ * chain, still redrawn per handshake on the AWG side. What has no AWG spelling
+ * — a `<c>` counter, or a length drawn from a range — keeps the whole item out,
+ * with a note naming it (see `awgTagsForExp` in src/core/noise/exp.ts).
+ *
  * Nothing here throws: the outbound comes from a user-edited JSON config, so
  * every field is read through a guard and anything unreadable becomes a note.
  *
@@ -34,7 +42,10 @@
 
 import { t, tn } from '../../i18n';
 import { awgObfuscationFromRecipe, type AwgObfuscation } from '../noise/awg';
-import { fromNoiseItems, packetBytes, parseRange } from '../noise/recipe';
+import { renderAwgSpec } from '../noise/awg-tags';
+import { newSeed, toHex } from '../noise/bytes';
+import { awgTagsForExp, parseNoiseExp } from '../noise/exp';
+import { fromNoiseItems, packetBytes, parseRange, type PacketStep, type Step } from '../noise/recipe';
 import type { NoiseItem, Note, Rng } from '../noise/types';
 
 export interface AwgConfOptions {
@@ -98,6 +109,48 @@ const asNoiseItem = (value: unknown): NoiseItem => {
     };
 };
 
+/** A noise item of 26.10's `exp` type; the core lower-cases the type (v26.10.10:infra/conf/transport_finalmask.go:317). */
+const isExpItem = (item: NoiseItem): boolean => String(item.type ?? '').toLowerCase() === 'exp';
+
+/**
+ * One `exp` item as the packet step that writes its tag chain back out, or
+ * nothing, with the reason in `notes`.
+ */
+const expStep = (item: NoiseItem, notes: Note[], counts: { notText: number }): PacketStep | null => {
+    if (typeof item.packet !== 'string') {
+        // `"packet" of noise "type": "exp" must be a string` (v26.10.10:infra/conf/transport_finalmask.go:318-321).
+        counts.notText++;
+        return null;
+    }
+    const parsed = parseNoiseExp(item.packet);
+    if ('error' in parsed) {
+        notes.push({
+            severity: 'warning',
+            message: t("An exp noise item does not build — {error} — so Xray refuses it as well, and it was left out.", { error: parsed.error }),
+        });
+        return null;
+    }
+    const mapped = awgTagsForExp(parsed.segments);
+    if ('notes' in mapped) {
+        for (const note of mapped.notes) {
+            if (!notes.some(existing => existing.message === note.message)) notes.push(note);
+        }
+        return null;
+    }
+    const delay = typeof item.delay === 'number' ? String(item.delay) : item.delay;
+    return {
+        kind: 'packet',
+        template: { kind: 'awg', tags: mapped.tags },
+        // Only for the step's shape: the export writes the tags, not these bytes.
+        hex: toHex(renderAwgSpec(mapped.tags, EXPORT_RNG, 0).bytes),
+        seed: newSeed(EXPORT_RNG),
+        ...(delay ? { delay } : {}),
+    };
+};
+
+/** What reaches the recipe, in order: a plain item for it to read, or a step already made. */
+type Carried = { item: NoiseItem } | { step: PacketStep };
+
 /** The first `noise` layer of the outbound's UDP finalmask chain, if it has one. */
 const noiseLayer = (outbound: unknown): unknown => {
     const masks = get(get(get(outbound, 'streamSettings'), 'finalmask'), 'udp');
@@ -110,13 +163,15 @@ const noiseLayer = (outbound: unknown): unknown => {
  * each that cannot.
  *
  * Only the conditions the recipe reader does not model are decided here: it
- * keeps an undecodable packet as the string it was written as, and it skips an
- * item that is neither a packet nor junk without saying so. Everything the
+ * keeps an undecodable packet as the string it was written as, it skips an
+ * item that is neither a packet nor junk without saying so, and it has no
+ * shape for an `exp` item, which becomes its packet step here. Everything the
  * recipe does model — order, delays, how many packets fit, how the junk folds
  * together — is left to it and to `awgObfuscationFromRecipe`.
  */
-const carryable = (raw: unknown[], notes: Note[]): NoiseItem[] => {
-    const items: NoiseItem[] = [];
+const carryable = (raw: unknown[], notes: Note[]): Carried[] => {
+    const items: Carried[] = [];
+    const exp = { notText: 0 };
     let undecodable = 0;
     let empty = 0;
     let unreadableRand = 0;
@@ -125,6 +180,11 @@ const carryable = (raw: unknown[], notes: Note[]): NoiseItem[] => {
 
     for (const value of raw) {
         const item = asNoiseItem(value);
+        if (isExpItem(item)) {
+            const step = expStep(item, notes, exp);
+            if (step) items.push({ step });
+            continue;
+        }
         const hasPacket = item.packet !== undefined;
         const hasRand = item.rand !== undefined;
         if (hasPacket && hasRand) bothKinds++;
@@ -135,13 +195,13 @@ const carryable = (raw: unknown[], notes: Note[]): NoiseItem[] => {
             const bytes = packetBytes(item);
             if (bytes === null) undecodable++;
             else if (bytes.length === 0) empty++;
-            else items.push(item);
+            else items.push({ item });
             continue;
         }
 
         if (hasRand) {
             if (parseRange(typeof item.rand === 'number' ? String(item.rand) : item.rand) === null) unreadableRand++;
-            else items.push(item);
+            else items.push({ item });
             continue;
         }
 
@@ -173,8 +233,18 @@ const carryable = (raw: unknown[], notes: Note[]): NoiseItem[] => {
             severity: 'warning',
             message: tn(
                 undecodable,
-                "{n} noise packet could not be decoded (type must be hex, str, base64 or array) and were left out.",
-                "{n} noise packets could not be decoded (type must be hex, str, base64 or array) and were left out.",
+                "{n} noise packet could not be decoded: its type is not hex, str, base64, array or exp, or the packet does not fit the type. It was left out.",
+                "{n} noise packets could not be decoded: each has a type that is not hex, str, base64, array or exp, or a packet that does not fit its type. They were left out.",
+            ),
+        });
+    }
+    if (exp.notText > 0) {
+        notes.push({
+            severity: 'warning',
+            message: tn(
+                exp.notText,
+                "{n} exp noise item has a packet that is not a string, which Xray refuses, and it was left out.",
+                "{n} exp noise items have a packet that is not a string, which Xray refuses, and they were left out.",
             ),
         });
     }
@@ -223,7 +293,25 @@ const awgObfuscation = (outbound: unknown, notes: Note[]): Omit<AwgObfuscation, 
     const reset = get(settings, 'reset');
     const rearms = reset !== undefined && reset !== 0 && reset !== '' && reset !== '0';
 
-    const recipe = fromNoiseItems(carryable(raw, notes), rearms ? reset : undefined, EXPORT_RNG);
+    // The recipe reader takes the plain items, run by run, so junk still folds
+    // the way it would; an exp step goes in between, where it was.
+    const steps: Step[] = [];
+    let run: NoiseItem[] = [];
+    const flush = () => {
+        if (run.length > 0) steps.push(...fromNoiseItems(run, undefined, EXPORT_RNG).steps);
+        run = [];
+    };
+    for (const carried of carryable(raw, notes)) {
+        if ('step' in carried) {
+            flush();
+            steps.push(carried.step);
+        } else {
+            run.push(carried.item);
+        }
+    }
+    flush();
+    const { reset: seconds } = fromNoiseItems([], rearms ? reset : undefined, EXPORT_RNG);
+    const recipe = { steps, ...(seconds ? { reset: seconds } : {}) };
     const { iLines, junk, notes: reshaping } = awgObfuscationFromRecipe(recipe);
     notes.push(...reshaping);
     return { iLines, ...(junk ? { junk } : {}) };

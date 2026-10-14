@@ -480,13 +480,46 @@ export interface FragmentMask {
     maxSplit?: Int32Range;
 }
 
-export interface NoiseItem {
+// ── finalmask: what this file says by hand ────────────────────────────
+// The scraper reads one tag at a time, so where a finalmask shape differs
+// between the supported lines (26.3 = v26.3.27, 26.7 = v26.7.28, 26.9 = v26.9.9,
+// 26.10 = v26.10.10) the types below were written by hand as unions, one
+// member per shape, each citing the struct it describes. A `schema:generate`
+// run from a single tag collapses them again; re-apply these. Which line takes
+// which key is decided in src/core/xray/versions/finalmask-rules.ts and
+// features.finalmask.ts, not here.
+
+/**
+ * A noise item whose packet is bytes — every line. `type` says how `packet`
+ * is read: "" or "array" (a list of byte values), "str", "hex" or "base64",
+ * compared lower-cased (v26.9.9:infra/conf/transport_finalmask.go:35-65).
+ * Without a packet, `rand` is the length of a random datagram and
+ * `randRange` the byte values it draws from.
+ */
+export interface NoiseBytesItem {
     rand?: Int32Range;
     randRange?: Int32Range;
     type?: string;
     packet?: any;
     delay?: Int32Range;
 }
+
+/**
+ * 26.10 only: a noise item built from an expression, such as
+ * `<b 0xDEADBEEF><r 8><t>`. `packet` has to be a JSON string; `rand` beside it
+ * is refused and `randRange` is not read
+ * (v26.10.10:infra/conf/transport_finalmask.go:314-332, the grammar at :361-441).
+ * Any earlier line answers "unknown type" for it.
+ */
+export interface NoiseExpItem {
+    /** Compared lower-cased, so "EXP" is the same. */
+    type: 'exp';
+    packet: string;
+    delay?: Int32Range;
+}
+
+/** One item of a noise mask (NoiseItem, v26.10.10:infra/conf/transport_finalmask.go:298-304). */
+export type NoiseItem = NoiseBytesItem | NoiseExpItem;
 
 export interface NoiseMask {
     reset?: Int32Range;
@@ -546,11 +579,62 @@ export interface Sudoku {
     padding_max?: number;
 }
 
-export interface Xdns {
+/**
+ * xdns settings on 26.3: one domain, the server's and the client's alike
+ * (v26.3.27:infra/conf/transport_internet.go:1662-1664).
+ */
+export interface Xdns263 {
+    domain?: string;
+}
+
+/**
+ * xdns settings on 26.7 and 26.9: `domains` is what the server answers for,
+ * `resolvers` what the client sends through, both lists of strings. `domain`
+ * is still decoded, as raw JSON, only so a config that has one is refused
+ * (v26.7.28:infra/conf/transport_finalmask.go:695-705,
+ * v26.9.9:infra/conf/transport_finalmask.go:698-708).
+ */
+export interface Xdns267 {
     domain?: any;
     domains?: string[];
     resolvers?: string[];
 }
+
+/** One domain entry of 26.10's xdns (v26.10.10:infra/conf/transport_finalmask.go:793-799). */
+export interface XdnsDomain {
+    names?: string[];
+    /** 0 is 255. */
+    lenLimit?: number;
+    /** 0 is 63. */
+    labelLimit?: number;
+    types?: number[];
+    edns0?: number;
+}
+
+/**
+ * One resolver entry of 26.10's xdns: addresses as `host:port`, or
+ * `udp://` / `tcp://` URLs; port 53 when none is given
+ * (v26.10.10:infra/conf/transport_finalmask.go:801-803 and :836-860).
+ */
+export interface XdnsResolver {
+    addrs?: string[];
+}
+
+/**
+ * xdns settings on 26.10: both lists are lists of objects now — a string in
+ * either fails the decode of the whole config — `domains` is read by both
+ * sides, and the client takes `extraPoll` (0-3). There is no `domain` field
+ * any more, so one is dropped unread
+ * (v26.10.10:infra/conf/transport_finalmask.go:805-809 and :862-864).
+ */
+export interface Xdns2610 {
+    domains?: XdnsDomain[];
+    resolvers?: XdnsResolver[];
+    extraPoll?: number;
+}
+
+/** The xdns mask's settings, by line. */
+export type Xdns = Xdns263 | Xdns267 | Xdns2610;
 
 export interface XMC {
     hostname?: string;
@@ -577,8 +661,37 @@ export interface Realm {
     tlsConfig?: TLSConfig;
 }
 
+/**
+ * The udphop mask's settings on 26.9 — a client-only mask, with a socket of
+ * its own for the hops (v26.9.9:infra/conf/transport_finalmask.go:911-917).
+ * Not a mask on 26.3 or 26.7, which hop through quicParams.udpHop instead.
+ */
+export interface UdpHopMask269 {
+    sockopt?: SocketConfig;
+    mode?: string;
+    interval?: Int32Range;
+    remotePorts?: PortList;
+    remoteIPs?: string[];
+}
+
+/**
+ * The udphop mask's settings on 26.10: the same without `sockopt`, which the
+ * struct no longer has — the hops dial with the outbound's own socket
+ * settings (v26.10.10:infra/conf/transport_finalmask.go:1053-1058).
+ */
+export interface UdpHopMask2610 {
+    mode?: string;
+    interval?: Int32Range;
+    remotePorts?: PortList;
+    remoteIPs?: string[];
+}
+
+/** The udphop mask's settings, by line. */
+export type UdpHopMask = UdpHopMask269 | UdpHopMask2610;
+
 export interface Mask {
     type?: string;
+    /** Per mask type — Xdns and UdpHopMask above are the ones whose shape differs by line. */
     settings?: any;
 }
 
@@ -588,6 +701,7 @@ export interface QuicParamsConfig {
     bbrProfile?: string;
     brutalUp?: string;
     brutalDown?: string;
+    /** 26.3 and 26.7 only; 26.9 dropped it for the udphop mask (v26.7.28:infra/conf/transport_finalmask.go:936). */
     udpHop?: UdpHop;
     initStreamReceiveWindow?: number;
     maxStreamReceiveWindow?: number;

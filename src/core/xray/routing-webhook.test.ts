@@ -64,8 +64,9 @@ describe('what the core reads as a webhook', () => {
     it('has headers that are an object of strings', () => {
         expect(found({ url: 'https://h.example', headers: 'Authorization: x' })).toEqual(['critical webhook.headers.type']);
         expect(found({ url: 'https://h.example', headers: ['a'] })).toEqual(['critical webhook.headers.type']);
+        // A null value is an empty string to encoding/json, not an error (see string-map.ts).
         expect(found({ url: 'https://h.example', headers: { A: 'x', B: 5, C: null, D: { e: 'f' } } }))
-            .toEqual(['critical webhook.headers.value', 'critical webhook.headers.value', 'critical webhook.headers.value']);
+            .toEqual(['critical webhook.headers.value', 'critical webhook.headers.value']);
         expect(found({ url: 'https://h.example', headers: null })).toEqual([]);
     });
 
@@ -92,6 +93,7 @@ describe('a string map', () => {
         expect(stringMapProblems('x')).toEqual([{ kind: 'not-object', held: 'x' }]);
         expect(stringMapProblems([])).toEqual([{ kind: 'not-object', held: [] }]);
         expect(stringMapProblems({ a: 1 })).toEqual([{ kind: 'not-string', name: 'a', held: 1 }]);
+        expect(stringMapProblems({ a: null })).toEqual([]);
     });
 });
 

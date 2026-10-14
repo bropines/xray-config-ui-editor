@@ -49,6 +49,20 @@ describe('InboundCoreNotes', () => {
         expect(calls).toEqual([['settings', { clients: [{ password: 'x' }] }]]);
     });
 
+    it('says shadowsocks-2022 is no protocol, and renames it without touching the method', () => {
+        const calls: [unknown, any][] = [];
+        const { container } = render(
+            <InboundCoreNotes
+                inbound={{ protocol: 'shadowsocks-2022', port: 8388, settings: { method: '2022-blake3-aes-128-gcm', password: 'AAAAAAAAAAAAAAAAAAAAAA==' } }}
+                onChange={(path, value) => calls.push([path, value])}
+            />,
+        );
+        expect(container.textContent).toContain('"shadowsocks-2022" is not a protocol Xray knows');
+        expect(calls).toEqual([]);
+        fireEvent.click(screen.getByText(t("Use shadowsocks")));
+        expect(calls).toEqual([['protocol', 'shadowsocks']]);
+    });
+
     it('says a WireGuard inbound with no secret key will not load, and offers to make one', () => {
         const calls: [unknown, any][] = [];
         const { container } = render(

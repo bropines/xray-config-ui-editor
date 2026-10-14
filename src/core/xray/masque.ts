@@ -315,7 +315,10 @@ export const masqueSettingsProblems = (
         if (!isObject(headers)) {
             push('type', 'headers', wrongType(`${at}.headers`, headers, t("an object of text values"), tag));
         } else {
-            for (const [name, value] of Object.entries(headers)) {
+            for (const [name, held] of Object.entries(headers)) {
+                // null decodes to "" (encoding/json leaves a string at its
+                // zero value), so it loads — as string-map.ts reads it too.
+                const value = held === null ? '' : held;
                 if (typeof value !== 'string') {
                     push('type', `headers.${name}`, wrongType(`${at}.headers.${name}`, value, t("text"), tag));
                     continue;

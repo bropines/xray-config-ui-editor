@@ -192,6 +192,11 @@ export const useTransportFields = (streamSettings: any, onChange: (next: any) =>
         ...useField<any>(streamSettings, update, ['masqueSettings']),
         onChange: (next: unknown) => (next === undefined ? removeKeys([], ['masqueSettings']) : update(['masqueSettings'], next)),
     };
+    // xdriveSettings the same way.
+    const xdriveSettings = {
+        ...useField<any>(streamSettings, update, ['xdriveSettings']),
+        onChange: (next: unknown) => (next === undefined ? removeKeys([], ['xdriveSettings']) : update(['xdriveSettings'], next)),
+    };
 
     const realitySettings = useField<any>(streamSettings, update, ['realitySettings']);
     const tlsSettings = useField<any>(streamSettings, update, ['tlsSettings']);
@@ -253,6 +258,7 @@ export const useTransportFields = (streamSettings: any, onChange: (next: any) =>
         removeHysteriaKeys,
         xhttpSettings,
         masqueSettings,
+        xdriveSettings,
         realitySettings,
         tlsSettings,
         tlsCertificates,

@@ -27,6 +27,8 @@ describe('which shape a config uses', () => {
 
     it('is the servers list otherwise', () => {
         expect(serverShape(servers({ address: 'p.example', port: 1080 }))).toBe('servers');
+        // `address: null` decodes into a nil *Address, which fails `v.Address != nil`.
+        expect(serverShape(flat({ address: null, servers: [{ address: 'p.example' }] }))).toBe('servers');
         expect(serverShape({ protocol: 'socks' })).toBe('servers');
         expect(serverShape(null)).toBe('servers');
     });

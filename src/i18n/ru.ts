@@ -653,8 +653,6 @@ export const ru: Record<string, string> = {
         '{n} noise-пакет задаёт сразу packet и rand, чего не принимает ни одно поддерживаемое ядро (v26.7.28:infra/conf/transport_finalmask.go:387). Выгружен как фиксированные байты.|{n} noise-пакета задают сразу packet и rand, чего не принимает ни одно поддерживаемое ядро (v26.7.28:infra/conf/transport_finalmask.go:387). Выгружены как фиксированные байты.|{n} noise-пакетов задают сразу packet и rand, чего не принимает ни одно поддерживаемое ядро (v26.7.28:infra/conf/transport_finalmask.go:387). Выгружены как фиксированные байты.',
     '{n} noise item has neither packet nor rand and were left out.|{n} noise items have neither packet nor rand and were left out.':
         '{n} noise-пакет не содержит ни packet, ни rand и пропущен.|{n} noise-пакета не содержат ни packet, ни rand и пропущены.|{n} noise-пакетов не содержат ни packet, ни rand и пропущены.',
-    '{n} noise packet could not be decoded (type must be hex, str, base64 or array) and were left out.|{n} noise packets could not be decoded (type must be hex, str, base64 or array) and were left out.':
-        '{n} noise-пакет не удалось раскодировать (type должен быть hex, str, base64 или array), он пропущен.|{n} noise-пакета не удалось раскодировать (type должен быть hex, str, base64 или array), они пропущены.|{n} noise-пакетов не удалось раскодировать (type должен быть hex, str, base64 или array), они пропущены.',
     '{n} noise packet decoded to no bytes and were left out: AWG has no way to send an empty decoy.|{n} noise packets decoded to no bytes and were left out: AWG has no way to send an empty decoy.':
         '{n} noise-пакет раскодировался в ноль байт и пропущен: AWG не умеет отправлять пустую обманку.|{n} noise-пакета раскодировались в ноль байт и пропущены: AWG не умеет отправлять пустую обманку.|{n} noise-пакетов раскодировались в ноль байт и пропущены: AWG не умеет отправлять пустую обманку.',
     '{n} random noise item has a size that could not be read (expected "40-70" or a number) and were left out of Jc.|{n} random noise items have a size that could not be read (expected "40-70" or a number) and were left out of Jc.':
@@ -1318,9 +1316,148 @@ export const ru: Record<string, string> = {
     'Xray 26.10 dropped this setting; {tag} ignores it, so it does nothing here.':
         'В Xray 26.10 эту настройку убрали; {tag} её игнорирует, поэтому здесь она ни на что не влияет.',
     'Previous release': 'Предыдущий релиз',
-    'The xdrive transport carries traffic through a cloud drive. This editor does not draw its settings: the ones in your config are kept as they are, and can be edited in the JSON view.':
-        'Транспорт xdrive передаёт трафик через облачный диск. Этот редактор не рисует его настройки: те, что есть в конфиге, сохраняются как есть, править их можно в режиме JSON.',
     'WARP Generator': 'Генератор WARP',
+    '{what} has {count} entries, and Xray {tag} wants exactly one server — the config will not load.':
+        'В {what} {count} записей, а Xray {tag} нужен ровно один сервер — конфиг не загрузится.',
+    'Set address and port beside method and password, or list exactly one server. Several servers are several outbounds behind a balancer.':
+        'Укажите address и port рядом с method и password или перечислите ровно один сервер. Несколько серверов — это несколько outbound за балансировщиком.',
+    '{what} is missing, and Xray {tag} refuses a Shadowsocks server without an address — the config will not load.':
+        '{what} не задан, а сервер Shadowsocks без адреса Xray {tag} отвергает — конфиг не загрузится.',
+    '{what} is missing or 0, and Xray {tag} refuses a Shadowsocks server without a port — the config will not load.':
+        '{what} не задан или равен 0, а сервер Shadowsocks без порта Xray {tag} отвергает — конфиг не загрузится.',
+    '{what} lists {count} keys, and {method} takes one — Xray {tag} refuses the config.':
+        'В {what} {count} ключей, а {method} принимает один — Xray {tag} отвергает конфиг.',
+    'Keep one key, or use an AES method to join a master key and a user key with a colon.':
+        'Оставьте один ключ или возьмите AES-метод, чтобы соединить мастер-ключ и ключ пользователя через двоеточие.',
+    '{field}, key {n} of {count}': '{field}, ключ {n} из {count}',
+    '{what} is empty, and an outbound has no default cipher: Xray {tag} reads it as an unknown cipher method — the config will not load.':
+        '{what} не задан, а шифра по умолчанию у outbound нет: Xray {tag} считает это неизвестным методом шифрования — конфиг не загрузится.',
+    '{what} is read by Xray {tag} only with a 2022 method, and {method} is not one — it does nothing here.':
+        '{what} Xray {tag} читает только с методом 2022, а {method} к ним не относится — здесь это ни на что не влияет.',
+    '{name} is not a protocol Xray knows — its loader stops at "unknown config id" and the config will not load. The 2022 ciphers are methods of shadowsocks.':
+        '{name} — не протокол, известный Xray: загрузчик останавливается на «unknown config id», и конфиг не загрузится. Шифры 2022 — это методы shadowsocks.',
+    'Set protocol to shadowsocks and keep the 2022 method.': 'Поставьте протокол shadowsocks и оставьте метод 2022.',
+    'Choose a method': 'Выберите метод',
+    'Use shadowsocks': 'Сделать shadowsocks',
+    'UDP over TCP version': 'Версия UDP over TCP',
+    'A folder on this machine that both ends can reach': 'Папка на этой машине, доступная обеим сторонам',
+    'A Google Drive folder, signed in with an OAuth client': 'Папка Google Drive, вход через OAuth-клиент',
+    'Any HTTP file API, described by a template': 'Любое файловое HTTP API, описанное шаблоном',
+    'A folder path on this machine. Both ends have to see the same files, so it is a shared or synced folder; Xray creates it when it is missing.':
+        'Путь к папке на этой машине. Обе стороны должны видеть одни и те же файлы, поэтому это общая или синхронизируемая папка; если её нет, Xray её создаст.',
+    'The id of the Google Drive folder both ends use — the last part of the folder\'s address.':
+        'Идентификатор папки Google Drive, которую используют обе стороны, — последняя часть адреса папки.',
+    'Put into the template wherever it says {folder}.': 'Подставляется в шаблон везде, где написано {folder}.',
+    'Where the files go; what it means depends on the service.':
+        'Куда кладутся файлы; что это значит, зависит от сервиса.',
+    'Segment size (bytes)': 'Размер сегмента (байт)',
+    'Flush interval (ms)': 'Интервал сброса (мс)',
+    'Poll interval (ms)': 'Интервал опроса (мс)',
+    'Longest poll interval (ms)': 'Наибольший интервал опроса (мс)',
+    'Fast polling window (ms)': 'Окно быстрого опроса (мс)',
+    'Missing segment timeout (ms)': 'Ожидание пропавшего сегмента (мс)',
+    'Session lifetime (s)': 'Время жизни сессии (с)',
+    'Concurrent transfers': 'Одновременных передач',
+    'The largest piece of a stream written as one file. 0 or empty is {fallback}; Xray uses at most {cap}.':
+        'Самый большой кусок потока, записываемый одним файлом. 0 или пусто — {fallback}; Xray берёт не больше {cap}.',
+    'How long data waits for more before a short piece is written anyway. 0 or empty is {fallback}.':
+        'Сколько данные ждут добавки, прежде чем короткий кусок всё равно запишется. 0 или пусто — {fallback}.',
+    'How often the store is looked at for the other side\'s files while traffic flows. 0 or empty is {fallback}.':
+        'Как часто хранилище проверяется на файлы другой стороны, пока идёт трафик. 0 или пусто — {fallback}.',
+    'The longest wait between looks once the line is quiet; never shorter than the poll interval. 0 or empty is {fallback}.':
+        'Самая долгая пауза между проверками, когда канал затих; не короче интервала опроса. 0 или пусто — {fallback}.',
+    'How long after the last traffic polling stays at its fastest. 0 or empty is {fallback}.':
+        'Сколько после последнего трафика опрос остаётся самым частым. 0 или пусто — {fallback}.',
+    'How long a missing piece is waited for while later ones have arrived, before the connection is given up. 0 or empty is {fallback}.':
+        'Сколько ждать пропавший кусок, когда следующие уже пришли, прежде чем бросить соединение. 0 или пусто — {fallback}.',
+    'How long the listening side keeps a session nobody picks up or uses before removing its files. 0 or empty is {fallback}.':
+        'Сколько слушающая сторона хранит сессию, которую никто не подхватил и не использует, прежде чем удалить её файлы. 0 или пусто — {fallback}.',
+    'How many files are written or read at once. 0 or empty is {fallback}; Xray uses at most {cap}.':
+        'Сколько файлов пишется или читается одновременно. 0 или пусто — {fallback}; Xray берёт не больше {cap}.',
+    'Client ID': 'Client ID',
+    'Client secret': 'Client secret',
+    'Refresh token': 'Refresh token',
+    'xdrive Settings': 'Настройки xdrive',
+    'xdrive carries a connection as files: each side writes what it sends into a shared store and polls the store for what the other side wrote. Both ends need the same store and the same settings.':
+        'xdrive передаёт соединение файлами: каждая сторона пишет отправляемое в общее хранилище и опрашивает его в поисках того, что написала другая. Обеим сторонам нужны одно хранилище и одинаковые настройки.',
+    'Service': 'Сервис',
+    'Where the files are kept. Written exactly as listed: Xray compares the name as it is, case and space included.':
+        'Где хранятся файлы. Пишется ровно как в списке: Xray сравнивает имя как есть, с регистром и пробелом.',
+    'Pick a service': 'Выберите сервис',
+    'Remote folder': 'Удалённая папка',
+    'Secrets': 'Секреты',
+    'Google Drive takes exactly three: the client ID, the client secret and the refresh token, in that order.':
+        'Google Drive нужно ровно три: client ID, client secret и refresh token, именно в таком порядке.',
+    'Each one is put into the template wherever it says {secret0}, {secret1} and so on, counting from 0.':
+        'Каждый подставляется в шаблон там, где написано {secret0}, {secret1} и так далее, считая с 0.',
+    'Add a secret': 'Добавить секрет',
+    'The HTTP calls the store makes: put, get, list and delete, each with a method and a url, and list with a namesRegex whose first group is the file name. {folder}, {name}, {prefix} and {secret0}… are filled in; auth and retry are optional.':
+        'HTTP-вызовы хранилища: put, get, list и delete, у каждого method и url, а у list ещё namesRegex, первая группа которого — имя файла. {folder}, {name}, {prefix} и {secret0}… подставляются; auth и retry необязательны.',
+    'Polling and writing': 'Опрос и запись',
+    'How often each side looks at the store and how it writes to it. Empty is Xray\'s default.':
+        'Как часто каждая сторона смотрит в хранилище и как в него пишет. Пусто — значение Xray по умолчанию.',
+    'Xray {tag} refuses the config.': 'Xray {tag} отвергает конфиг.',
+    'The inbound does not start on Xray {tag}.': 'На Xray {tag} inbound не запускается.',
+    'Every connection through this outbound fails on Xray {tag}.':
+        'На Xray {tag} каждое соединение через этот outbound падает.',
+    'true or false': 'true или false',
+    '{what} holds {value}, which the template service cannot read as a template object.':
+        'В {what} записано {value}, а сервис template не может прочитать это как объект шаблона.',
+    '{what} holds {value}, but the template reads {expected} there.':
+        'В {what} записано {value}, а шаблон ждёт там {expected}.',
+    '{what} is empty, and the template needs a url for each of put, get, list and delete.':
+        '{what} не задан, а шаблону нужен url для каждого из put, get, list и delete.',
+    '{what} is empty, and the template reads the file names out of a list response with it.':
+        '{what} не задан, а им шаблон вынимает имена файлов из ответа list.',
+    '{what} has no capture group, and the template takes each file name from the first one.':
+        'В {what} нет захватывающей группы, а имя каждого файла шаблон берёт из первой.',
+    'Put the part that is the name in parentheses, like {example}.':
+        'Возьмите часть, которая является именем, в скобки, например {example}.',
+    '{what} is "{value}": the template knows none, static, oauth2 and basic.':
+        '{what} — «{value}»: шаблон знает только none, static, oauth2 и basic.',
+    'Every request to the drive fails on Xray {tag}, so nothing gets through.':
+        'На Xray {tag} каждый запрос к хранилищу падает, и ничего не проходит.',
+    'The xdrive transport has no xdriveSettings, so it has no service to use.':
+        'У транспорта xdrive нет xdriveSettings, поэтому ему не через что работать.',
+    'a whole number from 0 to 4294967295': 'целое число от 0 до 4294967295',
+    '{what} is not set: the xdrive transport needs a service — local, Google Drive or template.':
+        '{what} не задан: транспорту xdrive нужен сервис — local, Google Drive или template.',
+    '{what} is "{value}": the services are local, Google Drive and template, written exactly so.':
+        '{what} — «{value}»: сервисы — local, Google Drive и template, написанные именно так.',
+    'Write it as "{service}".': 'Напишите «{service}».',
+    '{what} holds {count} entries, and Google Drive takes exactly three: the client ID, the client secret and the refresh token, in that order.':
+        'В {what} {count} записей, а Google Drive нужно ровно три: client ID, client secret и refresh token, именно в таком порядке.',
+    '{what} is not set, and the template service is built from it.':
+        '{what} не задан, а сервис template строится из него.',
+    '{what} is empty, and the local service needs the folder its files go in.':
+        '{what} не задан, а сервису local нужна папка для его файлов.',
+    '{what} is empty, and Google Drive needs the id of the folder its files go in.':
+        '{what} не задан, а Google Drive нужен идентификатор папки для файлов.',
+    '{what} is empty, and Google Drive needs all three secrets.':
+        '{what} не задан, а Google Drive нужны все три секрета.',
+    'An exp noise item does not build — {error} — so Xray refuses it as well, and it was left out.':
+        'Элемент шума exp не собирается — {error}, — Xray его тоже отвергает, поэтому он пропущен.',
+    '{n} noise packet could not be decoded: its type is not hex, str, base64, array or exp, or the packet does not fit the type. It was left out.|{n} noise packets could not be decoded: each has a type that is not hex, str, base64, array or exp, or a packet that does not fit its type. They were left out.':
+        '{n} пакет шума не удалось раскодировать: его тип не hex, str, base64, array или exp, либо пакет не подходит к типу. Он пропущен.|{n} пакета шума не удалось раскодировать: у каждого тип не hex, str, base64, array или exp, либо пакет не подходит к типу. Они пропущены.|{n} пакетов шума не удалось раскодировать: у каждого тип не hex, str, base64, array или exp, либо пакет не подходит к типу. Они пропущены.',
+    '{n} exp noise item has a packet that is not a string, which Xray refuses, and it was left out.|{n} exp noise items have a packet that is not a string, which Xray refuses, and they were left out.':
+        'У {n} элемента шума exp packet — не строка, Xray такое отвергает, поэтому он пропущен.|У {n} элементов шума exp packet — не строка, Xray такое отвергает, поэтому они пропущены.|У {n} элементов шума exp packet — не строка, Xray такое отвергает, поэтому они пропущены.',
+    'HTTP attributes': 'HTTP-атрибуты',
+    'Matches a sniffed HTTP request: :method, :path and, on the HTTP inbound, each request header by its lower-case name. Each value is a regular expression the attribute has to match, and every entry has to match. A pattern Go cannot compile stops Xray when it starts.':
+        'Совпадает с распознанным HTTP-запросом: :method, :path и, на inbound HTTP, каждый заголовок запроса по имени в нижнем регистре. Каждое значение — регулярное выражение, которому должен соответствовать атрибут, и совпасть должны все записи. Шаблон, который Go не может скомпилировать, останавливает Xray при запуске.',
+    'An exp noise item has <{key} {size}>, a length drawn between {min} and {max} for each packet; AmneziaWG\'s <{key}> takes one fixed length, so the item was left out.':
+        'В элементе шума exp есть <{key} {size}> — длина, выбираемая от {min} до {max} для каждого пакета; <{key}> в AmneziaWG принимает одну фиксированную длину, поэтому элемент пропущен.',
+    'An exp noise item has <c>, a counter Xray raises with every packet it sends; AmneziaWG has no such tag, so the item was left out.':
+        'В элементе шума exp есть <c> — счётчик, который Xray увеличивает с каждым отправленным пакетом; в AmneziaWG такого тега нет, поэтому элемент пропущен.',
+    '{what} is {value}, but Xray reads an object of attribute names to strings there. It cannot decode the rule, so the config will not load.':
+        '{what} — {value}, а Xray ждёт там объект «имя атрибута → строка». Правило не раскодируется, и конфиг не загрузится.',
+    '{what} gives "{name}" the value {value}, and attribute values are strings. Xray cannot decode the rule, so the config will not load.':
+        'В {what} атрибуту «{name}» задано {value}, а значения атрибутов — строки. Xray не раскодирует правило, и конфиг не загрузится.',
+    '{key} is set to {value}. Xray {tag} has no such WireGuard setting on either side, so it changes nothing.':
+        'В {key} записано {value}. У Xray {tag} нет такой настройки WireGuard ни на одной стороне, поэтому она ни на что не влияет.',
+    'This key takes a JSON object whose values are all strings, in quotes — the config keeps the last valid value.':
+        'Этот ключ принимает JSON-объект, все значения которого — строки в кавычках; в конфиге остаётся последнее корректное значение.',
+    'Carries traffic as files in a shared folder or on a cloud drive':
+        'Передаёт трафик файлами в общей папке или на облачном диске',
     // ── Freedom: fragment, noises and the rest of its settings ──────────────
     'Domain Strategy (legacy key)': 'Стратегия доменов (старый ключ)',
     'TLS Fragmentation': 'Фрагментация TLS',
@@ -1810,7 +1947,6 @@ export const ru: Record<string, string> = {
     'TCP Window Clamp': 'Ограничение TCP-окна',
 
     // ── Routing rule editor ─────────────────────────────────────────────────
-    'INVALID JSON': 'НЕВЕРНЫЙ JSON',
     'Select a rule to configure routing logic':
         'Выберите правило, чтобы настроить логику маршрутизации',
     'Raw Rule JSON': 'JSON правила',

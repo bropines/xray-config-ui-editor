@@ -22,7 +22,7 @@ import type { CoreVersionId } from './index';
 import { GENERATED_FEATURES } from './features.data';
 import { FINALMASK_FEATURES, FINALMASK_VALUE_SETS } from './features.finalmask';
 import { TRANSPORT_FEATURES, TRANSPORT_VALUE_SETS } from './features.transport';
-import { INBOUND_FEATURES, INBOUND_VALUE_SETS } from './features.inbound';
+import { INBOUND_FEATURES, INBOUND_VALUE_SETS, SS_2022, SS_CLASSIC } from './features.inbound';
 import { MASQUE_FEATURES } from './features.masque';
 import { V2610_FEATURES, V2610_VALUE_SETS } from './features.v2610';
 
@@ -115,14 +115,17 @@ const HAND_FEATURES: CoreFeature[] = [
     },
 
     // ── shadowsocks ─────────────────────────────────────────────────────
+    // The line reads the keys or not; what 26.3 then does with them depends on
+    // the cipher (only the 2022 builder passes them on), which is a rule —
+    // core/xray/shadowsocks-outbound — and not a row. So 26.3 says `accepted`.
     {
         id: 'outbound.shadowsocks.uot',
         scope: 'outbound',
         protocol: ['shadowsocks', 'shadowsocks-2022'],
         path: 'settings.uot',
         status: s('accepted', 'absent', 'absent'),
-        detail: 'UDP over TCP was dropped from the shadowsocks client config after 26.3.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go', 'v26.10.10:infra/conf/shadowsocks.go:189-197'],
+        detail: 'UDP over TCP was dropped from the shadowsocks client config after 26.3, where only the 2022 builder passes it on.',
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:179-180', 'v26.3.27:infra/conf/shadowsocks.go:223-224', 'v26.7.28:infra/conf/shadowsocks.go:188-196', 'v26.10.10:infra/conf/shadowsocks.go:189-197'],
     },
     {
         id: 'outbound.shadowsocks.servers.uot',
@@ -130,8 +133,17 @@ const HAND_FEATURES: CoreFeature[] = [
         protocol: ['shadowsocks', 'shadowsocks-2022'],
         path: 'settings.servers[].uot',
         status: s('accepted', 'absent', 'absent'),
-        detail: 'UDP over TCP was dropped from shadowsocks server entries after 26.3.',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go', 'v26.10.10:infra/conf/shadowsocks.go:180-187'],
+        detail: 'UDP over TCP was dropped from shadowsocks server entries after 26.3, where only the 2022 builder passes it on.',
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:168-169', 'v26.3.27:infra/conf/shadowsocks.go:223-224', 'v26.7.28:infra/conf/shadowsocks.go:179-186', 'v26.10.10:infra/conf/shadowsocks.go:180-187'],
+    },
+    {
+        id: 'outbound.shadowsocks.servers.uotVersion',
+        scope: 'outbound',
+        protocol: ['shadowsocks', 'shadowsocks-2022'],
+        path: 'settings.servers[].uotVersion',
+        status: s('accepted', 'absent', 'absent'),
+        detail: 'The UDP-over-TCP version was dropped from shadowsocks server entries after 26.3, where only the 2022 builder passes it on.',
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:168-169', 'v26.3.27:infra/conf/shadowsocks.go:223-224', 'v26.7.28:infra/conf/shadowsocks.go:179-186', 'v26.10.10:infra/conf/shadowsocks.go:180-187'],
     },
 
     // ── loopback ────────────────────────────────────────────────────────
@@ -319,14 +331,6 @@ const everywhere = (values: string[]): Record<CoreVersionId, string[]> =>
     ({ '26.3': values, '26.7': values, '26.9': values, '26.10': values });
 
 /** Outbound protocol values, read from findings/protocols.json. */
-const SS_METHODS_CLASSIC = [
-    'aes-128-gcm', 'aes-256-gcm', 'chacha20-poly1305', 'chacha20-ietf-poly1305',
-    'xchacha20-poly1305', 'xchacha20-ietf-poly1305',
-    'aead_aes_128_gcm', 'aead_aes_256_gcm', 'aead_chacha20_poly1305', 'aead_xchacha20_poly1305',
-];
-const SS_METHODS_2022 = ['2022-blake3-aes-128-gcm', '2022-blake3-aes-256-gcm', '2022-blake3-chacha20-poly1305'];
-const SS_METHODS_263 = [...SS_METHODS_CLASSIC, ...SS_METHODS_2022, 'none', 'plain'];
-const SS_METHODS_267 = [...SS_METHODS_CLASSIC, ...SS_METHODS_2022];
 const DOMAIN_STRATEGIES = [
     'AsIs', 'UseIP', 'UseIPv4', 'UseIPv6', 'UseIPv4v6', 'UseIPv6v4',
     'ForceIP', 'ForceIPv4', 'ForceIPv6', 'ForceIPv4v6', 'ForceIPv6v4',
@@ -348,10 +352,21 @@ const OUTBOUND_VALUE_SETS: CoreValueSet[] = [
         scope: 'outbound',
         protocol: ['shadowsocks', 'shadowsocks-2022'],
         path,
-        allowed: { '26.3': SS_METHODS_263, '26.7': SS_METHODS_267, '26.9': SS_METHODS_267, '26.10': SS_METHODS_267 },
+        allowed: {
+            '26.3': [...SS_2022, ...SS_CLASSIC, 'none', 'plain'],
+            '26.7': [...SS_2022, ...SS_CLASSIC],
+            '26.9': [...SS_2022, ...SS_CLASSIC],
+            '26.10': [...SS_2022, ...SS_CLASSIC],
+        },
         outside: 'rejected',
-        detail: 'The none and plain ciphers were removed in 26.7 and now fail with "unknown cipher method".',
-        evidence: ['v26.3.27:infra/conf/shadowsocks.go', 'v26.7.28:infra/conf/shadowsocks.go', 'v26.10.10:infra/conf/shadowsocks.go:241-244'],
+        // The list is for the chooser. Whether a config's method is accepted
+        // depends on more than the name — a 2022 name is compared exactly up
+        // to 26.9 and lower-cased from 26.10, the classic ones are lower-cased
+        // on every line, and an empty one is refused — none of which a flat
+        // list can say. shadowsocksOutboundProblems does.
+        offeredOnly: true,
+        detail: 'The none and plain ciphers were removed in 26.7 and now fail with "unknown cipher method", as does any other unknown name.',
+        evidence: ['v26.3.27:infra/conf/shadowsocks.go:26', 'v26.7.28:infra/conf/shadowsocks.go:17', 'v26.7.28:infra/conf/shadowsocks.go:256-259', 'v26.9.9:infra/conf/shadowsocks.go:256-259', 'v26.10.10:infra/conf/shadowsocks.go:241-244'],
     })),
     ...(['settings.security', 'settings.vnext[].users[].security'] as const).map((path, i): CoreValueSet => ({
         id: i === 0 ? 'outbound.vmess.security' : 'outbound.vmess.users.security',

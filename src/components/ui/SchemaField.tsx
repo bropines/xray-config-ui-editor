@@ -69,7 +69,7 @@ const StructuredField = ({ name, label, help, error, value, onChange, expects, p
     expects: JsonKind;
     placeholder?: string;
 }) => {
-    const wrong = expects === 'object' && value !== undefined && value !== null && !isObject(value);
+    const wrong = (expects === 'object' || expects === 'string-map') && value !== undefined && value !== null && !isObject(value);
     return (
         <FormField label={label} help={help} error={error}>
             <div className="flex flex-col gap-2" data-structured-field={name}>
@@ -329,7 +329,7 @@ export const SchemaField = ({
                     error={error}
                     value={value}
                     onChange={onChange}
-                    expects={details.type === 'unknown' ? 'any' : 'object'}
+                    expects={details.type === 'unknown' ? 'any' : details.stringValues ? 'string-map' : 'object'}
                     placeholder={placeholder}
                 />
             );

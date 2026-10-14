@@ -15,7 +15,9 @@ import { finalmaskIssues } from './finalmask-rules';
 import { effectiveNetwork, hysteriaTlsProblem, hysteriaUdpIdleProblem, kcpProblems, REALITY_NETWORKS } from '../transport-networks';
 import { checkPinnedCertSha256, echSockoptProblem, fallbackLimitProblems } from '../security-fields';
 import { shadowsocksInboundProblems } from '../shadowsocks-inbound';
+import { shadowsocksOutboundProblems } from '../shadowsocks-outbound';
 import { masqueProblems } from '../masque';
+import { xdriveProblems } from '../xdrive';
 
 // ── What the core calls a private address ─────────────────────────────
 // common/geodata/consts.go (v26.7.28, same in v26.9.9): privateIPMatcher and
@@ -255,6 +257,26 @@ const shadowsocksInbounds = (config: any, version: CoreVersionId): Diagnostic[] 
         })));
 
 /**
+ * A Shadowsocks outbound: the shape its server is in, the cipher (never
+ * defaulted — an empty `method` is refused), the 2022 key and, on the one
+ * line that reads it, a UDP-over-TCP switch beside a cipher that ignores it.
+ * Judged in core/xray/shadowsocks-outbound, which cites the source for each
+ * case; the outbound editor shows the same findings beside the fields.
+ */
+const shadowsocksOutbounds = (config: any, version: CoreVersionId): Diagnostic[] =>
+    list(config.outbounds).flatMap((outbound, index) =>
+        !outbound || isSnippetRef(outbound)
+            ? []
+            : shadowsocksOutboundProblems(outbound, version).map((problem): Diagnostic => ({
+                section: 'outbounds',
+                itemIndex: index,
+                field: problem.field,
+                severity: problem.severity,
+                message: problem.message,
+                suggestion: problem.suggestion,
+            })));
+
+/**
  * MASQUE (26.10): the proxy, its transport and the pairing between them, from
  * core/xray/masque — which cites the source for each rule, answers nothing for
  * a line that does not register the protocol, and is what the editors show
@@ -267,6 +289,27 @@ const masqueRules = (config: any, version: CoreVersionId): Diagnostic[] =>
             !item || isSnippetRef(item)
                 ? []
                 : masqueProblems(item, section === 'inbounds' ? 'inbound' : 'outbound', version).map((problem): Diagnostic => ({
+                    section,
+                    itemIndex: index,
+                    field: problem.field,
+                    severity: 'critical',
+                    message: problem.message,
+                    suggestion: problem.suggestion,
+                }))));
+
+/**
+ * xdrive (26.10): what XDriveConfig.Build() refuses — the config does not load
+ * — and, where the transport runs xdrive, what building its store refuses: an
+ * inbound that does not start, an outbound whose every connection fails. From
+ * core/xray/xdrive, which cites the source for each and answers nothing for a
+ * line that does not register the transport; the xdrive form shows the same.
+ */
+const xdriveRules = (config: any, version: CoreVersionId): Diagnostic[] =>
+    (['inbounds', 'outbounds'] as const).flatMap(section =>
+        list(config[section]).flatMap((item, index) =>
+            !item || isSnippetRef(item)
+                ? []
+                : xdriveProblems(item, section === 'inbounds' ? 'inbound' : 'outbound', version).map((problem): Diagnostic => ({
                     section,
                     itemIndex: index,
                     field: problem.field,
@@ -422,7 +465,9 @@ export const ruleDiagnostics = (config: unknown, version: CoreVersionId): Diagno
         ...duplicateRoutingTags(config, version),
         ...hysteriaShape(config, version),
         ...shadowsocksInbounds(config, version),
+        ...shadowsocksOutbounds(config, version),
         ...masqueRules(config, version),
+        ...xdriveRules(config, version),
         ...finalmaskChains(config, version),
         ...streamRules(config, version),
         ...securityFieldRules(config, version),

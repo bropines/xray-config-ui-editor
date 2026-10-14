@@ -228,7 +228,7 @@ export const TransportSettings = ({ streamSettings = {}, onChange, isClient = fa
     const sec = security.value || "none";
     const method: string | undefined = typeof streamSettings?.method === 'string' ? streamSettings.method : undefined;
     const methodStatus = statusAt(side, 'streamSettings.method', protocol);
-    const leftovers = leftoverTransportSettings(streamSettings, net);
+    const leftovers = leftoverTransportSettings(streamSettings, net, version);
 
     /**
      * TLS keys the chosen line does not simply accept. `allowInsecure` is

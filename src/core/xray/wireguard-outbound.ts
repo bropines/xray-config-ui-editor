@@ -17,15 +17,18 @@
  *
  *   secretKey empty or      v26.3.27:infra/conf/wireguard.go:68-71 and :129-131,
  *   undecodable             v26.7.28:infra/conf/wireguard.go:75-78 and :151-153,
- *                           v26.9.9:infra/conf/wireguard.go:76-79 and :153-155
+ *                           v26.9.9:infra/conf/wireguard.go:76-79 and :153-155,
+ *                           v26.10.10:infra/conf/wireguard.go:75-78 and :137-159
  *   a peer's publicKey or   parsed only when not empty, and then it has to parse
  *   preSharedKey            (v26.3.27:infra/conf/wireguard.go:25-37,
  *   undecodable             v26.7.28:infra/conf/wireguard.go:32-44,
- *                           v26.9.9:infra/conf/wireguard.go:32-44)
+ *                           v26.9.9:infra/conf/wireguard.go:32-44,
+ *                           v26.10.10:infra/conf/wireguard.go:32-44)
  *   reserved                "should be empty or 3 bytes" (see wireguard-config.ts)
- *   domainStrategy          "unsupported domain strategy" — a value set, not a
- *                           rule: `outbound.wireguard.domainStrategy` in
- *                           versions/features.ts
+ *   domainStrategy          26.3 to 26.9: "unsupported domain strategy" — a value
+ *                           set, not a rule: `outbound.wireguard.domainStrategy`
+ *                           in versions/features.ts. 26.10 has no such field
+ *                           (below), so nothing is checked there.
  *
  * Refused when the outbound is created, so the core does not start (every
  * outbound is added while the instance is built, and an error there ends it:

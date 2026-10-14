@@ -3,6 +3,7 @@ import {
     CLIENT_ONLY_KEYS,
     isWireguardInbound,
     nextPeerAllowedIP,
+    outboundReadsClientKey,
     serverReadsPeerEndpoint,
     wireguardInboundProblems,
 } from './wireguard-inbound';
@@ -253,5 +254,17 @@ describe('an address for the next peer', () => {
         expect(nextPeerAllowedIP({ address: ['fd00::1/128'] })).toBeUndefined();
         const full = Array.from({ length: 254 }, (_, i) => ({ allowedIPs: [`10.0.0.${i + 1}/32`] }));
         expect(nextPeerAllowedIP({ peers: full })).toBeUndefined();
+    });
+});
+
+describe('what an inbound holding a client-only key is told', () => {
+    it('names the lines where no WireGuard reads domainStrategy or remoteDNS at all', () => {
+        // v26.10.10:infra/conf/wireguard.go:59-69 dropped domainStrategy;
+        // remoteDNS arrived in 26.9 (v26.9.9:proxy/wireguard/client.go:113).
+        expect(outboundReadsClientKey('domainStrategy', '26.9')).toBe(true);
+        expect(outboundReadsClientKey('domainStrategy', '26.10')).toBe(false);
+        expect(outboundReadsClientKey('remoteDNS', '26.7')).toBe(false);
+        expect(outboundReadsClientKey('remoteDNS', '26.9')).toBe(true);
+        expect(outboundReadsClientKey('reserved', '26.3')).toBe(true);
     });
 });

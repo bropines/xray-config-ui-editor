@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.30.0] - 2026-10-14
+
+### Added
+- **The xdrive transport has a form** (Xray 26.10). It carries a connection as files in a shared store, and its settings were only editable in JSON. Now: the service (local folder, Google Drive or an HTTP template — written exactly as the core compares it), the remote folder, the three Google Drive secrets in their order or a template's secrets list, the template as JSON, and the eight polling and writing numbers with the core's defaults and caps. Everything `Build()` refuses, and everything that makes the inbound not start or every connection fail, is reported — a service spelled differently, the wrong number of secrets, a template without urls or without a capture group in `namesRegex`, an unknown auth type.
+- **AmneziaWG export carries exp noise.** A finalmask noise item of type `exp` made of tags AmneziaWG has too (`<b>`, `<r n>`, `<rc n>`, `<rd n>`, `<t>`) goes into the `.conf` as an `I` line. One using `<c>` (a per-packet counter) or a length range is left out, with a note naming the tag.
+
+### Fixed
+- **The Shadowsocks outbound is checked like the inbound.** Per line: 2022 method names matched exactly before 26.10, `none` and `plain` only on 26.3, an empty method refused (an outbound has no default), the password split into keys and each checked for size and encoding, address and port required. It reads whichever shape the config uses — flat `settings.address` (which every line accepts, 26.3 included) or `servers[0]` — and the form edits that same shape; before, a flat config showed empty boxes.
+- **`shadowsocks-2022` is not a protocol.** New 2022 accounts were written with it, and Xray stops at "unknown config id". They are written as `shadowsocks` with the 2022 method now; one already in a config is reported, with a **Use shadowsocks** button that renames it and keeps the settings.
+- **UDP over TCP is offered only where it does something:** on 26.3, beside a 2022 method. On 26.7 and later the keys are gone; a held one is shown with what it does there and a Remove.
+- **The Shadowsocks method boxes showed `aes-256-gcm` for a config that has no method.** They show the empty choice now, and the form accepts the spellings every core loads (`AES-256-GCM`, `aead_*`) that the schema used to refuse.
+- **A routing rule's HTTP attributes are an object of strings.** The box wrote any JSON, and anything else fails the rule's decode; a held wrong value is shown with a Remove.
+- **A `null` header value was reported as stopping the config.** Go decodes it as an empty string and loads it. That false critical could block a save to the panel, for webhook, HTTP outbound and MASQUE headers alike; the header boxes now refuse a value that is not a string instead.
+- A leftover `masqueSettings` or `xdriveSettings` beside another network is shown with a Remove on 26.10, which builds it anyway.
+- A WireGuard inbound holding `domainStrategy` on 26.10, or `remoteDNS` before 26.9, is told that no WireGuard on that line reads it — not that "only an outbound uses it".
+
 ## [1.29.0] - 2026-10-14
 
 ### Added

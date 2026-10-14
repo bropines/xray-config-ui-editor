@@ -253,3 +253,74 @@ describe('toAwgConf robustness', () => {
         expect(messages(notes)).toMatch(/not wireguard/);
     });
 });
+
+/**
+ * 26.10's `exp` items (v26.10.10:infra/conf/transport_finalmask.go:317-332)
+ * are built from an expression rather than held as bytes. Most of that
+ * grammar is AmneziaWG's own — the same tags, meaning the same thing — so an
+ * item that uses only those goes out as its tag chain; the rest is left out
+ * with a note that names what AWG has no tag for. They used to be dropped as
+ * "could not be decoded (type must be hex, str, base64 or array)".
+ */
+describe('toAwgConf exp items', () => {
+    it('writes an expression of shared tags as the same chain', () => {
+        const { conf, notes } = toAwgConf(outbound([{ type: 'exp', packet: '<b 0xDE AD><r 8><rc 4><rd 2><t>' }]));
+        expect(conf).toContain('I1 = <b 0xdead><r 8><rc 4><rd 2><t>');
+        expect(notes).toEqual([]);
+    });
+
+    it('reads the type as the core does, case and all, and keeps the order around it', () => {
+        const { conf, notes } = toAwgConf(outbound([
+            { type: 'hex', packet: HI },
+            { type: 'EXP', packet: '<b 0Xbeef>' },
+            { type: 'hex', packet: 'ff' },
+            ...junk(2),
+        ]));
+        expect(conf).toContain(`I1 = <b 0x${HI}>`);
+        expect(conf).toContain('I2 = <b 0xbeef>');
+        expect(conf).toContain('I3 = <b 0xff>');
+        expect(conf).toContain('Jc = 2');
+        expect(notes).toEqual([]);
+    });
+
+    it('writes <n> as the eight random bytes it is', () => {
+        const { conf } = toAwgConf(outbound([{ type: 'exp', packet: '<b 0x01><n>' }]));
+        expect(conf).toContain('I1 = <b 0x01><r 8>');
+    });
+
+    it('leaves out an item with a counter, which AWG has no tag for, and says so', () => {
+        const { conf, notes } = toAwgConf(outbound([{ type: 'exp', packet: '<b 0x01><c>' }, { type: 'hex', packet: HI }]));
+        expect(conf).toContain(`I1 = <b 0x${HI}>`);
+        expect(conf).not.toContain('I2 =');
+        expect(messages(notes)).toMatch(/<c>/);
+        expect(messages(notes)).not.toMatch(/could not be decoded/);
+    });
+
+    it('leaves out an item with a ranged length, which AWG cannot draw, and says so', () => {
+        const { conf, notes } = toAwgConf(outbound([{ type: 'exp', packet: '<r 8-16>' }]));
+        expect(conf).not.toContain('I1 =');
+        expect(messages(notes)).toMatch(/<r 8-16>/);
+        expect(messages(notes)).toMatch(/between 8 and 16/);
+        // A range of one is a fixed length.
+        expect(toAwgConf(outbound([{ type: 'exp', packet: '<rd 5-5>' }])).conf).toContain('I1 = <rd 5>');
+    });
+
+    it('says once what several items have in common', () => {
+        const { notes } = toAwgConf(outbound([{ type: 'exp', packet: '<c>' }, { type: 'exp', packet: '<t><c>' }]));
+        expect(notes.filter(note => /<c>/.test(note.message))).toHaveLength(1);
+    });
+
+    it('leaves out an expression the core refuses, in the core\'s words', () => {
+        const { conf, notes } = toAwgConf(outbound([{ type: 'exp', packet: '<b 0xABC>' }, { type: 'exp', packet: ['<t>'] }]));
+        expect(conf).not.toContain('I1 =');
+        const text = messages(notes);
+        expect(text).toMatch(/invalid hex in noise exp: 0xABC/);
+        expect(text).toMatch(/not a string/);
+    });
+
+    it('passes the delay on to the recipe, which notes that AWG has none', () => {
+        const { conf, notes } = toAwgConf(outbound([{ type: 'exp', packet: '<t>', delay: '5-10' }]));
+        expect(conf).toContain('I1 = <t>');
+        expect(notes.some(note => note.severity === 'info' && /Delays were dropped/.test(note.message))).toBe(true);
+    });
+});

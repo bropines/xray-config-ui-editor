@@ -4,65 +4,12 @@ import { TagDetailsModal } from '../TagDetailsModal';
 import { RoutingRuleSchema, WebhookObjectSchema } from '../../../core/xray/schemas/routing.schema';
 import { hasWebhook, webhookProblems } from '../../../core/xray/routing-webhook';
 import { isPlainObject } from '../../../core/xray/string-map';
-import { parseJsonc } from '../../../utils/jsonc';
 import { useConfigStore } from '../../../store/configStore';
 import { useRuleEditor } from '../../../hooks/useRuleEditor';
 import { isSnippetRef } from '../../../core/snippets';
 import { SnippetRefEditor } from './SnippetRefEditor';
+import { RuleAttrs } from './RuleAttrs';
 import { t } from '../../../i18n';
-
-const AttrsEditor = ({ value, onChange }: any) => {
-    const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
-    const [error, setError] = useState(false);
-
-    // Re-fill the box when the value changes underneath it — unless what is
-    // typed already means that value, which is the case on every keystroke
-    // the box itself caused. Adjusted during render rather than in an effect,
-    // so the box never shows the previous rule's attributes for a frame.
-    const [synced, setSynced] = useState(value);
-    if (value !== synced) {
-        setSynced(value);
-        let alreadyShown = false;
-        try {
-            alreadyShown = JSON.stringify(parseJsonc(text)) === JSON.stringify(value);
-        } catch {
-            /* unparseable: it does not represent anything, so replace it */
-        }
-        if (!alreadyShown) setText(value ? JSON.stringify(value, null, 2) : "");
-    }
-
-    const handleChange = (v: string) => {
-        setText(v);
-        if (!v.trim()) {
-            onChange(undefined);
-            setError(false);
-            return;
-        }
-        try {
-            const parsed = parseJsonc(v);
-            onChange(parsed);
-            setError(false);
-        } catch {
-            setError(true);
-        }
-    };
-
-    return (
-        <div className="flex-1 flex flex-col relative">
-            <textarea
-                className={`input-base font-mono text-xs flex-1 min-h-[140px] resize-none bg-slate-950/50 border-slate-800/80 focus:border-indigo-500/50 transition-all p-3 ${error ? 'ring-1 ring-rose-500/30 border-rose-500/50' : ''}`}
-                placeholder='{":method": "GET"}'
-                value={text}
-                onChange={e => handleChange(e.target.value)}
-            />
-            {error && (
-                <div className="absolute bottom-2 right-2 text-[9px] font-bold text-rose-500 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/30 animate-pulse">
-                    {t("INVALID JSON")}
-                    </div>
-            )}
-        </div>
-    );
-};
 
 export const RuleEditor = ({
     rule,
@@ -444,12 +391,10 @@ export const RuleEditor = ({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-800/60">
-                            <div className="flex flex-col gap-2 h-full">
-                                <label className="label-xs flex items-center gap-1.5 text-slate-400">
-                                    HTTP Attributes (JSON) <Help>{`e.g. {":method": "GET", ":path": "/test"}`}</Help>
-                                </label>
-                                <AttrsEditor value={rule.attrs} onChange={(v: any) => update('attrs', v)} />
-                            </div>
+                            {/* A map of strings on every line (core/xray/routing-attrs.ts):
+                                the box writes nothing else, and a held value
+                                of another type is shown with a way out. */}
+                            <RuleAttrs rule={rule} onChange={value => update('attrs', value)} />
                             <div className="flex flex-col gap-2 h-full">
                                 <label className="label-xs flex items-center gap-1.5 text-slate-400">
                                     Webhook Notification <Help>{t("Send HTTP POST notification on match.")}</Help>

@@ -62,6 +62,25 @@ describe("Link Parser & Generator", () => {
             expect(parsed.settings.servers[0].method).toBe("aes-256-gcm");
             expect(parsed.settings.servers[0].password).toBe("pass");
         });
+
+        test("writes the protocol Xray knows, whatever the link's scheme says", () => {
+            // The loader registers `shadowsocks` alone (v26.7.28:infra/conf/xray.go:44) and
+            // stops at any other name; a 2022 cipher is the method, not a protocol.
+            const body = "YWVzLTI1Ni1nY206cGFzcw@89.46.38.91:443#SS";
+            for (const scheme of ["ss", "SS", "shadowsocks"]) {
+                expect(parseXrayLink(`${scheme}://${body}`).protocol).toBe("shadowsocks");
+            }
+        });
+
+        test("does not turn a shadowsocks-2022 link into an outbound of that name", () => {
+            const quiet = console.error;
+            console.error = () => {};
+            try {
+                expect(parseXrayLink("shadowsocks-2022://YWVzLTI1Ni1nY206cGFzcw@89.46.38.91:443#SS")).toBeNull();
+            } finally {
+                console.error = quiet;
+            }
+        });
     });
 
     describe("VMess parsing & generation", () => {

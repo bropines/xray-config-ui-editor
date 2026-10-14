@@ -4,9 +4,11 @@
  *
  * The loader has one struct for both, WireGuardConfig, and tells them apart
  * with a flag it sets itself (`IsClient`, v26.7.28:infra/conf/xray.go:32 and
- * :51). Build() runs for both before it knows which it is building, so what
- * it refuses — a key it cannot decode, a `reserved` of the wrong length — is
- * refused for either. Past Build() each side builds its own device, and the
+ * :51, v26.10.10:infra/conf/xray.go:34 and :55). Build() runs for both before
+ * it knows which it is building, so what it refuses — a key it cannot decode,
+ * a `reserved` of the wrong length — is refused for either. (Through 26.9 it
+ * also switched on `domainStrategy`; 26.10's struct has no such field,
+ * v26.10.10:infra/conf/wireguard.go:59-69.) Past Build() each side builds its own device, and the
  * two read `address` and the peers differently; those rules live with their
  * side (wireguard-inbound.ts, wireguard-outbound.ts).
  *
@@ -92,9 +94,10 @@ export interface AddressIssue {
 /**
  * What an interface `address` list holds that the core refuses.
  *
- * Both sides read it the same way on each line. 26.7 and 26.9 take an address
- * or any prefix (v26.7.28:proxy/wireguard/server.go:83-96 for a server,
- * v26.7.28:proxy/wireguard/client.go:86-99 for a client). 26.3 sends both
+ * Both sides read it the same way on each line. 26.7, 26.9 and 26.10 take an
+ * address or any prefix (v26.7.28:proxy/wireguard/server.go:83-96 for a server,
+ * v26.7.28:proxy/wireguard/client.go:86-99 for a client; the same lines at
+ * v26.10.10). 26.3 sends both
  * through one parseEndpoints, which wants an address, or a prefix that is
  * exactly one host — /32 for IPv4, /128 for IPv6
  * (v26.3.27:proxy/wireguard/wireguard.go:29-46; the client calls it at
@@ -126,9 +129,9 @@ export interface AllowedIpIssue {
  * The entries of a peer's `allowedIPs` that are not a network written as
  * address/prefix. Every line hands them to the device's IpcSet, which parses
  * a prefix (v26.3.27:proxy/wireguard/wireguard.go:83-85,
- * v26.7.28:proxy/wireguard/client.go:325-327), so a bare address is refused
- * there as well as by a 26.7 server's own parse
- * (v26.7.28:proxy/wireguard/config.go:17-23).
+ * v26.7.28:proxy/wireguard/client.go:325-327, v26.10.10:proxy/wireguard/client.go:321-323),
+ * so a bare address is refused there as well as by the own parse of a server
+ * from 26.7 (v26.7.28:proxy/wireguard/config.go:17-23, the same lines at v26.10.10).
  */
 export const allowedIpIssues = (entries: readonly unknown[]): AllowedIpIssue[] => {
     const issues: AllowedIpIssue[] = [];
@@ -148,10 +151,11 @@ export const allowedIpIssues = (entries: readonly unknown[]): AllowedIpIssue[] =
  *   length  Build() answers `"reserved" should be empty or 3 bytes`
  *           (v26.3.27:infra/conf/wireguard.go:100-102,
  *           v26.7.28:infra/conf/wireguard.go:122-124,
- *           v26.9.9:infra/conf/wireguard.go:123-125)
+ *           v26.9.9:infra/conf/wireguard.go:123-125,
+ *           v26.10.10:infra/conf/wireguard.go:122-124)
  *   range   a list entry that is not a whole number from 0 to 255 is a type
  *           error for a byte, and the decode of the settings returns it
- *           (v26.7.28:infra/conf/loader.go:51-53)
+ *           (v26.7.28:infra/conf/loader.go:51-53, the same lines at v26.10.10)
  *
  * Both refuse the config. A string that is not base64 is refused the same
  * way, but atob is more forgiving than Go's padded decoder, so it is not

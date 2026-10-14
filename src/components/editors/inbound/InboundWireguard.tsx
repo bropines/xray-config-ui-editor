@@ -12,6 +12,7 @@ import {
 } from '../../../core/generators/crypto';
 import {
     CLIENT_ONLY_KEYS,
+    outboundReadsClientKey,
     WIREGUARD_DEFAULT_ADDRESSES,
     nextPeerAllowedIP,
     serverReadsPeerEndpoint,
@@ -299,10 +300,16 @@ export const InboundWireguard = ({ inbound, onChange }: InboundWireguardProps) =
                         {heldClientKeys.map(key => (
                             <div key={key} className="space-y-2">
                                 <p className="text-[11px] leading-relaxed text-slate-300 break-words">
-                                    {t("{key} is set to {value}. Only a WireGuard outbound uses it — on an inbound it changes nothing.", {
-                                        key,
-                                        value: JSON.stringify(settings[key]),
-                                    })}
+                                    {outboundReadsClientKey(key, version)
+                                        ? t("{key} is set to {value}. Only a WireGuard outbound uses it — on an inbound it changes nothing.", {
+                                            key,
+                                            value: JSON.stringify(settings[key]),
+                                        })
+                                        : t("{key} is set to {value}. Xray {tag} has no such WireGuard setting on either side, so it changes nothing.", {
+                                            key,
+                                            value: JSON.stringify(settings[key]),
+                                            tag,
+                                        })}
                                 </p>
                                 <NoteButton onClick={() => onChange(['settings', key], undefined)}>
                                     {t("Remove {alias}", { alias: key })}

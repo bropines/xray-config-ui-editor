@@ -7,6 +7,7 @@ import { Help } from '../../ui/Help';
 import { Icon } from '../../ui/Icon';
 import { XhttpSettingsEditor } from './XhttpSettingsEditor';
 import { MasqueSettingsEditor } from './MasqueSettingsEditor';
+import { XDriveSettingsEditor } from './XDriveSettingsEditor';
 import { useTransportFields } from '../../../hooks/useTransportFields';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
 import type { FeatureStatus } from '../../../core/xray/versions/features';
@@ -174,6 +175,7 @@ export const NetworkSection = ({
         grpcInitialWindowsSize,
         xhttpSettings,
         masqueSettings,
+        xdriveSettings,
     } = fields;
     const { tag } = useCoreVersion();
     const section = networkSection(net);
@@ -382,13 +384,16 @@ export const NetworkSection = ({
             />
         )}
 
-        {/* 26.10's other new transport. Nothing draws its settings, and the ones a config holds are kept. */}
+        {/* 26.10's other new transport: a shared store as the carrier. What
+            Build() and the store refuse is core/xray/xdrive's, said beside the
+            fields and in the diagnostics alike. */}
         {section === 'xdrive' && (
-            <div className="border-t border-slate-800/50 pt-4" data-xdrive-note>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                    {t("The xdrive transport carries traffic through a cloud drive. This editor does not draw its settings: the ones in your config are kept as they are, and can be edited in the JSON view.")}
-                </p>
-            </div>
+            <XDriveSettingsEditor
+                settings={xdriveSettings.value}
+                onChange={xdriveSettings.onChange}
+                isClient={isClient}
+                protocol={protocol}
+            />
         )}
         </>
     );

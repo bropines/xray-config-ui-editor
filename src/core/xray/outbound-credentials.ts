@@ -1,5 +1,7 @@
 /**
- * Where a SOCKS or HTTP outbound keeps its server and its login.
+ * Where a SOCKS or HTTP outbound keeps its server and its login. A Shadowsocks
+ * outbound has the same two shapes for its server (shadowsocks-outbound.ts
+ * reads them through `serverShape` and `serverPath` below), without the login.
  *
  * The client config has two shapes, the same on every supported tag
  * (v26.7.28:infra/conf/socks.go:77-85 and :87-136, infra/conf/http.go — the
@@ -36,9 +38,15 @@ const text = (value: unknown): string => (typeof value === 'string' ? value : ''
 /** Protocols whose client config has these two shapes. */
 export const hasLogin = (protocol: unknown): boolean => protocol === 'socks' || protocol === 'http';
 
-/** The shape the core will read: flat as soon as `settings.address` is there. */
+/**
+ * The shape the core will read: flat as soon as `settings.address` is there.
+ * `address: null` is not there — Go decodes it into a nil `*Address`, which is
+ * the `v.Address != nil` test failing (socks.go:78 and :89, http.go:59 and
+ * :71 on v26.7.28; infra/conf/shadowsocks.go:202 on v26.10.10 tests the same).
+ */
 export const serverShape = (outbound: unknown): ServerShape =>
-    isObject(outbound) && isObject(outbound.settings) && outbound.settings.address !== undefined
+    isObject(outbound) && isObject(outbound.settings)
+        && outbound.settings.address !== undefined && outbound.settings.address !== null
         ? 'flat'
         : 'servers';
 

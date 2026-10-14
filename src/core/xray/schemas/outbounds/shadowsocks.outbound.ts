@@ -2,13 +2,20 @@
 // Shadowsocks Outbound Settings — Source: docs/config/outbounds/shadowsocks.md
 // ============================================================
 import { z } from 'zod';
-import { UserLevelSchema, ShadowsocksMethodSchema } from '../primitives';
+import { UserLevelSchema } from '../primitives';
 
 /** One server in the grouped form. */
 export const ShadowsocksServerSchema = z.object({
   address: z.string().optional(),
   port: z.number().int().optional(),
-  method: ShadowsocksMethodSchema.optional(),
+  /**
+   * Cipher. Which names a line takes is a version fact — "none"/"plain" went
+   * away in 26.7, and a 2022 name is compared exactly up to 26.9 — so it is
+   * checked by core/xray/shadowsocks-outbound rather than pinned here; classic
+   * names are matched case-insensitively and have `aead_*` aliases an enum
+   * would wrongly refuse. An outbound has no default: an empty one is refused.
+   */
+  method: z.string().optional(),
   password: z.string().optional(),
   email: z.string().optional(),
   level: UserLevelSchema,
@@ -49,7 +56,8 @@ export const ShadowsocksOutboundSettingsSchema = z.object({
   email: z.string().optional(),
   address: z.string().optional(),
   port: z.number().int().optional(),
-  method: ShadowsocksMethodSchema.optional(),
+  /** Cipher, as in a server entry: checked by core/xray/shadowsocks-outbound. */
+  method: z.string().optional(),
   password: z.string().optional(),
   level: UserLevelSchema,
 }).passthrough();
