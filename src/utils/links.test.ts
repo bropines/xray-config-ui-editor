@@ -1,6 +1,7 @@
 import { expect, test, describe, it } from "bun:test";
 import { parseXrayLink, parseWireguardConfig, parseWireguardConfigDetailed, parseRawSubscriptionText } from "./link-parser";
 import { generateXrayLink, linkProblem } from "./link-generator";
+import { generateVlessEncryption } from "../core/generators/vless-encryption";
 
 describe("Link Parser & Generator", () => {
     
@@ -221,5 +222,41 @@ describe('a Shadowsocks link without a method', () => {
         const servers = { tag: 'ss', protocol: 'shadowsocks', settings: { servers: [{ address: '1.2.3.4', port: 8388, method: 'chacha20-ietf-poly1305', password: 'p' }] } };
         expect(atob(generateXrayLink(servers).slice(5).split('@')[0]!)).toBe('chacha20-ietf-poly1305:p');
         expect(linkProblem(servers)).toBeNull();
+    });
+});
+
+describe('a VLESS link for a connection that is encrypted', () => {
+    const pair = generateVlessEncryption('mlkem768', { appearance: 'random' });
+    const outbound = (encryption: string) => ({
+        tag: 'enc', protocol: 'vless',
+        settings: { vnext: [{ address: '203.0.113.5', port: 443, users: [{ id: '00000000-0000-0000-0000-000000000000', encryption }] }] },
+    });
+
+    it('carries the string, so a client does not connect as plain VLESS', () => {
+        const link = generateXrayLink(outbound(pair.encryption));
+        expect(new URL(link).searchParams.get('encryption')).toBe(pair.encryption);
+    });
+
+    it('reads back to the same outbound string', () => {
+        const parsed = parseXrayLink(generateXrayLink(outbound(pair.encryption)))!;
+        expect(parsed.settings.vnext[0].users[0].encryption).toBe(pair.encryption);
+    });
+
+    it('leaves it out for "none", as links always have', () => {
+        expect(generateXrayLink(outbound('none'))).not.toContain('encryption=');
+    });
+
+    it('takes the flat form too', () => {
+        const flat = { tag: 'enc', protocol: 'vless', settings: { address: '203.0.113.5', port: 443, id: 'x', encryption: pair.encryption } };
+        expect(new URL(generateXrayLink(flat)).searchParams.get('encryption')).toBe(pair.encryption);
+    });
+
+    it('is worked out from the decryption when the item is the inbound', () => {
+        const inbound = {
+            tag: 'in', protocol: 'vless', port: 443,
+            settings: { clients: [{ id: '00000000-0000-0000-0000-000000000000' }], decryption: pair.decryption },
+        };
+        expect(new URL(generateXrayLink(inbound)).searchParams.get('encryption')).toBe(pair.encryption);
+        expect(generateXrayLink({ ...inbound, settings: { ...inbound.settings, decryption: 'none' } })).not.toContain('encryption=');
     });
 });

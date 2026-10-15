@@ -92,7 +92,9 @@ describe('REALITY inbound destination naming', () => {
     // Remnawave profile checked) raised a critical finding — which
     // saveToRemnawave treats as a hard block on pushing to the panel.
     const inbound = (reality: any) => ({
-        inbounds: [{ tag: 'in', protocol: 'vless', streamSettings: { security: 'reality', realitySettings: reality } }],
+        // `decryption` is not what is being tested, but every supported Xray
+        // refuses a VLESS inbound without one, so the fixture has to say it.
+        inbounds: [{ tag: 'in', protocol: 'vless', settings: { clients: [], decryption: 'none' }, streamSettings: { security: 'reality', realitySettings: reality } }],
         outbounds: [{ tag: 'DIRECT', protocol: 'freedom', settings: {} }],
     }) as any;
 

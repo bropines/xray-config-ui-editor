@@ -17,6 +17,7 @@
 // ============================================================
 
 import { publicKeyFromPrivateKey } from './crypto';
+import { deriveClientEncryption } from './vless-encryption';
 
 /** The subset of a Remnawave host row this builder reads. */
 export interface PanelHost {
@@ -62,6 +63,24 @@ export interface ClientOutboundResult {
 const SUPPORTED_PROTOCOLS = ['vless', 'vmess', 'trojan'];
 
 /**
+ * The `encryption` a VLESS client needs for this inbound: "none" when the
+ * inbound decrypts nothing, otherwise the string worked out from its
+ * `decryption` (generators/vless-encryption — the public half of each key it
+ * holds, with the same appearance and padding). An inbound whose
+ * `decryption` is absent is a panel profile Xray would refuse; it is
+ * mirrored as plain rather than blocked, as it always was. One that is there
+ * and cannot be read is blocked, since a plain client would only fail.
+ */
+const clientEncryption = (inbound: PanelInbound): { value: string } | { blocker: string } => {
+    const decryption = inbound?.settings?.decryption;
+    if (decryption === undefined || decryption === null || decryption === '') return { value: 'none' };
+    const derived = deriveClientEncryption(decryption);
+    return derived.ok
+        ? { value: derived.encryption }
+        : { blocker: 'Inbound has a VLESS Encryption (decryption) that Xray would refuse, so the client key cannot be worked out from it' };
+};
+
+/**
  * Why a host cannot be turned into a client outbound, or null when it can.
  * Reported rather than thrown so a list of hosts can show each row's reason.
  */
@@ -71,6 +90,11 @@ export const clientOutboundBlocker = (host: PanelHost, inbound: PanelInbound): s
         return `${inbound.protocol} needs a per-user secret the panel does not expose here`;
     }
     if (!host?.address || !host?.port) return 'Host has no address or port';
+
+    if (inbound.protocol === 'vless') {
+        const encryption = clientEncryption(inbound);
+        if ('blocker' in encryption) return encryption.blocker;
+    }
 
     const security = effectiveSecurity(host, inbound);
     if (security === 'reality') {
@@ -142,7 +166,8 @@ export const buildClientOutbound = ({
             port: host.port,
             users: [{
                 id: userId,
-                encryption: 'none',
+                // The blocker has already refused an inbound whose decryption cannot be read.
+                encryption: (clientEncryption(inbound) as { value: string }).value,
                 flow: clientFlow(network, security),
             }],
         }];

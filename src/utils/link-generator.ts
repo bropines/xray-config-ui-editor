@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { deriveClientEncryption } from '../core/generators/vless-encryption';
 
 /** The method a Shadowsocks item holds: the flat one, else its first server's. */
 const shadowsocksMethod = (settings: any): string => {
@@ -112,6 +113,17 @@ export const generateXrayLink = (item: any) => {
     if (protocol === 'vless') {
         const flow = settings?.clients?.[0]?.flow || settings?.vnext?.[0]?.users?.[0]?.flow;
         if (flow) params.set("flow", flow);
+        // A client is told how to encrypt in the link itself: the outbound's own
+        // string, or, for an inbound, the one worked out from its `decryption`.
+        // A link without it connects as plain VLESS and the server drops it.
+        // "none" is what a link means by leaving it out.
+        const encryption = settings?.vnext?.[0]?.users?.[0]?.encryption
+            ?? settings?.encryption
+            ?? (typeof settings?.decryption === 'string' ? deriveClientEncryption(settings.decryption) : undefined);
+        const text = typeof encryption === 'string'
+            ? encryption
+            : encryption && encryption.ok ? encryption.encryption : '';
+        if (text && text !== 'none') params.set("encryption", text);
         return `vless://${creds}@${address}:${port}?${params.toString()}#${encodeURIComponent(tag || 'VLESS')}`;
     }
 

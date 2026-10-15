@@ -1477,6 +1477,236 @@ export const ru: Record<string, string> = {
     'Xray 26.9.30 dropped this setting; {tag} ignores it, so it does nothing here.':
         'В Xray 26.9.30 эту настройку убрали; {tag} её игнорирует, поэтому здесь она ни на что не влияет.',
     'Before MASQUE and xdrive': 'До MASQUE и xdrive',
+    'Short write limit': 'Граница короткой записи',
+    'Writes shorter than this many bytes get the long padding.':
+        'Записи короче этого числа байт получают длинный паддинг.',
+    'Long padding spread': 'Разброс длинного паддинга',
+    'The long padding adds a random 0 up to this many bytes, not including it.':
+        'Длинный паддинг добавляет случайно от 0 до этого числа байт, не включая его.',
+    'Long padding length': 'Длина длинного паддинга',
+    'The long padding makes a write this many bytes long, before its random part.':
+        'Длинный паддинг доводит запись до этой длины в байтах, не считая случайной части.',
+    'Short padding spread': 'Разброс короткого паддинга',
+    'Every other write gets a random padding of 0 up to this many bytes, not including it.':
+        'Остальные записи получают случайный паддинг от 0 до этого числа байт, не включая его.',
+    '{what} holds {value}, but Xray reads whole numbers from 0 to {max} in this list. It cannot decode the config, so the config will not load.':
+        'В {what} записано {value}, а Xray ждёт в этом списке целые числа от 0 до {max}. Конфиг не раскодируется и не загрузится.',
+    '{what} holds {value}, but Xray reads a list of whole numbers there. It cannot decode the config, so the config will not load.':
+        'В {what} записано {value}, а Xray ждёт там список целых чисел. Конфиг не раскодируется и не загрузится.',
+    'Write it as a list of four numbers, for example {example}.':
+        'Запишите списком из четырёх чисел, например {example}.',
+    '{what} has {count} of the 4 numbers Xray needs, so it ignores them: this client gets the inbound\'s testseed, or Xray\'s own numbers ({defaults}) where the inbound has none.':
+        'В {what} {count} из 4 нужных Xray чисел, поэтому он их игнорирует: клиент получает testseed inbound, а если у inbound его нет — числа Xray ({defaults}).',
+    '{what} has {count} of the 4 numbers Xray needs, so it ignores them and pads with its own ({defaults}).':
+        'В {what} {count} из 4 нужных Xray чисел, поэтому он их игнорирует и добивает своими ({defaults}).',
+    'Give all four numbers, or remove the key.': 'Задайте все четыре числа или уберите ключ.',
+    '{what} has {count} numbers; Xray reads the first four and ignores the rest.':
+        'В {what} {count} чисел; Xray читает первые четыре, остальные игнорирует.',
+    '{what} is {value}, above {limit}. Xray works with it as a signed 32-bit number, where it is negative, so no write is ever short enough for the long padding.':
+        '{what} — {value}, больше {limit}. Xray работает с ним как со знаковым 32-битным числом, где оно отрицательное, поэтому ни одна запись не бывает достаточно короткой для длинного паддинга.',
+    '{what} is {low}, but writes up to {high} bytes get the long padding. Its length is {low} minus the write\'s length plus a random part, so for a write longer than {low} it can come out negative, and Xray panics on a negative padding length — the core stops.':
+        '{what} — {low}, а длинный паддинг получают записи до {high} байт. Его длина — {low} минус длина записи плюс случайная часть, поэтому для записи длиннее {low} она может выйти отрицательной, а на отрицательной длине паддинга Xray паникует — ядро останавливается.',
+    'Keep {what} at least as large as {high}.': 'Держите {what} не меньше {high}.',
+    '{what} ({label}) is 0. Xray draws a random number below it for the padding, which panics for 0, and nothing catches the panic: the core stops the first time it takes that path.':
+        '{what} ({label}) равно 0. Xray берёт для паддинга случайное число меньше него, на 0 это паника, и её никто не перехватывает: ядро остановится, как только пойдёт по этой ветке.',
+    'Use at least 1; Xray\'s own number is {default}.': 'Укажите не меньше 1; у Xray по умолчанию {default}.',
+    '{what} is {value}, above {limit}. Xray works with it as a signed 32-bit number, where it can come out negative, and a negative padding length panics — the core stops.':
+        '{what} — {value}, больше {limit}. Xray работает с ним как со знаковым 32-битным числом, где оно может выйти отрицательным, а отрицательная длина паддинга — это паника, ядро останавливается.',
+    'Use at most {limit}; Xray\'s own number is {default}.':
+        'Укажите не больше {limit}; у Xray по умолчанию {default}.',
+    'no flow': 'без flow',
+    '{what} only matters with the flow {vision}; with {flow} nothing is padded and it does nothing.':
+        '{what} имеет смысл только с flow {vision}; с {flow} ничего не добивается, и он ни на что не влияет.',
+    '{what} holds {value}, but Xray reads text there. It cannot decode the config, so the config will not load.':
+        'В {what} записано {value}, а Xray ждёт там текст. Конфиг не раскодируется и не загрузится.',
+    '{what} is {flow}, but the stream settings use the {network} transport. Xray runs Vision only on the TLS or REALITY connection itself, which the raw transport hands over and the others do not, so every Vision connection is refused with "XTLS only supports TLS and REALITY directly for now." The node still starts.':
+        '{what} — {flow}, а в настройках потока транспорт {network}. Vision Xray запускает только на самом соединении TLS или REALITY, которое отдаёт транспорт raw, а остальные — нет, поэтому каждое Vision-соединение отклоняется с «XTLS only supports TLS and REALITY directly for now.». Нода при этом запускается.',
+    'Use the raw (tcp) transport with TLS or REALITY, or remove the flow.':
+        'Используйте транспорт raw (tcp) с TLS или REALITY либо уберите flow.',
+    '{what} is {flow}, but the stream settings have no TLS or REALITY. Xray runs Vision only on a TLS or REALITY connection, so every Vision connection is refused with "XTLS only supports TLS and REALITY directly for now." The node still starts.':
+        '{what} — {flow}, а в настройках потока нет TLS или REALITY. Vision Xray запускает только на соединении TLS или REALITY, поэтому каждое Vision-соединение отклоняется с «XTLS only supports TLS and REALITY directly for now.». Нода при этом запускается.',
+    'Turn on TLS or REALITY under the stream settings, or remove the flow.':
+        'Включите TLS или REALITY в настройках потока либо уберите flow.',
+    '{what} holds {value}, but Xray reads a whole number from 0 to {max} there. It cannot decode the config, so the config will not load.':
+        'В {what} записано {value}, а Xray ждёт там целое число от 0 до {max}. Конфиг не раскодируется и не загрузится.',
+    '{what} is ignored: Xray pre-connects only for an outbound without a reverse, and this one has one.':
+        '{what} игнорируется: Xray заранее подключается только для outbound без reverse, а у этого он есть.',
+    '{what} is {count}: Xray opens that many connections to the server as soon as the first request goes through this outbound, and keeps each one idle until a request takes it.':
+        '{what} — {count}: при первом запросе через этот outbound Xray открывает столько соединений к серверу и держит каждое в простое, пока его не возьмёт запрос.',
+    'A handful is enough to have a connection ready; each one is a socket the server holds open.':
+        'Чтобы соединение было наготове, хватит нескольких; каждое — открытый сокет на сервере.',
+    'Padding added to what the server sends back. Clients with no numbers of their own use these.':
+        'Паддинг для того, что сервер отправляет обратно. Клиенты без своих чисел используют эти.',
+    'Xray applies these when it loads this config, to the clients written in it. A user added to a running Xray through its API arrives with its own account and does not get them.':
+        'Xray применяет их при загрузке конфига к клиентам, записанным в нём. Пользователь, добавленный в работающий Xray через API, приходит со своим аккаунтом и их не получает.',
+    'Replaces the inbound\'s numbers for this client when all four are set.':
+        'Заменяет числа inbound для этого клиента, когда заданы все четыре.',
+    'With fewer than four numbers Xray ignores the list and uses the inbound\'s, or its own where the inbound has none.':
+        'Если чисел меньше четырёх, Xray игнорирует список и берёт числа inbound, а если у inbound их нет — свои.',
+    'Padding added to what this client sends. The server needs no matching numbers.':
+        'Паддинг для того, что отправляет этот клиент. Серверу не нужны такие же числа.',
+    'Each padded block carries its own length, so the server reads it whatever numbers it pads with.':
+        'Каждый добитый блок несёт свою длину, поэтому сервер читает его при любых числах паддинга.',
+    'Same as the inbound': 'Как у inbound',
+    'Xray\'s defaults': 'Значения Xray по умолчанию',
+    'Needs attention': 'Требует внимания',
+    'Vision padding': 'Паддинг Vision',
+    'Use the inbound\'s numbers': 'Взять числа inbound',
+    'Use Xray\'s numbers': 'Взять числа Xray',
+    'Vision pads the start of a connection to hide the TLS-inside-TLS pattern, and needs a TLS or REALITY connection to do it. The udp443 form also lets UDP to port 443 through, which plain Vision refuses.':
+        'Vision добивает начало соединения, чтобы скрыть картину «TLS внутри TLS», и для этого ему нужно соединение TLS или REALITY. Вариант udp443 ещё и пропускает UDP на порт 443, который обычный Vision отклоняет.',
+    'Pre-connect and Vision padding': 'Предподключение и паддинг Vision',
+    'Connections opened ahead of time, and the numbers Vision pads with.':
+        'Соединения, открытые заранее, и числа, которыми добивает Vision.',
+    'Pre-connect': 'Предподключение',
+    'Connections dialled to the server ahead of time and kept idle, so a request finds one ready. 0 or empty is off. They are opened when the first request goes through this outbound; each one is a socket the server keeps open, and one more than two minutes old when a request takes it is closed unused. Ignored on an outbound with a reverse.':
+        'Соединения к серверу, открытые заранее и держащиеся в простое, чтобы запрос нашёл готовое. 0 или пусто — выключено. Открываются при первом запросе через этот outbound; каждое — открытый сокет на сервере, а соединение старше двух минут на момент запроса закрывается неиспользованным. Игнорируется на outbound с reverse.',
+    'VLESS defaults': 'VLESS по умолчанию',
+    'Default flow': 'Flow по умолчанию',
+    'Clients that have no flow of their own get this one when Xray loads the config. A user added to a running Xray through its API arrives with its own account and does not get it. With Vision here, a client that connects without the flow has its TCP connections turned away.':
+        'Клиенты без своего flow получают этот при загрузке конфига Xray. Пользователь, добавленный в работающий Xray через API, приходит со своим аккаунтом и его не получает. Если здесь Vision, у клиента, подключающегося без flow, TCP-соединения отклоняются.',
+    '{name} holds {value}, and Xray reads a list of whole numbers here — it cannot read the config until this is replaced or removed.':
+        'В {name} записано {value}, а Xray ждёт здесь список целых чисел — он не прочитает конфиг, пока это не заменить или не убрать.',
+    '{name} holds {value}, and Xray reads a whole number here — it cannot read the config until this is replaced or removed.':
+        'В {name} записано {value}, а Xray ждёт здесь целое число — он не прочитает конфиг, пока это не заменить или не убрать.',
+    'Inherits {flow}': 'Наследует {flow}',
+    '{value} (Xray {tag} refuses it)': '{value} (Xray {tag} это отвергает)',
+    'X25519 private key': 'Приватный ключ X25519',
+    'X25519 public key': 'Публичный ключ X25519',
+    'ML-KEM-768 seed': 'Seed ML-KEM-768',
+    'ML-KEM-768 public key': 'Публичный ключ ML-KEM-768',
+    'VLESS Encryption': 'VLESS Encryption',
+    'Xray {tag} has no VLESS Encryption, so {what} is not read as one there.':
+        'В Xray {tag} нет VLESS Encryption, поэтому {what} там так не читается.',
+    'On · X25519 and ML-KEM-768': 'Включено · X25519 и ML-KEM-768',
+    'On · ML-KEM-768': 'Включено · ML-KEM-768',
+    'On · X25519': 'Включено · X25519',
+    'Decryption': 'Decryption',
+    'Encryption': 'Encryption',
+    'Encrypts the VLESS stream itself, with a key exchange that holds up against quantum computers — what xray vlessenc sets up. This server keeps the private key in decryption; each client is given the matching public key in its outbound\'s encryption.':
+        'Шифрует сам поток VLESS обменом ключей, устойчивым к квантовым компьютерам, — то, что настраивает xray vlessenc. Сервер хранит приватный ключ в decryption; каждому клиенту выдаётся парный публичный ключ в encryption его outbound.',
+    'The client half of VLESS Encryption. It has to match the server\'s decryption: the same appearance, and the public key that goes with the server\'s private one.':
+        'Клиентская половина VLESS Encryption. Она должна совпадать с decryption сервера: тот же вид и публичный ключ, парный приватному ключу сервера.',
+    '"none" for plain VLESS, or a string of the form mlkem768x25519plus.appearance.ticket.key that this inbound decrypts with.':
+        '«none» для обычного VLESS или строка вида mlkem768x25519plus.вид.тикет.ключ, которой этот inbound расшифровывает.',
+    '"none" for plain VLESS, or the string the server\'s operator gives out: mlkem768x25519plus.appearance.0rtt.key.':
+        '«none» для обычного VLESS или строка, которую выдаёт владелец сервера: mlkem768x25519plus.вид.0rtt.ключ.',
+    'No VLESS Encryption: the stream is plain VLESS, so it relies on TLS or REALITY underneath, or runs unprotected.':
+        'Без VLESS Encryption: поток — обычный VLESS, он полагается на TLS или REALITY под ним либо идёт незащищённым.',
+    'No VLESS Encryption: the stream is plain VLESS. Xray 26.7 and later refuse that to a public address unless TLS or REALITY is on.':
+        'Без VLESS Encryption: поток — обычный VLESS. Xray 26.7 и новее отказываются так ходить на публичный адрес без включённого TLS или REALITY.',
+    'These apply to the next key you generate.': 'Это применится к следующему сгенерированному ключу.',
+    'How it looks': 'Как выглядит',
+    'native leaves the handshake as it is. xorpub masks the public keys in it so they pass for random bytes. random masks the whole connection, record headers included.':
+        'native оставляет рукопожатие как есть. xorpub маскирует в нём публичные ключи под случайные байты. random маскирует всё соединение, включая заголовки записей.',
+    '{value} is not one of these; Xray refuses it.': '{value} — не из этих; Xray такое отвергает.',
+    'Ticket lifetime': 'Время жизни тикета',
+    'How long a client may resume a session without repeating the whole handshake: seconds, like 600s, or a range such as 300-600s. A single number means a random lifetime between half of it and all of it. 0s turns resumption off.':
+        'Сколько клиент может возобновлять сессию без полного рукопожатия: секунды, например 600s, или диапазон вроде 300-600s. Одно число — случайное время от его половины до него целиком. 0s выключает возобновление.',
+    'Session resumption': 'Возобновление сессии',
+    '0rtt reuses a ticket the server handed out and saves a round trip while it lasts; 1rtt always does the full handshake.':
+        '0rtt повторно использует выданный сервером тикет и, пока он действует, экономит один обмен; 1rtt всегда делает полное рукопожатие.',
+    'Padding': 'Паддинг',
+    'Extra random bytes sent with the handshake, so its size and timing are not always the same. Blocks are written chance-min-max and separated by dots: the first, third, ... are lengths in bytes, the second, fourth, ... are waits in milliseconds. The first block needs a chance of 100 and at least 35 bytes. Left empty, Xray uses its own: {default}.':
+        'Дополнительные случайные байты при рукопожатии, чтобы его размер и тайминг не были всегда одинаковыми. Блоки пишутся как шанс-мин-макс через точку: первый, третий, … — длины в байтах, второй, четвёртый, … — паузы в миллисекундах. Первому блоку нужен шанс 100 и не меньше 35 байт. Если пусто, Xray берёт свои: {default}.',
+    'Xray\'s own': 'Свои Xray',
+    'Key {n}': 'Ключ {n}',
+    '{bytes} bytes': '{bytes} байт',
+    'What the clients need': 'Что нужно клиентам',
+    'The string for each client\'s outbound encryption. It is worked out from the key above — the public half of each private key — and is not stored in this config.':
+        'Строка для encryption в outbound каждого клиента. Она вычисляется из ключа выше — публичная половина каждого приватного ключа — и в этом конфиге не хранится.',
+    'Client encryption': 'Клиентский encryption',
+    'Paste it into each client\'s VLESS Encryption card, in its outbound. An ML-KEM-768 public key is 1184 bytes, so this string is long; copy it rather than typing it.':
+        'Вставьте её в карточку VLESS Encryption в outbound каждого клиента. Публичный ключ ML-KEM-768 — 1184 байта, поэтому строка длинная; копируйте, а не набирайте.',
+    'Paste it into each client\'s VLESS Encryption card, in its outbound.':
+        'Вставьте её в карточку VLESS Encryption в outbound каждого клиента.',
+    'Copy client string': 'Скопировать клиентскую строку',
+    'From the server\'s decryption': 'Из decryption сервера',
+    'Paste the decryption of the inbound this connects to. This works out the public key that goes with its private one and fills in the Encryption field above.':
+        'Вставьте decryption inbound, к которому идёт подключение. Отсюда вычислится публичный ключ, парный его приватному, и заполнится поле Encryption выше.',
+    'Server\'s decryption': 'Decryption сервера',
+    'That is already a client string. Paste it into the Encryption field above.':
+        'Это уже клиентская строка. Вставьте её в поле Encryption выше.',
+    'That is a server string. The client\'s version of it is ready.':
+        'Это серверная строка. Её клиентский вариант готов.',
+    'A new key replaces the one in use. Every client set up with the old one stops connecting until it is given the new string.':
+        'Новый ключ заменит текущий. Все клиенты со старым перестанут подключаться, пока не получат новую строку.',
+    'New X25519 key': 'Новый ключ X25519',
+    'Generate X25519 key': 'Сгенерировать ключ X25519',
+    'New ML-KEM-768 key': 'Новый ключ ML-KEM-768',
+    'Generate ML-KEM-768 key': 'Сгенерировать ключ ML-KEM-768',
+    'Use it': 'Использовать',
+    'Switch off': 'Выключить',
+    'X25519 keys are short. ML-KEM-768 keys make the authentication post-quantum too, at the cost of a client string of about 1.6 KB. The key exchange itself is post-quantum either way.':
+        'Ключи X25519 короткие. Ключи ML-KEM-768 делают постквантовой и аутентификацию, ценой клиентской строки около 1,6 КБ. Сам обмен ключами постквантовый в любом случае.',
+    'inbound': 'inbound',
+    'outbound': 'outbound',
+    '{what} is missing, and every supported Xray refuses a VLESS inbound without it — the config will not load.':
+        '{what} не задан, а inbound VLESS без него отвергает любой поддерживаемый Xray — конфиг не загрузится.',
+    '{what} is missing, and every supported Xray refuses a VLESS outbound without it — the config will not load.':
+        '{what} не задан, а outbound VLESS без него отвергает любой поддерживаемый Xray — конфиг не загрузится.',
+    'Set it to "none", or use a VLESS Encryption string.': 'Поставьте «none» или строку VLESS Encryption.',
+    '{what} is {shown}. Xray reads "none" or a VLESS Encryption string — at least four parts separated by dots: mlkem768x25519plus, how it looks, how a session resumes, then the key — and refuses anything else, so the config will not load.':
+        '{what} — {shown}. Xray читает «none» или строку VLESS Encryption — минимум четыре части через точку: mlkem768x25519plus, вид, возобновление сессии, затем ключ — и всё остальное отвергает, конфиг не загрузится.',
+    'Generate a key in the VLESS Encryption card, or paste what xray vlessenc prints.':
+        'Сгенерируйте ключ в карточке VLESS Encryption или вставьте то, что печатает xray vlessenc.',
+    '{what} starts with {shown}. The first part has to be mlkem768x25519plus, in lower case — Xray refuses any other, so the config will not load.':
+        '{what} начинается с {shown}. Первой частью должно быть mlkem768x25519plus в нижнем регистре — любое другое Xray отвергает, конфиг не загрузится.',
+    'The second part of {what} is {shown}. It has to be native, xorpub or random, in lower case — Xray refuses any other, so the config will not load.':
+        'Вторая часть {what} — {shown}. Она должна быть native, xorpub или random в нижнем регистре — любое другое Xray отвергает, конфиг не загрузится.',
+    'The third part of {what} is {shown}. On a server it is how long a session ticket lives — whole seconds like 600s, or a range like 300-600s — and Xray refuses anything else, so the config will not load.':
+        'Третья часть {what} — {shown}. На сервере это время жизни тикета сессии — целые секунды вроде 600s или диапазон вроде 300-600s — всё остальное Xray отвергает, конфиг не загрузится.',
+    'The ticket lifetime in {what} is {shown}. The server tells the client how long a ticket lives in two bytes, so anything above 65535 seconds reaches the client cut down.':
+        'Время жизни тикета в {what} — {shown}. Сервер сообщает его клиенту двумя байтами, поэтому всё, что больше 65535 секунд, доходит до клиента урезанным.',
+    'Use 65535 seconds (about 18 hours) or less.': 'Укажите 65535 секунд (около 18 часов) или меньше.',
+    'The third part of {what} is {shown}. On a client it has to be 0rtt or 1rtt, in lower case — Xray refuses any other, so the config will not load.':
+        'Третья часть {what} — {shown}. На клиенте она должна быть 0rtt или 1rtt в нижнем регистре — любое другое Xray отвергает, конфиг не загрузится.',
+    'Key {n} of {what} is not unpadded URL-safe base64 — only A–Z, a–z, 0–9, - and _ are allowed, and no "=". Xray refuses it, so the config will not load.':
+        'Ключ {n} в {what} — не URL-safe base64 без выравнивания: допустимы только A–Z, a–z, 0–9, - и _, без «=». Xray его отвергает, конфиг не загрузится.',
+    'Key {n} of {what} is {bytes} bytes. A server takes a 32-byte X25519 private key or a 64-byte ML-KEM-768 seed — Xray refuses any other size, so the config will not load.':
+        'Ключ {n} в {what} — {bytes} байт. Сервер принимает 32-байтовый приватный ключ X25519 или 64-байтовый seed ML-KEM-768 — любой другой размер Xray отвергает, конфиг не загрузится.',
+    'Key {n} of {what} is {bytes} bytes. A client takes a 32-byte X25519 public key or a 1184-byte ML-KEM-768 public key — Xray refuses any other size, so the config will not load.':
+        'Ключ {n} в {what} — {bytes} байт. Клиент принимает 32-байтовый публичный ключ X25519 или 1184-байтовый публичный ключ ML-KEM-768 — любой другой размер Xray отвергает, конфиг не загрузится.',
+    'That is a client\'s public key. A server holds the private half — generate a pair, or use the server\'s own key.':
+        'Это публичный ключ клиента. На сервере хранится приватная половина — сгенерируйте пару или возьмите собственный ключ сервера.',
+    'That is a server\'s private seed. A client needs the public key that goes with it — paste the server\'s decryption below to work it out.':
+        'Это приватный seed сервера. Клиенту нужен парный ему публичный ключ — вставьте decryption сервера ниже, чтобы его вычислить.',
+    'Key {n} of {what} is the size of an ML-KEM-768 public key, but it is not one — a number in it is out of range, and Xray will not start the outbound with it.':
+        'Ключ {n} в {what} размером с публичный ключ ML-KEM-768, но им не является — одно из чисел в нём вне диапазона, и с ним Xray не запустит outbound.',
+    'Copy the client string again from the server\'s VLESS Encryption card, or generate a new pair.':
+        'Скопируйте клиентскую строку заново из карточки VLESS Encryption сервера или сгенерируйте новую пару.',
+    '{what} ends before its key. Xray runs off the end of the string while loading it, so the config will not load.':
+        '{what} заканчивается раньше ключа. Xray при загрузке выходит за конец строки, поэтому конфиг не загрузится.',
+    'Add the key after the options, or generate a new one. A key is at least 20 characters; anything shorter is read as padding.':
+        'Добавьте ключ после параметров или сгенерируйте новый. Ключ — не меньше 20 символов; всё короче читается как паддинг.',
+    'In {what} a padding block comes after a key. Padding goes first, then the keys: Xray cuts the string by the size of the short parts, so with this order it cuts into the key and the inbound will not start.':
+        'В {what} блок паддинга стоит после ключа. Сначала идёт паддинг, потом ключи: Xray режет строку по размеру коротких частей, и при таком порядке разрезает ключ — inbound не запустится.',
+    'In {what} a padding block comes after a key. Padding goes first, then the keys: Xray cuts the string by the size of the short parts, so with this order it cuts into the key and the outbound will not start.':
+        'В {what} блок паддинга стоит после ключа. Сначала идёт паддинг, потом ключи: Xray режет строку по размеру коротких частей, и при таком порядке разрезает ключ — outbound не запустится.',
+    'Move the padding blocks in front of the keys.': 'Перенесите блоки паддинга перед ключами.',
+    'The padding block {shown} in {what} is not three numbers separated by dashes (chance-min-max). Xray cannot read it, and the {noun} will not start.':
+        'Блок паддинга {shown} в {what} — не три числа через дефис (шанс-мин-макс). Xray его не прочитает, и {noun} не запустится.',
+    'Padding blocks look like 100-111-1111 and are separated by dots. A key is at least 20 characters, so a shorter one is read as padding.':
+        'Блоки паддинга выглядят как 100-111-1111 и разделяются точками. Ключ — не меньше 20 символов, поэтому всё короче читается как паддинг.',
+    'The padding block {shown} in {what} holds {part}, which is not a whole number. Xray cannot read it, and the {noun} will not start.':
+        'В блоке паддинга {shown} в {what} есть {part}, а это не целое число. Xray его не прочитает, и {noun} не запустится.',
+    'The first padding block of {what}, {shown}, is too small. Xray wants a chance of 100 and a minimum and a maximum of at least 35 bytes in it, and the {noun} will not start otherwise.':
+        'Первый блок паддинга в {what}, {shown}, слишком мал. Xray нужен шанс 100 и минимум и максимум не меньше 35 байт, иначе {noun} не запустится.',
+    'Start with something like 100-111-1111.': 'Начните с чего-то вроде 100-111-1111.',
+    'The length blocks of {what} add up to more than 65553 bytes at their largest. Xray will not start the {noun} with them.':
+        'Блоки длины в {what} в сумме по максимуму больше 65553 байт. С ними Xray не запустит {noun}.',
+    '{what} is set beside a VLESS Encryption decryption. Every supported Xray refuses fallbacks on an inbound that decrypts — an empty list too — and the config will not load.':
+        '{what} задан рядом с decryption VLESS Encryption. Fallbacks на расшифровывающем inbound отвергает любой поддерживаемый Xray — даже пустой список, — и конфиг не загрузится.',
+    'Remove the fallbacks, or set decryption to "none".': 'Уберите fallbacks или поставьте decryption «none».',
+    '{what} is set. An inbound\'s users carry no encryption — every supported Xray refuses one, even "none" — and the config will not load.':
+        '{what} задан. У пользователей inbound не бывает encryption — любой поддерживаемый Xray его отвергает, даже «none», — и конфиг не загрузится.',
+    'Remove it. The client\'s string goes in the client\'s outbound.':
+        'Уберите его. Клиентская строка нужна в outbound клиента.',
+    'Mux is on and carries TCP (concurrency is {value}, not -1), and the flow is {flow}. A Vision server lets only UDP through inside Mux, so every TCP connection this outbound sends that way fails.':
+        'Mux включён и несёт TCP (concurrency — {value}, а не -1), а flow — {flow}. Сервер с Vision пропускает внутри Mux только UDP, поэтому каждое TCP-соединение, которое этот outbound отправит так, упадёт.',
+    'not set, which is 8': 'не задан, то есть 8',
+    'Set Mux concurrency to -1: TCP then goes through Vision itself, and UDP can still share connections through XUDP (xudpConcurrency).':
+        'Поставьте Mux concurrency -1: TCP тогда пойдёт через сам Vision, а UDP по-прежнему сможет делить соединения через XUDP (xudpConcurrency).',
     // ── Freedom: fragment, noises and the rest of its settings ──────────────
     'Domain Strategy (legacy key)': 'Стратегия доменов (старый ключ)',
     'TLS Fragmentation': 'Фрагментация TLS',

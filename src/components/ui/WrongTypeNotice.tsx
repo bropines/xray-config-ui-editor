@@ -29,7 +29,9 @@ const preview = (value: unknown): string => {
  *
  * The same goes the other way round for a key the core reads as a string
  * (`expects="text"`): a boolean there fails the decode just as a string does
- * where an object is read.
+ * where an object is read. And for the numbers Vision is tuned with: a list of
+ * whole numbers (`expects="numbers"`, `testseed`) and one whole number
+ * (`expects="number"`, `testpre`), both unsigned 32-bit in the core.
  */
 export const WrongTypeNotice = ({ field, held, onRemove, expects = 'object' }: {
     /**
@@ -41,7 +43,7 @@ export const WrongTypeNotice = ({ field, held, onRemove, expects = 'object' }: {
     held: unknown;
     onRemove: () => void;
     /** What the core reads at this key. Objects are the usual case. */
-    expects?: 'object' | 'text';
+    expects?: 'object' | 'text' | 'numbers' | 'number';
 }) => (
     <div className="p-3 rounded-xl border space-y-3 bg-rose-950/20 border-rose-500/40" data-wrong-type={field}>
         <div className="flex gap-2 text-[11px] leading-relaxed">
@@ -49,7 +51,11 @@ export const WrongTypeNotice = ({ field, held, onRemove, expects = 'object' }: {
             <p className="text-rose-200/90 break-words min-w-0">
                 {expects === 'text'
                     ? t("{name} holds {value}, and Xray reads text here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })
-                    : t("{name} holds {value}, and Xray reads an object here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })}
+                    : expects === 'numbers'
+                        ? t("{name} holds {value}, and Xray reads a list of whole numbers here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })
+                        : expects === 'number'
+                            ? t("{name} holds {value}, and Xray reads a whole number here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })
+                            : t("{name} holds {value}, and Xray reads an object here — it cannot read the config until this is replaced or removed.", { name: field, value: preview(held) })}
             </p>
         </div>
         <button

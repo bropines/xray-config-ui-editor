@@ -20,6 +20,7 @@ import { OutboundProxyMux } from './outbound/OutboundProxyMux';
 import { outboundShape } from '../../core/xray/outbound-shape';
 import { chainOf } from '../../core/xray/outbound-chain';
 import { TransportSettings } from './shared/TransportSettings';
+import { VlessEncryptionEditor } from './shared/VlessEncryptionEditor';
 import { t, tn } from '../../i18n';
 
 export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
@@ -169,11 +170,21 @@ export const OutboundModal = ({ data, onSave, onClose, index }: any) => {
                             errors={{ address: getError('address'), port: getError('port') }}
                         />
                     ) : (
-                        <OutboundServer
-                            outbound={local}
-                            onChange={updateField}
-                            errors={{ address: getError('address'), port: getError('port') }}
-                        />
+                        <>
+                            <OutboundServer
+                                outbound={local}
+                                onChange={updateField}
+                                errors={{ address: getError('address'), port: getError('port') }}
+                            />
+                            {/* The client half of VLESS Encryption. Xray refuses a
+                                VLESS outbound with no `encryption` at all, so this
+                                is drawn even when it says "none". */}
+                            {local.protocol === 'vless' && (
+                                <div className="mt-4">
+                                    <VlessEncryptionEditor side="outbound" item={local} onChange={updateField} />
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 

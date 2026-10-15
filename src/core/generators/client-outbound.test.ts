@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { buildClientOutbound, clientOutboundBlocker } from './client-outbound';
 import { generateRealityKeyPair, publicKeyFromPrivateKey } from './crypto';
+import { generateVlessEncryption } from './vless-encryption';
 
 // A throwaway key pair stands in for a panel inbound's REALITY key: the point
 // of these tests is that the *public* half the client gets is derived from the
@@ -206,5 +207,44 @@ describe('publicKeyFromPrivateKey', () => {
         expect(publicKeyFromPrivateKey('')).toBeNull();
         expect(publicKeyFromPrivateKey('too-short')).toBeNull();
         expect(publicKeyFromPrivateKey('!!!not base64!!!')).toBeNull();
+    });
+});
+
+describe('an inbound that decrypts (VLESS Encryption)', () => {
+    // The client gets the public half of whatever the inbound holds the
+    // private half of — the same relationship REALITY's key has, one level up.
+    const pair = generateVlessEncryption('mlkem768', { appearance: 'xorpub', padding: '100-111-1111.75-0-111.50-0-3333' });
+    const decrypting = () => ({
+        ...realityInbound(),
+        settings: { clients: [], decryption: pair.decryption },
+    });
+
+    it('writes the encryption string worked out from the inbound\'s decryption', () => {
+        const { outbound } = buildClientOutbound({ host: host(), inbound: decrypting(), userId: USER, tag: 'proxy' });
+        expect(outbound.settings.vnext[0].users[0].encryption).toBe(pair.encryption);
+        expect(outbound.settings.vnext[0].users[0].encryption).not.toBe('none');
+        expect(outbound.settings.vnext[0].users[0].encryption).not.toContain(pair.decryption.split('.').pop()!);
+    });
+
+    it('stays "none" for an inbound that decrypts nothing', () => {
+        const { outbound } = buildClientOutbound({ host: host(), inbound: realityInbound(), userId: USER, tag: 'proxy' });
+        expect(outbound.settings.vnext[0].users[0].encryption).toBe('none');
+    });
+
+    it('treats a profile with no decryption at all as plain, as it always has', () => {
+        const inbound = { ...realityInbound(), settings: { clients: [] } };
+        expect(clientOutboundBlocker(host(), inbound)).toBeNull();
+        expect(buildClientOutbound({ host: host(), inbound, userId: USER, tag: 'proxy' }).outbound.settings.vnext[0].users[0].encryption).toBe('none');
+    });
+
+    it('blocks one whose decryption Xray would refuse, rather than hand out a plain client', () => {
+        const inbound = { ...realityInbound(), settings: { clients: [], decryption: 'mlkem768x25519plus.native.600s' } };
+        expect(clientOutboundBlocker(host(), inbound)).toContain('VLESS Encryption');
+        expect(() => buildClientOutbound({ host: host(), inbound, userId: USER, tag: 'proxy' })).toThrow('VLESS Encryption');
+    });
+
+    it('is not asked of the other protocols', () => {
+        const vmess = { ...realityInbound(), protocol: 'vmess', settings: { clients: [], decryption: 'junk' } };
+        expect(clientOutboundBlocker(host(), vmess)).toBeNull();
     });
 });

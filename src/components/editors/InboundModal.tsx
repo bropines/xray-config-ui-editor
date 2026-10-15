@@ -11,6 +11,7 @@ import { InboundWireguard } from './inbound/InboundWireguard';
 import { InboundMasque } from './inbound/InboundMasque';
 import { InboundCoreNotes } from './inbound/InboundCoreNotes';
 import { TransportSettings } from './shared/TransportSettings';
+import { VlessEncryptionEditor } from './shared/VlessEncryptionEditor';
 import { t } from '../../i18n';
 
 const TUNNEL_PROTOCOLS = ['dokodemo-door', 'tunnel'];
@@ -74,11 +75,21 @@ export const InboundModal = ({ data, onSave, onClose }: any) => {
                         // InboundClients draws, and nothing else to offer.
                         <InboundMasque inbound={local} onChange={updateField} />
                     ) : (
-                        <InboundClients
-                            inbound={local}
-                            onChange={updateField}
-                            errors={{ clients: getError('clients') }}
-                        />
+                        <>
+                            <InboundClients
+                                inbound={local}
+                                onChange={updateField}
+                                errors={{ clients: getError('clients') }}
+                            />
+                            {/* The string this inbound decrypts with, and the one its
+                                clients are given: a VLESS inbound always has one
+                                (Xray refuses it without), even if it is "none". */}
+                            {local.protocol === 'vless' && (
+                                <div className="mt-4">
+                                    <VlessEncryptionEditor side="inbound" item={local} onChange={updateField} />
+                                </div>
+                            )}
+                        </>
                     )}
                 </section>
 

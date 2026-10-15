@@ -57,6 +57,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@noble/post-quantum": "0.7.1",
     "@platformos/lang-jsonc": "^0.0.17",
     "@types/dagre": "^0.7.53",
     "@types/diff": "^8.0.0",

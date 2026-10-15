@@ -10,6 +10,23 @@ export {
     parseWireguardKey,
     wireguardPublicKey,
 } from './crypto';
+// VLESS Encryption: the keys and strings `xray vlessenc` makes, and the client string worked out from a server's.
+export {
+    DEFAULT_VLESS_ENCRYPTION_OPTIONS,
+    deriveClientEncryption,
+    generateVlessEncryption,
+    generateVlessKeyPair,
+    mlkem768PublicKey,
+    x25519PublicKey,
+} from './vless-encryption';
+export type {
+    DeriveOptions,
+    DeriveResult,
+    VlessAuthentication,
+    VlessEncryptionOptions,
+    VlessEncryptionPair,
+    VlessKeyPair,
+} from './vless-encryption';
 // spiderX is a browsing path, not a secret — see spider-path for why it is
 // built out of words rather than random characters.
 export { generateSpiderPath, parseSpiderPaths, mergeSpiderPaths } from './spider-path';

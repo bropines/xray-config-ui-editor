@@ -11,6 +11,11 @@ import { text } from '../../../core/xray/shadowsocks-rules';
 import { SHADOWSOCKS_METHOD_ALIASES } from '../../../core/xray/versions/features.inbound';
 import { useField, useArrayField } from '../../../hooks/useField';
 import { useCoreVersion } from '../../../hooks/useCoreVersion';
+import { WrongTypeNotice } from '../../ui/WrongTypeNotice';
+import { VisionSeedEditor } from '../shared/VisionSeedEditor';
+import { flowOptions } from '../shared/flow-options';
+import { InboundVlessDefaults } from './InboundVlessDefaults';
+import { inheritedSeed, visionInboundProblems } from '../../../core/xray/vless-vision';
 
 import { useConfigStore } from '../../../store/configStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -22,7 +27,7 @@ const withCurrent = (offered: string[], current: string | undefined): string[] =
 
 export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) => {
     const { remnawave } = useConfigStore(useShallow(state => ({ remnawave: state.remnawave })));
-    const { values } = useCoreVersion();
+    const { version, tag, values } = useCoreVersion();
     const [ssPassLen, setSsPassLen] = React.useState(32);
     const proto = inbound.protocol;
 
@@ -45,7 +50,7 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
 
     // Remnawave integration: Hide users if connected (only for multi-user protocols)
     if (remnawave.connected && ['vless', 'vmess', 'trojan', 'hysteria'].includes(proto)) {
-        return (
+        const managed = (
             <div className="bg-indigo-900/10 border border-indigo-500/20 p-4 rounded-xl mt-4 flex items-start gap-3">
                 <Icon name="Cloud" className="text-indigo-400 text-lg shrink-0 mt-0.5" />
                 <div>
@@ -56,6 +61,12 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
                 </div>
             </div>
         );
+        // The panel supplies the users, not the file's defaults: a profile with
+        // no clients still carries `flow` and `testseed`, and has nowhere else
+        // to set them.
+        return proto === 'vless'
+            ? (<>{managed}<InboundVlessDefaults inbound={inbound} onChange={onChange} /></>)
+            : managed;
     }
 
     // 1. Shadowsocks / SS-2022
@@ -302,6 +313,12 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
     // "" and xtls-rprx-vision on every line; the udp443 variant is a client
     // value that fails the load on an inbound (v26.7.28:infra/conf/vless.go:72).
     const flows = values('inbound.vless.clients.flow');
+    // What a client with no flow of its own is given, and the padding it falls
+    // back on (see core/xray/vless-vision for where the core does both).
+    const inheritedFlow = typeof inbound.settings?.flow === 'string' ? inbound.settings.flow : '';
+    const inheritedNumbers = inheritedSeed(inbound);
+    const vision = proto === 'vless' ? visionInboundProblems(inbound, version) : [];
+    const streamNotes = vision.filter(problem => problem.kind === 'flow.transport');
 
     const addClient = () => {
         const newClient: any = { email: `user${clientItems.length}@xray` };
@@ -311,64 +328,97 @@ export const InboundClients = ({ inbound, onChange, errors = {} as any }: any) =
     };
 
     return (
-        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
-            <div className="flex justify-between items-center mb-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                    <Icon name="Users" />
-{t("Clients / Users")}
-</h4>
-                <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addClient} icon="Plus">{t("Add")}</Button>
-            </div>
-
-            {errors.clients && (
-                <div className="mb-3 p-2 bg-rose-900/20 border border-rose-500/40 rounded text-rose-300 text-[11px]">
-                    ⚠ {errors.clients}
+        <>
+            {proto === 'vless' && <InboundVlessDefaults inbound={inbound} onChange={onChange} />}
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 mt-4">
+                <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                        <Icon name="Users" />
+                        {t("Clients / Users")}
+                    </h4>
+                    <Button variant="ghost" size="sm" className="!py-0.5 !px-2 !text-[10px]" onClick={addClient} icon="Plus">{t("Add")}</Button>
                 </div>
-            )}
-            <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scroll pr-1">
-                {clientItems.map((c, i) => (
-                    <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group hover:border-slate-600 transition-colors">
-                        <button onClick={() => clients.remove(i)} className="absolute top-2 right-2 text-slate-600 hover:text-rose-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <Icon name="Trash" />
-                        </button>
 
-                        {/* Адаптивный грид клиентов */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
-                            <div>
-                                <label className="label-xs">{t("Email")}</label>
-                                <input className="input-base py-1.5 text-xs"
-                                    value={c.email || ""}
-                                    onChange={e => clients.update(i, { email: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="label-xs">{idKey === 'id' ? 'UUID' : 'Password'}</label>
-                                <div className="flex gap-2">
-                                    <input className="input-base py-1.5 text-xs font-mono"
-                                        value={c[idKey] || ""}
-                                        onChange={e => clients.update(i, { [idKey]: e.target.value })}
-                                    />
-                                    <button onClick={() => clients.update(i, { [idKey]: idKey === 'id' ? generateUUID() : generateShortId() })}
-                                        className="text-slate-500 hover:text-white transition-colors">
-                                        <Icon name="DiceFive" />
-                                    </button>
-                                </div>
-                            </div>
-                            {proto === 'vless' && (
-                                    <Select
-                                        label={t("Flow")}
-                                        value={c.flow || ""}
-                                        onChange={val => clients.update(i, { flow: val })}
-                                        options={withCurrent(flows, c.flow || "").map(flow => ({ value: flow, label: flow || t("None") }))}
-                                    />
-                            )}
-                        </div>
+                {errors.clients && (
+                    <div className="mb-3 p-2 bg-rose-900/20 border border-rose-500/40 rounded text-rose-300 text-[11px]">
+                        ⚠ {errors.clients}
+                    </div>
+                )}
+                {streamNotes.map((note, at) => (
+                    <div key={at} data-problem={note.kind} className="mb-3 p-2 bg-amber-950/20 border border-amber-500/30 rounded text-amber-200/90 text-[11px] leading-relaxed break-words">
+                        {note.message}
+                        {note.suggestion && <span className="block text-slate-400">{note.suggestion}</span>}
                     </div>
                 ))}
-                {clientItems.length === 0 && (
-                    <div className="text-center text-slate-600 text-xs py-4 italic">{t("No users defined. Click Add to create one.")}</div>
-                )}
+                <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scroll pr-1">
+                    {clientItems.map((c, i) => {
+                        const ownFlow = typeof c.flow === 'string' ? c.flow : '';
+                        const wrongFlow = c.flow !== undefined && c.flow !== null && typeof c.flow !== 'string';
+                        return (
+                            <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-3 relative group hover:border-slate-600 transition-colors">
+                                <button onClick={() => clients.remove(i)} className="absolute top-2 right-2 text-slate-600 hover:text-rose-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                    <Icon name="Trash" />
+                                </button>
+
+                                {/* Адаптивный грид клиентов */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
+                                    <div>
+                                        <label className="label-xs">{t("Email")}</label>
+                                        <input className="input-base py-1.5 text-xs"
+                                            value={c.email || ""}
+                                            onChange={e => clients.update(i, { email: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="label-xs">{idKey === 'id' ? 'UUID' : 'Password'}</label>
+                                        <div className="flex gap-2">
+                                            <input className="input-base py-1.5 text-xs font-mono"
+                                                value={c[idKey] || ""}
+                                                onChange={e => clients.update(i, { [idKey]: e.target.value })}
+                                            />
+                                            <button onClick={() => clients.update(i, { [idKey]: idKey === 'id' ? generateUUID() : generateShortId() })}
+                                                className="text-slate-500 hover:text-white transition-colors">
+                                                <Icon name="DiceFive" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {proto === 'vless' && (
+                                        <>
+                                            {wrongFlow && (
+                                                <div className="md:col-span-2">
+                                                    <WrongTypeNotice field="flow" held={c.flow} expects="text" onRemove={() => clients.update(i, { flow: undefined })} />
+                                                </div>
+                                            )}
+                                            <Select
+                                                label={t("Flow")}
+                                                value={ownFlow}
+                                                onChange={val => clients.update(i, { flow: val })}
+                                                options={flowOptions(flows, ownFlow, {
+                                                    tag,
+                                                    empty: inheritedFlow ? t("Inherits {flow}", { flow: inheritedFlow }) : t("None"),
+                                                })}
+                                            />
+                                            <div className="md:col-span-2">
+                                                <VisionSeedEditor
+                                                    scope="client"
+                                                    collapsible
+                                                    value={c.testseed}
+                                                    onChange={next => clients.update(i, { testseed: next })}
+                                                    fallback={inheritedNumbers}
+                                                    problems={vision.filter(problem => problem.client === i && problem.kind.startsWith('testseed.'))}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {clientItems.length === 0 && (
+                        <div className="text-center text-slate-600 text-xs py-4 italic">{t("No users defined. Click Add to create one.")}</div>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };

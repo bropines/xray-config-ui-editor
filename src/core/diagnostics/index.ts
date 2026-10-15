@@ -14,6 +14,8 @@ import { wireguardOutboundProblems } from '../xray/wireguard-outbound';
 import { httpHeadersProblems } from '../xray/http-outbound-headers';
 import { webhookProblems } from '../xray/routing-webhook';
 import { attrsProblems } from '../xray/routing-attrs';
+import { visionInboundProblems, visionMuxProblem, visionOutboundProblems } from '../xray/vless-vision';
+import { vlessInboundEncryptionProblems, vlessOutboundEncryptionProblems } from '../xray/vless-encryption';
 import { t } from '../../i18n';
 import type { CoreVersionId } from '../xray/versions';
 
@@ -88,11 +90,32 @@ export const runFullDiagnostics = (
             });
         }
 
+        // A VLESS outbound's `encryption`: absent, or a string the core refuses
+        // or cannot start with. It is the same on every line, so it is judged
+        // whether or not a version is given — core/xray/vless-encryption.ts.
+        for (const problem of vlessOutboundEncryptionProblems(o)) {
+            diagnostics.push({
+                section: 'outbounds', itemIndex: i, field: problem.field,
+                severity: problem.severity, message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
         // HTTP headers the core cannot decode into its map of strings.
         for (const problem of httpHeadersProblems(o)) {
             diagnostics.push({
                 section: 'outbounds', itemIndex: i, field: problem.field,
                 severity: 'critical', message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
+        // Vision's padding numbers and pre-connect count, in whichever of the
+        // flat and vnext forms the outbound is written, and Vision on a stream
+        // that cannot carry it. The list, and the source line for each entry,
+        // is in core/xray/vless-vision.ts.
+        for (const problem of visionOutboundProblems(o)) {
+            diagnostics.push({
+                section: 'outbounds', itemIndex: i, field: problem.field,
+                severity: problem.severity, message: problem.message, suggestion: problem.suggestion,
             });
         }
 
@@ -151,14 +174,15 @@ export const runFullDiagnostics = (
             }
         }
 
-        const flow = (o.settings?.vnext?.[0]?.users?.[0]?.flow) || (o.settings?.users?.[0]?.flow);
         const mux = o.mux || {};
 
-        if (flow === 'xtls-rprx-vision' && mux.enabled) {
+        // Vision with Mux: XUDP is fine, TCP inside Mux is what fails — and
+        // the flow may be flat or in vnext. See visionMuxProblem.
+        const visionMux = visionMuxProblem(o);
+        if (visionMux) {
             diagnostics.push({
-                section: 'outbounds', itemIndex: i, field: 'mux',
-                severity: 'critical', message: 'XTLS-Vision is incompatible with Mux/XUDP.',
-                suggestion: 'Disable Mux for this outbound to use Vision flow.',
+                section: 'outbounds', itemIndex: i, field: visionMux.field,
+                severity: visionMux.severity, message: visionMux.message, suggestion: visionMux.suggestion,
             });
         }
 
@@ -194,6 +218,27 @@ export const runFullDiagnostics = (
             diagnostics.push({
                 section: 'inbounds', itemIndex: i, field: problem.field,
                 severity: 'critical', message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
+        // A VLESS inbound's `decryption` (absent, refused, or a string the
+        // inbound cannot start with), fallbacks beside a decrypting inbound, and
+        // an `encryption` on a user. `version` only decides which client list
+        // is read — core/xray/vless-encryption.ts.
+        for (const problem of vlessInboundEncryptionProblems(inb, version)) {
+            diagnostics.push({
+                section: 'inbounds', itemIndex: i, field: problem.field,
+                severity: problem.severity, message: problem.message, suggestion: problem.suggestion,
+            });
+        }
+
+        // Vision's padding numbers, inbound-wide and per client, a flow that is
+        // not text, and a Vision client on a stream that cannot carry it.
+        // `version` only decides which client list is read.
+        for (const problem of visionInboundProblems(inb, version)) {
+            diagnostics.push({
+                section: 'inbounds', itemIndex: i, field: problem.field,
+                severity: problem.severity, message: problem.message, suggestion: problem.suggestion,
             });
         }
 

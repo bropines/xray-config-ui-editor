@@ -19,6 +19,7 @@ import {
 } from '../../../core/xray/shadowsocks-outbound';
 import { canonicalNames, protocolNameProblem, text } from '../../../core/xray/shadowsocks-rules';
 import { OutboundHttpHeaders } from './OutboundHttpHeaders';
+import { OutboundFlow, OutboundVision } from './OutboundVision';
 import { isHttpOutbound } from '../../../core/xray/http-outbound-headers';
 import { t } from '../../../i18n';
 
@@ -105,7 +106,13 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     // (v26.7.28:infra/conf/shadowsocks.go:201-212): a form that always wrote
     // `servers[0]` drew empty boxes for a flat config and edited a list the
     // core had already replaced.
-    const isFlat = isHysteria || ((withLogin || isShadowsocks) && serverShape(outbound) === 'flat');
+    //
+    // VMess and VLESS have the same two forms by the same test: `address` in
+    // the settings makes it the flat one, and `vnext` is then replaced
+    // (v26.7.28:infra/conf/vless.go:263-271, v26.7.28:infra/conf/vmess.go:127
+    // and :161-162; v26.3.27:infra/conf/vless.go:251 and vmess.go:121, :155-156).
+    // Their account — id, flow, and for VLESS the Vision keys — is then flat too.
+    const isFlat = isHysteria || ((withLogin || isShadowsocks || isVnextProtocol) && serverShape(outbound) === 'flat');
     // One identifier: a UUID for vless and vmess, a password for trojan and
     // shadowsocks. Nothing else has one — this box used to be drawn for
     // socks, http and hysteria as well, bound to nothing.
@@ -118,9 +125,9 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     // `updateField(path, value)` (see OutboundModal.tsx). The active server
     // entry lives at settings.vnext[0] for vmess/vless, settings.servers[0]
     // for every other protocol handled by the "Server Details" card below.
-    const basePath: (string | number)[] = isVnextProtocol
-        ? ['settings', 'vnext', 0]
-        : isFlat ? ['settings'] : ['settings', 'servers', 0];
+    const basePath: (string | number)[] = isFlat
+        ? ['settings']
+        : isVnextProtocol ? ['settings', 'vnext', 0] : ['settings', 'servers', 0];
 
     const address = useField<string>(outbound, onChange, [...basePath, 'address']);
     const port = useField<number>(outbound, onChange, [...basePath, 'port']);
@@ -142,11 +149,14 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
     const heldMethod = text(method.value);
     const methodNames = canonicalNames(values('outbound.shadowsocks.method'));
     const methodOptions = heldMethod !== '' && !methodNames.includes(heldMethod) ? [...methodNames, heldMethod] : methodNames;
-    // vmess/vless keep the identifier under users[0].id; trojan/shadowsocks keep it as `password`.
+    // vmess/vless keep the identifier under users[0].id, or `id` in the flat
+    // form; trojan/shadowsocks keep it as `password`.
     const userIdField = useField<string>(
         outbound,
         onChange,
-        isVnextProtocol ? [...basePath, 'users', 0, 'id'] : [...basePath, 'password']
+        isVnextProtocol
+            ? (isFlat ? ['settings', 'id'] : [...basePath, 'users', 0, 'id'])
+            : [...basePath, 'password']
     );
     const userId = supportsUserId ? userIdField : { value: '', onChange: () => {} };
 
@@ -305,6 +315,9 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     </p>
                 )}
 
+                {/* VLESS: what makes it Vision, drawn beside the id it belongs to. */}
+                {outbound.protocol === 'vless' && <OutboundFlow outbound={outbound} onChange={onChange} />}
+
                 {isShadowsocks && (
                     <div>
                         {/* An outbound has no default cipher: an empty method is
@@ -352,6 +365,8 @@ export const OutboundServer = ({ outbound, onChange, errors = {} }: any) => {
                     server, whichever shape the server is in. */}
                 {isHttpOutbound(outbound) && <OutboundHttpHeaders outbound={outbound} onChange={onChange} />}
             </div>
+
+            {outbound.protocol === 'vless' && <OutboundVision outbound={outbound} onChange={onChange} />}
 
             {isShadowsocks && (
                 <ShadowsocksNotes

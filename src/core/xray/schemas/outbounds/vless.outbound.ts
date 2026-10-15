@@ -27,7 +27,12 @@ export const VlessOutboundSettingsSchema = z.object({
   port: z.number().int().optional(),
   /** User UUID */
   id: z.string().optional(),
-  /** Encryption (must be "none") */
+  /**
+   * "none", or the client's VLESS Encryption string for the server's `decryption`
+   * (core/xray/vless-encryption.ts). Every supported line refuses a VLESS
+   * outbound without one, so it is never left out. Also read from
+   * `vnext[].users[].encryption`.
+   */
   encryption: z.string().optional(),
   /** XTLS flow control */
   flow: VlessFlowSchema.optional(),

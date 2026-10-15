@@ -43,7 +43,11 @@ export const VlessInboundSettingsSchema = z.object({
   users: z.array(VlessInboundUserSchema).optional(),
   /** Default flow applied to clients that do not set their own. */
   flow: VlessInboundFlowSchema.optional(),
-  /** Decryption method. Must be "none" */
+  /**
+   * "none", or a VLESS Encryption string (what `xray vlessenc` prints) - see
+   * core/xray/vless-encryption.ts. Every supported line refuses a VLESS inbound
+   * without one, so it is never left out.
+   */
   decryption: z.string().optional(),
   /** Fallback configurations for active probing resistance */
   fallbacks: z.array(FallbackObjectSchema).optional(),

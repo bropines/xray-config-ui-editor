@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.32.0] - 2026-10-15
+
+### Added
+- **VLESS Encryption has an editor, on both ends.** The inbound has a card under its clients and the outbound one under its server. The inbound card holds `decryption`: **Generate X25519 key** and **Generate ML-KEM-768 key** write what `xray vlessenc` writes (`mlkem768x25519plus.native.600s.KEY`), with the choices `vlessenc` has no flags for — how it looks (native, xorpub, random), the ticket lifetime (`600s`, `300-600s`, `0s` for none) and padding — and a second press is needed to replace a key in use, since every client holding the old one stops connecting. Under it, **What the clients need** shows the matching `encryption`, worked out from the server's string (the public half of each private key, the same appearance and padding, 0rtt or 1rtt at your choice) with a Copy button; it is not stored in the config. The outbound card holds `encryption`: paste the server's `decryption` (a whole `"decryption": "…",` line from `xray vlessenc` is fine) and **Use it** fills in the client's string. A held value is always drawn, whatever it is, with the words for what the core would do with it.
+- **The keys are made in the browser, and checked against the real core.** X25519 as `xray vlessenc` makes it (the private key clamped); ML-KEM-768 through `@noble/post-quantum` 0.7.1 (MIT, pinned), whose public key for a seed is held in the tests to what the Xray 26.10.10 binary prints for the same seed (`xray mlkem768 -i`, four seeds; `xray x25519 -i` for the curve). Strings from the generator were loaded by that binary (`run -test`) and carried real traffic over loopback — X25519 and ML-KEM-768, all three appearances, padding, 0rtt and 1rtt, no tickets, and a chain of two keys — while a wrong key, a plain client against an encrypting server, an encrypting client against a plain one and mismatched appearances all failed.
+- **Everything the core refuses about the strings is reported, critical, in the card and in the diagnostics.** A missing or empty `decryption`/`encryption` (every supported Xray refuses both), a first part other than `mlkem768x25519plus`, an unknown appearance, a ticket that is not a number of seconds (or `0rtt`/`1rtt` on a client), a key that is not unpadded URL-safe base64 or not 32 or 64 bytes (32 or 1184 on a client), a client's ML-KEM-768 key that is the right size but not a real public key, no key at all (the loader crashes on it), padding blocks after a key, bad padding (the first block needs a chance of 100 and at least 35 bytes; the lengths together at most 65553), `fallbacks` beside a decrypting inbound, and an `encryption` on an inbound's user. 127 strings were run through the binary to get the rules right.
+- **A VLESS inbound has a Default flow**, in a new **VLESS defaults** card that is there even with no clients — the usual case in a Remnawave profile, where the panel adds the users and the form used to offer no flow anywhere. Clients without a flow of their own get this one when Xray loads the config (a client's Flow box says "Inherits …"); a user added later through the API does not.
+- **The VLESS outbound has a Flow box.** It had none — Vision could only be switched on in the JSON.
+- **Vision padding numbers (`testseed`)** — inbound-wide, per client, and on the outbound — in a collapsed editor with Xray's own numbers (900, 500, 900, 256) shown and what each one does. All four are always written, since the core ignores a list of fewer. A 0 in the second or fourth number, or a number that turns negative as a signed 32-bit value, is critical: the core panics on the first padded write and nothing catches it.
+- **Pre-connect (`testpre`)** on the VLESS outbound: connections dialled to the server ahead of time and kept idle, each living two minutes; ignored with `reverse`, and a large number is pointed out, since each one is a socket the server keeps open.
+- **A Vision flow over a transport that cannot carry it** (anything but raw with TLS or REALITY) is reported: the node starts, and refuses every Vision connection with "XTLS only supports TLS and REALITY directly for now."
+
+### Changed
+- **Copy Link keeps the encryption.** A `vless://` link for an encrypted outbound carries `encryption=…` (for an inbound, the client string worked out from its `decryption`); without it the client connects as plain VLESS and the server drops it.
+- **A panel host mirrored into a client outbound gets the matching `encryption`** when the inbound decrypts, derived from its `decryption`; one whose `decryption` Xray would refuse is reported rather than turned into a plain client that can never connect.
+
+### Fixed
+- **A VLESS inbound with no `decryption`, or an outbound with no `encryption`, is reported as stopping the config.** Every supported Xray answers `please add/set "decryption":"none"` and does not start; nothing here said so until the node did.
+- **Vision with Mux was reported wrongly.** Any Mux beside a Vision flow was called "incompatible", including the combination that works: TCP outside Mux (`concurrency: -1`) and UDP through XUDP. What fails is TCP inside Mux — a Vision server allows only UDP there — and that is what is reported now, with the fix. A flat VLESS outbound was not checked at all.
+- **A flat VLESS or VMess outbound showed empty server fields** and edited a `vnext` list the core ignores once `settings.address` is set. The server card follows the shape the config uses.
+
 ## [1.31.0] - 2026-10-15
 
 ### Added
